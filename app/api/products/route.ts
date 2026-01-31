@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Rate limiting
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
-    
+
     if (!rateLimitResult.success) {
       return createErrorResponse(
         'RATE_LIMIT_EXCEEDED',
@@ -52,8 +52,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      // Search in categories JSONB field
-      query = query.contains('categories', [category])
+      // Search in category JSONB field - category is an object with 'name' field
+      // Convert slug (e.g., 'project-management-software') to searchable format
+      // Replace hyphens with spaces for matching database category names
+      const searchCategory = category.replace(/-/g, ' ')
+      query = query.ilike('category->>name', `%${searchCategory}%`)
     }
 
     if (minRating !== undefined) {

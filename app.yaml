@@ -12,7 +12,5 @@ automatic_scaling:
   min_instances: 1
   max_instances: 10
   target_cpu_utilization: 0.6
-# Note: Set sensitive environment variables in Google Cloud Console
-# under App Engine > Settings > Environment Variables
-# or use Secret Manager for production
+
 

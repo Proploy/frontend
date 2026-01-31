@@ -1,12 +1,19 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-/**
- * Next.js Middleware for Supabase session refresh
- * This ensures the user's session cookie is automatically refreshed
- * before accessing routes, keeping the user logged in
- */
-export async function middleware(request: NextRequest) {
+
+const isProtectedRoute = createRouteMatcher([
+  '/become-expert(.*)',
+])
+
+
+export default clerkMiddleware(async (auth, request: NextRequest) => {
+
+  if (isProtectedRoute(request)) {
+    await auth.protect()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -22,8 +29,15 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+          cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value)
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options)
           })
         },
@@ -31,22 +45,17 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - this will keep the user logged in
+
   await supabase.auth.getUser()
 
   return response
-}
+})
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+
+    '/(api|trpc)(.*)',
   ],
 }
-

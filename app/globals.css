@@ -1,26 +1,246 @@
 @import "tailwindcss";
 
+@theme {
+    /* Colors */
+    --color-cta-button: #197CFF;
+    --color-primary-dark: #0466E7;
+    --color-secondary-light: #C9E0FF;
+    --color-secondary-medium: #89BCFF;
+    --color-text-primary: #011127;
+    --color-surface: #FFFFFF;
+    --color-section-bg: #F9FAFB;
+    --color-page-bg: #F4F8FD;
+    --color-badge-bg: #BEDAFF;
+    --color-badge-text: #0466E7;
+
+    /* Typography */
+    --font-dm-sans: var(--font-dm-sans), ui-sans-serif, system-ui;
+    --font-inter: var(--font-inter), ui-sans-serif, system-ui;
+
+    /* Spacing System */
+    --spacing-16: 1rem;
+    /* 16px - flex/grid gaps */
+    --spacing-24: 1.5rem;
+    /* 24px - card padding, gaps */
+    --spacing-32: 2rem;
+    /* 32px - larger gaps */
+    --spacing-48: 3rem;
+    /* 48px - heading to subheading */
+    --spacing-56: 3.5rem;
+    /* 56px - global inset */
+    --spacing-64: 4rem;
+    /* 64px - subheading to content */
+    --spacing-80: 5rem;
+    /* 80px - section gaps */
+    --spacing-83: 5.1875rem;
+    /* 83px - badge to heading */
+    --spacing-100: 6.25rem;
+    /* 100px - ticker to body */
+    --spacing-102: 6.375rem;
+    /* 102px - subheading to search */
+    --spacing-120: 7.5rem;
+    /* 120px - large section gaps */
+    --spacing-176: 11rem;
+    /* 176px - ticker to body */
+
+    /* Component Specific */
+    --navbar-height: 80px;
+    --logo-width: 194px;
+    --logo-height: 54px;
+    --search-bar-width: 824px;
+    --search-bar-height: 64px;
+    --become-expert-btn-width: 173px;
+    --become-expert-btn-height: 44px;
+
+    /* Shadows */
+    --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-search: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    --background: #F4F8FD;
+    --foreground: #011127;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    color: var(--foreground);
+    background: var(--background);
+    font-family: var(--font-inter);
+}
+
+@layer components {
+    .btn-cta {
+        @apply bg-cta-button hover:bg-primary-dark text-white font-bold rounded-full transition-all duration-300 shadow-premium flex items-center justify-center;
+        width: 239px;
+        height: 39px;
+        font-size: 14px;
+    }
+
+    .btn-sso {
+        @apply bg-[#F5F5F5] hover:bg-[#EAEAEA] text-[#011127] font-medium rounded-[8px] transition-all duration-300 flex items-center justify-center gap-3;
+        width: 239px;
+        height: 39px;
+        font-size: 12px;
+    }
+
+    .input-field {
+        @apply w-full h-[39px] px-4 border border-secondary-medium rounded-[8px] focus:ring-1 focus:ring-cta-button focus:border-cta-button outline-none transition-all text-[12px] text-gray-900 placeholder:text-[#CCCCCC];
+    }
+
+    .section-inset {
+        @apply px-56 py-56;
+    }
+
+    /* Navbar Utilities */
+    .navbar-container {
+        @apply fixed top-0 left-0 w-full z-50 transition-all duration-300;
+        padding-left: var(--spacing-56);
+        padding-right: var(--spacing-56);
+        padding-top: var(--spacing-56);
+        padding-bottom: 1.5rem;
+    }
+
+    .navbar-logo {
+        height: var(--logo-height);
+        width: auto;
+    }
+
+    .navbar-link {
+        @apply text-text-primary hover:text-cta-button font-semibold transition-colors;
+        font-family: var(--font-inter);
+        font-size: 14px;
+    }
+
+    .navbar-links-container {
+        gap: 2.5rem;
+        /* 40px between nav links */
+    }
+
+    /* Search Bar Utilities */
+    .search-bar-container {
+        width: var(--search-bar-width);
+        height: var(--search-bar-height);
+        @apply bg-white border border-secondary-medium rounded-full flex items-center p-2 relative z-20 transition-all;
+        box-shadow: var(--shadow-search);
+    }
+
+    .search-bar-container:focus-within {
+        @apply ring-2 ring-cta-button/20;
+    }
+
+    .search-bar-input {
+        @apply w-full h-full bg-transparent outline-none text-text-primary placeholder:text-gray-400;
+        font-size: 16px;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .search-bar-button {
+        @apply bg-primary-dark hover:bg-blue-700 text-[#F4F8FD] font-bold rounded-full h-full px-8 transition-all flex items-center justify-center whitespace-nowrap;
+        font-size: 16px;
+    }
+
+    /* Become Expert Button */
+    .btn-become-expert {
+        @apply bg-cta-button hover:bg-primary-dark text-white font-bold rounded-[8px] transition-all duration-300 flex items-center justify-center font-inter;
+        width: var(--become-expert-btn-width);
+        height: var(--become-expert-btn-height);
+        font-size: 14px;
+        box-shadow: var(--shadow-premium);
+    }
+}
+
+@layer utilities {
+    .headline-main {
+        font-family: var(--font-dm-sans);
+        font-weight: 700;
+        font-size: 60px;
+        line-height: 1.1;
+    }
+
+    .subheading-main {
+        font-family: var(--font-dm-sans);
+        font-weight: 400;
+        font-size: 20px;
+        line-height: 1.5;
+    }
+
+    /* Spacing Utilities */
+    .gap-16 {
+        gap: var(--spacing-16);
+    }
+
+    .gap-24 {
+        gap: var(--spacing-24);
+    }
+
+    .gap-32 {
+        gap: var(--spacing-32);
+    }
+
+    .gap-48 {
+        gap: var(--spacing-48);
+    }
+
+    .gap-56 {
+        gap: var(--spacing-56);
+    }
+
+    .gap-64 {
+        gap: var(--spacing-64);
+    }
+
+    .gap-83 {
+        gap: var(--spacing-83);
+    }
+
+    .px-56 {
+        padding-left: var(--spacing-56);
+        padding-right: var(--spacing-56);
+    }
+
+    .py-56 {
+        padding-top: var(--spacing-56);
+        padding-bottom: var(--spacing-56);
+    }
+
+    .pt-56 {
+        padding-top: var(--spacing-56);
+    }
+
+    .pb-56 {
+        padding-bottom: var(--spacing-56);
+    }
+
+    .mb-48 {
+        margin-bottom: var(--spacing-48);
+    }
+
+    .mb-64 {
+        margin-bottom: var(--spacing-64);
+    }
+
+    .mb-83 {
+        margin-bottom: var(--spacing-83);
+    }
+
+    .mb-100 {
+        margin-bottom: var(--spacing-100);
+    }
+
+    .mb-102 {
+        margin-bottom: var(--spacing-102);
+    }
+
+    .mb-176 {
+        margin-bottom: var(--spacing-176);
+    }
+
+    /* Gradient Text Utility */
+    .text-gradient-blue {
+        background: linear-gradient(90deg, #197CFF 0%, #011127 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
 }

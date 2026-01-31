@@ -23,11 +23,11 @@ interface ApiResponse {
   }
 }
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: { page?: string; search?: string; category?: string; minRating?: string }
+export default async function ProductsPage(props: {
+  searchParams: Promise<{ page?: string; search?: string; category?: string; minRating?: string }>
 }) {
+ 
+  const searchParams = await props.searchParams
   const page = searchParams.page || '1'
   const search = searchParams.search || ''
   const category = searchParams.category || ''
