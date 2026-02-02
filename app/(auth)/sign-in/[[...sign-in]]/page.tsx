@@ -5,7 +5,6 @@ import { useSignIn } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import Navbar from '@/components/Navbar'
 
 /**
  * Custom Sign-In Page
@@ -67,9 +66,7 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F7F4] flex flex-col">
-      <Navbar />
-      
-      <div className="flex-1 flex pt-[120px]">
+      <div className="flex-1 flex pt-[40px]">
         {/* Left Side - Sign In Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 lg:px-16">
           <div className="w-full max-w-[239px]">

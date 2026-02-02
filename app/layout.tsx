@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { DM_Sans, Inter } from "next/font/google";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
-/**
- * DM Sans - Used for hero headlines and branding text
- * Inter - Used for body text and UI elements
- */
+
 const dmSans = DM_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -34,8 +33,12 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={`${dmSans.variable} ${inter.variable}`}>
-        <body className="antialiased font-inter">
-          {children}
+        <body className="antialiased font-inter flex flex-col min-h-screen">
+          <Navbar />
+          <main className="pt-20 flex-1">
+            {children}
+          </main>
+          <Footer />
         </body>
       </html>
     </ClerkProvider>

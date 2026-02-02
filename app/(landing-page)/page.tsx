@@ -14,7 +14,6 @@ import {
   Zap,
   Search
 } from 'lucide-react'
-import Navbar from '@/components/Navbar'
 import SearchBar from '@/components/SearchBar'
 import Badge from '@/components/Badge'
 import ExpandableCard from '@/components/ExpandableCard'
@@ -72,7 +71,7 @@ const getCategoryDescription = (categoryName: string): string => {
   return 'Discover the best software solutions for your business needs'
 }
 
-// Random growth percentage for display (simulated)
+// Random growth percentage for display (simulated) will build the logic for this when we have adequate data 
 const getGrowthPercent = (categoryName: string): number => {
   // Generate a consistent "random" number based on category name
   const hash = categoryName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
@@ -111,11 +110,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F8FD] font-inter">
-      <Navbar />
-      
       {/* Hero Section */}
       <section className="pt-[160px] pb-[100px] px-56 flex flex-col items-center text-center">
-        <h1 className="text-[60px] font-bold text-text-primary font-dm-sans leading-[1.1] mb-48">
+        <h1 className="text-[60px] font-bold text-text-primary font-dm-sans leading-[1.1] mb-12">
           Discover, Decide, Deploy, <span className="text-cta-button">Done.</span>
         </h1>
         <p className="text-[20px] text-gray-600 font-dm-sans max-w-[800px] mb-102 leading-[1.5]">
@@ -226,17 +223,25 @@ export default function LandingPage() {
           </p>
 
           {/* Category Grid - Dynamic from database */}
-          <div className="grid grid-cols-3 gap-6">
-            {categories.slice(0, 9).map((category: Category, idx: number) => (
-              <CategoryCard 
-                key={category.name}
-                name={category.name}
-                description={getCategoryDescription(category.name)}
-                icon={getCategoryIcon(category.name)}
-                slug={category.name.toLowerCase().replace(/\s+/g, '-')}
-                growthPercent={getGrowthPercent(category.name)}
-              />
-            ))}
+          <div className="relative">
+            {/* Centered Gradient Circle */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-400 opacity-[0.08] blur-[100px] rounded-full -z-10 pointer-events-none" />
+            
+            <div className="grid grid-cols-3 gap-6 relative z-10">
+              {categories
+                .filter(c => c.name !== "E-Commerce Platforms")
+                .slice(0, 9)
+                .map((category: Category, idx: number) => (
+                  <CategoryCard 
+                    key={category.name}
+                    name={category.name}
+                    description={getCategoryDescription(category.name)}
+                    icon={getCategoryIcon(category.name)}
+                    slug={category.name.toLowerCase().replace(/\s+/g, '-')}
+                    growthPercent={getGrowthPercent(category.name)}
+                  />
+                ))}
+            </div>
           </div>
         </div>
       </section>
