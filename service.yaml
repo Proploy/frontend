@@ -13,7 +13,7 @@ spec:
     spec:
       containerConcurrency: 80
       containers:
-      - image: gcr.io/coral-polymer-484212-r3/proploy-frontend
+      - image: asia-south1-docker.pkg.dev/coral-polymer-484212-r3/proploy-frontend/proploy-frontend
         ports:
         - containerPort: 3000
         resources:

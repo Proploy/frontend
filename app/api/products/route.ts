@@ -4,6 +4,7 @@ import { getProductsQuerySchema } from '@/lib/validations/api'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
+export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // Revalidate every hour (ISR)
 
 /**

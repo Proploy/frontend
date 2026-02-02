@@ -4,6 +4,7 @@ import { searchQuerySchema } from '@/lib/validations/api'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
+export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // Revalidate every hour (ISR)
 
 /**
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Rate limiting
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
-    
+
     if (!rateLimitResult.success) {
       return createErrorResponse(
         'RATE_LIMIT_EXCEEDED',

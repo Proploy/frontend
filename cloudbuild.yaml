@@ -1,0 +1,39 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'build',
+    '--build-arg', 'NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL',
+    '--build-arg', 'NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    '--build-arg', 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$_NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+    '--build-arg', 'NEXT_PUBLIC_APP_URL=$_NEXT_PUBLIC_APP_URL',
+    '-t', 'asia-south1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend',
+    '.'
+  ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'asia-south1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'deploy'
+  - 'proploy-frontend'
+  - '--image'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend'
+  - '--service-account'
+  - 'proploy-deployer@coral-polymer-484212-r3.iam.gserviceaccount.com'
+  - '--region'
+  - 'asia-south1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+images:
+- 'asia-south1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend'
+
+substitutions:
+  _NEXT_PUBLIC_SUPABASE_URL: ""
+  _NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+  _NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ""
+  _NEXT_PUBLIC_APP_URL: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY
