@@ -55,10 +55,10 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
   }, [])
 
   return (
-    <div ref={searchBarRef} className={`relative w-[824px] ${className}`}>
+    <div ref={searchBarRef} className={`relative w-full max-w-[824px] ${className}`}>
       <div className="search-bar-container">
-        <div className="flex-1 flex items-center gap-3">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-4">
+        <div className="w-full md:flex-1 flex items-center gap-2 py-3 md:py-0">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-4 shrink-0">
             <path d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z" stroke="#98A2B3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <input 
@@ -66,8 +66,8 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => searchQuery.length > 1 && setIsDropdownOpen(true)}
-            placeholder="Search products, industries, and experts"
-            className="search-bar-input"
+            placeholder="Search products..."
+            className="w-full h-10 md:h-full bg-transparent outline-none text-[15px] md:text-[16px] text-text-primary placeholder:text-gray-400 px-2"
           />
         </div>
         <button className="search-bar-button">
@@ -77,7 +77,7 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
 
       {/* Search Dropdown */}
       {isDropdownOpen && searchResults.length > 0 && (
-        <div className="absolute top-[32px] left-0 w-full pt-[48px] bg-white border border-secondary-light rounded-b-[32px] shadow-2xl z-10 overflow-hidden">
+        <div className="absolute top-full left-0 w-full bg-white border border-secondary-light rounded-2xl shadow-2xl z-50 overflow-hidden mt-2">
           <div className="py-4">
             {searchResults.map((product) => (
               <Link 
