@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { DM_Sans, Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+
 import "./globals.css";
 
 
@@ -38,7 +38,7 @@ export default function RootLayout({
           <main className="pt-20 flex-1">
             {children}
           </main>
-          <Footer />
+
         </body>
       </html>
     </ClerkProvider>
