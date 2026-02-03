@@ -101,7 +101,7 @@ body {
         padding-bottom: 1rem;
     }
 
-    @screen md {
+    @media (min-width: 768px) {
         .navbar-container {
             padding-left: var(--spacing-56);
             padding-right: var(--spacing-56);
@@ -209,7 +209,7 @@ body {
         padding-right: var(--spacing-mobile);
     }
 
-    @screen md {
+    @media (min-width: 768px) {
         .px-56 {
             padding-left: var(--spacing-56);
             padding-right: var(--spacing-56);
