@@ -1,0 +1,40 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      docker build -t gcr.io/$PROJECT_ID/proploy-frontend . \
+        --build-arg NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL \
+        --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY \
+        --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$_NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY \
+        --build-arg NEXT_PUBLIC_APP_URL=$_NEXT_PUBLIC_APP_URL
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/proploy-frontend']
+
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+    - 'run'
+    - 'deploy'
+    - 'proploy-frontend'
+    - '--image'
+    - 'gcr.io/$PROJECT_ID/proploy-frontend'
+    - '--region'
+    - 'asia-south1'
+    - '--platform'
+    - 'managed'
+    - '--allow-unauthenticated'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _NEXT_PUBLIC_SUPABASE_URL: "https://wyoaqtliilrzomfuityd.supabase.co"
+  _NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5b2FxdGxpaWxyem9tZnVpdHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzAzMzYsImV4cCI6MjA3NjA0NjMzNn0.Kw2tPr2dP2Ei-oW4AfX3MKe9CpnHNOXyYOqV0AJxMNM"
+  _NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_c2hhcmluZy1oaXBwby03My5jbGVyay5hY2NvdW50cy5kZXYk"
+  _NEXT_PUBLIC_APP_URL: "https://proploy-frontend-731353524841.asia-south1.run.app"
