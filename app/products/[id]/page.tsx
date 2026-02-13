@@ -64,8 +64,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        const response = await fetch(`${baseUrl}/api/products/${id}`)
+        const response = await fetch(`/api/products/${id}`)
         if (response.ok) {
           const result = await response.json()
           setProduct(result.data)
