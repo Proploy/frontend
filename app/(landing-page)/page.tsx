@@ -274,7 +274,7 @@ export default function LandingPage() {
                 "Access objective, unbiased recommendations"
               ]}
               imagePosition="right"
-              imageSrc="/uploaded_media_2_1769860593263.png"
+              imageSrc="/uploaded_media_2_1769860593263.png" //replace with something intutive with effective 
               hasCircleBorder={true}
             />
             <MethodologyStep 

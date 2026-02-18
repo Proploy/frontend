@@ -3,17 +3,14 @@ import { createClient } from '@/lib/supabase/server'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 3600 // Revalidate every hour
+export const revalidate = 3600 //   
 
-/**
- * GET /api/categories
- * Get unique categories from products with counts
- */
+
 export async function GET(request: NextRequest) {
     try {
         const supabase = await createClient()
 
-        // Get all products with category field (JSONB with name and link)
+        
         const { data, error } = await supabase
             .from('products')
             .select('category, product_id')
@@ -24,7 +21,7 @@ export async function GET(request: NextRequest) {
             return createErrorResponse('DATABASE_ERROR', error.message, 500)
         }
 
-        // Extract unique category names and count products per category
+        
         const categoryMap = new Map<string, { name: string; count: number; link?: string }>()
 
         data?.forEach((product: any) => {
@@ -43,7 +40,7 @@ export async function GET(request: NextRequest) {
             }
         })
 
-        // Sort by count (descending) to show most popular categories first
+            
         const categories = Array.from(categoryMap.values()).sort((a, b) => b.count - a.count)
 
         return Response.json({

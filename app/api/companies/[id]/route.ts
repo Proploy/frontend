@@ -4,18 +4,15 @@ import { getCompanyByIdParamsSchema } from '@/lib/validations/api'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
-export const revalidate = 3600 // Revalidate every hour (ISR)
+export const revalidate = 3600 //   
 
-/**
- * GET /api/companies/[id]
- * Get a single company by ID
- */
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Rate limiting
+  
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
     
@@ -27,14 +24,14 @@ export async function GET(
       )
     }
 
-    // Validate params
+          
     const { id } = await params
     const validatedParams = getCompanyByIdParamsSchema.parse({ id })
 
-    // Create Supabase client
+      
     const supabase = await createClient()
 
-    // Fetch company
+    
     const { data, error } = await supabase
       .from('companies')
       .select('*')

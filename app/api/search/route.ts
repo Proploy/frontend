@@ -5,15 +5,12 @@ import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 3600 // Revalidate every hour (ISR)
+export const revalidate = 3600 
 
-/**
- * GET /api/search
- * Full-text search across products and companies
- */
+
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
+  
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
 
@@ -25,14 +22,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams
     const queryParams = Object.fromEntries(searchParams.entries())
     const validatedParams = searchQuerySchema.parse(queryParams)
 
     const { q, type, limit } = validatedParams
 
-    // Create Supabase client
+   
     const supabase = await createClient()
 
     const results: {
@@ -40,7 +36,7 @@ export async function GET(request: NextRequest) {
       companies?: unknown[]
     } = {}
 
-    // Search products
+   
     if (type === 'products' || type === 'all') {
       const { data: products, error: productsError } = await supabase
         .from('products')
@@ -56,7 +52,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Search companies
     if (type === 'companies' || type === 'all') {
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
@@ -72,7 +67,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Calculate total results
     const totalResults = (results.products?.length || 0) + (results.companies?.length || 0)
 
     return Response.json({
