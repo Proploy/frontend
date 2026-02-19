@@ -92,7 +92,10 @@ export default function LandingPage() {
         const productsRes = await fetch('/api/products?limit=25')
         const productsData = await productsRes.json()
         if (productsData && productsData.data) {
-          setLogos(productsData.data.filter((p: Product) => p.product_logo))
+          const filteredLogos = productsData.data.filter((p: Product) => p.product_logo)
+          // Shuffle logos for random order
+          const shuffled = [...filteredLogos].sort(() => Math.random() - 0.5)
+          setLogos(shuffled)
         }
 
         // Fetch categories with counts
@@ -125,10 +128,10 @@ export default function LandingPage() {
         </div>
 
         {/* Ticker Section (80px height) */}
-        <div className="w-full h-16 md:h-20 overflow-hidden relative grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all mb-12 md:mb-16">
-          <div className="flex animate-ticker items-center h-full gap-8 md:gap-16 whitespace-nowrap">
+        <div className="w-full h-16 md:h-20 overflow-hidden relative opacity-50 mb-12 md:mb-16">
+          <div className="flex animate-ticker items-center h-full gap-2.5 whitespace-nowrap">
             {[...logos, ...logos].map((product, idx) => (
-              <div key={idx} className="flex-shrink-0 h-6 md:h-10 w-auto flex items-center">
+              <div key={idx} className="flex-shrink-0 h-6 md:h-10 w-auto flex items-center px-[10px]">
                 {product.product_logo && (
                   <img 
                     src={product.product_logo} 

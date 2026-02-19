@@ -143,15 +143,15 @@ export default function ProductDetailPage() {
         {/* Product Information Header (Below Banner) - Responsive flex */}
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start text-center md:text-left mb-8 md:mb-12">
              {/* Product Logo Large */}
-             <div className="w-24 h-24 md:w-32 md:h-32 rounded-[20px] md:rounded-3xl bg-white shadow-md flex items-center justify-center overflow-hidden border border-gray-100 relative z-10 shrink-0">
+              <div className="w-20 h-20 md:w-20 md:h-20 rounded-[20px] md:rounded-3xl bg-white shadow-md flex items-center justify-center overflow-hidden border border-gray-100 relative z-10 shrink-0">
                 {product.product_logo ? (
                   <img 
                     src={product.product_logo}
                     alt={product.product_name}
-                    className="w-16 h-16 md:w-24 md:h-24 object-contain"
+                    className="w-full h-full object-contain p-2"
                   />
                 ) : (
-                  <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl md:text-4xl font-bold">
+                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl md:text-4xl font-bold">
                     {product.product_name.charAt(0)}
                   </div>
                 )}
