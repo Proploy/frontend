@@ -134,7 +134,7 @@ export default async function ProductsPage(props: {
                 <img
                   src={product.product_logo}
                   alt={product.product_name}
-                  className="w-16 h-16 mb-4 object-contain"
+                  className="w-20 h-20 mb-4 object-contain"
                 />
               )}
               <h2 className="text-xl font-semibold mb-2">{product.product_name}</h2>

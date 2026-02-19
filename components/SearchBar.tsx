@@ -70,9 +70,6 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
             className="w-full h-10 md:h-full bg-transparent outline-none text-[15px] md:text-[16px] text-text-primary placeholder:text-gray-400 px-2"
           />
         </div>
-        <button className="search-bar-button">
-          Find Your Software
-        </button>
       </div>
 
       {/* Search Dropdown */}

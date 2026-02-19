@@ -26,22 +26,22 @@ export default function MethodologyStep({
       {/* Icon with optional circle border */}
       <div className="mb-6">
         {hasCircleBorder ? (
-          <div className="w-16 h-16 rounded-full border-2 border-[#197CFF] flex items-center justify-center bg-white">
+          <div className="w-20 h-20 rounded-full border-[3px] border-[#197CFF] flex items-center justify-center bg-white shadow-sm">
             <Image 
               src={icon} 
               alt={title} 
-              width={32} 
-              height={32}
-              className="w-8 h-8"
+              width={64} 
+              height={64}
+              className="w-12 h-12"
             />
           </div>
         ) : (
           <Image 
             src={icon} 
             alt={title} 
-            width={32} 
-            height={32}
-            className="w-8 h-8"
+            width={64} 
+            height={64}
+            className="w-16 h-16"
           />
         )}
       </div>
