@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model alembic_version {
+  version_num String @id(map: "alembic_version_pkc") @db.VarChar(32)
+}
+
+model companies {
+  company_id             String     @id @db.VarChar(12)
+  g2_company_id          Int?
+  name                   String     @db.VarChar(255)
+  website                String?
+  phone                  String?    @db.VarChar(20)
+  location               String?    @db.VarChar(255)
+  founded_year           Int?
+  company_ownership      String?    @db.VarChar(100)
+  company_annual_revenue String?    @db.VarChar(100)
+  total_revenue_usd_mmm  String?    @db.VarChar(50)
+  linkedin_url           String?
+  twitter_url            String?
+  employee_count         Int?
+  created_at             DateTime   @db.Timestamp(6)
+  updated_at             DateTime   @db.Timestamp(6)
+  products               products[]
+
+  @@index([g2_company_id], map: "idx_companies_g2_company_id")
+  @@index([name], map: "idx_companies_name")
+  @@index([g2_company_id], map: "ix_companies_g2_company_id")
+  @@index([name], map: "ix_companies_name")
+}
+
+model job_url_status {
+  id                 String        @id @db.VarChar(36)
+  job_id             String        @db.VarChar(36)
+  url                String
+  status             String        @db.VarChar(50)
+  product_id         String?       @db.VarChar(12)
+  processing_time_ms Int?
+  attempts           Int
+  error_message      String?
+  last_attempt_at    DateTime?     @db.Timestamp(6)
+  created_at         DateTime      @db.Timestamp(6)
+  updated_at         DateTime      @db.Timestamp(6)
+  scraping_jobs      scraping_jobs @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([job_id], map: "idx_job_url_status_job_id")
+  @@index([status], map: "idx_job_url_status_status")
+  @@index([url], map: "idx_job_url_status_url")
+  @@index([job_id], map: "ix_job_url_status_job_id")
+  @@index([status], map: "ix_job_url_status_status")
+}
+
+model products {
+  product_id          String     @id @db.VarChar(12)
+  g2_product_id       Int?
+  g2_company_id       Int?
+  product_name        String     @db.VarChar(255)
+  product_description String?
+  product_logo        String?
+  what_is             String?
+  g2_link             String?
+  g2_reviews_link     String?
+  seller              String?
+  rating              Float?
+  reviews             Int?
+  star_distribution   Json?
+  category            Json?
+  parent_category     Json?
+  categories          Json?
+  company_data        Json?
+  pricing_plans       Json?
+  features            Json?
+  detailed_features   Json?
+  screenshots         Json?
+  videos              Json?
+  download_links      Json?
+  alternatives        Json?
+  comparisons         Json?
+  popular_mentions    Json?
+  review_links        Json?
+  created_at          DateTime   @db.Timestamp(6)
+  updated_at          DateTime   @db.Timestamp(6)
+  company_id          String?    @db.VarChar(12)
+  companies           companies? @relation(fields: [company_id], references: [company_id], onDelete: NoAction, onUpdate: NoAction)
+  review_records      reviews[]
+
+  @@index([company_id], map: "idx_products_company_id")
+  @@index([g2_product_id], map: "idx_products_g2_product_id")
+  @@index([product_name], map: "idx_products_name")
+  @@index([rating], map: "idx_products_rating")
+  @@index([reviews], map: "idx_products_reviews")
+  @@index([company_id], map: "ix_products_company_id")
+  @@index([g2_product_id], map: "ix_products_g2_product_id")
+  @@index([product_name], map: "ix_products_product_name")
+  @@index([rating], map: "ix_products_rating")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reviews {
+  review_id               String    @id @db.VarChar(12)
+  product_id              String    @db.VarChar(12)
+  g2_review_id            Int?
+  g2_product_id           Int?
+  review_title            String?   @db.VarChar(500)
+  review_content          String?
+  review_question_answers Json?
+  review_rating           Float?
+  reviewer                Json?
+  reviewer_name           String?   @db.VarChar(255)
+  reviewer_job_title      String?   @db.VarChar(255)
+  reviewer_link           String?
+  reviewer_company_size   String?   @db.VarChar(100)
+  publish_date            DateTime? @db.Timestamp(6)
+  video_link              String?
+  review_link             String?
+  created_at              DateTime  @db.Timestamp(6)
+  updated_at              DateTime  @db.Timestamp(6)
+  products                products  @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([g2_review_id], map: "idx_reviews_g2_review_id")
+  @@index([product_id], map: "idx_reviews_product_id")
+  @@index([publish_date], map: "idx_reviews_publish_date")
+  @@index([review_rating], map: "idx_reviews_rating")
+  @@index([g2_review_id], map: "ix_reviews_g2_review_id")
+  @@index([product_id], map: "ix_reviews_product_id")
+}
+
+model scraping_jobs {
+  id                      String           @id @db.VarChar(36)
+  job_name                String?          @db.VarChar(255)
+  urls                    Json
+  status                  String           @db.VarChar(50)
+  config                  Json?
+  total_urls              Int
+  successful_urls         Int
+  failed_urls             Int
+  skipped_urls            Int
+  started_at              DateTime?        @db.Timestamp(6)
+  completed_at            DateTime?        @db.Timestamp(6)
+  processing_time_seconds Float?
+  error_message           String?
+  retry_count             Int
+  max_retries             Int
+  created_at              DateTime         @db.Timestamp(6)
+  updated_at              DateTime         @db.Timestamp(6)
+  job_url_status          job_url_status[]
+
+  @@index([created_at], map: "idx_scraping_jobs_created_at")
+  @@index([status], map: "idx_scraping_jobs_status")
+  @@index([status], map: "ix_scraping_jobs_status")
+}
+
+enum ExpertStatus {
+  draft
+  submitted
+  approved
+  rejected
+  changes_requested
+}
+
+enum TagType {
+  platform
+  industry
+  project_type
+  tool
+}
+
+enum LinkType {
+  portfolio
+  case_study
+  certification
+  testimonial
+}
+
+model Expert {
+  id                    String         @id @default(uuid())
+  userId                String         @unique // Clerk user id
+  status                ExpertStatus   @default(draft)
+  entityType            String         // Individual | Business/Team
+  displayName           String
+  headline              String
+  regionCountry         String
+  regionCity            String
+  timezone              String
+  yearsExperience       Int
+  projectsCompletedTotal Int
+  introVideoLink        String
+  availabilityHoursPerWeek Int
+  availabilityNotes     String
+  whyPlatform           String
+  uniqueStrength        String
+  idealClients          String
+  biggestWin            String
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  tags                  ExpertTag[]
+  links                 ExpertLink[]
+  projects              ExpertProject[]
+  reviews               ExpertReview[]
+}
+
+model ExpertTag {
+  id        String   @id @default(uuid())
+  expertId  String
+  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  tagType   TagType
+  tagValue  String
+
+  @@unique([expertId, tagType, tagValue])
+}
+
+model ExpertLink {
+  id        String   @id @default(uuid())
+  expertId  String
+  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  linkType  LinkType
+  url       String
+}
+
+model ExpertProject {
+  id        String   @id @default(uuid())
+  expertId  String
+  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  title     String
+  summary   String
+  link      String?
+  outcomes  String
+}
+
+model ExpertReview {
+  id             String       @id @default(uuid())
+  expertId       String
+  expert         Expert       @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  reviewerUserId String       // Clerk user id of admin
+  status         ExpertStatus
+  notes          String?
+  createdAt      DateTime     @default(now())
+}
