@@ -1,146 +1,87 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { SignInButton, UserButton, useUser, useAuth } from '@clerk/nextjs'
-import { useEffect, useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 export default function Navbar() {
-  const { isSignedIn } = useUser()
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
 
-  // Handle scroll for transparent -> solid transition
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  if (pathname?.startsWith('/vendor-onboarding')) return null
 
   return (
-    <nav className={`navbar-container transition-all duration-300 ${isScrolled || isMenuOpen ? 'bg-[#F4F8FD]/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
-      <div className="flex items-center justify-between">
-        {/* Logo - 30px spacing from nav content on desktop */}
-        <div className="flex items-center lg:mr-[30px]">
-          <Link href="/">
-            <Image 
-              src="/PROPLOY.svg" 
-              alt="Proploy" 
-              width={192} 
-              height={54}
-              className="h-[40px] md:h-[54px] w-auto object-contain"
-              priority
-            />
-          </Link>
-        </div>
-
-        {/* Navigation Links - Centered - Desktop only */}
-        <div className="hidden lg:flex items-center navbar-links-container flex-1 justify-center">
-          <Link href="/products" className="navbar-link">
-            Explore Products
-          </Link>
-          <Link href="/experts" className="navbar-link">
-            Explore Experts
-          </Link>
-          <Link href="/for-businesses" className="navbar-link">
-            For Businesses
-          </Link>
-          <Link href="/for-experts" className="navbar-link">
-            For Experts
-          </Link>
-        </div>
-
-        {/* Action Items - 30px spacing from nav content on desktop */}
-        <div className="flex items-center gap-3 md:gap-6 lg:ml-[30px]">
-          <div className="hidden md:flex items-center gap-4">
-            {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
-            ) : (
-              <Link href="/sign-in" className="navbar-link">
-                Sign In
-              </Link>
-            )}
-          </div>
-          
-          <Link 
-            href="/become-expert" 
-            className="hidden md:flex px-6 py-3 bg-[#0466E7] text-white font-semibold text-[14px] rounded-full hover:bg-[#0355c0] transition-colors"
-            style={{ borderRadius: '100px' }}
-          >
-            Become an Expert
-          </Link>
-
-          {/* Mobile Menu Button */}
-          <button 
-            className="lg:hidden p-2 text-text-primary"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {isMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
-          <Link 
-            href="/products" 
-            className="text-lg font-semibold text-text-primary"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Explore Products
-          </Link>
-          <Link 
-            href="/experts" 
-            className="text-lg font-semibold text-text-primary"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Explore Experts
-          </Link>
-          <Link 
-            href="/for-businesses" 
-            className="text-lg font-semibold text-text-primary"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            For Businesses
-          </Link>
-          <Link 
-            href="/for-experts" 
-            className="text-lg font-semibold text-text-primary"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            For Experts
-          </Link>
-          
-          <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
-            {isSignedIn ? (
-              <div className="flex items-center gap-4">
-                <UserButton afterSignOutUrl="/" />
-                <span className="font-medium text-text-primary">My Account</span>
-              </div>
-            ) : (
-              <Link 
-                href="/sign-in" 
-                className="text-lg font-semibold text-cta-button"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-            )}
-            <Link 
-              href="/become-expert" 
-              className="w-full py-4 bg-[#0466E7] text-white font-bold rounded-xl text-center shadow-lg"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Become an Expert
+    <div className="bg-[#fafbfc] content-stretch flex flex-col h-[80px] items-center justify-center relative shrink-0 w-full">
+      <div className="content-stretch flex items-center justify-between max-w-[1280px] px-[var(--container-padding-desktop,32px)] relative shrink-0 w-full">
+        {/* Logo */}
+        <div className="flex flex-row items-center self-stretch">
+          <div className="content-stretch flex gap-[8px] h-full items-center relative shrink-0">
+            <Link href="/" className="flex items-center">
+              <img src="/proploy-logo.png" alt="Proploy Logo" className="h-auto w-[140px]" />
             </Link>
           </div>
         </div>
-      )}
-    </nav>
+
+        {/* Navigation */}
+        <div className="content-stretch flex gap-[36px] items-center relative shrink-0">
+          <Link href="/product" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
+            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
+              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
+                Explore Products
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/experts" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
+            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
+              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
+                Explore Experts
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/for-businesses" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
+            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
+              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
+                For Businesses
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/for-experts" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
+            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
+              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
+                For Experts
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Actions */}
+        <div className="content-stretch flex gap-[var(--spacing-lg,12px)] items-center relative shrink-0">
+          <motion.div whileHover={{ filter: 'brightness(0.95)' }} whileTap={{ filter: 'brightness(0.9)' }} transition={{ duration: 0.2 }} className="rounded-[8px]">
+            <Link href="/sign-in" className="bg-[var(--colors\/background\/bg-primary,white)] border border-[var(--colors\/border\/border-primary,#d5d7da)] border-solid content-stretch flex gap-[6px] items-center justify-center overflow-clip px-[16px] py-[10px] relative rounded-[8px] shadow-[0px_1px_2px_0px_var(--colors\/effects\/shadows\/shadow-xs,rgba(10,13,18,0.05))] shrink-0">
+              <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
+                <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
+                  Log in
+                </p>
+              </div>
+              <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_0px_1px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner-border,rgba(10,13,18,0.18)),inset_0px_-2px_0px_0px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner,rgba(10,13,18,0.05))]" />
+            </Link>
+          </motion.div>
+
+          <motion.div whileHover={{ filter: 'brightness(0.95)' }} whileTap={{ filter: 'brightness(0.9)' }} transition={{ duration: 0.2 }} className="rounded-[8px]">
+            <Link href="/become-expert" className="bg-[var(--colors\/background\/bg-brand-solid,#155eef)] border-2 border-[rgba(255,255,255,0.12)] border-solid content-stretch flex gap-[6px] items-center justify-center overflow-clip px-[16px] py-[10px] relative rounded-[8px] shadow-[0px_1px_2px_0px_var(--colors\/effects\/shadows\/shadow-xs,rgba(10,13,18,0.05))] shrink-0">
+              <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
+                <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-white,white)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
+                  Become an Expert
+                </p>
+              </div>
+              <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_0px_1px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner-border,rgba(10,13,18,0.18)),inset_0px_-2px_0px_0px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner,rgba(10,13,18,0.05))]" />
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </div>
   )
 }
 

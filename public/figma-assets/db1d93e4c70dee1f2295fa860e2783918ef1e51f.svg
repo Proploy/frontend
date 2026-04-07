@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="zendesk">
+<path d="M15 0L15 15.7143L28 0H15Z" fill="var(--fill-0, #07363D)"/>
+<path d="M6.50003 7C10.0562 7 13 3.41579 13 2.02358e-05H2.39213e-05C2.39213e-05 3.41579 2.94386 7 6.50003 7Z" fill="var(--fill-0, #07363D)"/>
+<path d="M15 22C15 18.5842 17.9439 15 21.5 15C25.0562 15 28 18.5842 28 22H15Z" fill="var(--fill-0, #07363D)"/>
+<path d="M13 22V6.28571L0 22H13Z" fill="var(--fill-0, #07363D)"/>
+</g>
+</svg>

@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 28 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="bitbucket">
+<g id="vector">
+</g>
+<path id="vector_2" d="M0.908702 7.71983e-05C0.643675 -0.00345259 0.390701 0.114217 0.217641 0.321522C0.0445798 0.528827 -0.0308532 0.804546 0.0115767 1.07472L3.81987 24.9484C3.91782 25.5515 4.42093 25.9949 5.01305 25.9999H23.283C23.7274 26.0058 24.109 25.6748 24.1801 25.2217L27.9884 1.07935C28.0309 0.809179 27.9554 0.533459 27.7824 0.326154C27.6093 0.118849 27.3563 0.00117948 27.0913 0.00470927L0.908702 7.71983e-05ZM16.9448 17.2546H11.1135L9.53456 8.73617H18.3578L16.9448 17.2546Z" fill="var(--fill-0, #2684FF)"/>
+<path id="vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M26.7774 8.73618H18.3579L16.9449 17.2546H11.1136L4.22815 25.6942C4.44639 25.8891 4.72463 25.9974 5.01313 25.9999H23.2876C23.732 26.0058 24.1136 25.6748 24.1847 25.2217L26.7774 8.73618Z" fill="url(#paint0_linear_2124_17068)"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_2124_17068" x1="28.7242" y1="11.1217" x2="18.576" y2="25.0751" gradientUnits="userSpaceOnUse">
+<stop offset="0.18" stop-color="#0052CC"/>
+<stop offset="1" stop-color="#2684FF"/>
+</linearGradient>
+</defs>
+</svg>

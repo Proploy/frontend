@@ -1,72 +1,263 @@
 @import "tailwindcss";
 
 @theme {
-    /* Colors */
-    --color-cta-button: #197CFF;
-    --color-primary-dark: #0466E7;
-    --color-secondary-light: #C9E0FF;
-    --color-secondary-medium: #89BCFF;
-    --color-text-primary: #011127;
-    --color-surface: #FFFFFF;
-    --color-section-bg: #F9FAFB;
-    --color-page-bg: #F4F8FD;
-    --color-badge-bg: #BEDAFF;
-    --color-badge-text: #0466E7;
+    /* ===== COLOR SYSTEM ===== */
 
-    /* Typography */
-    --font-dm-sans: var(--font-dm-sans), ui-sans-serif, system-ui;
-    --font-inter: var(--font-inter), ui-sans-serif, system-ui;
+    /* Brand Colors - Blue Scale */
+    --color-brand-25: #f5f8ff;
+    --color-brand-50: #eff4ff;
+    --color-brand-100: #d1e0ff;
+    --color-brand-200: #b2ccff;
+    --color-brand-300: #84adff;
+    --color-brand-400: #528bff;
+    --color-brand-500: #2970ff;
+    --color-brand-600: #155eef;
+    --color-brand-700: #004eeb;
+    --color-brand-800: #0040c1;
+    --color-brand-900: #00359e;
+    --color-brand-950: #002266;
 
-    /* Spacing System */
-    --spacing-16: 1rem;
-    /* 16px - flex/grid gaps */
-    --spacing-24: 1.5rem;
-    /* 24px - card padding, gaps */
-    --spacing-32: 2rem;
-    /* 32px - larger gaps */
-    --spacing-48: 3rem;
-    /* 48px - heading to subheading */
-    --spacing-56: 3.5rem;
-    /* 56px - global inset */
+    /* Gray Colors (Light Mode) */
+    --color-gray-25: #fdfdfd;
+    --color-gray-50: #fafafa;
+    --color-gray-100: #f5f5f5;
+    --color-gray-200: #e9eaeb;
+    --color-gray-300: #d5d7da;
+    --color-gray-400: #a4a7ae;
+    --color-gray-500: #717680;
+    --color-gray-600: #535862;
+    --color-gray-700: #414651;
+    --color-gray-800: #252b37;
+    --color-gray-900: #181d27;
+    --color-gray-950: #0a0d12;
+
+    /* Error Colors - Red Scale */
+    --color-error-25: #fffbfa;
+    --color-error-50: #fef3f2;
+    --color-error-100: #fee4e2;
+    --color-error-200: #fecdca;
+    --color-error-300: #fda29b;
+    --color-error-400: #f97066;
+    --color-error-500: #f04438;
+    --color-error-600: #d92d20;
+    --color-error-700: #b42318;
+    --color-error-800: #912018;
+    --color-error-900: #7a271a;
+    --color-error-950: #55160c;
+
+    /* Warning Colors - Orange/Amber Scale */
+    --color-warning-25: #fffcf5;
+    --color-warning-50: #fffaeb;
+    --color-warning-100: #fef0c7;
+    --color-warning-200: #fedf89;
+    --color-warning-300: #fec84b;
+    --color-warning-400: #fdb022;
+    --color-warning-500: #f79009;
+    --color-warning-600: #dc6803;
+    --color-warning-700: #b54708;
+    --color-warning-800: #93370d;
+    --color-warning-900: #7a2e0e;
+    --color-warning-950: #4e1d09;
+
+    /* Success Colors - Green Scale */
+    --color-success-25: #f6fef9;
+    --color-success-50: #ecfdf3;
+    --color-success-100: #dcfae6;
+    --color-success-200: #a9efc5;
+    --color-success-300: #75e0a7;
+    --color-success-400: #47cd89;
+    --color-success-500: #17b26a;
+    --color-success-600: #079455;
+    --color-success-700: #067647;
+    --color-success-800: #085d3a;
+    --color-success-900: #074d31;
+    --color-success-950: #053321;
+
+    /* Base Colors */
+    --color-base-white: #ffffff;
+    --color-base-black: #000000;
+    --color-base-transparent: transparent;
+
+    /* Text Colors (Semantic) */
+    --color-text-primary: #181d27;
+    --color-text-secondary: #414651;
+    --color-text-tertiary: #535862;
+    --color-text-quaternary: #717680;
+    --color-text-disabled: #a4a7ae;
+    --color-text-placeholder: #717680;
+    --color-text-brand: #2970ff;
+    --color-text-error: #d92d20;
+    --color-text-warning: #dc6803;
+    --color-text-success: #079455;
+
+    /* Background Colors (Semantic) */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #fafafa;
+    --color-bg-tertiary: #f5f5f5;
+    --color-bg-light: #f5f8ff;
+    --color-bg-brand: #2970ff;
+    --color-bg-brand-light: #eff4ff;
+    --color-bg-error: #fef3f2;
+    --color-bg-warning: #fffaeb;
+    --color-bg-success: #ecfdf3;
+
+    /* Border Colors (Semantic) */
+    --color-border-primary: #d5d7da;
+    --color-border-secondary: #e9eaeb;
+    --color-border-brand: #2970ff;
+    --color-border-error: #f04438;
+    --color-border-warning: #f79009;
+    --color-border-success: #17b26a;
+
+    /* Legacy color mappings for existing components */
+    --color-cta-button: #2970ff;
+    --color-primary-dark: #155eef;
+    --color-secondary-light: #b2ccff;
+    --color-secondary-medium: #84adff;
+    --color-surface: #ffffff;
+    --color-section-bg: #f5f8ff;
+    --color-page-bg: #f5f8ff;
+
+    /* ===== TYPOGRAPHY ===== */
+
+    /* Font Families */
+    --font-display: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui;
+    --font-body: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui;
+    --font-dm-sans: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui;
+    --font-inter: var(--font-inter), "Inter", ui-sans-serif, system-ui;
+
+    /* Font Sizes - Display Scale */
+    --text-display-2xl: 72px;
+    --text-display-xl: 60px;
+    --text-display-lg: 48px;
+    --text-display-md: 36px;
+    --text-display-sm: 30px;
+    --text-display-xs: 24px;
+
+    /* Font Sizes - Text Scale */
+    --text-xl: 20px;
+    --text-lg: 18px;
+    --text-md: 16px;
+    --text-sm: 14px;
+    --text-xs: 12px;
+
+    /* Line Heights - Display Scale */
+    --leading-display-2xl: 90px;
+    --leading-display-xl: 72px;
+    --leading-display-lg: 60px;
+    --leading-display-md: 44px;
+    --leading-display-sm: 38px;
+    --leading-display-xs: 32px;
+
+    /* Line Heights - Text Scale */
+    --leading-xl: 30px;
+    --leading-lg: 28px;
+    --leading-md: 24px;
+    --leading-sm: 20px;
+    --leading-xs: 18px;
+
+    /* Letter Spacing */
+    --tracking-display: -0.02em;
+    --tracking-normal: 0em;
+
+    /* ===== SPACING SYSTEM ===== */
+    /*
+     * Figma uses a 4px base unit with multiplier naming:
+     *   Spacing/0 = 0px, Spacing/1 = 4px, Spacing/2 = 8px, etc.
+     *
+     * Tailwind v4 default spacing already matches this scale
+     * (p-1 = 4px, p-2 = 8px, p-4 = 16px, p-8 = 32px, etc.)
+     * so we only define values that extend or alias the defaults.
+     */
+
+    /* Half-step primitives (not in Tailwind defaults) */
+    --spacing-0_5: 2px;
+    --spacing-1_5: 6px;
+
+    /* Named Spacing Tokens (Figma component-level aliases) */
+    --spacing-xxs: 2px;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 8px;
+    --spacing-lg: 12px;
+    --spacing-xl: 16px;
+    --spacing-2xl: 20px;
+    --spacing-3xl: 24px;
+    --spacing-4xl: 32px;
+    --spacing-5xl: 40px;
+    --spacing-6xl: 48px;
+    --spacing-7xl: 64px;
+    --spacing-8xl: 80px;
+    --spacing-9xl: 96px;
+    --spacing-10xl: 128px;
+    --spacing-11xl: 160px;
+
+    /* Large spacing primitives (extend Tailwind defaults) */
+    --spacing-160: 640px;
+    --spacing-180: 720px;
+    --spacing-192: 768px;
+    --spacing-256: 1024px;
+    --spacing-320: 1280px;
+    --spacing-360: 1440px;
+    --spacing-400: 1600px;
+    --spacing-480: 1920px;
+
+    /* Legacy responsive spacing for existing components */
     --spacing-mobile: 1rem;
-    /* 16px - mobile inset */
-    --spacing-64: 4rem;
-    /* 64px - subheading to content */
-    --spacing-80: clamp(2.5rem, 5vw, 5rem);
-    /* 40px mobile -> 80px desktop */
+    --spacing-inset: 3.5rem;
     --spacing-83: clamp(3rem, 6vw, 5.1875rem);
-    /* 48px mobile -> 83px desktop */
     --spacing-100: clamp(3.5rem, 8vw, 6.25rem);
-    /* 56px mobile -> 100px desktop */
     --spacing-102: clamp(3.5rem, 8vw, 6.375rem);
-    --spacing-120: clamp(4rem, 10vw, 7.5rem);
-    /* 64px mobile -> 120px desktop */
     --spacing-176: clamp(5rem, 15vw, 11rem);
-    /* 176px - ticker to body */
 
-    /* Component Specific */
+    /* ===== BORDER RADIUS ===== */
+    --radius-none: 0px;
+    --radius-xxs: 2px;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+    --radius-2xl: 16px;
+    --radius-3xl: 20px;
+    --radius-4xl: 24px;
+    --radius-full: 9999px;
+
+    /* ===== WIDTHS ===== */
+    --width-md: 560px;
+    --width-2xl: 1024px;
+
+    /* ===== COMPONENT SPECIFIC ===== */
+
+    /* Navbar */
     --navbar-height: 80px;
     --logo-width: 194px;
     --logo-height: 54px;
+
+    /* Search Bar */
     --search-bar-width: 824px;
     --search-bar-height: 64px;
+
+    /* Buttons */
     --become-expert-btn-width: 173px;
     --become-expert-btn-height: 44px;
 
-    /* Shadows */
+    /* ===== SHADOWS ===== */
     --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-search: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 :root {
-    --background: #F4F8FD;
-    --foreground: #011127;
+    --background: var(--color-bg-light);
+    --foreground: var(--color-text-primary);
 }
 
 body {
     color: var(--foreground);
     background: var(--background);
-    font-family: var(--font-inter);
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+    line-height: var(--leading-md);
 }
 
 @layer components {
@@ -103,9 +294,9 @@ body {
 
     @media (min-width: 768px) {
         .navbar-container {
-            padding-left: var(--spacing-56);
-            padding-right: var(--spacing-56);
-            padding-top: var(--spacing-56);
+            padding-left: var(--spacing-inset);
+            padding-right: var(--spacing-inset);
+            padding-top: var(--spacing-inset);
             padding-bottom: 1.5rem;
         }
     }
@@ -161,96 +352,127 @@ body {
 }
 
 @layer utilities {
+
+    /* ===== TYPOGRAPHY UTILITIES ===== */
+
+    /* Display 2xl — 72px/90px, -2% tracking */
+    .display-2xl-regular { font-family: var(--font-display); font-size: var(--text-display-2xl); line-height: var(--leading-display-2xl); letter-spacing: var(--tracking-display); font-weight: 400; }
+    .display-2xl-medium  { font-family: var(--font-display); font-size: var(--text-display-2xl); line-height: var(--leading-display-2xl); letter-spacing: var(--tracking-display); font-weight: 500; }
+    .display-2xl-semibold { font-family: var(--font-display); font-size: var(--text-display-2xl); line-height: var(--leading-display-2xl); letter-spacing: var(--tracking-display); font-weight: 600; }
+    .display-2xl-bold    { font-family: var(--font-display); font-size: var(--text-display-2xl); line-height: var(--leading-display-2xl); letter-spacing: var(--tracking-display); font-weight: 700; }
+
+    /* Display xl — 60px/72px, -2% tracking */
+    .display-xl-regular  { font-family: var(--font-display); font-size: var(--text-display-xl); line-height: var(--leading-display-xl); letter-spacing: var(--tracking-display); font-weight: 400; }
+    .display-xl-medium   { font-family: var(--font-display); font-size: var(--text-display-xl); line-height: var(--leading-display-xl); letter-spacing: var(--tracking-display); font-weight: 500; }
+    .display-xl-semibold { font-family: var(--font-display); font-size: var(--text-display-xl); line-height: var(--leading-display-xl); letter-spacing: var(--tracking-display); font-weight: 600; }
+    .display-xl-bold     { font-family: var(--font-display); font-size: var(--text-display-xl); line-height: var(--leading-display-xl); letter-spacing: var(--tracking-display); font-weight: 700; }
+
+    /* Display lg — 48px/60px, -2% tracking */
+    .display-lg-regular  { font-family: var(--font-display); font-size: var(--text-display-lg); line-height: var(--leading-display-lg); letter-spacing: var(--tracking-display); font-weight: 400; }
+    .display-lg-medium   { font-family: var(--font-display); font-size: var(--text-display-lg); line-height: var(--leading-display-lg); letter-spacing: var(--tracking-display); font-weight: 500; }
+    .display-lg-semibold { font-family: var(--font-display); font-size: var(--text-display-lg); line-height: var(--leading-display-lg); letter-spacing: var(--tracking-display); font-weight: 600; }
+    .display-lg-bold     { font-family: var(--font-display); font-size: var(--text-display-lg); line-height: var(--leading-display-lg); letter-spacing: var(--tracking-display); font-weight: 700; }
+
+    /* Display md — 36px/44px, -2% tracking */
+    .display-md-regular  { font-family: var(--font-display); font-size: var(--text-display-md); line-height: var(--leading-display-md); letter-spacing: var(--tracking-display); font-weight: 400; }
+    .display-md-medium   { font-family: var(--font-display); font-size: var(--text-display-md); line-height: var(--leading-display-md); letter-spacing: var(--tracking-display); font-weight: 500; }
+    .display-md-semibold { font-family: var(--font-display); font-size: var(--text-display-md); line-height: var(--leading-display-md); letter-spacing: var(--tracking-display); font-weight: 600; }
+    .display-md-bold     { font-family: var(--font-display); font-size: var(--text-display-md); line-height: var(--leading-display-md); letter-spacing: var(--tracking-display); font-weight: 700; }
+
+    /* Display sm — 30px/38px */
+    .display-sm-regular  { font-family: var(--font-display); font-size: var(--text-display-sm); line-height: var(--leading-display-sm); font-weight: 400; }
+    .display-sm-medium   { font-family: var(--font-display); font-size: var(--text-display-sm); line-height: var(--leading-display-sm); font-weight: 500; }
+    .display-sm-semibold { font-family: var(--font-display); font-size: var(--text-display-sm); line-height: var(--leading-display-sm); font-weight: 600; }
+    .display-sm-bold     { font-family: var(--font-display); font-size: var(--text-display-sm); line-height: var(--leading-display-sm); font-weight: 700; }
+
+    /* Display xs — 24px/32px */
+    .display-xs-regular  { font-family: var(--font-display); font-size: var(--text-display-xs); line-height: var(--leading-display-xs); font-weight: 400; }
+    .display-xs-medium   { font-family: var(--font-display); font-size: var(--text-display-xs); line-height: var(--leading-display-xs); font-weight: 500; }
+    .display-xs-semibold { font-family: var(--font-display); font-size: var(--text-display-xs); line-height: var(--leading-display-xs); font-weight: 600; }
+    .display-xs-bold     { font-family: var(--font-display); font-size: var(--text-display-xs); line-height: var(--leading-display-xs); font-weight: 700; }
+
+    /* Text xl — 20px/30px */
+    .text-xl-regular     { font-family: var(--font-body); font-size: var(--text-xl); line-height: var(--leading-xl); font-weight: 400; }
+    .text-xl-medium      { font-family: var(--font-body); font-size: var(--text-xl); line-height: var(--leading-xl); font-weight: 500; }
+    .text-xl-semibold    { font-family: var(--font-body); font-size: var(--text-xl); line-height: var(--leading-xl); font-weight: 600; }
+    .text-xl-bold        { font-family: var(--font-body); font-size: var(--text-xl); line-height: var(--leading-xl); font-weight: 700; }
+
+    /* Text lg — 18px/28px */
+    .text-lg-regular     { font-family: var(--font-body); font-size: var(--text-lg); line-height: var(--leading-lg); font-weight: 400; }
+    .text-lg-medium      { font-family: var(--font-body); font-size: var(--text-lg); line-height: var(--leading-lg); font-weight: 500; }
+    .text-lg-semibold    { font-family: var(--font-body); font-size: var(--text-lg); line-height: var(--leading-lg); font-weight: 600; }
+    .text-lg-bold        { font-family: var(--font-body); font-size: var(--text-lg); line-height: var(--leading-lg); font-weight: 700; }
+
+    /* Text md — 16px/24px */
+    .text-md-regular     { font-family: var(--font-body); font-size: var(--text-md); line-height: var(--leading-md); font-weight: 400; }
+    .text-md-medium      { font-family: var(--font-body); font-size: var(--text-md); line-height: var(--leading-md); font-weight: 500; }
+    .text-md-semibold    { font-family: var(--font-body); font-size: var(--text-md); line-height: var(--leading-md); font-weight: 600; }
+    .text-md-bold        { font-family: var(--font-body); font-size: var(--text-md); line-height: var(--leading-md); font-weight: 700; }
+
+    /* Text sm — 14px/20px */
+    .text-sm-regular     { font-family: var(--font-body); font-size: var(--text-sm); line-height: var(--leading-sm); font-weight: 400; }
+    .text-sm-medium      { font-family: var(--font-body); font-size: var(--text-sm); line-height: var(--leading-sm); font-weight: 500; }
+    .text-sm-semibold    { font-family: var(--font-body); font-size: var(--text-sm); line-height: var(--leading-sm); font-weight: 600; }
+    .text-sm-bold        { font-family: var(--font-body); font-size: var(--text-sm); line-height: var(--leading-sm); font-weight: 700; }
+
+    /* Text xs — 12px/18px */
+    .text-xs-regular     { font-family: var(--font-body); font-size: var(--text-xs); line-height: var(--leading-xs); font-weight: 400; }
+    .text-xs-medium      { font-family: var(--font-body); font-size: var(--text-xs); line-height: var(--leading-xs); font-weight: 500; }
+    .text-xs-semibold    { font-family: var(--font-body); font-size: var(--text-xs); line-height: var(--leading-xs); font-weight: 600; }
+    .text-xs-bold        { font-family: var(--font-body); font-size: var(--text-xs); line-height: var(--leading-xs); font-weight: 700; }
+
+    /* Legacy aliases */
     .headline-main {
-        font-family: var(--font-dm-sans);
+        font-family: var(--font-display);
         font-weight: 700;
-        font-size: 60px;
-        line-height: 1.1;
+        font-size: var(--text-display-xl);
+        line-height: var(--leading-display-xl);
+        letter-spacing: var(--tracking-display);
     }
 
     .subheading-main {
-        font-family: var(--font-dm-sans);
+        font-family: var(--font-body);
         font-weight: 400;
-        font-size: 20px;
-        line-height: 1.5;
+        font-size: var(--text-xl);
+        line-height: var(--leading-xl);
     }
 
     /* Spacing Utilities */
-    .gap-16 {
-        gap: var(--spacing-16);
-    }
-
-    .gap-24 {
-        gap: var(--spacing-24);
-    }
-
-    .gap-32 {
-        gap: var(--spacing-32);
-    }
-
-    .gap-48 {
-        gap: var(--spacing-48);
-    }
-
-    .gap-56 {
-        gap: var(--spacing-56);
-    }
-
-    .gap-64 {
-        gap: var(--spacing-64);
-    }
-
-    .gap-83 {
-        gap: var(--spacing-83);
-    }
+    /* Legacy layout spacing utilities (use Figma tokens where possible) */
+    .gap-16 { gap: var(--spacing-xl); }       /* 16px */
+    .gap-24 { gap: var(--spacing-3xl); }      /* 24px */
+    .gap-32 { gap: var(--spacing-4xl); }      /* 32px */
+    .gap-48 { gap: var(--spacing-6xl); }      /* 48px */
+    .gap-56 { gap: var(--spacing-inset); }    /* 56px */
+    .gap-64 { gap: var(--spacing-7xl); }      /* 64px */
+    .gap-83 { gap: var(--spacing-83); }       /* clamp */
 
     .px-56 {
         padding-left: var(--spacing-mobile);
         padding-right: var(--spacing-mobile);
     }
-
     @media (min-width: 768px) {
         .px-56 {
-            padding-left: var(--spacing-56);
-            padding-right: var(--spacing-56);
+            padding-left: var(--spacing-inset);
+            padding-right: var(--spacing-inset);
         }
     }
 
-    .py-56 {
-        padding-top: var(--spacing-56);
-        padding-bottom: var(--spacing-56);
-    }
+    .py-56 { padding-top: var(--spacing-inset); padding-bottom: var(--spacing-inset); }
+    .pt-56 { padding-top: var(--spacing-inset); }
+    .pb-56 { padding-bottom: var(--spacing-inset); }
 
-    .pt-56 {
-        padding-top: var(--spacing-56);
-    }
+    .mb-48  { margin-bottom: var(--spacing-6xl); }   /* 48px */
+    .mb-64  { margin-bottom: var(--spacing-7xl); }   /* 64px */
+    .mb-83  { margin-bottom: var(--spacing-83); }    /* clamp */
+    .mb-100 { margin-bottom: var(--spacing-100); }   /* clamp */
+    .mb-102 { margin-bottom: var(--spacing-102); }   /* clamp */
+    .mb-176 { margin-bottom: var(--spacing-176); }   /* clamp */
 
-    .pb-56 {
-        padding-bottom: var(--spacing-56);
-    }
-
-    .mb-48 {
-        margin-bottom: var(--spacing-48);
-    }
-
-    .mb-64 {
-        margin-bottom: var(--spacing-64);
-    }
-
-    .mb-83 {
-        margin-bottom: var(--spacing-83);
-    }
-
-    .mb-100 {
-        margin-bottom: var(--spacing-100);
-    }
-
-    .mb-102 {
-        margin-bottom: var(--spacing-102);
-    }
-
-    .mb-176 {
-        margin-bottom: var(--spacing-176);
+    /* Marquee Animation */
+    @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
     }
 
     /* Gradient Text Utility */

@@ -22,7 +22,7 @@ export default function CategoryCard({
 }: CategoryCardProps) {
   return (
     <Link 
-      href={`/products?category=${slug}`}
+      href={`/product?category=${slug}`}
       className={`relative block rounded-[16px] bg-white p-6 overflow-hidden group hover:shadow-xl transition-all duration-300 border border-gray-100 ${className}`}
     >
       {/* Top Row: Icon and Growth Badge */}
