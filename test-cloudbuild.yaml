@@ -1,0 +1,3 @@
+steps:
+- name: 'ubuntu'
+  args: ['echo', 'Minimal build test success']
