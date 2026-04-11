@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const AUTH_PAGES = ['/sign-in', '/sign-up']
+const PROTECTED_PREFIXES = ['/become-expert', '/admin']
+
 async function handleRequest(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -8,62 +11,70 @@ async function handleRequest(request: NextRequest) {
     },
   })
 
-  // Skip Supabase initialization if env variables are not set (development without DB)
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => {
-              request.cookies.set(name, value)
-            })
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
+  const isSupabaseConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    await supabase.auth.getUser()
+  if (!isSupabaseConfigured) {
+    return response
+  }
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value)
+          })
+
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const pathname = request.nextUrl.pathname
+  const isProtectedRoute = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  const isAuthPage = AUTH_PAGES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+
+  if (isProtectedRoute && !user) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/sign-in'
+    redirectUrl.searchParams.set('redirectTo', pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  if (isAuthPage && user) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/'
+    redirectUrl.searchParams.delete('redirectTo')
+    return NextResponse.redirect(redirectUrl)
   }
 
   return response
 }
 
-let middleware: (request: NextRequest) => Promise<NextResponse>
-
-if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-  const { clerkMiddleware, createRouteMatcher } = require('@clerk/nextjs/server')
-  const isProtectedRoute = createRouteMatcher(['/dashboard(.*)'])
-
-  middleware = clerkMiddleware(async (auth: any, request: NextRequest) => {
-    if (isProtectedRoute(request)) {
-      await auth.protect()
-    }
-    return handleRequest(request)
-  })
-} else {
-  middleware = handleRequest
-}
-
-export default middleware
+export default handleRequest
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-
     '/(api|trpc)(.*)',
   ],
 }

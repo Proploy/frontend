@@ -1,52 +1,39 @@
-import type { Metadata } from "next";
-import { DM_Sans, Inter } from "next/font/google";
-import Navbar from "@/components/Navbar";
+import type { Metadata } from 'next'
+import { DM_Sans, Inter } from 'next/font/google'
+import Navbar from '@/components/Navbar'
 
-import "./globals.css";
-
-let ClerkProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-try {
-  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    ClerkProvider = require("@clerk/nextjs").ClerkProvider;
-  }
-} catch {
-  // Clerk not configured — skip
-}
+import './globals.css'
 
 const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+})
 
 const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
-  display: "swap",
-});
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "Proploy - Procurement Solutions",
-  description: "Smart procurement platform for your business needs",
-};
+  title: 'Proploy - Procurement Solutions',
+  description: 'Smart procurement platform for your business needs',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-  const content = (
+  return (
     <html lang="en" className={`${dmSans.variable} ${inter.variable}`}>
       <body className="antialiased font-inter flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-1">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
       </body>
     </html>
-  );
-
-  return ClerkProvider ? <ClerkProvider>{content}</ClerkProvider> : content;
+  )
 }

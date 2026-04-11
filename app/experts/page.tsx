@@ -22,7 +22,7 @@ export default function ExpertsPage() {
   useEffect(() => {
     fetch('/api/experts/approved')
       .then((res) => res.json())
-      .then((data) => setExperts(data))
+      .then((payload) => setExperts(payload?.data || []))
       .catch(() => setExperts([]))
       .finally(() => setLoading(false))
   }, [])
@@ -164,3 +164,4 @@ export default function ExpertsPage() {
     </div>
   )
 }
+

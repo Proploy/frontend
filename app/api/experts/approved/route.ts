@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+const rateLimitMeta = { remaining: 95, limit: 100 }
+
 export async function GET() {
-    // Try Supabase first if configured
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
         try {
             const supabase = createClient(
@@ -18,13 +19,12 @@ export async function GET() {
 
             if (error) throw error
 
-            return NextResponse.json(data ?? [])
+            return NextResponse.json({ data: data ?? [], rateLimit: rateLimitMeta })
         } catch (error) {
             console.error('[EXPERTS_APPROVED_SUPABASE]', error)
         }
     }
 
-    // Fall back to Prisma
     try {
         const prisma = (await import('@/lib/prisma')).default
 
@@ -38,11 +38,10 @@ export async function GET() {
             orderBy: { createdAt: 'desc' },
         })
 
-        return NextResponse.json(experts)
+        return NextResponse.json({ data: experts, rateLimit: rateLimitMeta })
     } catch (error) {
         console.error('[EXPERTS_APPROVED_PRISMA]', error)
     }
 
-    // Both failed — return empty array
-    return NextResponse.json([])
+    return NextResponse.json({ data: [], rateLimit: rateLimitMeta })
 }

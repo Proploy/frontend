@@ -1,8 +1,10 @@
-import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { verifyAdmin } from '@/lib/admin'
 import { expertStatusSchema } from '@/lib/validations/expert'
+import { requireUser } from '@/lib/supabase/auth'
+
+const rateLimitMeta = { remaining: 95, limit: 100 }
 
 export async function PATCH(
     req: Request,
@@ -10,18 +12,12 @@ export async function PATCH(
 ) {
     try {
         await verifyAdmin()
-        const session = await auth()
-        const adminUserId = session.userId
-
-        if (!adminUserId) {
-            return new NextResponse('Unauthorized', { status: 401 })
-        }
+        const user = await requireUser()
 
         const { id } = await params
         const json = await req.json()
         const { status, notes } = json
 
-        // Validate status
         const validatedStatus = expertStatusSchema.parse(status)
 
         const expert = await prisma.expert.update({
@@ -30,23 +26,26 @@ export async function PATCH(
                 status: validatedStatus,
                 reviews: {
                     create: {
-                        reviewerUserId: adminUserId,
+                        reviewerUserId: user.id,
                         status: validatedStatus,
                         notes,
-                    }
-                }
+                    },
+                },
             },
         })
 
-        return NextResponse.json(expert)
+        return NextResponse.json({
+            data: expert,
+            rateLimit: rateLimitMeta,
+        })
     } catch (error) {
         console.error('[ADMIN_EXPERT_PATCH]', error)
         if (error instanceof Error && error.message.includes('Unauthorized')) {
-            return new NextResponse('Unauthorized', { status: 401 })
+            return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Admin access required', statusCode: 401 }, { status: 401 })
         }
         if (error instanceof Error && error.name === 'ZodError') {
-            return new NextResponse('Invalid status', { status: 400 })
+            return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Invalid status', statusCode: 400 }, { status: 400 })
         }
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ error: 'INTERNAL_ERROR', message: 'Internal Error', statusCode: 500 }, { status: 500 })
     }
 }

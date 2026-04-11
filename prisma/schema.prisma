@@ -4,7 +4,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 
 model alembic_version {
   version_num String @id(map: "alembic_version_pkc") @db.VarChar(32)
@@ -179,7 +181,7 @@ enum LinkType {
 
 model Expert {
   id                    String         @id @default(uuid())
-  userId                String         @unique // Clerk user id
+  userId                String         @unique // Supabase auth user id
   status                ExpertStatus   @default(draft)
   entityType            String         // Individual | Business/Team
   displayName           String
@@ -237,8 +239,9 @@ model ExpertReview {
   id             String       @id @default(uuid())
   expertId       String
   expert         Expert       @relation(fields: [expertId], references: [id], onDelete: Cascade)
-  reviewerUserId String       // Clerk user id of admin
+  reviewerUserId String       // Supabase auth user id of admin
   status         ExpertStatus
   notes          String?
   createdAt      DateTime     @default(now())
 }
+

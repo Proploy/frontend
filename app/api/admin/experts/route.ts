@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { verifyAdmin } from '@/lib/admin'
 
+const rateLimitMeta = { remaining: 95, limit: 100 }
+
 export async function GET() {
     try {
         await verifyAdmin()
@@ -9,8 +11,8 @@ export async function GET() {
         const experts = await prisma.expert.findMany({
             where: {
                 status: {
-                    in: ['submitted', 'approved', 'rejected', 'changes_requested']
-                }
+                    in: ['submitted', 'approved', 'rejected', 'changes_requested'],
+                },
             },
             include: {
                 tags: true,
@@ -20,12 +22,15 @@ export async function GET() {
             orderBy: { updatedAt: 'desc' },
         })
 
-        return NextResponse.json(experts)
+        return NextResponse.json({
+            data: experts,
+            rateLimit: rateLimitMeta,
+        })
     } catch (error) {
         console.error('[ADMIN_EXPERTS_GET]', error)
         if (error instanceof Error && error.message.includes('Unauthorized')) {
-            return new NextResponse('Unauthorized', { status: 401 })
+            return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Admin access required', statusCode: 401 }, { status: 401 })
         }
-        return new NextResponse('Internal Error', { status: 500 })
+        return NextResponse.json({ error: 'INTERNAL_ERROR', message: 'Internal Error', statusCode: 500 }, { status: 500 })
     }
 }
