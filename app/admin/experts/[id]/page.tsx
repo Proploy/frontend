@@ -1,24 +1,66 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Loader2, ArrowLeft, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
-export default function ExpertReviewPage({ params }: { params: { id: string } }) {
+type TagGroup = {
+  platform: string[]
+  industry: string[]
+  project_type: string[]
+  tool: string[]
+}
+
+export default function ExpertReviewPage() {
+  const params = useParams()
   const router = useRouter()
   const [expert, setExpert] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [reviewNotes, setReviewNotes] = useState('')
+  const [editedTags, setEditedTags] = useState<TagGroup>({
+    platform: [],
+    industry: [],
+    project_type: [],
+    tool: [],
+  })
+  const [newTagInputs, setNewTagInputs] = useState<Record<keyof TagGroup, string>>({
+    platform: '',
+    industry: '',
+    project_type: '',
+    tool: '',
+  })
+
+  const expertId = params?.id as string
+
+  // Initialize editedTags when expert loads
+  useEffect(() => {
+    if (!expert?.tags) return
+    const grouped: TagGroup = {
+      platform: [],
+      industry: [],
+      project_type: [],
+      tool: [],
+    }
+    expert.tags.forEach((tag: any) => {
+      if (tag.tagType in grouped) {
+        grouped[tag.tagType as keyof TagGroup].push(tag.tagValue)
+      }
+    })
+    setEditedTags(grouped)
+  }, [expert])
 
   useEffect(() => {
+    if (!expertId) return
+    
     async function fetchExpert() {
       try {
-        const res = await fetch('/api/admin/experts')
-        const data = await res.json()
-        const found = data.find((e: any) => e.id === params.id)
-        setExpert(found)
+        const res = await fetch(`/api/admin/experts/${expertId}`)
+        const json = await res.json()
+        if (json.data) {
+          setExpert(json.data)
+        }
       } catch (err) {
         console.error(err)
       } finally {
@@ -26,15 +68,18 @@ export default function ExpertReviewPage({ params }: { params: { id: string } })
       }
     }
     fetchExpert()
-  }, [params.id])
+  }, [expertId])
 
   const handleUpdateStatus = async (status: string) => {
+    if (!expertId) return
     setIsUpdating(true)
     try {
-      const res = await fetch(`/api/admin/experts/${params.id}`, {
-        method: 'PATCH',
+      const endpointStatus = status === 'changes_requested' ? 'request-changes' : status
+
+      const res = await fetch(`/api/admin/experts/${expertId}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, notes: reviewNotes }),
+        body: JSON.stringify({ status: endpointStatus, notes: reviewNotes }),
       })
       if (res.ok) {
         router.push('/admin/experts')
@@ -45,6 +90,22 @@ export default function ExpertReviewPage({ params }: { params: { id: string } })
     } finally {
       setIsUpdating(false)
     }
+  }
+
+  const addTag = (tagType: keyof TagGroup) => {
+    const value = (newTagInputs[tagType] || '').trim()
+    if (!value) return
+    if (!editedTags[tagType].includes(value)) {
+      setEditedTags(prev => ({ ...prev, [tagType]: [...prev[tagType], value] }))
+    }
+    setNewTagInputs(prev => ({ ...prev, [tagType]: '' }))
+  }
+
+  const removeTag = (tagType: keyof TagGroup, tagValue: string) => {
+    setEditedTags(prev => ({
+      ...prev,
+      [tagType]: prev[tagType].filter(v => v !== tagValue),
+    }))
   }
 
   if (isLoading) {
@@ -154,13 +215,42 @@ export default function ExpertReviewPage({ params }: { params: { id: string } })
 
               <div>
                 <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Platform Expertise</h3>
-                <div className="flex flex-wrap gap-2">
-                  {expert.tags?.map((tag: any, idx: number) => (
-                    <span key={idx} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                      {tag.tagValue}
-                    </span>
-                  ))}
-                </div>
+                {(Object.keys(editedTags) as Array<keyof TagGroup>).map(tagType => (
+                  <div key={tagType} className="mb-4">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 capitalize">{tagType.replace('_', ' ')}</p>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {editedTags[tagType].map((val, idx) => (
+                        <span key={idx} className="px-3 py-1.5 bg-[#0466E7]/10 text-[#0466E7] rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                          {val}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tagType, val)}
+                            className="ml-1 hover:text-red-500 transition-colors"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder={`Add ${tagType.replace('_', ' ')}...`}
+                        value={newTagInputs[tagType]}
+                        onChange={e => setNewTagInputs(prev => ({ ...prev, [tagType]: e.target.value }))}
+                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(tagType))}
+                        className="flex-1 px-3 py-1.5 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-[#0466E7] transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addTag(tagType)}
+                        className="px-3 py-1.5 text-xs font-bold bg-[#0466E7] text-white rounded-xl hover:bg-[#0356C7] transition-all"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </div>

@@ -1,12 +1,15 @@
 import { NextRequest } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
-import { serviceApisFetch } from '@/lib/service-apis/client'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ productId: string }> }
+) {
   try {
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
@@ -24,30 +27,23 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('UNAUTHORIZED', 'Not authenticated', 401)
     }
 
-    const body = await request.json()
+    const { productId } = await params
 
-    const res = await serviceApisFetch('/api/v1/experts/me/application', {
-      requireAuth: true,
-      method: 'PATCH',
-      body,
-    })
+    const supabase = createAdminClient()
 
-    if (res.status === 409) {
-      return createErrorResponse(
-        'CONFLICT',
-        'Cannot update application in its current status',
-        409
-      )
+    const { error } = await supabase
+      .from('favorite')
+      .delete()
+      .eq('userId', user.id)
+      .eq('productId', productId)
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return createErrorResponse('DATABASE_ERROR', error.message, 500)
     }
-
-    if (!res.ok) {
-      return createErrorResponse('SERVICE_APIS_ERROR', `Failed to save draft: ${res.status}`, res.status)
-    }
-
-    const data = await res.json()
 
     return Response.json({
-      data,
+      data: { success: true },
       rateLimit: {
         remaining: rateLimitResult.remaining,
         limit: rateLimitResult.limit,

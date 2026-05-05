@@ -1,47 +1,42 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest } from 'next/server'
+import { createErrorResponse, normalizeServiceApisError } from '@/lib/utils/errors'
+import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 
-const rateLimitMeta = { remaining: 95, limit: 100 }
+export const dynamic = 'force-dynamic'
 
-export async function GET() {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        try {
-            const supabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL,
-                process.env.SUPABASE_SERVICE_ROLE_KEY
-            )
+export async function GET(request: NextRequest) {
+  try {
+    const ip = getClientIP(request)
+    const rateLimitResult = await rateLimit(ip)
 
-            const { data, error } = await supabase
-                .from('experts')
-                .select('*')
-                .eq('status', 'approved')
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
-
-            return NextResponse.json({ data: data ?? [], rateLimit: rateLimitMeta })
-        } catch (error) {
-            console.error('[EXPERTS_APPROVED_SUPABASE]', error)
-        }
+    if (!rateLimitResult.success) {
+      return createErrorResponse(
+        'RATE_LIMIT_EXCEEDED',
+        'Too many requests. Please try again later.',
+        429
+      )
     }
 
-    try {
-        const prisma = (await import('@/lib/prisma')).default
+    const response = await serviceApisFetch('/api/v1/experts', {
+      requireAuth: false,
+    })
 
-        const experts = await prisma.expert.findMany({
-            where: { status: 'approved' },
-            include: {
-                tags: true,
-                links: true,
-                projects: true,
-            },
-            orderBy: { createdAt: 'desc' },
-        })
+    const data = await response.json()
 
-        return NextResponse.json({ data: experts, rateLimit: rateLimitMeta })
-    } catch (error) {
-        console.error('[EXPERTS_APPROVED_PRISMA]', error)
+    if (!response.ok) {
+      return normalizeServiceApisError(response, data)
     }
 
-    return NextResponse.json({ data: [], rateLimit: rateLimitMeta })
+    return Response.json({
+      ...data,
+      rateLimit: {
+        remaining: rateLimitResult.remaining,
+        limit: rateLimitResult.limit,
+      },
+    })
+  } catch (error) {
+    console.error('Error in experts/approved:', error)
+    return createErrorResponse('INTERNAL_ERROR', 'Failed to fetch experts', 500)
+  }
 }

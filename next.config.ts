@@ -13,7 +13,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Configure images to allow localhost for Figma assets
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
   },
 };
 
