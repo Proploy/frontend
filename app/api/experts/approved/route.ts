@@ -1,87 +1,47 @@
-import { NextRequest } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
-import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
-import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export const dynamic = 'force-dynamic'
+const rateLimitMeta = { remaining: 95, limit: 100 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const ip = getClientIP(request)
-    const rateLimitResult = await rateLimit(ip)
+export async function GET() {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+            const supabase = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL,
+                process.env.SUPABASE_SERVICE_ROLE_KEY
+            )
 
-    if (!rateLimitResult.success) {
-      return createErrorResponse(
-        'RATE_LIMIT_EXCEEDED',
-        'Too many requests. Please try again later.',
-        429
-      )
+            const { data, error } = await supabase
+                .from('experts')
+                .select('*')
+                .eq('status', 'approved')
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+
+            return NextResponse.json({ data: data ?? [], rateLimit: rateLimitMeta })
+        } catch (error) {
+            console.error('[EXPERTS_APPROVED_SUPABASE]', error)
+        }
     }
 
-    const supabase = createAdminClient()
+    try {
+        const prisma = (await import('@/lib/prisma')).default
 
-    const { data: experts, error } = await supabase
-      .from('Expert')
-      .select('*')
-      .eq('status', 'approved')
-      .is('deletedAt', null)
-      .order('createdAt', { ascending: false })
+        const experts = await prisma.expert.findMany({
+            where: { status: 'approved' },
+            include: {
+                tags: true,
+                links: true,
+                projects: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        })
 
-    if (error) {
-      console.error('Supabase error:', error)
-      return createErrorResponse('DATABASE_ERROR', error.message, 500)
+        return NextResponse.json({ data: experts, rateLimit: rateLimitMeta })
+    } catch (error) {
+        console.error('[EXPERTS_APPROVED_PRISMA]', error)
     }
 
-    if (!experts || experts.length === 0) {
-      return Response.json({
-        data: [],
-        rateLimit: {
-          remaining: rateLimitResult.remaining,
-          limit: rateLimitResult.limit,
-        },
-      })
-    }
-
-    const expertIds = experts.map(e => e.id)
-
-    const [tagsResult, linksResult, projectsResult] = await Promise.all([
-      supabase.from('ExpertTag').select('*').in('expertId', expertIds),
-      supabase.from('ExpertLink').select('*').in('expertId', expertIds),
-      supabase.from('ExpertProject').select('*').in('expertId', expertIds),
-    ])
-
-    const tagsMap = new Map()
-    const linksMap = new Map()
-    const projectsMap = new Map()
-
-    ;(tagsResult.data || []).forEach(tag => {
-      if (!tagsMap.has(tag.expertId)) tagsMap.set(tag.expertId, [])
-      tagsMap.get(tag.expertId).push(tag)
-    })
-    ;(linksResult.data || []).forEach(link => {
-      if (!linksMap.has(link.expertId)) linksMap.set(link.expertId, [])
-      linksMap.get(link.expertId).push(link)
-    })
-    ;(projectsResult.data || []).forEach(project => {
-      if (!projectsMap.has(project.expertId)) projectsMap.set(project.expertId, [])
-      projectsMap.get(project.expertId).push(project)
-    })
-
-    const expertsWithRelations = experts.map(expert => ({
-      ...expert,
-      tags: tagsMap.get(expert.id) || [],
-      links: linksMap.get(expert.id) || [],
-      projects: projectsMap.get(expert.id) || [],
-    }))
-
-    return Response.json({
-      data: expertsWithRelations,
-      rateLimit: {
-        remaining: rateLimitResult.remaining,
-        limit: rateLimitResult.limit,
-      },
-    })
-  } catch (error) {
-    return handleApiError(error)
-  }
+    return NextResponse.json({ data: [], rateLimit: rateLimitMeta })
 }

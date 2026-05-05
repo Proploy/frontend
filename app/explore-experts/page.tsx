@@ -1,30 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, ExternalLink, MapPin, Briefcase, GraduationCap, ChevronRight, AlertCircle } from 'lucide-react'
+import { Loader2, ExternalLink, MapPin, Briefcase, GraduationCap, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import AgentContextBridge from '@/components/agent/AgentContextBridge'
 
 export default function ExploreExpertsPage() {
   const [experts, setExperts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchApproved() {
       try {
         const res = await fetch('/api/experts/approved')
-        const json = await res.json()
-        
-        if (!res.ok) {
-          setError(json.message || 'Failed to fetch experts')
-          return
-        }
-        
-        setExperts(json.data || json || [])
+        const data = await res.json()
+        setExperts(data)
       } catch (err) {
         console.error(err)
-        setError('Failed to load experts')
       } finally {
         setIsLoading(false)
       }
@@ -42,14 +33,6 @@ export default function ExploreExpertsPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F8FD] pt-[140px] pb-20 px-4 md:px-8">
-      <AgentContextBridge
-        context={{
-          route: '/experts',
-          pageType: 'experts',
-          title: 'Explore experts',
-          summary: 'Verified implementation experts listing.',
-        }}
-      />
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-[#011127] font-dm-sans mb-4 tracking-tight">Verified Implementation Experts</h1>
@@ -127,3 +110,4 @@ export default function ExploreExpertsPage() {
     </div>
   )
 }
+

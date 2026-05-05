@@ -4,7 +4,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
 
 model alembic_version {
   version_num String @id(map: "alembic_version_pkc") @db.VarChar(32)
@@ -177,149 +179,69 @@ enum LinkType {
   testimonial
 }
 
-model User {
-  id             String    @id @db.VarChar(36)
-  supabaseUserId String    @unique
-  email          String    @unique
-  name           String?
-  avatarUrl      String?
-  createdAt      DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime  @updatedAt @db.Timestamp(6)
-
-  favorites       Favorite[]
-  recentlyViewed RecentlyViewed[]
-  userInterests  UserInterests?
-  expert         Expert?
-}
-
 model Expert {
-  id                       String         @id @default(cuid())
-  supabaseUserId           String         @unique
-  status                   ExpertStatus   @default(draft)
-  entityType               String
-  displayName              String
-  headline                 String
-  regionCountry            String
-  regionCity               String
-  timezone                 String
-  yearsExperience          Int
-  projectsCompletedTotal   Int
-  introVideoLink           String
+  id                    String         @id @default(uuid())
+  userId                String         @unique // Supabase auth user id
+  status                ExpertStatus   @default(draft)
+  entityType            String         // Individual | Business/Team
+  displayName           String
+  headline              String
+  regionCountry         String
+  regionCity            String
+  timezone              String
+  yearsExperience       Int
+  projectsCompletedTotal Int
+  introVideoLink        String
   availabilityHoursPerWeek Int
-  availabilityNotes        String
-  whyPlatform              String
-  uniqueStrength           String
-  idealClients             String
-  biggestWin               String
+  availabilityNotes     String
+  whyPlatform           String
+  uniqueStrength        String
+  idealClients          String
+  biggestWin            String
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
-  primaryPlatforms        String[]
-  secondaryPlatforms      String[]
-  industryExpertise       String[]
-  preferredProjectTypes   String[]
-  toolsStack              String[]
-
-  agreeTerms               Boolean        @default(false)
-  consentContact           Boolean        @default(false)
-
-  createdAt                DateTime       @default(now()) @db.Timestamp(6)
-  updatedAt                DateTime       @updatedAt @db.Timestamp(6)
-  deletedAt                DateTime?      @db.Timestamp(6)
-
-  user                     User?          @relation(fields: [supabaseUserId], references: [supabaseUserId])
-  tags                     ExpertTag[]
-  links                    ExpertLink[]
-  projects                 ExpertProject[]
-  reviews                  ExpertReview[]
-
-  @@index([supabaseUserId])
-  @@index([status])
+  tags                  ExpertTag[]
+  links                 ExpertLink[]
+  projects              ExpertProject[]
+  reviews               ExpertReview[]
 }
 
 model ExpertTag {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   expertId  String
+  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
   tagType   TagType
   tagValue  String
 
-  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
-
   @@unique([expertId, tagType, tagValue])
-  @@index([expertId])
 }
 
 model ExpertLink {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   expertId  String
+  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
   linkType  LinkType
   url       String
-
-  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
-
-  @@index([expertId])
 }
 
 model ExpertProject {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   expertId  String
+  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
   title     String
   summary   String
   link      String?
   outcomes  String
-
-  expert    Expert   @relation(fields: [expertId], references: [id], onDelete: Cascade)
-
-  @@index([expertId])
 }
 
 model ExpertReview {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid())
   expertId       String
-  reviewerUserId String
+  expert         Expert       @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  reviewerUserId String       // Supabase auth user id of admin
   status         ExpertStatus
   notes          String?
-  createdAt      DateTime     @default(now()) @db.Timestamp(6)
-
-  expert         Expert       @relation(fields: [expertId], references: [id], onDelete: Cascade)
-
-  @@index([expertId])
+  createdAt      DateTime     @default(now())
 }
 
-model Favorite {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-
-  user      User     @relation(fields: [userId], references: [supabaseUserId])
-
-  @@unique([userId, productId])
-  @@index([userId])
-}
-
-model RecentlyViewed {
-  id         String   @id @default(uuid())
-  userId     String
-  productId  String
-  viewedAt   DateTime @default(now()) @db.Timestamp(6)
-
-  user       User     @relation(fields: [userId], references: [supabaseUserId])
-
-  @@unique([userId, productId])
-  @@index([userId])
-  @@index([userId, viewedAt])
-}
-
-model UserInterests {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  industries   String[]
-  platforms    String[]
-  projectTypes String[]
-  companySizes String[]
-  createdAt    DateTime @default(now()) @db.Timestamp(6)
-  updatedAt    DateTime @updatedAt @db.Timestamp(6)
-
-  user         User     @relation(fields: [userId], references: [supabaseUserId])
-
-  @@index([userId])
-}

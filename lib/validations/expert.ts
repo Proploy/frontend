@@ -55,63 +55,34 @@ export const expertDraftSchema = z.object({
     uniqueStrength: z.string().optional(),
     idealClients: z.string().optional(),
     biggestWin: z.string().optional(),
-    primaryPlatforms: z.array(z.string()).optional(),
-    secondaryPlatforms: z.array(z.string()).optional(),
-    industryExpertise: z.array(z.string()).optional(),
-    preferredProjectTypes: z.array(z.string()).optional(),
-    toolsStack: z.array(z.string()).optional(),
     tags: z.array(expertTagSchema).optional(),
     links: z.array(expertLinkSchema).optional(),
     projects: z.array(expertProjectSchema).optional(),
-    agreeTerms: z.boolean().optional(),
-    consentContact: z.boolean().optional(),
 })
 
-const stringRequired = (msg: string) => z.string().trim().min(1, msg)
-const numberRequired = (msg: string) => z.number().int().min(0, msg)
-const urlRequired = (msg: string) => z.string().trim().url(msg)
-const requiredStringArray = (msg: string) => z.array(z.string().trim().min(1)).min(1, msg)
-const webLinkSchema = z.string().trim().min(1).transform((value) => {
-    if (/^https?:\/\//i.test(value)) {
-        return value
-    }
-
-    return `https://${value}`
-}).pipe(z.string().url('Please enter a valid web link'))
-
 export const expertSubmitSchema = z.object({
-    entityType: stringRequired('Entity type is required'),
-    displayName: stringRequired('Display name is required'),
-    headline: stringRequired('Headline is required'),
-    regionCountry: stringRequired('Country is required'),
-    regionCity: stringRequired('City is required'),
-    timezone: stringRequired('Timezone is required'),
-    yearsExperience: numberRequired('Years of experience is required'),
-    projectsCompletedTotal: numberRequired('Total projects completed is required'),
-    introVideoLink: urlRequired('Intro video link is required'),
-    availabilityHoursPerWeek: numberRequired('Availability is required'),
-    availabilityNotes: stringRequired('Availability notes are required'),
-    whyPlatform: stringRequired('This field is required'),
-    uniqueStrength: stringRequired('This field is required'),
-    idealClients: stringRequired('This field is required'),
-    biggestWin: stringRequired('This field is required'),
-    primaryPlatforms: requiredStringArray('Primary platforms are required'),
-    secondaryPlatforms: z.array(z.string()).optional(),
-    industryExpertise: requiredStringArray('Industry expertise is required'),
-    preferredProjectTypes: requiredStringArray('Project priorities are required'),
-    toolsStack: requiredStringArray('Tools stack is required'),
-    tags: z.array(expertTagSchema).optional(),
-    links: z.array(expertLinkSchema).optional(),
+    entityType: z.string().min(1, 'Entity type is required'),
+    displayName: z.string().min(1, 'Display name is required'),
+    headline: z.string().min(1, 'Headline is required'),
+    regionCountry: z.string().min(1, 'Country is required'),
+    regionCity: z.string().min(1, 'City is required'),
+    timezone: z.string().min(1, 'Timezone is required'),
+    yearsExperience: z.number().int().min(0, 'Years of experience is required'),
+    projectsCompletedTotal: z.number().int().min(0, 'Total projects completed is required'),
+    introVideoLink: z.string().url('Invalid video link'),
+    availabilityHoursPerWeek: z.number().int().min(0, 'Availability is required'),
+    availabilityNotes: z.string().min(1, 'Availability notes are required'),
+    whyPlatform: z.string().min(1, 'This field is required'),
+    uniqueStrength: z.string().min(1, 'This field is required'),
+    idealClients: z.string().min(1, 'This field is required'),
+    biggestWin: z.string().min(1, 'This field is required'),
+    tags: z.array(expertTagSchema).min(1, 'At least one tag is required'),
+    links: z.array(expertLinkSchema).min(1, 'At least one link is required'),
     projects: z.array(expertProjectSchema).optional(),
-    portfolioLinks: z.array(webLinkSchema).min(1, 'Portfolio links are required'),
-    caseStudyLinks: z.array(webLinkSchema).optional(),
-    certificationLinks: z.array(webLinkSchema).min(1, 'Certification links are required'),
-    testimonialsLinks: z.array(webLinkSchema).min(1, 'Testimonials links are required'),
-    featuredProjects: z.array(expertProjectSchema).min(1, 'Featured projects are required'),
-    agreeTerms: z.boolean().refine(val => val === true, {
-        message: 'You must agree to the terms and conditions',
+    agreeTerms: z.literal(true, {
+        errorMap: () => ({ message: 'You must agree to the terms' }),
     }),
-    consentContact: z.boolean().refine(val => val === true, {
-        message: 'You must consent to being contacted',
+    consentContact: z.literal(true, {
+        errorMap: () => ({ message: 'You must consent to being contacted' }),
     }),
 })

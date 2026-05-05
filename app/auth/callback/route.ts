@@ -1,28 +1,39 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
-import { getAuthIntentFromCookie, AUTH_INTENT_COOKIE } from '@/lib/utils/auth-intent'
+import { type NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const redirectParam = searchParams.get('next') ?? '/'
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const redirectTo = requestUrl.searchParams.get('redirectTo') || '/'
 
-  if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      const cookieHeader = request.headers.get('cookie')
-      const authIntent = getAuthIntentFromCookie(cookieHeader)
-      
-      const finalRedirect = authIntent || redirectParam
-      
-      const response = NextResponse.redirect(`${origin}${finalRedirect}`)
-      
-      response.cookies.set(AUTH_INTENT_COOKIE, '', { path: '/', maxAge: 0, sameSite: 'lax' })
-      
-      return response
-    }
+  if (!code) {
+    return NextResponse.redirect(new URL('/sign-in?error=missing_code', request.url))
   }
 
-  return NextResponse.redirect(`${origin}/sign-in?error=auth_error`)
+  let response = NextResponse.redirect(new URL(redirectTo, request.url))
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (error) {
+    return NextResponse.redirect(new URL('/sign-in?error=auth_callback_failed', request.url))
+  }
+
+  return response
 }

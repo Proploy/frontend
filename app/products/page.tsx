@@ -1,6 +1,5 @@
 // Example Products Page using API Routes
 import Link from 'next/link'
-import AgentContextBridge from '@/components/agent/AgentContextBridge'
 
 interface Product {
   product_id: string
@@ -82,20 +81,6 @@ export default async function ProductsPage(props: {
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
-      <AgentContextBridge
-        context={{
-          route: '/products',
-          pageType: 'catalog',
-          title: 'Products catalog',
-          searchQuery: search || undefined,
-          filters: {
-            page,
-            category: category || undefined,
-            minRating: minRating || undefined,
-          },
-          summary: `Viewing ${result.data.length} products from a total of ${result.pagination.total}.`,
-        }}
-      />
       <h1 className="text-4xl font-bold mb-6">Products</h1>
 
       {/* Search and Filters */}

@@ -4,59 +4,49 @@ import { useState } from 'react'
 import { X, Plus, Link as LinkIcon } from 'lucide-react'
 
 interface UrlListInputProps {
-  links: string[]
-  onChange: (links: string[]) => void
+  links: any[]
+  linkType: string
+  onChange: (links: any[]) => void
   label: string
 }
 
-export default function UrlListInput({ links = [], onChange, label }: UrlListInputProps) {
+export default function UrlListInput({ links = [], linkType, onChange, label }: UrlListInputProps) {
   const [input, setInput] = useState('')
 
-  const normalizeWebLink = (value: string) => {
-    const trimmed = value.trim()
-    if (!trimmed) {
-      return ''
-    }
-
-    if (/^https?:\/\//i.test(trimmed)) {
-      return trimmed
-    }
-
-    return `https://${trimmed}`
-  }
+  const currentLinks = links.filter((l) => l.linkType === linkType)
 
   const addLink = () => {
     if (input.trim()) {
       try {
-        const normalizedLink = normalizeWebLink(input)
-        new URL(normalizedLink)
-        onChange([...links, normalizedLink])
+        new URL(input) // Basic validation
+        const newLink = { linkType, url: input.trim() }
+        onChange([...links, newLink])
         setInput('')
-      } catch {
+      } catch (err) {
         alert('Please enter a valid URL')
       }
     }
   }
 
   const removeLink = (url: string) => {
-    onChange(links.filter((link) => link !== url))
+    onChange(links.filter((l) => !(l.linkType === linkType && l.url === url)))
   }
 
   return (
     <div className="space-y-3">
       <div className="grid gap-2">
-        {links.map((link, idx) => (
+        {currentLinks.map((link, idx) => (
           <div 
             key={idx} 
             className="flex items-center justify-between gap-3 px-4 py-3 bg-[#F4F8FD] rounded-xl border border-blue-50/50 group"
           >
             <div className="flex items-center gap-2 truncate">
               <LinkIcon size={14} className="text-[#0466E7] shrink-0" />
-              <span className="text-sm text-gray-700 truncate">{link}</span>
+              <span className="text-sm text-gray-700 truncate">{link.url}</span>
             </div>
             <button 
               type="button" 
-              onClick={() => removeLink(link)}
+              onClick={() => removeLink(link.url)}
               className="text-gray-400 hover:text-red-500 transition-colors"
             >
               <X size={16} />
