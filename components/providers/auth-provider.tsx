@@ -104,10 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Step 2: getSession() now returns the FRESH token (post-refresh)
       const { data: { session } } = await supabase.auth.getSession()
 
-      // Step 3: Ensure user exists in service-apis DB (safety net if OAuth
-      // callback sync was missed or failed). Non-blocking — don't stall UI.
+      // Step 3: Ensure user exists in service-apis DB. Must await to prevent
+      // race condition where subsequent API calls 401 because sync hasn't completed.
       if (session?.access_token) {
-        syncUserToServiceApis(session.access_token)
+        await syncUserToServiceApis(session.access_token)
       }
 
       const u = {
@@ -125,9 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        // Sync user to service-apis on auth state change
+        // Sync user to service-apis on auth state change. Await to prevent
+        // race condition on first OAuth login where API calls fail before sync completes.
         if (session.access_token) {
-          syncUserToServiceApis(session.access_token)
+          await syncUserToServiceApis(session.access_token)
         }
         const u = {
           id: session.user.id,
