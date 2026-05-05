@@ -4,6 +4,23 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 
+const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL || 'http://localhost:8020'
+
+async function syncUserToServiceApis(accessToken: string) {
+  try {
+    const res = await fetch(`${SERVICE_APIS_URL}/api/v1/auth/sync`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 type AuthUser = {
   id: string
   email?: string
@@ -73,20 +90,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const u = {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name as string || session.user.user_metadata?.name as string,
-          image: session.user.user_metadata?.avatar_url as string,
-        }
-        setUser(u)
-        await fetchExpert(u.id)
-      } else {
+      // Step 1: getUser() validates with Supabase Auth server, auto-refreshes
+      // the access token if the refresh token is still valid
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
         setUser(null)
         setExpert(null)
+        setIsLoading(false)
+        return
       }
+
+      // Step 2: getSession() now returns the FRESH token (post-refresh)
+      const { data: { session } } = await supabase.auth.getSession()
+
+      // Step 3: Ensure user exists in service-apis DB (safety net if OAuth
+      // callback sync was missed or failed). Non-blocking — don't stall UI.
+      if (session?.access_token) {
+        syncUserToServiceApis(session.access_token)
+      }
+
+      const u = {
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name as string || user.user_metadata?.name as string,
+        image: user.user_metadata?.avatar_url as string,
+      }
+      setUser(u)
+      await fetchExpert(u.id)
       setIsLoading(false)
     }
 
@@ -94,6 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        // Sync user to service-apis on auth state change
+        if (session.access_token) {
+          syncUserToServiceApis(session.access_token)
+        }
         const u = {
           id: session.user.id,
           email: session.user.email,

@@ -47,6 +47,10 @@ export function handleApiError(error: unknown): Response {
       return createErrorResponse('VALIDATION_ERROR', error.message, 400)
     }
 
+    if (error.message.includes('UNAUTHORIZED')) {
+      return createErrorResponse('UNAUTHORIZED', error.message, 401)
+    }
+
     // Generic error
     return createErrorResponse('INTERNAL_ERROR', error.message, 500)
   }
@@ -57,5 +61,23 @@ export function handleApiError(error: unknown): Response {
     'An unexpected error occurred',
     500
   )
+}
+
+/**
+ * Normalize service-apis error responses to frontend format
+ */
+export function normalizeServiceApisError(response: Response, data: unknown): Response {
+  const statusCode = response.status
+
+  if (typeof data === 'object' && data !== null && 'error' in data) {
+    const errorData = data as { error: string; detail?: string; message?: string }
+    return createErrorResponse(
+      errorData.error || 'SERVICE_APIS_ERROR',
+      errorData.detail || errorData.message || 'An error occurred',
+      statusCode
+    )
+  }
+
+  return createErrorResponse('SERVICE_APIS_ERROR', 'Service unavailable', statusCode)
 }
 

@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,21 +24,15 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('UNAUTHORIZED', 'Not authenticated', 401)
     }
 
-    const supabase = createAdminClient()
-
-    const { data: interests, error } = await supabase
-      .from('UserInterests')
-      .select('*')
-      .eq('userId', user.id)
-      .single()
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Supabase error:', error)
-      return createErrorResponse('DATABASE_ERROR', error.message, 500)
+    const res = await serviceApisFetch('/api/v1/users/me/interests', { requireAuth: true })
+    if (!res.ok) {
+      return createErrorResponse('SERVICE_APIS_ERROR', `Failed to fetch interests: ${res.status}`, res.status)
     }
 
+    const data = await res.json()
+
     return Response.json({
-      data: interests || null,
+      data,
       rateLimit: {
         remaining: rateLimitResult.remaining,
         limit: rateLimitResult.limit,
@@ -69,45 +63,14 @@ export async function POST(request: NextRequest) {
 
     const { industries, platforms, projectTypes, companySizes } = await request.json()
 
-    const supabase = createAdminClient()
+    const res = await serviceApisFetch('/api/v1/users/me/interests', {
+      requireAuth: true,
+      method: 'PATCH',
+      body: { industries, platforms, projectTypes, companySizes },
+    })
 
-    const { data: existing } = await supabase
-      .from('UserInterests')
-      .select('id')
-      .eq('userId', user.id)
-      .single()
-
-    if (existing) {
-      const { error } = await supabase
-        .from('UserInterests')
-        .update({
-          industries: industries || [],
-          platforms: platforms || [],
-          projectTypes: projectTypes || [],
-          companySizes: companySizes || [],
-          updatedAt: new Date().toISOString(),
-        })
-        .eq('userId', user.id)
-
-      if (error) {
-        console.error('Supabase error:', error)
-        return createErrorResponse('DATABASE_ERROR', error.message, 500)
-      }
-    } else {
-      const { error } = await supabase
-        .from('UserInterests')
-        .insert({
-          userId: user.id,
-          industries: industries || [],
-          platforms: platforms || [],
-          projectTypes: projectTypes || [],
-          companySizes: companySizes || [],
-        })
-
-      if (error) {
-        console.error('Supabase error:', error)
-        return createErrorResponse('DATABASE_ERROR', error.message, 500)
-      }
+    if (!res.ok) {
+      return createErrorResponse('SERVICE_APIS_ERROR', `Failed to update interests: ${res.status}`, res.status)
     }
 
     return Response.json({

@@ -147,6 +147,10 @@ function buildPayload(formData: ExpertFormData) {
 }
 
 function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
+  const rawTags = Array.isArray(data?.tags) ? data.tags : []
+  const getTagValues = (tagType: string): string[] =>
+    rawTags.filter((t: any) => t.tagType === tagType).map((t: any) => t.tagValue)
+
   const normalizedLinks: Record<LinkFieldName, string[]> = {
     portfolioLinks: [],
     caseStudyLinks: [],
@@ -178,16 +182,18 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
     uniqueStrength: data?.uniqueStrength ?? '',
     idealClients: data?.idealClients ?? '',
     biggestWin: data?.biggestWin ?? '',
-    primaryPlatforms: Array.isArray(data?.primaryPlatforms) ? data.primaryPlatforms : [],
-    secondaryPlatforms: Array.isArray(data?.secondaryPlatforms) ? data.secondaryPlatforms : [],
-    industryExpertise: Array.isArray(data?.industryExpertise) ? data.industryExpertise : [],
-    preferredProjectTypes: Array.isArray(data?.preferredProjectTypes) ? data.preferredProjectTypes : [],
-    toolsStack: Array.isArray(data?.toolsStack) ? data.toolsStack : [],
+    // Tags → flat arrays (primary and secondary both stored as tagType='platform')
+    primaryPlatforms: getTagValues('platform'),
+    secondaryPlatforms: [],
+    industryExpertise: getTagValues('industry'),
+    preferredProjectTypes: getTagValues('project_type'),
+    toolsStack: getTagValues('tool'),
     portfolioLinks: normalizedLinks.portfolioLinks,
     caseStudyLinks: normalizedLinks.caseStudyLinks,
     certificationLinks: normalizedLinks.certificationLinks,
     testimonialsLinks: normalizedLinks.testimonialsLinks,
-    featuredProjects: Array.isArray(data?.projects) ? data.projects : [],
+    featuredProjects: Array.isArray(data?.featuredProjects) ? data.featuredProjects :
+                      Array.isArray(data?.projects) ? data.projects : [],
     agreeTerms: Boolean(data?.agreeTerms),
     consentContact: Boolean(data?.consentContact),
   }

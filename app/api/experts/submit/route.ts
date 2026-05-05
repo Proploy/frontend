@@ -1,57 +1,70 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { expertSubmitSchema } from '@/lib/validations/expert'
-import { requireUser } from '@/lib/supabase/auth'
+import { NextRequest } from 'next/server'
+import { getUser } from '@/lib/auth'
+import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
+import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 
-const rateLimitMeta = { remaining: 95, limit: 100 }
+export const dynamic = 'force-dynamic'
 
-export async function POST(req: Request) {
-    try {
-        const user = await requireUser()
-        const json = await req.json()
-        const body = expertSubmitSchema.parse(json)
+export async function POST(request: NextRequest) {
+  try {
+    const ip = getClientIP(request)
+    const rateLimitResult = await rateLimit(ip)
 
-        const { tags, links, projects, agreeTerms, consentContact, ...expertData } = body
-
-        const expert = await prisma.expert.update({
-            where: { userId: user.id },
-            data: {
-                ...expertData,
-                status: 'submitted',
-                tags: {
-                    deleteMany: {},
-                    create: tags.map((t) => ({ tagType: t.tagType, tagValue: t.tagValue })),
-                },
-                links: {
-                    deleteMany: {},
-                    create: links.map((l) => ({ linkType: l.linkType, url: l.url })),
-                },
-                projects: projects
-                    ? {
-                          deleteMany: {},
-                          create: projects.map((p) => ({
-                              title: p.title,
-                              summary: p.summary,
-                              link: p.link,
-                              outcomes: p.outcomes,
-                          })),
-                      }
-                    : undefined,
-            },
-        })
-
-        return NextResponse.json({
-            data: expert,
-            rateLimit: rateLimitMeta,
-        })
-    } catch (error) {
-        console.error('[EXPERTS_SUBMIT_POST]', error)
-        if (error instanceof Error && error.message.includes('Unauthorized')) {
-            return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Sign in required', statusCode: 401 }, { status: 401 })
-        }
-        if (error instanceof Error && error.name === 'ZodError') {
-            return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Invalid submission payload', statusCode: 400 }, { status: 400 })
-        }
-        return NextResponse.json({ error: 'INTERNAL_ERROR', message: 'Internal Error', statusCode: 500 }, { status: 500 })
+    if (!rateLimitResult.success) {
+      return createErrorResponse(
+        'RATE_LIMIT_EXCEEDED',
+        'Too many requests. Please try again later.',
+        429
+      )
     }
+
+    const user = await getUser()
+    if (!user) {
+      return createErrorResponse('UNAUTHORIZED', 'Not authenticated', 401)
+    }
+
+    // Send the full body — service-apis validates required fields server-side
+    const body = await request.json()
+
+    const res = await serviceApisFetch('/api/v1/experts/me/application/submit', {
+      requireAuth: true,
+      method: 'POST',
+      body,
+    })
+
+    if (res.status === 400) {
+      const errorData = await res.json().catch(() => ({}))
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        errorData.detail || 'Validation failed. Please check all required fields.',
+        400,
+        errorData
+      )
+    }
+
+    if (res.status === 409) {
+      return createErrorResponse(
+        'CONFLICT',
+        'Application cannot be submitted in its current status',
+        409
+      )
+    }
+
+    if (!res.ok) {
+      return createErrorResponse('SERVICE_APIS_ERROR', `Failed to submit application: ${res.status}`, res.status)
+    }
+
+    const data = await res.json()
+
+    return Response.json({
+      data,
+      rateLimit: {
+        remaining: rateLimitResult.remaining,
+        limit: rateLimitResult.limit,
+      },
+    })
+  } catch (error) {
+    return handleApiError(error)
+  }
 }

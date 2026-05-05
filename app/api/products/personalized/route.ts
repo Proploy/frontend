@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { getUserInterests } from '@/lib/service-apis/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,26 +32,22 @@ export async function GET(request: NextRequest) {
 
     if (userId) {
       const { data: favorites } = await supabase
-        .from('Favorite')
+        .from('favorite')
         .select('productId')
         .eq('userId', userId)
 
       const { data: recentlyViewed } = await supabase
-        .from('RecentlyViewed')
+        .from('recently_viewed')
         .select('productId')
         .eq('userId', userId)
         .order('viewedAt', { ascending: false })
         .limit(10)
 
-      const { data: interests } = await supabase
-        .from('UserInterests')
-        .select('industries, platforms')
-        .eq('userId', userId)
-        .single()
+      const interests = await getUserInterests().catch(() => null)
 
       const favoriteIds = favorites?.map(f => f.productId) || []
       const recentIds = recentlyViewed?.map(r => r.productId) || []
-      
+
       productIds = [...new Set([...favoriteIds, ...recentIds])]
 
       let categoryFilter: string[] = []

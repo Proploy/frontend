@@ -32,7 +32,7 @@ export async function DELETE(
     const supabase = createAdminClient()
 
     const { error } = await supabase
-      .from('Favorite')
+      .from('favorite')
       .delete()
       .eq('userId', user.id)
       .eq('productId', productId)

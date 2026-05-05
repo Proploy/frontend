@@ -48,7 +48,7 @@ export async function getUserWithProfile() {
   const supabase = createAdminClient()
   
   const { data: userProfile } = await supabase
-    .from('User')
+    .from('user')
     .select('*, expert(*, tags(*), links(*), projects(*))')
     .eq('supabaseUserId', user.id)
     .single()
@@ -58,6 +58,9 @@ export async function getUserWithProfile() {
 
 export async function getUserSession() {
   const supabase = await createClient()
+  // getUser() validates with server (auto-refreshes if needed) before getSession()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) return null
   const { data: { session } } = await supabase.auth.getSession()
   return session
 }
@@ -69,7 +72,7 @@ export async function getExpert() {
   const supabase = createAdminClient()
   
   const { data: expert } = await supabase
-    .from('Expert')
+    .from('expert')
     .select('*, tags(*), links(*), projects(*), reviews(*)')
     .eq('supabaseUserId', user.id)
     .single()
@@ -97,7 +100,7 @@ export async function createOrGetUser(user: { id: string; email?: string; user_m
   const supabase = createAdminClient()
   
   const { data: existingUser } = await supabase
-    .from('User')
+    .from('user')
     .select('*')
     .eq('supabaseUserId', user.id)
     .single()
@@ -110,9 +113,8 @@ export async function createOrGetUser(user: { id: string; email?: string; user_m
   const userId = generateId()
   
   const { data: newUser, error } = await supabase
-    .from('User')
+    .from('user')
     .insert({
-      id: userId,
       supabaseUserId: user.id,
       email: user.email || '',
       name: (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || null,

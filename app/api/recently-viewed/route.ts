@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient()
 
     const { data: recentlyViewed, error } = await supabase
-      .from('RecentlyViewed')
+      .from('recently_viewed')
       .select('*, products(product_id, product_name, product_logo, rating, reviews)')
       .eq('userId', user.id)
       .order('viewedAt', { ascending: false })
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     const { data: existing } = await supabase
-      .from('RecentlyViewed')
+      .from('recently_viewed')
       .select('id')
       .eq('userId', user.id)
       .eq('productId', productId)
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       const { error: updateError } = await supabase
-        .from('RecentlyViewed')
+        .from('recently_viewed')
         .update({ viewedAt: new Date().toISOString() })
         .eq('id', existing.id)
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       const { error: insertError } = await supabase
-        .from('RecentlyViewed')
+        .from('recently_viewed')
         .insert({
           userId: user.id,
           productId,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
 
       const { data: oldRecords } = await supabase
-        .from('RecentlyViewed')
+        .from('recently_viewed')
         .select('id')
         .eq('userId', user.id)
         .order('viewedAt', { ascending: false })
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       if (oldRecords && oldRecords.length > 20) {
         const idsToDelete = oldRecords.slice(20).map(r => r.id)
         await supabase
-          .from('RecentlyViewed')
+          .from('recently_viewed')
           .delete()
           .in('id', idsToDelete)
       }

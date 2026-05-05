@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient()
 
     const { data: favorites, error } = await supabase
-      .from('Favorite')
+      .from('favorite')
       .select('*, products(product_id, product_name, product_logo, rating, reviews)')
       .eq('userId', user.id)
       .order('createdAt', { ascending: false })
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     const { data: favorite, error } = await supabase
-      .from('Favorite')
+      .from('favorite')
       .insert({
         userId: user.id,
         productId,

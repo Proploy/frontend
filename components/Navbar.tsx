@@ -1,87 +1,264 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
+import { Menu, X, LogOut, User, Settings } from 'lucide-react'
+import { useAuth } from '@/components/providers/auth-provider'
+import { setAuthIntent, getAuthIntent } from '@/lib/utils/auth-intent-client'
 
 export default function Navbar() {
-  const pathname = usePathname()
+  const { user, expert, signOut } = useAuth()
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
-  if (pathname?.startsWith('/vendor-onboarding')) return null
+  const expertStatus = expert?.status
+  const showDashboard = expertStatus === 'approved'
+  const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
+  const showApplicationPending = expertStatus === 'submitted'
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const handleSignOut = async () => {
+    await signOut()
+    setIsProfileOpen(false)
+  }
+
+  const handleBecomeExpertClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault()
+      setAuthIntent('/expert/apply')
+      window.location.href = '/sign-in?redirect=/expert/apply'
+    }
+  }
 
   return (
-    <div className="bg-[#fafbfc] content-stretch flex flex-col h-[80px] items-center justify-center relative shrink-0 w-full">
-      <div className="content-stretch flex items-center justify-between max-w-[1280px] px-[var(--container-padding-desktop,32px)] relative shrink-0 w-full">
-        {/* Logo */}
-        <div className="flex flex-row items-center self-stretch">
-          <div className="content-stretch flex gap-[8px] h-full items-center relative shrink-0">
-            <Link href="/" className="flex items-center">
-              <img src="/proploy-logo.png" alt="Proploy Logo" className="h-auto w-[140px]" />
+    <nav className={`navbar-container transition-all duration-300 ${isScrolled || isMenuOpen ? 'bg-[#F4F8FD]/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center lg:mr-[30px]">
+          <Link href="/">
+            <Image 
+              src="/PROPLOY.svg" 
+              alt="Proploy" 
+              width={192} 
+              height={54}
+              className="h-[40px] md:h-[54px] w-auto object-contain"
+              priority
+            />
+          </Link>
+        </div>
+
+        <div className="hidden lg:flex items-center navbar-links-container flex-1 justify-center">
+          <Link href="/products" className="navbar-link">
+            Explore Products
+          </Link>
+          <Link href="/experts" className="navbar-link">
+            Explore Experts
+          </Link>
+          <Link href="/for-businesses" className="navbar-link">
+            For Businesses
+          </Link>
+          <Link href="/for-experts" className="navbar-link">
+            For Experts
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-3 md:gap-6 lg:ml-[30px]">
+          <div className="hidden md:flex items-center gap-4">
+            {user ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center gap-2"
+                >
+                  {user.image ? (
+                    <Image 
+                      src={user.image} 
+                      alt={user.name || 'User'} 
+                      width={36} 
+                      height={36} 
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 bg-[#0466E7] rounded-full flex items-center justify-center text-white font-medium">
+                      {user.name?.[0] || user.email?.[0] || 'U'}
+                    </div>
+                  )}
+                </button>
+                
+                {isProfileOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{user.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <User size={16} />
+                      Dashboard
+                    </Link>
+                    {showDashboard && (
+                      <Link
+                        href="/expert/dashboard"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#0466E7] hover:bg-blue-50 font-medium"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        Expert Dashboard
+                      </Link>
+                    )}
+                    {showCompleteApplication && (
+                      <Link
+                        href="/expert/apply"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#0466E7] hover:bg-blue-50 font-medium"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        Complete Application
+                      </Link>
+                    )}
+                    {showApplicationPending && (
+                      <div className="flex items-center gap-2 px-4 py-2 text-sm text-amber-600">
+                        Application Pending
+                      </div>
+                    )}
+                    <Link
+                      href="/settings"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <Settings size={16} />
+                      Settings
+                    </Link>
+                    <button 
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link href="/sign-in" className="navbar-link">
+                Sign In
+              </Link>
+            )}
+          </div>
+          
+          <Link
+            href={showDashboard ? '/expert/dashboard' : showCompleteApplication ? '/expert/apply' : showApplicationPending ? '#' : user ? '/expert/apply' : '#'}
+            onClick={!user && !showApplicationPending ? handleBecomeExpertClick : undefined}
+            className="hidden md:flex px-6 py-3 bg-[#0466E7] text-white font-semibold text-[14px] rounded-full hover:bg-[#0355c0] transition-colors"
+            style={{ borderRadius: '100px' }}
+          >
+            {showDashboard ? 'Expert Dashboard' : showApplicationPending ? 'Application Pending' : showCompleteApplication ? 'Complete Application' : 'Become an Expert'}
+          </Link>
+
+          <button 
+            className="lg:hidden p-2 text-text-primary"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+      </div>
+
+      {isMenuOpen && (
+        <div className="lg:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
+          <Link 
+            href="/products" 
+            className="text-lg font-semibold text-text-primary"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Explore Products
+          </Link>
+          <Link 
+            href="/experts" 
+            className="text-lg font-semibold text-text-primary"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Explore Experts
+          </Link>
+          <Link 
+            href="/for-businesses" 
+            className="text-lg font-semibold text-text-primary"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            For Businesses
+          </Link>
+          <Link
+            href={showDashboard ? '/expert/dashboard' : showCompleteApplication ? '/expert/apply' : showApplicationPending ? '#' : user ? '/expert/apply' : '#'}
+            onClick={(e) => {
+              if (!user && !showApplicationPending) {
+                e.preventDefault()
+                setAuthIntent('/expert/apply')
+                window.location.href = '/sign-in?redirect=/expert/apply'
+              }
+              setIsMenuOpen(false)
+            }}
+            className="text-lg font-semibold text-[#0466E7]"
+          >
+            {showDashboard ? 'Expert Dashboard' : showApplicationPending ? 'Application Pending' : showCompleteApplication ? 'Complete Application' : 'Become an Expert'}
+          </Link>
+          
+          <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
+            {user ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  {user.image ? (
+                    <Image 
+                      src={user.image} 
+                      alt={user.name || 'User'} 
+                      width={40} 
+                      height={40} 
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-[#0466E7] rounded-full flex items-center justify-center text-white font-medium">
+                      {user.name?.[0] || user.email?.[0] || 'U'}
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-text-primary">{user.name || 'User'}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
+                  className="text-left text-lg font-semibold text-red-600"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link 
+                href="/sign-in" 
+                className="text-lg font-semibold text-cta-button"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
+            <Link
+              href={showDashboard ? '/expert/dashboard' : showCompleteApplication ? '/expert/apply' : showApplicationPending ? '#' : '/become-expert'}
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full py-4 bg-[#0466E7] text-white font-bold rounded-xl text-center shadow-lg"
+            >
+              {showDashboard ? 'Expert Dashboard' : showApplicationPending ? 'Application Pending' : showCompleteApplication ? 'Complete Application' : 'Become an Expert'}
             </Link>
           </div>
         </div>
-
-        {/* Navigation */}
-        <div className="content-stretch flex gap-[36px] items-center relative shrink-0">
-          <Link href="/product" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
-            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
-              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
-                Explore Products
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/experts" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
-            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
-              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
-                Explore Experts
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/for-businesses" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
-            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
-              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
-                For Businesses
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/for-experts" className="content-stretch flex gap-[var(--spacing-xxs,2px)] items-center justify-center overflow-clip px-[var(--spacing-sm,6px)] py-[var(--spacing-xs,4px)] relative rounded-[var(--radius-md,8px)] shrink-0">
-            <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
-              <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
-                For Experts
-              </p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Actions */}
-        <div className="content-stretch flex gap-[var(--spacing-lg,12px)] items-center relative shrink-0">
-          <motion.div whileHover={{ filter: 'brightness(0.95)' }} whileTap={{ filter: 'brightness(0.9)' }} transition={{ duration: 0.2 }} className="rounded-[8px]">
-            <Link href="/sign-in" className="bg-[var(--colors\/background\/bg-primary,white)] border border-[var(--colors\/border\/border-primary,#d5d7da)] border-solid content-stretch flex gap-[6px] items-center justify-center overflow-clip px-[16px] py-[10px] relative rounded-[8px] shadow-[0px_1px_2px_0px_var(--colors\/effects\/shadows\/shadow-xs,rgba(10,13,18,0.05))] shrink-0">
-              <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
-                <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-secondary-\(700\),#414651)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
-                  Log in
-                </p>
-              </div>
-              <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_0px_1px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner-border,rgba(10,13,18,0.18)),inset_0px_-2px_0px_0px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner,rgba(10,13,18,0.05))]" />
-            </Link>
-          </motion.div>
-
-          <motion.div whileHover={{ filter: 'brightness(0.95)' }} whileTap={{ filter: 'brightness(0.9)' }} transition={{ duration: 0.2 }} className="rounded-[8px]">
-            <Link href="/become-expert" className="bg-[var(--colors\/background\/bg-brand-solid,#155eef)] border-2 border-[rgba(255,255,255,0.12)] border-solid content-stretch flex gap-[6px] items-center justify-center overflow-clip px-[16px] py-[10px] relative rounded-[8px] shadow-[0px_1px_2px_0px_var(--colors\/effects\/shadows\/shadow-xs,rgba(10,13,18,0.05))] shrink-0">
-              <div className="content-stretch flex items-center justify-center px-[var(--spacing-xxs,2px)] relative shrink-0">
-                <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-white,white)] text-[length:var(--font-size\/text-md,16px)] whitespace-nowrap">
-                  Become an Expert
-                </p>
-              </div>
-              <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_0px_1px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner-border,rgba(10,13,18,0.18)),inset_0px_-2px_0px_0px_var(--colors\/effects\/shadows\/shadow-skeumorphic-inner,rgba(10,13,18,0.05))]" />
-            </Link>
-          </motion.div>
-        </div>
-      </div>
-    </div>
+      )}
+    </nav>
   )
 }
-
