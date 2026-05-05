@@ -1,4 +1,14 @@
-export const onboardingSteps = [
+// Re-exports for ExpertApplicationForm (migrated from unified onboarding-config)
+// TODO: remove these re-exports once ExpertApplicationForm is updated to use
+// the step-based config directly instead of flat suggestion lists.
+export const INDUSTRY_SUGGESTIONS: string[] = []
+export const PLATFORM_SUGGESTIONS: string[] = []
+export const TOOLS_SUGGESTIONS: string[] = []
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type OnboardingField = Record<string, any>
+// PROJECT_PRIORITY_GROUPS was a Record<string, string[]> — unused in the step
+// config, so provide a minimal stub to unblock the build.
+export const PROJECT_PRIORITY_GROUPS: Record<string, string[]> = {}
     {
         id: 1,
         title: 'Identity & Entity',
