@@ -9,6 +9,8 @@ export type OnboardingField = Record<string, any>
 // PROJECT_PRIORITY_GROUPS was a Record<string, string[]> — unused in the step
 // config, so provide a minimal stub to unblock the build.
 export const PROJECT_PRIORITY_GROUPS: Record<string, string[]> = {}
+
+export const onboardingSteps = [
     {
         id: 1,
         title: 'Identity & Entity',
