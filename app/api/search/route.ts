@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
-
-const isSupabaseConfigured =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 const mockProducts = [
   { product_id: '1', product_name: 'Salesforce CRM', product_description: 'The world\'s #1 CRM platform.', rating: 4.5, reviews: 1243, product_logo: null },
@@ -20,6 +18,11 @@ const mockProducts = [
   { product_id: '9', product_name: 'Intercom', product_description: 'Customer messaging platform.', rating: 4.4, reviews: 543, product_logo: null },
 ]
 
+/**
+ * GET /api/search
+ * Proxy to service-apis POST /api/v1/catalog/search
+ * Searches products only (service-apis does not search companies)
+ */
 export async function GET(request: NextRequest) {
   try {
     const ip = getClientIP(request)
@@ -33,59 +36,51 @@ export async function GET(request: NextRequest) {
     const q = searchParams.get('q') || searchParams.get('search') || ''
     const limitParam = parseInt(searchParams.get('limit') || '10')
 
-    // Mock data fallback
-    if (!isSupabaseConfigured) {
-      const query = q.toLowerCase()
-      const filtered = query
-        ? mockProducts.filter(p => p.product_name.toLowerCase().includes(query) || p.product_description.toLowerCase().includes(query))
-        : mockProducts
-      const products = filtered.slice(0, limitParam)
-
-      return Response.json({
-        query: q,
-        type: 'all',
-        totalResults: products.length,
-        results: { products, companies: [] },
-        rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
+    try {
+      const res = await serviceApisFetch('/api/v1/catalog/search', {
+        method: 'POST',
+        body: {
+          query: q,
+          semantic_query: q,
+          limit: limitParam,
+        },
       })
+
+      if (res.ok) {
+        const json = await res.json()
+        const products = json.products || []
+
+        return Response.json({
+          query: q,
+          type: 'all',
+          totalResults: products.length,
+          results: { products, companies: [] },
+          rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
+        })
+      }
+
+      if (res.status === 404 || res.status === 400) {
+        // Endpoint not yet available, fall through to mock
+      } else {
+        console.error('service-apis error:', res.status, await res.text())
+        return createErrorResponse('SERVICE_APIS_ERROR', 'Search service unavailable', 502)
+      }
+    } catch (err) {
+      console.error('service-apis fetch failed:', err)
     }
 
-    // Real Supabase path
-    const { createClient } = await import('@/lib/supabase/server')
-    const { searchQuerySchema } = await import('@/lib/validations/api')
-
-    const queryParams = Object.fromEntries(searchParams.entries())
-    const validatedParams = searchQuerySchema.parse(queryParams)
-    const { q: vq, type, limit } = validatedParams
-
-    const supabase = await createClient()
-    const results: { products?: unknown[]; companies?: unknown[] } = {}
-
-    if (type === 'products' || type === 'all') {
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('product_id, product_name, product_description, rating, reviews, product_logo')
-        .or(`product_name.ilike.%${vq}%,product_description.ilike.%${vq}%,what_is.ilike.%${vq}%`)
-        .limit(limit)
-        .order('rating', { ascending: false })
-      if (!error) results.products = products || []
-    }
-
-    if (type === 'companies' || type === 'all') {
-      const { data: companies, error } = await supabase
-        .from('companies')
-        .select('company_id, name, website, location, employee_count')
-        .or(`name.ilike.%${vq}%,website.ilike.%${vq}%,location.ilike.%${vq}%`)
-        .limit(limit)
-        .order('name', { ascending: true })
-      if (!error) results.companies = companies || []
-    }
+    // Mock fallback
+    const query = q.toLowerCase()
+    const filtered = query
+      ? mockProducts.filter(p => p.product_name.toLowerCase().includes(query) || p.product_description.toLowerCase().includes(query))
+      : mockProducts
+    const products = filtered.slice(0, limitParam)
 
     return Response.json({
-      query: vq,
-      type,
-      totalResults: (results.products?.length || 0) + (results.companies?.length || 0),
-      results,
+      query: q,
+      type: 'all',
+      totalResults: products.length,
+      results: { products, companies: [] },
       rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
     })
   } catch (error) {
@@ -95,4 +90,3 @@ export async function GET(request: NextRequest) {
     return handleApiError(error)
   }
 }
-
