@@ -1,3 +1,4 @@
+// TODO: Move to service-apis endpoint - currently blocked by schema mismatch
 import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth'

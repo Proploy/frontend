@@ -25,7 +25,7 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
     const timer = setTimeout(async () => {
       if (searchQuery.trim().length > 1) {
         try {
-          const res = await fetch(`/api/product?search=${encodeURIComponent(searchQuery)}&limit=5`)
+          const res = await fetch(`/api/products?search=${encodeURIComponent(searchQuery)}&limit=5`)
           const data = await res.json()
           if (data && data.data) {
             setSearchResults(data.data)
@@ -79,7 +79,7 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
             {searchResults.map((product) => (
               <Link 
                 key={product.product_id}
-                href={`/product/${product.product_id}`}
+                href={`/products/${product.product_id}`}
                 className="flex items-center gap-4 px-8 py-4 hover:bg-blue-50 transition-colors group"
               >
                 <div className="w-10 h-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">
