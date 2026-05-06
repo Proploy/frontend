@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
-
-const isSupabaseConfigured =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 const mockProducts = [
   { product_id: '1', product_name: 'Salesforce CRM', product_description: 'The world\'s #1 CRM platform for sales, service, marketing, and more.', rating: 4.5, reviews: 1243, product_logo: null, category: { name: 'CRM' }, created_at: '2024-01-01' },
@@ -22,7 +20,7 @@ const mockProducts = [
 
 /**
  * GET /api/products
- * Get paginated list of products with optional filtering and search
+ * Proxy to service-apis GET /api/v1/catalog/products
  */
 export async function GET(request: NextRequest) {
   try {
@@ -37,71 +35,74 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const search = searchParams.get('search') || ''
+    const category = searchParams.get('category') || ''
+    const sort = searchParams.get('sort') || ''
+    const offset = (page - 1) * limit
 
-    // Use mock data when Supabase is not configured
-    if (!isSupabaseConfigured) {
-      let filtered = mockProducts
-      if (search) {
-        const q = search.toLowerCase()
-        filtered = filtered.filter(p =>
-          p.product_name.toLowerCase().includes(q) ||
-          p.product_description?.toLowerCase().includes(q)
-        )
+    // Build query string for service-apis
+    const queryParts: string[] = []
+    if (search) queryParts.push(`search=${encodeURIComponent(search)}`)
+    if (category) queryParts.push(`category=${encodeURIComponent(category)}`)
+    if (sort) queryParts.push(`sort=${encodeURIComponent(sort)}`)
+    queryParts.push(`limit=${limit}`)
+    queryParts.push(`offset=${offset}`)
+    const queryString = queryParts.join('&')
+
+    try {
+      const res = await serviceApisFetch(`/api/v1/catalog/products${queryString ? `?${queryString}` : ''}`)
+
+      if (res.ok) {
+        const json = await res.json()
+        // Map service-apis response to frontend expected shape
+        const products = json.results || json.products || []
+        const count = json.count || products.length
+        const totalPages = Math.ceil(count / limit)
+
+        return Response.json({
+          data: products,
+          pagination: {
+            page,
+            limit,
+            total: count,
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1,
+          },
+          rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
+        })
       }
 
-      const from = (page - 1) * limit
-      const paged = filtered.slice(from, from + limit)
-      const totalPages = Math.ceil(filtered.length / limit)
-
-      return Response.json({
-        data: paged,
-        pagination: { page, limit, total: filtered.length, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 },
-        rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
-      })
+      if (res.status === 404 || res.status === 400) {
+        // Endpoint not yet available on service-apis, fall through to mock
+      } else {
+        console.error('service-apis error:', res.status, await res.text())
+        return createErrorResponse('SERVICE_APIS_ERROR', 'Failed to fetch products from catalog service', 502)
+      }
+    } catch (err) {
+      // service-apis unreachable, fall through to mock
+      console.error('service-apis fetch failed:', err)
     }
 
-    // Real Supabase path
-    const { createClient } = await import('@/lib/supabase/server')
-    const { getProductsQuerySchema } = await import('@/lib/validations/api')
-
-    const queryParams = Object.fromEntries(searchParams.entries())
-    const validatedParams = getProductsQuerySchema.parse(queryParams)
-    const { page: vPage, limit: vLimit, search: vSearch, category, minRating, maxRating, sortBy, sortOrder, companyId } = validatedParams
-
-    const supabase = await createClient()
-    let query = supabase.from('products').select('*', { count: 'exact' })
-
-    if (vSearch) query = query.or(`product_name.ilike.%${vSearch}%,product_description.ilike.%${vSearch}%`)
-    if (category) {
-      const searchCategory = category.replace(/-/g, ' ')
-      query = query.ilike('category->>name', `%${searchCategory}%`)
-    }
-    if (minRating !== undefined) query = query.gte('rating', minRating)
-    if (maxRating !== undefined) query = query.lte('rating', maxRating)
-    if (companyId) query = query.eq('company_id', companyId)
-
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' })
-    const from = (vPage - 1) * vLimit
-    query = query.range(from, from + vLimit - 1)
-
-    const { data, error, count } = await query
-
-    if (error) {
-      console.error('Supabase error:', error)
-      return createErrorResponse('DATABASE_ERROR', error.message, 500)
+    // Mock fallback
+    let filtered = mockProducts
+    if (search) {
+      const q = search.toLowerCase()
+      filtered = filtered.filter(p =>
+        p.product_name.toLowerCase().includes(q) ||
+        p.product_description?.toLowerCase().includes(q)
+      )
     }
 
-    const totalPages = count ? Math.ceil(count / vLimit) : 0
+    const from = (page - 1) * limit
+    const paged = filtered.slice(from, from + limit)
+    const totalPages = Math.ceil(filtered.length / limit)
 
     return Response.json({
-      data: data || [],
-      pagination: { page: vPage, limit: vLimit, total: count || 0, totalPages, hasNextPage: vPage < totalPages, hasPreviousPage: vPage > 1 },
+      data: paged,
+      pagination: { page, limit, total: filtered.length, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 },
       rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
     })
   } catch (error) {
-    if (error instanceof Error && error.name === 'ZodError') {
-      return createErrorResponse('VALIDATION_ERROR', 'Invalid query parameters', 400, error)
-    }
     return handleApiError(error)
   }
 }
