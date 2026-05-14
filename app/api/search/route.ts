@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server'
-import { serviceApisFetch } from '@/lib/service-apis/client'
-import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
+import { handleApiError, createErrorResponse, normalizeServiceApisError } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 3600
+
+const SERVICE_APIS_BASE = process.env.SERVICE_APIS_BASE_URL || ''
 
 const mockProducts = [
-  { product_id: '1', product_name: 'Salesforce CRM', product_description: 'The world\'s #1 CRM platform.', rating: 4.5, reviews: 1243, product_logo: null },
+  { product_id: '1', product_name: 'Salesforce CRM', product_description: "The world's #1 CRM platform.", rating: 4.5, reviews: 1243, product_logo: null },
   { product_id: '2', product_name: 'HubSpot', product_description: 'All-in-one inbound marketing and CRM.', rating: 4.6, reviews: 987, product_logo: null },
   { product_id: '3', product_name: 'Slack', product_description: 'Business communication platform.', rating: 4.7, reviews: 2156, product_logo: null },
   { product_id: '4', product_name: 'Asana', product_description: 'Work management platform for teams.', rating: 4.4, reviews: 876, product_logo: null },
@@ -18,16 +19,10 @@ const mockProducts = [
   { product_id: '9', product_name: 'Intercom', product_description: 'Customer messaging platform.', rating: 4.4, reviews: 543, product_logo: null },
 ]
 
-/**
- * GET /api/search
- * Proxy to service-apis POST /api/v1/catalog/search
- * Searches products only (service-apis does not search companies)
- */
 export async function GET(request: NextRequest) {
   try {
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
-
     if (!rateLimitResult.success) {
       return createErrorResponse('RATE_LIMIT_EXCEEDED', 'Too many requests.', 429)
     }
@@ -35,58 +30,38 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const q = searchParams.get('q') || searchParams.get('search') || ''
     const limitParam = parseInt(searchParams.get('limit') || '10')
+    const rateLimitInfo = { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit }
 
-    try {
-      const res = await serviceApisFetch('/api/v1/catalog/search', {
-        method: 'POST',
-        body: {
-          query: q,
-          semantic_query: q,
-          limit: limitParam,
-        },
+    if (!SERVICE_APIS_BASE) {
+      const query = q.toLowerCase()
+      const filtered = query
+        ? mockProducts.filter((p) => p.product_name.toLowerCase().includes(query) || p.product_description.toLowerCase().includes(query))
+        : mockProducts
+      const products = filtered.slice(0, limitParam)
+      return Response.json({
+        query: q,
+        type: 'all',
+        totalResults: products.length,
+        results: { products, companies: [] },
+        rateLimit: rateLimitInfo,
       })
-
-      if (res.ok) {
-        const json = await res.json()
-        const products = json.products || []
-
-        return Response.json({
-          query: q,
-          type: 'all',
-          totalResults: products.length,
-          results: { products, companies: [] },
-          rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
-        })
-      }
-
-      if (res.status === 404 || res.status === 400) {
-        // Endpoint not yet available, fall through to mock
-      } else {
-        console.error('service-apis error:', res.status, await res.text())
-        return createErrorResponse('SERVICE_APIS_ERROR', 'Search service unavailable', 502)
-      }
-    } catch (err) {
-      console.error('service-apis fetch failed:', err)
     }
 
-    // Mock fallback
-    const query = q.toLowerCase()
-    const filtered = query
-      ? mockProducts.filter(p => p.product_name.toLowerCase().includes(query) || p.product_description.toLowerCase().includes(query))
-      : mockProducts
-    const products = filtered.slice(0, limitParam)
+    const res = await serviceApisFetch('/catalog/search', {
+      method: 'POST',
+      body: JSON.stringify({ query: q, limit: limitParam }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) return normalizeServiceApisError(res, data)
 
     return Response.json({
       query: q,
       type: 'all',
-      totalResults: products.length,
-      results: { products, companies: [] },
-      rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
+      totalResults: data?.totalResults ?? data?.results?.products?.length ?? 0,
+      results: data?.results ?? data,
+      rateLimit: rateLimitInfo,
     })
   } catch (error) {
-    if (error instanceof Error && error.name === 'ZodError') {
-      return createErrorResponse('VALIDATION_ERROR', 'Invalid search query', 400, error)
-    }
     return handleApiError(error)
   }
 }

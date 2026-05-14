@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
         .order('viewedAt', { ascending: false })
         .limit(10)
 
-      const interests = await getUserInterests().catch(() => null)
+      const interestsResp = await getUserInterests().catch(() => null)
+      const interests = (interestsResp?.data ?? null) as { industries?: string[] } | null
 
       const favoriteIds = favorites?.map(f => f.productId) || []
       const recentIds = recentlyViewed?.map(r => r.productId) || []
