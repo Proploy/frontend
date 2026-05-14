@@ -1,12 +1,41 @@
-// Stub client for missing service-apis backend.
-// Returns empty/successful responses so the frontend can render in dev
-// without the upstream service. Replace with the real implementation
-// (or wire to an external host) when ready.
+/**
+ * Thin client for the Proploy `service-apis` gateway.
+ *
+ * Reads `SERVICE_APIS_BASE_URL` (server-only). When set, requests are proxied
+ * to the gateway; otherwise the helper returns an empty stub response so the
+ * frontend keeps rendering in dev environments without the backend running.
+ *
+ * `requireAuth: true` forwards the current Supabase session access token as
+ * `Authorization: Bearer <token>` so the gateway can authenticate the user.
+ */
+import { createClient } from '@/lib/supabase/server'
 
-const SERVICE_APIS_BASE = process.env.SERVICE_APIS_BASE_URL || ''
+const SERVICE_APIS_BASE = (process.env.SERVICE_APIS_BASE_URL || '').replace(/\/$/, '')
 
 interface ServiceApisFetchOptions extends RequestInit {
   requireAuth?: boolean
+  /**
+   * Forward a Supabase access token explicitly (e.g. when calling from a
+   * context where cookies aren't available). Bypasses the cookie lookup.
+   */
+  accessToken?: string | null
+}
+
+function emptyResponse(): Response {
+  return new Response(JSON.stringify({ data: [], message: 'service-apis disabled' }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
+async function resolveAccessToken(): Promise<string | null> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getSession()
+    return data.session?.access_token ?? null
+  } catch {
+    return null
+  }
 }
 
 export async function serviceApisFetch(
@@ -14,16 +43,48 @@ export async function serviceApisFetch(
   options: ServiceApisFetchOptions = {},
 ): Promise<Response> {
   if (!SERVICE_APIS_BASE) {
-    return new Response(JSON.stringify({ data: [], message: 'service-apis disabled' }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    })
+    return emptyResponse()
   }
 
-  const { requireAuth: _requireAuth, ...init } = options
-  return fetch(`${SERVICE_APIS_BASE}${path}`, init)
+  const { requireAuth, accessToken, headers, ...init } = options
+  const finalHeaders: Record<string, string> = {
+    accept: 'application/json',
+    ...(headers as Record<string, string> | undefined),
+  }
+
+  if (init.body && !finalHeaders['content-type']) {
+    finalHeaders['content-type'] = 'application/json'
+  }
+
+  let token = accessToken ?? null
+  if (requireAuth && token === null) {
+    token = await resolveAccessToken()
+  }
+  if (token) {
+    finalHeaders.authorization = `Bearer ${token}`
+  }
+
+  const url = `${SERVICE_APIS_BASE}${path.startsWith('/') ? path : `/${path}`}`
+  return fetch(url, {
+    ...init,
+    headers: finalHeaders,
+    cache: 'no-store',
+  })
 }
 
-export async function getUserInterests(): Promise<{ data: unknown[] }> {
-  return { data: [] }
+export async function getUserInterests(): Promise<{
+  ok: boolean
+  status: number
+  data: unknown
+}> {
+  const response = await serviceApisFetch('/api/v1/users/me/interests', {
+    requireAuth: true,
+  })
+  let data: unknown = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+  return { ok: response.ok, status: response.status, data }
 }

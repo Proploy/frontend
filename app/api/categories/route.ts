@@ -1,57 +1,39 @@
 import { NextRequest } from 'next/server'
+import { handleApiError, createErrorResponse, normalizeServiceApisError } from '@/lib/utils/errors'
 import { serviceApisFetch } from '@/lib/service-apis/client'
-import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
-import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 3600
 
-/**
- * GET /api/categories
- * Proxy to service-apis GET /api/v1/catalog/categories
- */
-export async function GET(request: NextRequest) {
+const SERVICE_APIS_BASE = process.env.SERVICE_APIS_BASE_URL || ''
+
+const MOCK_CATEGORIES = [
+  { name: 'CRM & Sales', count: 64 },
+  { name: 'Marketing Automation', count: 48 },
+  { name: 'Project Management', count: 72 },
+  { name: 'Analytics & Business Intelligence', count: 39 },
+  { name: 'Accounting & Finance', count: 31 },
+  { name: 'HR & Recruitment', count: 22 },
+  { name: 'Customer Support', count: 41 },
+  { name: 'Collaboration Tools', count: 56 },
+  { name: 'Security & Compliance', count: 18 },
+]
+
+export async function GET(_request: NextRequest) {
   try {
-    const ip = getClientIP(request)
-    const rateLimitResult = await rateLimit(ip)
-
-    if (!rateLimitResult.success) {
-      return createErrorResponse('RATE_LIMIT_EXCEEDED', 'Too many requests.', 429)
+    if (!SERVICE_APIS_BASE) {
+      return Response.json({ data: MOCK_CATEGORIES, total: MOCK_CATEGORIES.length })
     }
-
-    try {
-      const res = await serviceApisFetch('/api/v1/catalog/categories')
-
-      if (res.ok) {
-        const json = await res.json()
-        // Map taxonomy terms to {name, link} format expected by frontend
-        const categories = (json.terms || json.categories || []).map((term: { name: string; slug?: string; link?: string }) => ({
-          name: term.name,
-          link: term.link || term.slug ? `/products?category=${term.slug || term.name}` : undefined,
-        }))
-
-        return Response.json({
-          data: categories,
-          total: categories.length,
-        })
-      }
-
-      if (res.status === 404 || res.status === 400) {
-        // Endpoint not yet available
-      } else {
-        console.error('service-apis error:', res.status, await res.text())
-        return createErrorResponse('SERVICE_APIS_ERROR', 'Failed to fetch categories from catalog service', 502)
-      }
-    } catch (err) {
-      console.error('service-apis fetch failed:', err)
+    const response = await serviceApisFetch('/catalog/categories')
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      return normalizeServiceApisError(response, data)
     }
-
-    // Fallback: no mock categories (empty)
-    return Response.json({
-      data: [],
-      total: 0,
-    })
+    const items = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
+    return Response.json({ data: items, total: items.length })
   } catch (error) {
+    if (error instanceof Error) {
+      return createErrorResponse('INTERNAL_ERROR', error.message, 500)
+    }
     return handleApiError(error)
   }
 }
