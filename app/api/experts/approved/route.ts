@@ -22,14 +22,22 @@ export async function GET(request: NextRequest) {
       requireAuth: false,
     })
 
-    const data = await response.json()
+    const data = await response.json().catch(() => null)
 
     if (!response.ok) {
       return normalizeServiceApisError(response, data)
     }
 
+    const list = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.items)
+      ? data.items
+      : []
+
     return Response.json({
-      ...data,
+      data: list,
       rateLimit: {
         remaining: rateLimitResult.remaining,
         limit: rateLimitResult.limit,
