@@ -1,15 +1,14 @@
 import { NextRequest } from 'next/server'
-import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
+import { handleApiError, createErrorResponse, normalizeServiceApisError } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
+import { serviceApisFetch } from '@/lib/service-apis/client'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 3600
 
-const isSupabaseConfigured =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const SERVICE_APIS_BASE = process.env.SERVICE_APIS_BASE_URL || ''
 
 const mockProducts = [
-  { product_id: '1', product_name: 'Salesforce CRM', product_description: 'The world\'s #1 CRM platform.', rating: 4.5, reviews: 1243, product_logo: null },
+  { product_id: '1', product_name: 'Salesforce CRM', product_description: "The world's #1 CRM platform.", rating: 4.5, reviews: 1243, product_logo: null },
   { product_id: '2', product_name: 'HubSpot', product_description: 'All-in-one inbound marketing and CRM.', rating: 4.6, reviews: 987, product_logo: null },
   { product_id: '3', product_name: 'Slack', product_description: 'Business communication platform.', rating: 4.7, reviews: 2156, product_logo: null },
   { product_id: '4', product_name: 'Asana', product_description: 'Work management platform for teams.', rating: 4.4, reviews: 876, product_logo: null },
@@ -24,7 +23,6 @@ export async function GET(request: NextRequest) {
   try {
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
-
     if (!rateLimitResult.success) {
       return createErrorResponse('RATE_LIMIT_EXCEEDED', 'Too many requests.', 429)
     }
@@ -32,67 +30,38 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const q = searchParams.get('q') || searchParams.get('search') || ''
     const limitParam = parseInt(searchParams.get('limit') || '10')
+    const rateLimitInfo = { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit }
 
-    // Mock data fallback
-    if (!isSupabaseConfigured) {
+    if (!SERVICE_APIS_BASE) {
       const query = q.toLowerCase()
       const filtered = query
-        ? mockProducts.filter(p => p.product_name.toLowerCase().includes(query) || p.product_description.toLowerCase().includes(query))
+        ? mockProducts.filter((p) => p.product_name.toLowerCase().includes(query) || p.product_description.toLowerCase().includes(query))
         : mockProducts
       const products = filtered.slice(0, limitParam)
-
       return Response.json({
         query: q,
         type: 'all',
         totalResults: products.length,
         results: { products, companies: [] },
-        rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
+        rateLimit: rateLimitInfo,
       })
     }
 
-    // Real Supabase path
-    const { createClient } = await import('@/lib/supabase/server')
-    const { searchQuerySchema } = await import('@/lib/validations/api')
-
-    const queryParams = Object.fromEntries(searchParams.entries())
-    const validatedParams = searchQuerySchema.parse(queryParams)
-    const { q: vq, type, limit } = validatedParams
-
-    const supabase = await createClient()
-    const results: { products?: unknown[]; companies?: unknown[] } = {}
-
-    if (type === 'products' || type === 'all') {
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('product_id, product_name, product_description, rating, reviews, product_logo')
-        .or(`product_name.ilike.%${vq}%,product_description.ilike.%${vq}%,what_is.ilike.%${vq}%`)
-        .limit(limit)
-        .order('rating', { ascending: false })
-      if (!error) results.products = products || []
-    }
-
-    if (type === 'companies' || type === 'all') {
-      const { data: companies, error } = await supabase
-        .from('companies')
-        .select('company_id, name, website, location, employee_count')
-        .or(`name.ilike.%${vq}%,website.ilike.%${vq}%,location.ilike.%${vq}%`)
-        .limit(limit)
-        .order('name', { ascending: true })
-      if (!error) results.companies = companies || []
-    }
+    const res = await serviceApisFetch('/catalog/search', {
+      method: 'POST',
+      body: JSON.stringify({ query: q, limit: limitParam }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) return normalizeServiceApisError(res, data)
 
     return Response.json({
-      query: vq,
-      type,
-      totalResults: (results.products?.length || 0) + (results.companies?.length || 0),
-      results,
-      rateLimit: { remaining: rateLimitResult.remaining, limit: rateLimitResult.limit },
+      query: q,
+      type: 'all',
+      totalResults: data?.totalResults ?? data?.results?.products?.length ?? 0,
+      results: data?.results ?? data,
+      rateLimit: rateLimitInfo,
     })
   } catch (error) {
-    if (error instanceof Error && error.name === 'ZodError') {
-      return createErrorResponse('VALIDATION_ERROR', 'Invalid search query', 400, error)
-    }
     return handleApiError(error)
   }
 }
-
