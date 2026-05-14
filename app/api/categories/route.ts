@@ -28,8 +28,22 @@ export async function GET(_request: NextRequest) {
     if (!response.ok) {
       return normalizeServiceApisError(response, data)
     }
-    const items = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
-    return Response.json({ data: items, total: items.length })
+    const rawList: Array<Record<string, unknown>> = Array.isArray(data?.categories)
+      ? data.categories
+      : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+      ? data
+      : []
+    const items = rawList.map((c) => ({
+      name: (c.label as string) ?? (c.name as string) ?? (c.slug as string),
+      slug: (c.slug as string) ?? (c.term_id as string),
+      term_id: c.term_id,
+      taxonomy_type: c.taxonomy_type,
+      parent_term_id: c.parent_term_id,
+      count: c.count ?? null,
+    }))
+    return Response.json({ data: items, total: data?.count ?? items.length })
   } catch (error) {
     if (error instanceof Error) {
       return createErrorResponse('INTERNAL_ERROR', error.message, 500)

@@ -85,12 +85,34 @@ export async function GET(request: NextRequest) {
       return normalizeServiceApisError(response, data)
     }
 
+    const rawList: Array<Record<string, unknown>> = Array.isArray(data?.results)
+      ? data.results
+      : Array.isArray(data?.items)
+      ? data.items
+      : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+      ? data
+      : []
+
+    const normalized = rawList.map((p) => ({
+      product_id: p.product_id ?? p.id,
+      product_name: p.product_name ?? p.name,
+      product_description: p.product_description ?? p.short_description ?? p.what_is ?? null,
+      product_logo: p.product_logo ?? p.logo_url ?? null,
+      rating: p.rating ?? p.avg_rating ?? null,
+      reviews: p.reviews ?? p.total_reviews ?? null,
+      category: p.category ?? (p.primary_category ? { name: p.primary_category } : null),
+      slug: p.slug,
+      official_website: p.official_website,
+    }))
+
     return Response.json({
-      data: Array.isArray(data?.items) ? data.items : Array.isArray(data?.data) ? data.data : data,
+      data: normalized,
       pagination: data?.pagination ?? {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: data?.total ?? 0,
+        total: data?.count ?? data?.total ?? normalized.length,
       },
       rateLimit: rateLimitInfo,
     })

@@ -48,7 +48,25 @@ export async function GET(
       return normalizeServiceApisError(response, data)
     }
 
-    return Response.json({ data: data?.data ?? data, rateLimit: rateLimitInfo })
+    const raw = (data?.data ?? data) as Record<string, unknown> | null
+    if (!raw) {
+      return createErrorResponse('NOT_FOUND', 'Product not found', 404)
+    }
+    const normalized = {
+      ...raw,
+      product_id: raw.product_id ?? raw.id,
+      product_name: raw.product_name ?? raw.name,
+      product_description:
+        raw.product_description ?? raw.short_description ?? raw.what_is ?? null,
+      product_logo: raw.product_logo ?? raw.logo_url ?? null,
+      rating: raw.rating ?? raw.avg_rating ?? null,
+      reviews: raw.reviews ?? raw.total_reviews ?? null,
+      product_link: raw.product_link ?? raw.official_website ?? null,
+      category:
+        raw.category ?? (raw.primary_category ? { name: raw.primary_category } : null),
+    }
+
+    return Response.json({ data: normalized, rateLimit: rateLimitInfo })
   } catch (error) {
     return handleApiError(error)
   }
