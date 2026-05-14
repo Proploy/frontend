@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Loader2, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
+import ListingExplorer from '@/components/ListingExplorer'
 
 interface Expert {
   id: string
@@ -29,8 +30,9 @@ export default function ExpertsPage() {
 
   return (
     <div className="relative bg-white min-h-screen">
+      <ListingExplorer kind="experts" />
       {/* Hero */}
-      <section className="relative pt-[96px] pb-[64px] bg-[#fafbfc] overflow-x-clip">
+      <section className="relative pt-[96px] pb-[64px] bg-[#fafbfc] overflow-x-clip hidden">
         <div className="-translate-x-1/2 absolute h-[1440px] left-1/2 top-0 w-[1920px] pointer-events-none">
           <img
             alt=""

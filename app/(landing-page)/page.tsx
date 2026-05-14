@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InputField from '@/components/ui/InputField';
 import Button from '@/components/ui/Button';
+import { useProployAgent } from '@/components/agent/proploy-agent-context';
 
 const imgBitbucket = "/figma-assets/037e84947c2a4908a5313764d597a0d5a6a0f084.svg";
 const imgBorder = "/figma-assets/29599994635cb0e4374299477bfaf89fac007270.svg";
@@ -430,6 +431,45 @@ function CompanyLogo({ className, company = "3Portals", darkMode = false, logote
   );
 }
 
+function HeroSearch() {
+  const { setIsOpen, sendMessage } = useProployAgent();
+  const [query, setQuery] = React.useState('');
+
+  const handleSubmit = async () => {
+    setIsOpen(true);
+    const value = query.trim();
+    if (!value) return;
+    setQuery('');
+    await sendMessage(value);
+  };
+
+  return (
+    <>
+      <InputField
+        className="w-[480px] shrink-0"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <Button
+        variant="primary"
+        size="lg"
+        onClick={handleSubmit}
+        leadingIcon={
+          <div className="overflow-clip relative size-[20px]">
+            <div className="absolute inset-[12.5%]">
+              <div className="absolute inset-[-5.56%]">
+                <img alt="" className="block max-w-none size-full" src={imgIcon2} />
+              </div>
+            </div>
+          </div>
+        }
+      >
+        Find Your Software
+      </Button>
+    </>
+  );
+}
+
 export default function Landing() {
   const [activeTab, setActiveTab] = React.useState<0 | 1 | 2>(0);
 
@@ -444,7 +484,7 @@ export default function Landing() {
       <div className="-translate-x-1/2 absolute h-[1440px] left-1/2 top-0 w-[1920px]" data-name="Background pattern" data-node-id="2047:22656">
         <img alt="" className="absolute inset-0 max-w-none size-full object-cover opacity-80" src="/figma-assets/background-pattern.png" />
       </div>
-      <div className="content-stretch flex flex-col gap-[64px] items-center pt-[96px] relative shrink-0 w-full" data-name="Section" data-node-id="2047:5196">
+      <div className="content-stretch flex flex-col gap-[64px] items-center pt-[160px] relative shrink-0 w-full" data-name="Section" data-node-id="2047:5196">
         <div className="content-stretch flex flex-col gap-0 items-center max-w-[1280px] pl-[32px] pr-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="2047:5197">
           <div className="content-stretch flex flex-col gap-[48px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="2047:5198">
             <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[768px] relative shrink-0 text-center w-full" data-name="Heading and supporting text" data-node-id="2047:5199">
@@ -470,22 +510,7 @@ export default function Landing() {
             </div>
             <FadeUp delay={0.3}>
               <div className="content-stretch flex gap-[16px] items-start justify-center relative shrink-0 w-full" data-name="Email capture" data-node-id="2067:6075">
-                <InputField className="w-[480px] shrink-0" />
-                <Button
-                  variant="primary"
-                  size="lg"
-                  leadingIcon={
-                    <div className="overflow-clip relative size-[20px]">
-                      <div className="absolute inset-[12.5%]">
-                        <div className="absolute inset-[-5.56%]">
-                          <img alt="" className="block max-w-none size-full" src={imgIcon2} />
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  Find Your Software
-                </Button>
+                <HeroSearch />
             </div>
             </FadeUp>
           </div>
