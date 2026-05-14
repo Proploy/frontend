@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { DM_Sans, Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
+import ProployAgentShell from '@/components/agent/ProployAgentShell'
 import { AuthProvider } from '@/components/providers/auth-provider'
 
 import './globals.css'
@@ -33,8 +34,10 @@ export default function RootLayout({
     <html lang="en" className={`${dmSans.variable} ${inter.variable}`}>
       <body className="antialiased font-inter flex flex-col min-h-screen">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
+          <ProployAgentShell>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+          </ProployAgentShell>
         </AuthProvider>
       </body>
     </html>

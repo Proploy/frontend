@@ -1,188 +1,346 @@
-// Example Products Page using API Routes
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+import ListingExplorer from '@/components/ListingExplorer'
+import Footer from '@/components/Footer'
+
+const BUTTON_SKEUO_SHADOW =
+  'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
+
+const CATEGORIES = [
+  'View all',
+  'CRM & Sales',
+  'Marketing Automation',
+  'Project Management',
+  'Analytics & Business Intelligence',
+  'Accounting & Finance',
+  'HR & Recruitment',
+  'Customer Support',
+  'Collaboration Tools',
+  'Security & Compliance',
+]
 
 interface Product {
   product_id: string
   product_name: string
   product_description: string | null
-  rating: number | null
-  reviews: number | null
   product_logo: string | null
-  created_at: string
+  rating?: number | null
+  reviews?: number | null
 }
 
-interface ApiResponse {
-  data: Product[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-    hasNextPage: boolean
-    hasPreviousPage: boolean
-  }
-}
+const FALLBACK_PRODUCTS: Product[] = Array.from({ length: 15 }).map((_, i) => ({
+  product_id: `placeholder-${i}`,
+  product_name: 'The Product Name',
+  product_description:
+    'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.',
+  product_logo: null,
+  rating: 4.8,
+  reviews: 124,
+}))
 
-export default async function ProductsPage(props: {
-  searchParams: Promise<{ page?: string; search?: string; category?: string; minRating?: string }>
-}) {
- 
-  const searchParams = await props.searchParams
-  const page = searchParams.page || '1'
-  const search = searchParams.search || ''
-  const category = searchParams.category || ''
-  const minRating = searchParams.minRating || ''
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('View all')
+  const [visible, setVisible] = useState(15)
+  const [contact, setContact] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    message: '',
+    consent: false,
+  })
 
-  // Build API URL - Use absolute URL for server-side fetch
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const apiUrl = new URL('/api/products', baseUrl)
-  apiUrl.searchParams.set('page', page)
-  apiUrl.searchParams.set('limit', '20')
-  if (search) apiUrl.searchParams.set('search', search)
-  if (category) apiUrl.searchParams.set('category', category)
-  if (minRating) apiUrl.searchParams.set('minRating', minRating)
-
-  // Fetch data from API route
-  let result: ApiResponse | null = null
-  let error: string | null = null
-
-  try {
-    // For server components, we can also fetch directly from Supabase
-    // But using API route is good for consistency and rate limiting
-    const response = await fetch(apiUrl.toString(), {
-      next: { revalidate: 3600 }, // Revalidate every hour (ISR)
-      cache: 'force-cache', // Cache the response
-    })
-
-    if (!response.ok) {
-      error = `Failed to fetch products: ${response.statusText}`
-    } else {
-      result = await response.json()
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch('/api/products?limit=30')
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data?.data) && data.data.length > 0) {
+            setProducts(data.data)
+          } else {
+            setProducts(FALLBACK_PRODUCTS)
+          }
+        } else {
+          setProducts(FALLBACK_PRODUCTS)
+        }
+      } catch {
+        setProducts(FALLBACK_PRODUCTS)
+      } finally {
+        setLoading(false)
+      }
     }
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'An error occurred'
-  }
+    fetchProducts()
+  }, [])
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-red-600">Error: {error}</div>
-      </div>
-    )
-  }
-
-  if (!result) {
-    return (
-      <div className="container mx-auto p-4">
-        <div>Loading...</div>
-      </div>
-    )
-  }
+  const filtered = useMemo(() => products, [products])
+  const cards = filtered.slice(0, visible)
 
   return (
-    <div className="container mx-auto p-4 max-w-7xl">
-      <h1 className="text-4xl font-bold mb-6">Products</h1>
+    <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] flex flex-col">
+      <ListingExplorer kind="products" />
 
-      {/* Search and Filters */}
-      <div className="mb-6 space-y-4">
-        <form className="flex gap-2">
-          <input
-            type="text"
-            name="search"
-            placeholder="Search products..."
-            defaultValue={search}
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="number"
-            name="minRating"
-            placeholder="Min Rating"
-            defaultValue={minRating}
-            min="0"
-            max="5"
-            step="0.1"
-            className="w-32 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+      <section className="py-[96px]">
+        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
+          <div className="max-w-[768px] mx-auto flex flex-col gap-[20px] text-center">
+            <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
+              Close more deals, stress less.
+            </h2>
+            <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
+              Hear first-hand from our incredible community of customers.
+            </p>
+          </div>
+
+          {/* Category filter tabs */}
+          <div className="flex flex-wrap justify-center gap-[8px]">
+            {CATEGORIES.map((cat) => {
+              const active = cat === activeCategory
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors ${
+                    active
+                      ? 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
+                      : 'text-[#717680] hover:text-[#414651]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Product card grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-[96px]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]">
+              {cards.map((p, idx) => (
+                <ProductCard key={p.product_id} product={p} highlightIndex={idx} />
+              ))}
+            </div>
+          )}
+
+          {visible < filtered.length && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisible((v) => v + 9)}
+                className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}
+              >
+                View more
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Contact section */}
+      <section className="py-[96px] bg-[#fafafa]">
+        <div className="max-w-[768px] mx-auto px-[32px] flex flex-col gap-[32px]">
+          <div className="flex flex-col items-center gap-[12px] text-center">
+            <p className="font-semibold text-[16px] leading-[24px] text-[#004eeb]">Contact us</p>
+            <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
+              Can&apos;t See Your Product?
+            </h2>
+            <p className="font-normal text-[16px] leading-[24px] text-[#535862] max-w-[560px]">
+              We&apos;re constantly expanding and would love to hear from you. Tell us what&apos;s missing.
+              We&apos;ll reach out when it&apos;s live or connect you with an expert who can help.
+            </p>
+          </div>
+
+          <form
+            className="flex flex-col gap-[24px] bg-white rounded-[16px] border border-[#e9eaeb] p-[32px]"
+            onSubmit={(e) => {
+              e.preventDefault()
+              // submit hook placeholder
+              alert('Thanks — Proploy will reach out shortly.')
+            }}
           >
-            Search
-          </button>
-        </form>
-      </div>
-
-      {/* Results Count */}
-      <p className="text-gray-600 mb-4">
-        Showing {result.data.length} of {result.pagination.total} products
-      </p>
-
-      {/* Products Grid */}
-      {result.data.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No products found</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {result.data.map((product) => (
-            <Link
-              key={product.product_id}
-              href={`/products/${product.product_id}`}
-              className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
+              <LabeledInput label="First name" value={contact.firstName} onChange={(v) => setContact((c) => ({ ...c, firstName: v }))} placeholder="First name" />
+              <LabeledInput label="Last name" value={contact.lastName} onChange={(v) => setContact((c) => ({ ...c, lastName: v }))} placeholder="Last name" />
+            </div>
+            <LabeledInput label="Email" type="email" value={contact.email} onChange={(v) => setContact((c) => ({ ...c, email: v }))} placeholder="you@company.com" required />
+            <LabeledInput label="Phone number" value={contact.phone} onChange={(v) => setContact((c) => ({ ...c, phone: v }))} placeholder="+1 (555) 000-0000" />
+            <div className="flex flex-col gap-[6px]">
+              <label className="font-medium text-[14px] leading-[20px] text-[#414651]">Message</label>
+              <textarea
+                value={contact.message}
+                onChange={(e) => setContact((c) => ({ ...c, message: e.target.value }))}
+                placeholder="Tell us about the product you can&apos;t find"
+                className="h-[124px] resize-none border border-[#d5d7da] rounded-[8px] px-[14px] py-[12px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#0466e7]/30 focus:border-[#0466e7]"
+              />
+            </div>
+            <label className="flex items-start gap-[8px] font-normal text-[14px] leading-[20px] text-[#535862]">
+              <input
+                type="checkbox"
+                checked={contact.consent}
+                onChange={(e) => setContact((c) => ({ ...c, consent: e.target.checked }))}
+                className="mt-[2px]"
+              />
+              You agree to our friendly{' '}
+              <Link href="#" className="underline">
+                privacy policy
+              </Link>
+              .
+            </label>
+            <button
+              type="submit"
+              className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] py-[12px] font-semibold text-[16px] leading-[24px] text-white ${BUTTON_SKEUO_SHADOW}`}
             >
-              {product.product_logo && (
-                <img
-                  src={product.product_logo}
-                  alt={product.product_name}
-                  className="w-20 h-20 mb-4 object-contain"
-                />
-              )}
-              <h2 className="text-xl font-semibold mb-2">{product.product_name}</h2>
-              <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                {product.product_description || 'No description available'}
-              </p>
-              <div className="flex items-center justify-between">
-                <div>
-                  {product.rating && (
-                    <span className="text-yellow-500 font-semibold">
-                      ⭐ {product.rating.toFixed(1)}
-                    </span>
-                  )}
-                  {product.reviews && (
-                    <span className="text-gray-500 ml-2">({product.reviews} reviews)</span>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
+              Send message
+            </button>
+          </form>
         </div>
-      )}
+      </section>
 
-      {/* Pagination */}
-      {result.pagination.totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          {result.pagination.hasPreviousPage && (
-            <Link
-              href={`/products?page=${result.pagination.page - 1}${search ? `&search=${search}` : ''}${category ? `&category=${category}` : ''}${minRating ? `&minRating=${minRating}` : ''}`}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Previous
-            </Link>
-          )}
-          <span className="px-4 py-2 text-gray-600">
-            Page {result.pagination.page} of {result.pagination.totalPages}
-          </span>
-          {result.pagination.hasNextPage && (
-            <Link
-              href={`/products?page=${result.pagination.page + 1}${search ? `&search=${search}` : ''}${category ? `&category=${category}` : ''}${minRating ? `&minRating=${minRating}` : ''}`}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Next
-            </Link>
-          )}
+      {/* Newsletter CTA */}
+      <section className="py-[96px] bg-[#0040c1]">
+        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-wrap gap-[32px] items-start">
+          <div className="flex-1 min-w-[420px] max-w-[768px] flex flex-col gap-[20px]">
+            <h2 className="font-semibold text-[36px] leading-[44px] text-white tracking-[-0.72px]">
+              Transform Your Software Procurement Strategy
+            </h2>
+            <p className="font-normal text-[20px] leading-[30px] text-[#b2ccff]">
+              Join leading enterprises that have modernised their procurement operations and achieved consistent,
+              high-success implementation outcomes.
+            </p>
+          </div>
+          <form
+            className="w-[480px] max-w-full flex flex-col gap-[6px]"
+            onSubmit={(e) => {
+              e.preventDefault()
+              alert('Subscribed.')
+            }}
+          >
+            <div className="flex gap-[16px]">
+              <input
+                type="email"
+                required
+                placeholder="Enter your email"
+                className="flex-1 bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[12px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]"
+              />
+              <button
+                type="submit"
+                className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-white ${BUTTON_SKEUO_SHADOW}`}
+              >
+                Subscribe
+              </button>
+            </div>
+            <p className="font-normal text-[14px] leading-[20px] text-[#b2ccff]">
+              We care about your data in our{' '}
+              <Link href="#" className="underline">
+                privacy policy
+              </Link>
+              .
+            </p>
+          </form>
         </div>
-      )}
+      </section>
+
+      <Footer />
     </div>
   )
 }
 
+const HIGHLIGHT_BADGES = [
+  { label: '+24% Sales Increase', tone: 'blue' },
+  { label: '3× Faster Rollout', tone: 'indigo' },
+  { label: '40 hrs / week saved', tone: 'success' },
+  { label: 'CFO-ready ROI', tone: 'pink' },
+  { label: 'Cuts vendor sprawl', tone: 'brand' },
+]
+
+const HIGHLIGHT_STYLES: Record<string, string> = {
+  blue: 'bg-[#eff8ff] border-[#b2ddff] text-[#175cd3] dot-[#1570ef]',
+  indigo: 'bg-[#eef4ff] border-[#c7d7fe] text-[#3538cd] dot-[#444ce7]',
+  success: 'bg-[#ecfdf3] border-[#abefc6] text-[#067647] dot-[#079455]',
+  pink: 'bg-[#fdf2fa] border-[#fcceee] text-[#c11574] dot-[#dd2590]',
+  brand: 'bg-[#eff4ff] border-[#b2ccff] text-[#004eeb] dot-[#155eef]',
+}
+
+function ProductCard({ product, highlightIndex }: { product: Product; highlightIndex: number }) {
+  const highlight = HIGHLIGHT_BADGES[highlightIndex % HIGHLIGHT_BADGES.length]
+  const tone = HIGHLIGHT_STYLES[highlight.tone]
+  return (
+    <article className="bg-white border border-[#e9eaeb] rounded-[12px] p-[32px] flex flex-col gap-[36px]">
+      <div className="flex flex-col gap-[12px]">
+        <div className="flex items-start justify-between">
+          <div className={`size-[48px] rounded-[10px] border border-[#d5d7da] bg-white flex items-center justify-center text-[#155eef] font-bold text-[18px] ${BUTTON_SKEUO_SHADOW}`}>
+            {product.product_name?.charAt(0) ?? 'P'}
+          </div>
+          <span className={`inline-flex items-center gap-[6px] rounded-full border px-[10px] py-[2px] font-medium text-[14px] leading-[20px] ${tone}`}>
+            <span className="size-[6px] rounded-full bg-current" />
+            {highlight.label}
+          </span>
+        </div>
+        <Link
+          href={`/product/${product.product_id}`}
+          className="font-semibold text-[18px] leading-[28px] text-[#181d27] hover:text-[#0466e7]"
+        >
+          {product.product_name}
+        </Link>
+        <p className="font-normal text-[16px] leading-[24px] text-[#535862] line-clamp-4">
+          {product.product_description || 'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.'}
+        </p>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex -space-x-[8px]">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="size-[32px] rounded-full border-[1.5px] border-white bg-gradient-to-br from-[#cfcbdc] to-[#d7e3e8]"
+            />
+          ))}
+        </div>
+        <Link
+          href={`/product/${product.product_id}`}
+          className="inline-flex items-center gap-[4px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
+        >
+          Learn More
+          <ArrowRight size={16} />
+        </Link>
+      </div>
+    </article>
+  )
+}
+
+function LabeledInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  required,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  type?: string
+  required?: boolean
+}) {
+  return (
+    <div className="flex flex-col gap-[6px]">
+      <label className="font-medium text-[14px] leading-[20px] text-[#414651]">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        className="border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#0466e7]/30 focus:border-[#0466e7]"
+      />
+    </div>
+  )
+}

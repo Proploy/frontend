@@ -1,32 +1,83 @@
 'use client'
 
-import { useMemo } from 'react'
-import { Bot, ChevronRight, MessageSquare, Sparkles, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import type { ComponentType, FormEvent, KeyboardEvent } from 'react'
+import {
+  BarChart3,
+  Edit3,
+  FileText,
+  ImagePlus,
+  Paperclip,
+  Smile,
+  Sparkles,
+  X,
+  Zap,
+} from 'lucide-react'
 
+import { useAuth } from '@/components/providers/auth-provider'
 import { useProployAgent } from './proploy-agent-context'
 
-function getQuickPrompts(pageType: string, productName?: string) {
+type QuickPrompt = {
+  label: string
+  icon: ComponentType<{ className?: string }>
+  prompt: string
+}
+
+function getQuickPrompts(pageType: string, productName?: string): QuickPrompt[] {
   if (pageType === 'product' && productName) {
     return [
-      `Would ${productName} work for a small team?`,
-      `What would implementation look like for ${productName}?`,
-      `Show me the best alternatives to ${productName}.`,
+      { label: 'Fit check', icon: ImagePlus, prompt: `Would ${productName} work for a small team?` },
+      { label: 'Implementation', icon: Zap, prompt: `What would implementation look like for ${productName}?` },
+      { label: 'Alternatives', icon: BarChart3, prompt: `Show me the best alternatives to ${productName}.` },
+      { label: 'Pricing', icon: FileText, prompt: `Summarize ${productName} pricing tiers.` },
+      { label: 'Compare', icon: Edit3, prompt: `Compare ${productName} to its top 3 competitors.` },
+      { label: 'More', icon: Sparkles, prompt: `Tell me more about ${productName}.` },
     ]
   }
 
   if (pageType === 'catalog') {
     return [
-      'I need software for HR in India',
-      'Compare the top options for a 40-person team',
-      'Which tool is easiest to implement quickly?',
+      { label: 'Find software', icon: ImagePlus, prompt: 'I need software for HR in India' },
+      { label: 'Compare options', icon: BarChart3, prompt: 'Compare the top options for a 40-person team' },
+      { label: 'Quickest deploy', icon: Zap, prompt: 'Which tool is easiest to implement quickly?' },
+      { label: 'Summarize', icon: FileText, prompt: 'Summarize my current shortlist' },
+      { label: 'Help me write', icon: Edit3, prompt: 'Help me write an RFP brief' },
+      { label: 'More', icon: Sparkles, prompt: 'What else should I consider?' },
     ]
   }
 
   return [
-    'I need help choosing software for my business',
-    'Shortlist the best fit from what I am looking at',
-    'What should I ask before making a decision?',
+    { label: 'Create image', icon: ImagePlus, prompt: 'Create an image of...' },
+    { label: 'Analyze data', icon: BarChart3, prompt: 'Help me analyze some data' },
+    { label: 'Make a plan', icon: Zap, prompt: 'Help me make a plan for...' },
+    { label: 'Summarize text', icon: FileText, prompt: 'Summarize this text for me' },
+    { label: 'Help me write', icon: Edit3, prompt: 'Help me write...' },
+    { label: 'More', icon: Sparkles, prompt: 'What else can you help with?' },
   ]
+}
+
+function TypingDots() {
+  return (
+    <div className="flex items-end gap-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="block h-1 w-1 rounded-full bg-gray-500 animate-bounce"
+          style={{ animationDelay: `${i * 140}ms`, animationDuration: '900ms' }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <div className="h-px flex-1 bg-gray-200" />
+      <p className="text-sm-medium text-gray-600">{label}</p>
+      <div className="h-px flex-1 bg-gray-200" />
+    </div>
+  )
 }
 
 export default function ProployResearchPanel() {
@@ -39,204 +90,221 @@ export default function ProployResearchPanel() {
     isSending,
     lastError,
     recommendations,
-    lastAnswer,
   } = useProployAgent()
+  const { user } = useAuth()
 
-  const quickPrompts = useMemo(
-    () => getQuickPrompts(pageContext.pageType, pageContext.productName),
-    [pageContext.pageType, pageContext.productName]
-  )
+  const [draft, setDraft] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
+  const quickPrompts = getQuickPrompts(pageContext.pageType, pageContext.productName)
+
+  useEffect(() => {
+    if (!scrollRef.current) return
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  }, [messages.length, isSending])
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const value = draft.trim()
+    if (!value || isSending) return
+    setDraft('')
+    await sendMessage(value)
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      event.currentTarget.form?.requestSubmit()
+    }
+  }
 
   const handleQuickPrompt = async (prompt: string) => {
+    if (isSending) return
     await sendMessage(prompt)
-    setIsOpen(true)
   }
+
+  const isEmpty = messages.length === 0
 
   return (
     <>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-[90] flex items-center gap-3 rounded-full border border-white/10 bg-[#081120] px-4 py-3 text-white shadow-[0_16px_40px_rgba(8,17,32,0.35)] backdrop-blur-xl transition-transform hover:scale-[1.02]"
+        aria-label="Open Proploy Chatbot"
+        className={`fixed bottom-6 right-6 z-[90] flex items-center gap-2 rounded-full bg-brand-700 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,78,235,0.35)] transition-all duration-200 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
+          isOpen ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+        }`}
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#4D9CFF] to-[#0466E7]">
-          <Sparkles className="h-4 w-4" />
-        </span>
-        <span className="hidden text-sm font-semibold md:inline">Research</span>
+        <Sparkles className="h-4 w-4" />
+        <span className="text-sm-semibold">Ask Proploy</span>
       </button>
 
+      <div
+        onClick={() => setIsOpen(false)}
+        aria-hidden
+        className={`fixed inset-0 z-[94] bg-black/10 transition-opacity duration-200 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
       <aside
-        className={`fixed right-0 top-0 z-[95] h-dvh w-full border-l border-white/10 bg-[#07101E] text-white shadow-2xl transition-transform duration-300 ease-out md:w-[420px] ${
+        aria-hidden={!isOpen}
+        className={`fixed right-0 top-0 z-[95] flex h-dvh w-full max-w-[432px] flex-col overflow-hidden border-l border-gray-200 bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.18)] transition-transform duration-300 ease-out font-[family-name:var(--font-dm-sans)] ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(70,132,255,0.22),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(5,101,231,0.18),_transparent_28%)]" />
+        <div className="flex items-center gap-4 border-b border-gray-200 px-6 pt-5 pb-5">
+          <p className="flex-1 min-w-0 text-lg-semibold text-gray-900">Proploy Chatbot</p>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+            aria-label="Close chatbot"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-        <div className="relative flex h-full flex-col">
-          <header className="border-b border-white/10 px-5 py-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#9CC3FF]">
-                  <Bot className="h-3.5 w-3.5" />
-                  Proploy Research Agent
+        <div
+          ref={scrollRef}
+          className={`flex-1 overflow-y-auto bg-white px-6 ${
+            isEmpty ? 'flex flex-col items-center justify-center' : 'pt-6 pb-6'
+          }`}
+        >
+          {isEmpty ? (
+            <div className="flex w-full flex-col items-center gap-8 px-4 py-6">
+              <div className="flex flex-col items-center gap-5 w-full">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 shadow-[0_8.5px_11.4px_-2.9px_rgba(10,13,18,0.08),0_2.9px_4.3px_-1.4px_rgba(10,13,18,0.03),0_1.4px_1.4px_-0.7px_rgba(10,13,18,0.04)]">
+                  <Sparkles className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-lg font-bold tracking-tight">Context-aware software research</h2>
-                <p className="mt-1 text-sm text-slate-300">
-                  Page-aware, memory-backed, and ready to narrow the shortlist.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition-colors hover:bg-white/10"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200">
-                {pageContext.pageType}
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200">
-                {pageContext.route}
-              </span>
-              {pageContext.productName ? (
-                <span className="rounded-full border border-[#4D9CFF]/30 bg-[#4D9CFF]/10 px-3 py-1 text-[#CFE2FF]">
-                  {pageContext.productName}
-                </span>
-              ) : null}
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-y-auto px-5 py-5">
-            {messages.length === 0 ? (
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-                <p className="text-sm leading-6 text-slate-200">
-                  Ask me what software fits your business. I will use the current page context, what you
-                  have told me before, and a retrieval shortlist to keep the answer grounded.
-                </p>
-
-                <div className="mt-4 space-y-2">
-                  {quickPrompts.map((prompt) => (
-                    <button
-                      type="button"
-                      key={prompt}
-                      onClick={() => handleQuickPrompt(prompt)}
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0B1628] px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-[#4D9CFF]/40 hover:bg-[#0E1A30]"
-                    >
-                      <span>{prompt}</span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-[#8FB7FF]" />
-                    </button>
-                  ))}
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className="flex flex-col w-full">
+                    <p className="text-md-semibold text-gray-500">Hi {firstName},</p>
+                    <p className="text-md-semibold text-gray-900">Welcome back! How can I help?</p>
+                  </div>
+                  <p className="text-sm-regular text-gray-600">
+                    I&apos;m here to help tackle your tasks. Choose from the prompts below or tell me what you need!
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
+
+              <div className="flex flex-wrap items-start justify-center gap-2 w-full">
+                {quickPrompts.map(({ label, icon: Icon, prompt }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => handleQuickPrompt(prompt)}
+                    disabled={isSending}
+                    className="flex items-center gap-1 rounded-md border border-gray-300 bg-white pl-2 pr-2.5 py-1 shadow-[0_1px_2px_rgba(10,13,18,0.05)] transition-colors hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Icon className="h-3 w-3 text-gray-700" />
+                    <span className="text-sm-medium text-gray-700">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 pb-4">
+              <SectionDivider label="Today" />
+
+              {messages.map((message) => {
+                const isUser = message.role === 'user'
+                return (
                   <div
                     key={message.id}
-                    className={`rounded-[24px] border px-4 py-4 ${
-                      message.role === 'user'
-                        ? 'ml-6 border-[#4D9CFF]/20 bg-[#0B1E3B] text-slate-100'
-                        : 'mr-2 border-white/10 bg-white/5 text-slate-100'
-                    }`}
+                    className={`flex w-full ${isUser ? 'justify-end pl-8' : 'pr-8'}`}
                   >
-                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      {message.role}
+                    <div
+                      className={`max-w-[312px] rounded-md border border-gray-200 px-3 py-2 ${
+                        isUser ? 'bg-white rounded-tr-none' : 'bg-gray-50 rounded-tl-none'
+                      }`}
+                    >
+                      <p className="text-md-regular text-gray-900 whitespace-pre-wrap">
+                        {message.content}
+                      </p>
                     </div>
-                    <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
                   </div>
-                ))}
+                )
+              })}
 
-                {lastError ? (
-                  <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-100">
-                    {lastError}
+              {isSending ? (
+                <div className="flex pr-8">
+                  <div className="rounded-md rounded-tl-none border border-gray-200 bg-gray-50 px-2.5 py-2.5">
+                    <TypingDots />
                   </div>
-                ) : null}
+                </div>
+              ) : null}
 
-                {recommendations.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                      Shortlist
-                    </div>
-                    {recommendations.map((item) => (
-                      <div
-                        key={String(item.product_id)}
-                        className="rounded-[24px] border border-white/10 bg-white/5 p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-base font-semibold text-white">
-                              {String(item.product_name)}
-                            </h3>
-                            <p className="mt-1 text-sm leading-6 text-slate-300">
-                              {String(item.why_it_fits || '')}
-                            </p>
-                          </div>
-                          <div className="rounded-full border border-[#4D9CFF]/20 bg-[#4D9CFF]/10 px-3 py-1 text-xs font-bold text-[#CFE2FF]">
-                            {String(item.fit_score ?? 0)}
-                          </div>
-                        </div>
+              {lastError ? (
+                <div className="rounded-md border border-error-200 bg-error-50 px-3 py-2 text-sm-regular text-error-700">
+                  {lastError}
+                </div>
+              ) : null}
 
-                        <div className="mt-3 grid gap-2 text-xs text-slate-300">
-                          <div>
-                            <span className="font-semibold text-slate-100">Not for:</span>{' '}
-                            {String(item.not_for || '')}
-                          </div>
-                          <div>
-                            <span className="font-semibold text-slate-100">Complexity:</span>{' '}
-                            {String(item.implementation_complexity || '')}
-                          </div>
-                          <div>
-                            <span className="font-semibold text-slate-100">Timeline:</span>{' '}
-                            {String(item.estimated_timeline || '')}
-                          </div>
-                        </div>
+              {recommendations.length > 0 ? (
+                <div className="flex flex-col gap-2 pt-2">
+                  <p className="text-sm-semibold text-gray-700">Shortlist</p>
+                  {recommendations.map((item, index) => (
+                    <div
+                      key={String(item.product_id ?? index)}
+                      className="rounded-md border border-gray-200 bg-white p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm-semibold text-gray-900">
+                          {String(item.product_name ?? 'Untitled')}
+                        </p>
+                        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs-semibold text-brand-700">
+                          {String(item.fit_score ?? 0)}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            )}
+                      {item.why_it_fits ? (
+                        <p className="mt-1 text-sm-regular text-gray-600">
+                          {String(item.why_it_fits)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
 
-            {lastAnswer && messages.length > 0 ? (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs leading-6 text-slate-300">
-                <span className="font-semibold text-slate-100">Latest answer:</span> {lastAnswer}
-              </div>
-            ) : null}
-          </div>
-
-          <footer className="border-t border-white/10 p-4">
-            <form
-              className="space-y-3"
-              onSubmit={async (event) => {
-                event.preventDefault()
-                const form = event.currentTarget
-                const formData = new FormData(form)
-                const value = String(formData.get('prompt') || '')
-                if (!value.trim()) return
-                form.reset()
-                await sendMessage(value)
-              }}
-            >
-              <textarea
-                name="prompt"
-                rows={3}
-                placeholder="Ask the agent what to choose, what to compare, or what to rule out..."
-                className="w-full resize-none rounded-[20px] border border-white/10 bg-[#091423] px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-[#4D9CFF]/50"
-              />
+        <div className="border-t border-gray-200 bg-white px-6 pt-5 pb-6">
+          <form onSubmit={handleSubmit} className="relative h-32">
+            <textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message"
+              disabled={isSending}
+              className="block h-full w-full resize-none rounded-md border border-gray-300 bg-white px-3.5 py-3 pb-12 text-md-regular text-gray-900 placeholder:text-gray-500 shadow-[0_1px_2px_rgba(10,13,18,0.05)] outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:bg-gray-50"
+            />
+            <div className="absolute bottom-2 right-3.5 flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Attach file"
+                className="flex h-7 w-7 items-center justify-center rounded-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Add emoji"
+                className="flex h-7 w-7 items-center justify-center rounded-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+              >
+                <Smile className="h-4 w-4" />
+              </button>
               <button
                 type="submit"
-                disabled={isSending}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#4D9CFF] to-[#0466E7] px-4 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isSending || !draft.trim()}
+                className="px-1 text-sm-semibold text-brand-700 transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {isSending ? 'Researching...' : 'Ask Proploy'}
+                {isSending ? 'Sending…' : 'Send'}
               </button>
-            </form>
-          </footer>
+            </div>
+          </form>
         </div>
       </aside>
     </>
