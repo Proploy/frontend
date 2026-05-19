@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalog UI Hardening — Slice 0 Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; color: #181d27; line-height: 1.6; }
+    .container { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+    header { margin-bottom: 48px; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: #535862; font-size: 15px; }
+    .meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+    .meta-item { font-size: 13px; color: #717680; }
+    .meta-item strong { color: #414651; }
+
+    .card { background: white; border: 1px solid #e9eaeb; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6; }
+    h3 { font-size: 14px; font-weight: 600; color: #414651; margin-bottom: 8px; margin-top: 20px; }
+    p { font-size: 14px; color: #535862; margin-bottom: 12px; }
+
+    .commit { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f3f4f6; align-items: flex-start; }
+    .commit:last-child { border-bottom: none; }
+    .commit-hash { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; color: #155eef; white-space: nowrap; }
+    .commit-msg { font-size: 14px; font-weight: 500; color: #181d27; flex: 1; }
+    .commit-files { font-size: 12px; color: #717680; margin-top: 4px; }
+
+    .file-list { display: flex; flex-direction: column; gap: 8px; }
+    .file-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .file-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+    .badge-contract { background: #eef4ff; color: #3538cd; }
+    .badge-viewmodel { background: #ecfdf3; color: #067647; }
+    .badge-mapper { background: #fdf2fa; color: #c11574; }
+    .badge-hook { background: #fff7ed; color: #c2410c; }
+    .badge-component { background: #f0f9ff; color: #0369a1; }
+    .badge-page { background: #f9fafb; color: #414651; border: 1px solid #e9eaeb; }
+    .file-path { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; color: #535862; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; background: #f9fafb; border-bottom: 1px solid #e9eaeb; font-weight: 600; color: #414651; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+    td code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
+    td p { margin: 0; }
+
+    .status-done { color: #067647; font-weight: 600; }
+    .status-pending { color: #717680; }
+
+    .rule-card { background: #f9fafb; border: 1px solid #e9eaeb; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .rule-title { font-size: 13px; font-weight: 600; color: #181d27; margin-bottom: 4px; }
+    .rule-desc { font-size: 12px; color: #535862; }
+
+    .divider { border: none; border-top: 1px solid #e9eaeb; margin: 32px 0; }
+
+    .architecture-diagram { background: #f9fafb; border: 1px solid #e9eaeb; border-radius: 8px; padding: 24px; margin: 16px 0; }
+    .arch-layer { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .arch-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #717680; width: 80px; }
+    .arch-box { font-size: 12px; padding: 6px 12px; border-radius: 6px; font-weight: 500; }
+    .arch-contract { background: #eef4ff; color: #3538cd; }
+    .arch-viewmodel { background: #ecfdf3; color: #067647; }
+    .arch-hook { background: #fff7ed; color: #c2410c; }
+    .arch-component { background: #f0f9ff; color: #0369a1; }
+
+    .warning-note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #c2410c; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Catalog UI Hardening — Implementation Report</h1>
+      <p class="subtitle">Public catalog read path migration — Slice 0 (Tasks 1–3)</p>
+      <div class="meta">
+        <span class="meta-item"><strong>Date:</strong> 2026-05-16</span>
+        <span class="meta-item"><strong>Branch:</strong> api-routes</span>
+        <span class="meta-item"><strong>Status:</strong> Tasks 1–3 complete</span>
+        <span class="meta-item"><strong>Commits:</strong> 3</span>
+      </div>
+    </header>
+
+    <!-- Commits -->
+    <div class="card">
+      <h2>Commits</h2>
+      <div class="commit">
+        <span class="commit-hash">fa7331e</span>
+        <div>
+          <div class="commit-msg">feat(frontend): add catalog contract types mirroring service-apis schemas</div>
+          <div class="commit-files">hooks/types/catalog-contracts.ts</div>
+        </div>
+      </div>
+      <div class="commit">
+        <span class="commit-hash">e2ca63d</span>
+        <div>
+          <div class="commit-msg">feat(frontend): add catalog view model types for UI consumption</div>
+          <div class="commit-files">hooks/types/catalog-view-models.ts</div>
+        </div>
+      </div>
+      <div class="commit">
+        <span class="commit-hash">5983f4a</span>
+        <div>
+          <div class="commit-msg">feat(frontend): add catalog mappers converting backend contracts to UI view models</div>
+          <div class="commit-files">hooks/mappers/catalog-mappers.ts</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Inventory -->
+    <div class="card">
+      <h2>File Inventory</h2>
+      <div class="file-list">
+        <div class="file-item">
+          <span class="file-badge badge-contract">contract</span>
+          <span class="file-path">hooks/types/catalog-contracts.ts</span>
+          <span style="font-size:12px;color:#717680;">Backend schema mirror — ProductSummary, ProductListResponse, CatalogProductDetail, CatalogSearchRequest, CatalogSearchResponse, PricingPlansResponse, RatingsResponse, CatalogAlternativesResponse, CategoriesResponse</span>
+        </div>
+        <div class="file-item">
+          <span class="file-badge badge-viewmodel">view-model</span>
+          <span class="file-path">hooks/types/catalog-view-models.ts</span>
+          <span style="font-size:12px;color:#717680;">UI types — CardProduct, ProductPageModel, PricingTier, ReviewSource, AlternativeProduct, CategoryFilter, Pagination</span>
+        </div>
+        <div class="file-item">
+          <span class="file-badge badge-mapper">mapper</span>
+          <span class="file-path">hooks/mappers/catalog-mappers.ts</span>
+          <span style="font-size:12px;color:#717680;">9 mapper functions: mapProductSummaryToCardProduct, mapProductListResponseToPage, mapSearchResultToCardProduct, mapCatalogSearchResponseToResults, mapPricingPlanResponseToTier, mapRatingResponseToReviewSource, mapAlternativesResponseToProducts, mapCatalogProductDetailToPageModel, mapCategoriesResponseToFilters</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="card">
+      <h2>Three-Layer Architecture</h2>
+      <div class="architecture-diagram">
+        <div class="arch-layer">
+          <span class="arch-label">Backend</span>
+          <span class="arch-box arch-contract">service-apis (FastAPI)</span>
+          <span style="font-size:12px;color:#717680;">returns: count/results, semantic_query, short_description, avg_rating</span>
+        </div>
+        <div style="font-size:11px;color:#717680;margin-left:92px;margin-bottom:8px;">↓ raw JSON</div>
+        <div class="arch-layer">
+          <span class="arch-label">Contract</span>
+          <span class="arch-box arch-contract">catalog-contracts.ts</span>
+          <span style="font-size:12px;color:#717680;">Backend field names preserved exactly. No UI assumptions.</span>
+        </div>
+        <div style="font-size:11px;color:#717680;margin-left:92px;margin-bottom:8px;">↓ mappers</div>
+        <div class="arch-layer">
+          <span class="arch-label">View Model</span>
+          <span class="arch-box arch-viewmodel">catalog-view-models.ts</span>
+          <span style="font-size:12px;color:#717680;">UI-friendly names: product_description, rating, reviews.</span>
+        </div>
+        <div style="font-size:11px;color:#717680;margin-left:92px;margin-bottom:8px;">↓ hooks return view models</div>
+        <div class="arch-layer">
+          <span class="arch-label">Hooks</span>
+          <span class="arch-box arch-hook">use-catalog-*.ts</span>
+          <span style="font-size:12px;color:#717680;">useCatalogProducts, useCatalogSearch, useCatalogCategories, useProductDetail</span>
+        </div>
+        <div style="font-size:11px;color:#717680;margin-left:92px;margin-bottom:8px;">↓ view model data</div>
+        <div class="arch-layer">
+          <span class="arch-label">UI</span>
+          <span class="arch-box arch-component">components/pages</span>
+          <span style="font-size:12px;color:#717680;">SearchBar, products/page, product/[id]/page</span>
+        </div>
+      </div>
+      <p>Raw backend responses always pass through mappers before reaching UI pages or components. UI components never consume contract types directly.</p>
+    </div>
+
+    <!-- Contract Types Detail -->
+    <div class="card">
+      <h2>Contract Types (Backend Mirror)</h2>
+      <p>All field names match backend schemas exactly. No UI renaming.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Backend field</th>
+            <th>UI-equivalent name</th>
+            <th>Rule</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>short_description</code></td>
+            <td><code>product_description</code> (in view model)</td>
+            <td>Mapped by mappers only</td>
+          </tr>
+          <tr>
+            <td><code>avg_rating</code></td>
+            <td><code>rating</code> (in view model)</td>
+            <td>Mapped by mappers only</td>
+          </tr>
+          <tr>
+            <td><code>total_reviews</code></td>
+            <td><code>reviews</code> (in view model)</td>
+            <td>Mapped by mappers only</td>
+          </tr>
+          <tr>
+            <td><code>semantic_query</code></td>
+            <td>n/a (request param only)</td>
+            <td>Hooks send <code>semantic_query</code>, never <code>query</code></td>
+          </tr>
+          <tr>
+            <td><code>count/results</code></td>
+            <td><code>data/pagination</code> (in view model)</td>
+            <td>Hooks read <code>{ count, results }</code>, not <code>{ data, pagination }</code></td>
+          </tr>
+          <tr>
+            <td><code>vendor_name</code></td>
+            <td><code>vendor_name</code> (same)</td>
+            <td>No mapping needed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mapper Functions -->
+    <div class="card">
+      <h2>Mapper Functions</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Function</th>
+            <th>Input</th>
+            <th>Output</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>mapProductSummaryToCardProduct</code></td>
+            <td><code>ProductSummary</code></td>
+            <td><code>CardProduct</code></td>
+          </tr>
+          <tr>
+            <td><code>mapProductListResponseToPage</code></td>
+            <td><code>ProductListResponse</code> + limit + offset</td>
+            <td><code>{ products: CardProduct[], pagination: Pagination }</code></td>
+          </tr>
+          <tr>
+            <td><code>mapSearchResultToCardProduct</code></td>
+            <td><code>CatalogSearchResult</code></td>
+            <td><code>CardProduct</code></td>
+          </tr>
+          <tr>
+            <td><code>mapCatalogSearchResponseToResults</code></td>
+            <td><code>CatalogSearchResponse</code> + limit + offset</td>
+            <td><code>{ products: CardProduct[], total, pagination: Pagination }</code></td>
+          </tr>
+          <tr>
+            <td><code>mapPricingPlanResponseToTier</code></td>
+            <td><code>PricingPlanResponse</code></td>
+            <td><code>PricingTier</code></td>
+          </tr>
+          <tr>
+            <td><code>mapRatingResponseToReviewSource</code></td>
+            <td><code>RatingResponse</code></td>
+            <td><code>ReviewSource</code></td>
+          </tr>
+          <tr>
+            <td><code>mapAlternativesResponseToProducts</code></td>
+            <td><code>CatalogAlternativesResponse</code></td>
+            <td><code>AlternativeProduct[]</code></td>
+          </tr>
+          <tr>
+            <td><code>mapCatalogProductDetailToPageModel</code></td>
+            <td><code>CatalogProductDetail</code> + pricingPlans + reviewSources + alternatives</td>
+            <td><code>ProductPageModel</code></td>
+          </tr>
+          <tr>
+            <td><code>mapCategoriesResponseToFilters</code></td>
+            <td><code>CategoriesResponse</code></td>
+            <td><code>CategoryFilter[]</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Route Contracts -->
+    <div class="card">
+      <h2>Service-Apis Route Contracts</h2>
+      <p>Hooks call these routes directly (not <code>/app/api/*</code> proxy routes). Backend-native params.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Route</th>
+            <th>Method</th>
+            <th>Request shape</th>
+            <th>Response shape</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/catalog/products</code></td>
+            <td>GET</td>
+            <td><code>?limit&amp;offset&amp;search&amp;category&amp;sort</code></td>
+            <td><code>{ count, results: ProductSummary[] }</code></td>
+          </tr>
+          <tr>
+            <td><code>/catalog/products/{id}</code></td>
+            <td>GET</td>
+            <td>path param</td>
+            <td><code>CatalogProductDetail</code> (not wrapped)</td>
+          </tr>
+          <tr>
+            <td><code>/catalog/products/{id}/pricing-plans</code></td>
+            <td>GET</td>
+            <td>path param</td>
+            <td><code>{ product_id, plans: PricingPlanResponse[] }</code></td>
+          </tr>
+          <tr>
+            <td><code>/catalog/products/{id}/ratings</code></td>
+            <td>GET</td>
+            <td>path param</td>
+            <td><code>{ product_id, ratings: RatingResponse[], avg_rating, total_reviews }</code></td>
+          </tr>
+          <tr>
+            <td><code>/catalog/products/{id}/alternatives</code></td>
+            <td>GET</td>
+            <td>path param</td>
+            <td><code>{ source_product_id, source_product_name, count, alternatives: CatalogSearchResult[] }</code></td>
+          </tr>
+          <tr>
+            <td><code>/catalog/search</code></td>
+            <td>POST</td>
+            <td><code>{ semantic_query, limit, offset, sort }</code></td>
+            <td><code>{ count, results: CatalogSearchResult[], facets? }</code></td>
+          </tr>
+          <tr>
+            <td><code>/catalog/categories</code></td>
+            <td>GET</td>
+            <td>—</td>
+            <td><code>{ count, categories: CategoryResponse[] }</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Error Handling -->
+    <div class="card">
+      <h2>Error Handling Contract</h2>
+      <p>All errors are normalized to <code>{ ok: false, status, error: { code, message, retryAfter? } }</code>.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Status</th>
+            <th>UI behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>CIRCUIT_OPEN</code></td>
+            <td>503</td>
+            <td>User-safe message + retry countdown. No auto-retry in hook.</td>
+          </tr>
+          <tr>
+            <td><code>AUTHENTICATION_ERROR</code></td>
+            <td>401</td>
+            <td>Public catalog does not expect auth — indicates misconfiguration.</td>
+          </tr>
+          <tr>
+            <td><code>NETWORK_ERROR</code></td>
+            <td>0</td>
+            <td>Browser could not reach service-apis. Show connection error.</td>
+          </tr>
+          <tr>
+            <td><code>NOT_CONFIGURED</code></td>
+            <td>503</td>
+            <td>NEXT_PUBLIC_SERVICE_APIS_URL not set. Console warning + error state.</td>
+          </tr>
+          <tr>
+            <td><code>INTERNAL_ERROR</code></td>
+            <td>500+</td>
+            <td>Generic "Something went wrong" — backend details never leaked to UI.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Remaining Tasks -->
+    <div class="card">
+      <h2>Remaining Tasks</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Task</th>
+            <th>Files</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>4</td>
+            <td>useCatalogProducts hook</td>
+            <td><code>hooks/use-catalog-products.ts</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>useCatalogSearch hook</td>
+            <td><code>hooks/use-catalog-search.ts</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>useCatalogCategories hook</td>
+            <td><code>hooks/use-catalog-categories.ts</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>useProductDetail hook</td>
+            <td><code>hooks/use-product-detail.ts</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Migrate SearchBar</td>
+            <td><code>components/SearchBar.tsx</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Migrate products listing page</td>
+            <td><code>app/products/page.tsx</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Migrate product detail page</td>
+            <td><code>app/product/[id]/page.tsx</code></td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Build verification</td>
+            <td>—</td>
+            <td><span class="status-pending">pending</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Implementation Guards -->
+    <div class="card">
+      <h2>Implementation Guards</h2>
+      <div class="rule-card">
+        <div class="rule-title">No raw contract types in UI</div>
+        <div class="rule-desc">UI pages/components never import or consume catalog-contracts.ts types directly. All data passes through mappers.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-title">Hooks call service-apis directly</div>
+        <div class="rule-desc">Hooks call /catalog/* routes directly. They do not call /app/api/* proxy routes.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-title">No mock fallback in production paths</div>
+        <div class="rule-desc">If service-apis is unavailable, hooks return error states. No FALLBACK_PRODUCTS or placeholder data in migrated paths.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-title">No auto-retry in hooks</div>
+        <div class="rule-desc">Hooks expose error.retryAfter and refetch. UI decides whether/how to show retry controls.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-title">App/api routes untouched</div>
+        <div class="rule-desc">/app/api/* proxy routes remain as compatibility shims. Not deleted or refactored in this slice.</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-title">Backend field names preserved in contracts</div>
+        <div class="rule-desc">Contract types mirror backend exactly: short_description, avg_rating, total_reviews, semantic_query, count/results.</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <p style="font-size:12px;color:#717680;text-align:center;">
+      Generated 2026-05-16 · api-routes branch · Slice 0 (Tasks 1–3 of 11)
+    </p>
+  </div>
+</body>
+</html>
