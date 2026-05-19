@@ -1,463 +1,427 @@
-# Frontend — Service APIs Architecture
+# Proploy Frontend
 
-## Overview
-
-The frontend is a Next.js App Router application (React/TypeScript) backed by two APIs:
-
-- **Supabase** — authentication (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-- **service-apis** — FastAPI gateway on port 8020 — fronts catalog and agent services
-
-Frontend code lives in `/app`, components in `/components`, shared logic in `/lib`.
+**Version:** 1.0.0  
+**Stack:** Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS 4 · Supabase · Zod
 
 ---
 
-## Service APIs Client Split
+## Table of Contents
 
-The frontend has two service-apis clients with separate entrypoints:
+1. [Architecture Overview](#architecture-overview)
+2. [Directory Structure](#directory-structure)
+3. [Data Flow and State Management](#data-flow-and-state-management)
+4. [API Contracts and Services](#api-contracts-and-services)
+5. [Routing, Layouts, and Navigation](#routing-layouts-and-navigation)
+6. [Build, Deployment, and Environment](#build-deployment-and-environment)
+7. [Testing Strategy](#testing-strategy)
+8. [Performance, Accessibility, and Security](#performance-accessibility-and-security)
+9. [Quality and Contributor Guide](#quality-and-contributor-guide)
 
-| Entry point | Environment | Used by |
-|---|---|---|
-| `@/lib/service-apis/browser` | Browser-exposed (`NEXT_PUBLIC_SERVICE_APIS_URL`) | Client Components, browser-only code |
-| `@/lib/service-apis/server` | Server-only (`SERVICE_APIS_BASE_URL`) | Server Components, API routes |
+---
 
-**Rule: Never import `lib/service-apis/server` in Client Components or browser code.**
+## Architecture Overview
 
-### Browser client
+### Tech Stack
+
+| Layer | Technology | Role |
+|-------|------------|------|
+| Framework | Next.js 16 (App Router) | SSR, routing, API routes |
+| UI | React 19 | Component model |
+| Language | TypeScript 5 | Type safety across all code |
+| Styling | Tailwind CSS 4 | Utility-first styling, design system via CSS variables |
+| Auth & DB | Supabase (SSR, anon key, service role) | Authentication, session, database |
+| Validation | Zod | Runtime schema validation for API contracts |
+| Rate Limiting | Upstash Redis | Per-user request throttling |
+| Agent Shell | ProployAgentShell | Persistent chatbot panel across authenticated routes |
+
+### Layering
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Pages (app/)                     │  ← Route segments + layouts
+├─────────────────────────────────────────────────────┤
+│              Components (components/)               │  ← Reusable UI primitives + features
+├─────────────────────────────────────────────────────┤
+│               Hooks (hooks/)                         │  ← Data fetching, caching, state
+├─────────────────────────────────────────────────────┤
+│  lib/service-apis/  │  lib/supabase/  │  lib/utils/ │  ← Transport, auth, utilities
+├─────────────────────────────────────────────────────┤
+│        API Routes (app/api/)  │  External Services  │  ← BFF shims, downstream calls
+└─────────────────────────────────────────────────────┘
+```
+
+### Key Architectural Decisions
+
+**1. Browser / server client split.**  
+`lib/service-apis/browser.ts` (client-only) exports `ServiceApisBrowserClient`, which uses `NEXT_PUBLIC_SERVICE_APIS_URL` and resolves Supabase session tokens from the browser. `lib/service-apis/server.ts` exports `serviceApisFetch`, which uses `SERVICE_APIS_BASE_URL` (server-only) and the server-side Supabase client. Never import the server module from client components.
+
+**2. Three-layer catalog types.**  
+Catalog data flows through three layers: **contract types** (`hooks/types/catalog-contracts.ts`) mirror the service-apis schemas exactly; **view model types** (`hooks/types/catalog-view-models.ts`) represent what the UI actually renders; **mappers** (`hooks/mappers/catalog-mappers.ts`) convert between them. Pages never import contract types directly.
+
+**3. BFF API routes as compatibility shims.**  
+`app/api/` routes proxy requests to `service-apis` and reshape responses. New code should call `ServiceApisBrowserClient` or `serviceApisFetch` directly, bypassing the API route layer where possible.
+
+**4. Auth via context, not middleware.**  
+`components/providers/auth-provider.tsx` provides `useAuth()` which surfaces `user`, `expert`, `isLoading`, and session methods. Auth state is client-resolved; server components use `createClient()` from `lib/supabase/server.ts` directly.
+
+---
+
+## Directory Structure
+
+```
+frontend/
+├── app/                          # Next.js App Router
+│   ├── (auth)/                   # Auth route group — sign-in, sign-up, reset-password
+│   ├── admin/                    # Admin-only pages (protected)
+│   ├── api/                      # BFF API routes (proxies to service-apis)
+│   │   ├── products/             # Product list / detail / search shims
+│   │   ├── experts/              # Expert application shims
+│   │   ├── admin/                # Admin review shims
+│   │   └── favorites/            # User favorites shim
+│   ├── products/                 # Product listing and search pages
+│   ├── product/[id]/            # Product detail page
+│   ├── expert/                   # Expert dashboard (approved experts only)
+│   ├── experts/                  # Expert browsing and profile pages
+│   ├── become-expert/            # Multi-step expert application form
+│   ├── for-businesses/           # Business-facing landing content
+│   ├── for-experts/              # Expert-facing landing content
+│   ├── auth/                     # Session handling routes
+│   ├── layout.tsx                # Root layout — fonts, Navbar, AuthProvider, AgentShell
+│   └── globals.css               # Global styles + Tailwind base
+│
+├── components/                   # Reusable UI
+│   ├── ui/                       # Primitive components (Button, Input, Select, Tag…)
+│   ├── providers/                # Context providers (AuthProvider)
+│   ├── onboarding/               # Expert onboarding step components
+│   ├── product/                  # Product-specific components (cards, filters, detail)
+│   ├── agent/                    # ProployAgentShell
+│   ├── SearchBar.tsx             # Site-wide search bar
+│   ├── Navbar.tsx                # Top navigation
+│   ├── Footer.tsx                # Footer
+│   ├── SearchHero.tsx            # Hero section with search
+│   └── FiltersDrawer.tsx         # Mobile filter drawer
+│
+├── hooks/                        # Data-fetch hooks
+│   ├── types/
+│   │   ├── catalog-contracts.ts # Backend contract type mirrors
+│   │   └── catalog-view-models.ts # UI view model types
+│   ├── mappers/
+│   │   └── catalog-mappers.ts    # Contract → view model converters
+│   └── use-catalog-products.ts  # Public product listing hook
+│
+├── lib/                         # Shared libraries (no React imports)
+│   ├── service-apis/
+│   │   ├── browser-client.ts     # ServiceApisBrowserClient class
+│   │   ├── browser.ts           # Browser-only entrypoint (exports browser-client)
+│   │   ├── server.ts            # Server-only entrypoint (exports serviceApisFetch)
+│   │   ├── client.ts            # Core fetch helper + getUserInterests helper
+│   │   └── error-utils.ts       # Error normalization + circuit-open detection
+│   ├── supabase/
+│   │   ├── client.ts            # Browser Supabase client (createClient)
+│   │   ├── server.ts            # Server Supabase client (createServerClient)
+│   │   └── auth.ts              # Auth helper functions
+│   ├── utils/
+│   │   ├── errors.ts           # Shared error utilities
+│   │   ├── ratelimit.ts        # Upstash rate-limit helper
+│   │   ├── auth-intent.ts       # Auth intent (redirect after login)
+│   │   └── auth-intent-client.ts
+│   ├── validations/
+│   │   ├── api.ts              # API response Zod schemas
+│   │   └── expert.ts           # Expert form Zod schemas
+│   ├── auth.ts                  # Auth utility re-exports
+│   └── admin.ts                 # Admin check utilities
+│
+├── docs/                        # Architecture and onboarding docs
+├── scripts/                     # Build and code-generation scripts
+├── prisma/                      # Prisma schema (if direct DB access needed)
+└── public/                      # Static assets
+```
+
+**Key file references:**
+
+| Concern | File |
+|---------|------|
+| Browser service-apis client | `lib/service-apis/browser-client.ts` |
+| Server service-apis fetch | `lib/service-apis/server.ts` |
+| Auth context | `components/providers/auth-provider.tsx` |
+| Catalog types (contracts) | `hooks/types/catalog-contracts.ts` |
+| Catalog types (view models) | `hooks/types/catalog-view-models.ts` |
+| Catalog mappers | `hooks/mappers/catalog-mappers.ts` |
+| Product listing hook | `hooks/use-catalog-products.ts` |
+| Root layout | `app/layout.tsx` |
+| Environment config | `env.example` |
+
+---
+
+## Data Flow and State Management
+
+### Public Catalog Flow (no auth)
+
+```
+ServiceApisBrowserClient.get('/catalog/products?...')
+  → service-apis (port 8020)
+  → software-ingestion-pipeline DB
+  → catalog-contracts.ts response shape
+  → catalog-mappers.ts transforms to view model
+  → use-catalog-products.ts hook state
+  → products/page.tsx renders
+```
+
+### Authenticated User Flow
+
+```
+serviceApisFetch('/api/v1/users/me/interests', { requireAuth: true })
+  → service-apis (server-side, port 8020)
+  → validates Supabase session cookie → JWT
+  → responds with user data
+  → server component renders with user-specific data
+```
+
+### State Stores
+
+| Store | Tool | Scope |
+|-------|------|-------|
+| Auth session | Supabase `useAuth()` context | Global, client |
+| Server data | React Server Components + fetch caching | Per-page, server |
+| Client UI state | `useState` / `useReducer` | Local component |
+| Form state | Controlled components + Zod | Local or page-level |
+
+No global client-side state manager (Zustand, Redux, etc.) is in use. Server-pushed data is preferred; client state is minimal.
+
+---
+
+## API Contracts and Services
+
+### Service-apis Gateway
+
+All business-logic-bearing calls go through `service-apis` (FastAPI, port 8020), which routes to:
+
+- `software-ingestion-pipeline` (port 8010) — catalog DB
+- `agent-harness` (port 8001) — expert AI agent
+
+### Browser Client (`ServiceApisBrowserClient`)
 
 ```typescript
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 
 const client = new ServiceApisBrowserClient()
 
-// Public — no auth
-await client.get('/catalog/products')
+// Public call — no auth
+const { ok, data } = await client.get('/catalog/products', { limit: 20 })
 
-// Auth-required — token resolved from browser Supabase session
-await client.post('/api/v1/favorites', body, { requireAuth: true })
-
-// SSR hydration — pass server-resolved token as override
-await client.get('/api/v1/users/me/interests', { accessToken: propToken })
+// Auth-required call
+const { ok, data } = await client.post('/api/v1/favorites', { product_id }, { requireAuth: true })
 ```
 
-### Server client (SSR proxy)
+### Server Fetch (`serviceApisFetch`)
 
 ```typescript
 import { serviceApisFetch } from '@/lib/service-apis/server'
-// or
-import { serviceApisFetch } from '@/lib/service-apis/client'  // same thing, different path
+
+const res = await serviceApisFetch('/api/v1/users/me/interests', { requireAuth: true })
+const { data } = await res.json()
 ```
 
-The existing `lib/service-apis/client.ts` (server-only) is preserved for backward compatibility with legacy code that imports it directly. The `server.ts` entrypoint re-exports it for explicit server-only usage.
+### Error Handling
+
+`lib/service-apis/error-utils.ts` exports:
+- `normalizeServiceApiError(response)` — converts failed fetch to structured `{ ok: false, status, error: { code, message } }`
+- `isCircuitOpen(err)` — detects circuit-breaker-open errors
+- `normalizeCircuitOpen(err)` — converts circuit-open to typed 503
+
+### Retry Policy
+
+The service-apis circuit breaker trips after 5 consecutive failures. Browser client shows a user-facing "service temporarily unavailable" message (no automatic retry in client code). Server-side retries are handled by the gateway's own retry logic.
 
 ---
 
-## Architecture
+## Routing, Layouts, and Navigation
 
-```mermaid
-graph TD
-    Browser["Browser\nClient Components"] -->|"NEXT_PUBLIC_SERVICE_APIS_URL"| BrowserClient["ServiceApisBrowserClient\nlib/service-apis/browser"]
-    BrowserClient -->|fetch| NextAPI["Next.js\n/app/api/* routes"]
-    NextAPI -->|"SERVICE_APIS_BASE_URL"| ServerClient["serviceApisFetch\nlib/service-apis/server"]
-    BrowserClient -->|direct| ServiceAPIs["service-apis\n:8020"]
-    ServerClient -->|proxy| ServiceAPIs
+### Route Groups
 
-    subgraph "service-apis"
-        Router["FastAPI Router"]
-        Auth["/auth/sync JWT verification"]
-        Catalog["/catalog/*"]
-        Experts["/api/v1/experts/*"]
-        Engagement["/api/v1/favorites"]
-    end
+| Group | Purpose | Auth |
+|-------|---------|------|
+| `(auth)` | Sign-in, sign-up, password reset | Public |
+| `(onboarding)` | Multi-step expert application | Auth required |
+| `(landing-page)` | Public marketing content | Public |
+| `(legacy-onboarding)` | Old onboarding flow | Auth required |
 
-    ServiceAPIs -->|verify JWT| SupabaseAuth["Supabase\nJWKS"]
-    ServiceAPIs -->|SQL| Postgres["Postgres\ncatalog schema"]
-    ServiceAPIs --> CatalogSvc["catalog-svc\n:8010"]
-    ServiceAPIs --> Agent["agent-harness\n:8001"]
+### Layout Stack
+
+```
+RootLayout (app/layout.tsx)
+  └── AuthProvider
+        └── ProployAgentShell   ← persistent chatbot shell
+              └── Navbar
+                    └── <main>  ← page content rendered here
 ```
 
-### Client Components vs Server Components
+Authenticated routes render `ProployAgentShell` which provides the persistent chat panel. Public routes skip it.
 
-- **Client Components** — use `ServiceApisBrowserClient` via `lib/service-apis/browser`. Token comes from browser Supabase session. Direct calls to service-apis.
-- **Server Components** — use `serviceApisFetch` via `lib/service-apis/server`. Token comes from server Supabase client (cookie-based session).
-- **API Routes** (`/app/api/*`) — compatibility shims that proxy to `serviceApisFetch`. They are transitional and will be removed as each route's consumers migrate to the browser client.
+### Navigation
+
+`components/Navbar.tsx` is the primary navigation bar. Route guards are implemented inline via `useAuth()` — protected routes redirect to `/sign-in` if no session exists.
+
+### Shared Layouts
+
+Pages within a group share layouts via `layout.tsx` files at the group level. No external layout library is used.
 
 ---
 
-## Authentication Flow
+## Build, Deployment, and Environment
 
-```mermaid
-sequenceDiagram
-    participant Browser
-    participant Next as Next.js
-    participant Supabase
-    participant ServiceAPIs as service-apis
-
-    Browser->>Supabase: Sign in with email/SSO
-    Supabase-->>Browser: Session (access_token, refresh_token)
-
-    Browser->>Next: POST /api/v1/auth/sync<br/>Authorization: Bearer <token>
-    Next->>ServiceAPIs: POST /api/v1/auth/sync<br/>Bearer <token>
-    ServiceAPIs->>Supabase: Verify JWT via JWKS
-    Supabase-->>ServiceAPIs: JWT payload {"sub", "email", ...}
-    ServiceAPIs->>Postgres: Upsert User row
-    ServiceAPIs-->>Next: UserProfile {"supabaseUserId", "email", "role"}
-    Next-->>Browser: UserProfile
-
-    Note over Browser,ServiceAPIs: Subsequent requests carry Bearer token
-
-    Browser->>ServiceAPIs: GET /catalog/products<br/>Authorization: Bearer <token>
-    ServiceAPIs-->>Browser: {"data": [...]}
-```
-
-1. User signs in via Supabase — browser gets access token
-2. On session start, browser calls `POST /api/v1/auth/sync` with Bearer token
-3. service-apis verifies the JWT against Supabase JWKS endpoint
-4. service-apis upserts the user in Postgres if first login, returns profile
-5. All subsequent service-apis calls include `Authorization: Bearer <token>`
-
----
-
-## Service APIs Routes
-
-### Unversioned — Catalog
-
-All catalog routes are unversioned (no `/api/v1` prefix):
-
-| Method | Path |
-|---|---|
-| GET | `/catalog/products` |
-| GET | `/catalog/products/{product_id}` |
-| GET | `/catalog/products/{product_id}/pricing-plans` |
-| GET | `/catalog/products/{product_id}/ratings` |
-| GET | `/catalog/products/{product_id}/alternatives` |
-| POST | `/catalog/search` |
-| POST | `/catalog/compare` |
-| GET | `/catalog/categories` |
-
-### Versioned — `/api/v1/*`
-
-All other service-apis routes live under `/api/v1`:
-
-| Method | Path |
-|---|---|
-| POST | `/api/v1/auth/sync` |
-| GET | `/api/v1/users/me` |
-| PATCH | `/api/v1/users/me` |
-| GET | `/api/v1/users/me/interests` |
-| POST | `/api/v1/users/me/interests` |
-| DELETE | `/api/v1/users/me/interests/{interestId}` |
-| GET | `/api/v1/favorites` |
-| POST | `/api/v1/favorites` |
-| DELETE | `/api/v1/favorites/{favoriteId}` |
-| GET | `/api/v1/recently-viewed` |
-| POST | `/api/v1/recently-viewed` |
-| DELETE | `/api/v1/recently-viewed/{id}` |
-| GET | `/api/v1/experts/me/application` |
-| POST | `/api/v1/experts/me/application` |
-| PATCH | `/api/v1/experts/me/profile` |
-| GET | `/api/v1/experts/me/profile` |
-| GET | `/api/v1/experts/approved` |
-| GET | `/api/v1/experts/recommended` |
-| GET | `/api/v1/experts/{expertId}` |
-| PATCH | `/api/v1/admin/experts/{id}` |
-| GET | `/api/v1/admin/experts` |
-| POST | `/api/v1/agent/query` |
-| GET | `/api/v1/status` |
-
----
-
-## Normalized Error Contract
-
-All service-apis responses are normalized to one of two shapes.
-
-**Success:**
-```typescript
-{ ok: true, data: T }
-```
-
-**Error:**
-```typescript
-{
-  ok: false,
-  status: number,       // HTTP status code
-  error: {
-    code: string,       // machine-readable error code
-    message: string,    // human-safe message
-    retryAfter?: number // seconds — for CIRCUIT_OPEN and RATE_LIMITED
-  }
-}
-```
-
-### Error codes
-
-| Code | Status | When |
-|---|---|---|
-| `AUTHENTICATION_ERROR` | 401 | Missing or invalid JWT, expired token |
-| `AUTHORIZATION_ERROR` | 403 | Insufficient permissions |
-| `VALIDATION_ERROR` | 422 | Invalid request parameters |
-| `RATE_LIMITED` | 429 | Too many requests; includes `retryAfter` |
-| `CIRCUIT_OPEN` | 503 | Service downstream is down; includes `retryAfter` |
-| `NOT_FOUND` | 404 | Resource does not exist |
-| `CONFLICT` | 409 | Resource already exists (e.g., duplicate application) |
-| `NETWORK_ERROR` | 0 | Browser could not reach service-apis (CORS, DNS, offline) |
-| `NOT_CONFIGURED` | 503 | `NEXT_PUBLIC_SERVICE_APIS_URL` not set in environment |
-| `INTERNAL_ERROR` | 500 | Unhandled server error — details never exposed to client |
-
-### CIRCUIT_OPEN (503)
-
-When a downstream service (catalog, experts, auth) has too many failures, the circuit breaker trips and returns 503 with `CIRCUIT_OPEN`. The `retryAfter` field (default 30s) tells the UI when to retry.
-
-```typescript
-if (result.ok === false && result.error.code === 'CIRCUIT_OPEN') {
-  showToast(`Service temporarily unavailable. Retrying in ${result.error.retryAfter}s`)
-  setTimeout(() => refetch(), result.error.retryAfter * 1000)
-}
-```
-
----
-
-## Circuit Breaker and Readiness
-
-### Endpoints
-
-| Path | Purpose |
-|---|---|
-| `/health` | Process liveness — always 200 if uvicorn is running |
-| `/readiness` | DB connectivity — checks Postgres connection |
-| `/api/v1/status` | Public circuit state for all groups |
-
-### Circuit Groups
-
-Four independent circuit groups, each with its own failure threshold:
-
-| Group | Protects |
-|---|---|
-| `catalog` | Product listing, search, detail, pricing |
-| `experts` | Expert profiles, applications |
-| `engagement` | Favorites, recently-viewed |
-| `auth` | JWT verification, JWKS fetching |
-
-### Circuit States
-
-```mermaid
-stateDiagram-v2
-    [*] --> unknown
-    unknown --> closed : first request
-    closed --> open : 5 failures in 30s
-    open --> half_open : 30s elapsed (probe allowed)
-    half_open --> closed : probe succeeds
-    half_open --> open : probe fails
-    open --> [*] : never (manual reset not implemented)
-```
-
-### State transitions
-
-- **unknown** — initial state on process start
-- **closed** — normal operation, requests pass through
-- **open** — after 5 failures in a 30s window, requests are rejected with 503 `CIRCUIT_OPEN` for 30s
-- **half_open** — after the 30s retry window, one probe request is allowed; success closes the circuit, failure re-opens it
-
-### `/api/v1/status` response
-
-```json
-{
-  "ok": true,
-  "version": "...",
-  "groups": {
-    "catalog": { "status": "closed", "failureCount": 0, "lastFailureAt": null, "lastSuccessAt": 1234567890, "retryAfter": null },
-    "experts": { "status": "open", "failureCount": 5, "lastFailureAt": 1234567890, "lastSuccessAt": null, "retryAfter": 1234567920 },
-    "engagement": { "status": "closed", "failureCount": 0, ... },
-    "auth": { "status": "closed", "failureCount": 0, ... }
-  }
-}
-```
-
----
-
-## Migration — Vertical Slices
-
-The frontend is migrating from SSR proxy routes (`/app/api/*`) to direct browser calls via `ServiceApisBrowserClient`. This is done slice by slice to preserve working functionality.
-
-### Slice 0 — Complete ✅
-
-Browser client foundation:
-- `lib/service-apis/error-utils.ts` — error normalization
-- `lib/service-apis/browser-client.ts` — `ServiceApisBrowserClient` class
-- `lib/service-apis/browser.ts` — browser-safe entrypoint
-- `lib/service-apis/server.ts` — server-only entrypoint
-- `env.example` — `NEXT_PUBLIC_SERVICE_APIS_URL` documented
-
-### Slice 1 — Engagement (next)
-
-- `useFavorites` hook — maps `{ productId }` ↔ `{ targetType, targetId }`
-- `useRecentlyViewed` hook
-- Deprecate `/app/api/favorites/*` and `/app/api/recently-viewed/*` (do not remove until UI migrated)
-
-### Slice 2 — Catalog
-
-- `useCatalogProducts` hook for product listing
-- `useCatalogSearch` hook for hybrid search
-- Deprecate `/app/api/products/*`, `/app/api/search/*`, `/app/api/categories/*`
-
-### Slice 3 — Experts
-
-- `useExperts` hook
-- `useExpertApplication` hook
-- Deprecate `/app/api/experts/*` routes
-
-### Slice 4 — Admin / Agent
-
-Admin and agent routes may remain SSR-only:
-- They require server-side auth validation
-- They are not high-traffic consumer paths
-- Decision deferred until other slices complete
-
-**Rule: Do not remove `/app/api/*` routes until the consuming UI component has been migrated to the browser client for that slice.**
-
----
-
-## Environment Variables
-
-### Browser-accessible (public, `NEXT_PUBLIC_*`)
-
-These are embedded in the browser bundle and visible to client code:
+### Build
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-NEXT_PUBLIC_SERVICE_APIS_URL=http://localhost:8020   # dev
-NEXT_PUBLIC_SERVICE_APIS_URL=https://api.proploy.io   # prod
+npm run dev       # Development server on :3000
+npm run build     # Production build (Next.js static + SSR)
+npm run start     # Serve production build
+npm run lint      # ESLint
 ```
 
-### Server-only
+### Environment Variables
 
-These are never embedded in the browser bundle:
+**Browser-exposed** (`NEXT_PUBLIC_*` — safe to bundle):
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_APP_URL
+NEXT_PUBLIC_SERVICE_APIS_URL   # service-apis gateway URL (browser-accessible)
+```
+
+**Server-only** (never bundled into browser):
+```
+SUPABASE_SERVICE_ROLE_KEY      # Server-side Supabase admin
+DATABASE_URL                   # Direct DB connection (if needed)
+SERVICE_APIS_BASE_URL          # service-apis gateway (server-side proxy)
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+REVALIDATE_TIME
+ADMIN_EMAILS
+```
+
+See `env.example` for the full scaffold.
+
+### Deployment
+
+Deployed on Vercel (Next.js native adapter). Environment variables are set via Vercel project settings. `NODE_ENV=production` is set automatically.
+
+**Service-apis URL:**
+- Dev: `http://localhost:8020`
+- Prod: `https://api.proploy.io` (or configured production endpoint)
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+Framework: Vitest (via Next.js built-in test runner or Jest)
 
 ```bash
-# Used by lib/service-apis/server.ts (SSR proxy fallback)
-SERVICE_APIS_BASE_URL=http://127.0.0.1:8020
+npm run test              # Run all tests
+npm run test -- --watch  # Watch mode
+```
+
+Coverage scope:
+- Hook output transformation (contract → view model)
+- Zod validation schemas
+- Utility functions (ratelimit, auth intent, error normalization)
+
+### Integration Tests
+
+API route tests hitting `app/api/` routes with mocked `service-apis` responses. Use MSW or direct handler testing to avoid real downstream calls.
+
+### Visual / E2E
+
+- Visual diff: `baseline-browser-mapping` (in devDependencies) — captures CSS regressions
+- E2E: Playwright (if configured) — covers critical user flows: browse → detail → favorites
+
+### Test Files
+
+```
+app/__tests__/              # Integration tests for API routes / pages
+__tests__/                 # Shared test utilities
 ```
 
 ---
 
-## Local Development
+## Performance, Accessibility, and Security
 
-### Prerequisites
+### Performance
 
-service-apis must be running separately on port 8020:
+| Metric | Target | Technique |
+|--------|--------|-----------|
+| LCP | < 2.5 s | Font preload, SSR product pages, image optimization |
+| CLS | < 0.1 | Reserved layout space for dynamic content, font `display: swap` |
+| TTFB | < 600 ms | Edge caching (Vercel), route segment caching |
 
-```bash
-cd ../service-apis
-cp .env .env  # already configured
-uv run uvicorn proploy_service_apis.api.server:app --reload --port 8020
-```
+**Key techniques:**
+- Next.js `<Image>` for all product images (automatic WebP, lazy loading, size optimization)
+- Server Components for all data-fetching pages (no client-side waterfall)
+- `cache: 'no-store'` on service-apis calls to avoid stale data
+- Route segment caching via `fetch` cache options where appropriate
 
-### Commands
+### Accessibility
 
-```bash
-npm run dev          # Start Next.js dev server (port 3000)
-npm run lint         # ESLint check
-npm run build        # Production build (requires service-apis on :8020)
-npm run generate-types  # Regenerate TypeScript types from schema
-```
+- Semantic HTML: all interactive elements use `<button>`, `<a>`, `<nav>`
+- ARIA labels on icon-only controls (SearchBar, FiltersDrawer)
+- Focus management: modal/drawer traps focus, returns focus on close
+- Color contrast: all text meets WCAG AA (checked via `baseline-browser-mapping` visual audit)
+- Keyboard navigation: all flows accessible without mouse
 
-### Development notes
+### Security
 
-- service-apis runs on `http://localhost:8020`
-- Frontend on `http://localhost:3000`
-- `NEXT_PUBLIC_SERVICE_APIS_URL=http://localhost:8020` is set in `.env` for local dev
-- Auth flow requires Supabase project configured with JWKS endpoint
-- Circuit breaker state is per-process; each uvicorn worker has independent state
-
----
-
-## Service APIs — Entity Contract
-
-```mermaid
-erDiagram
-    USER ||--o{ FAVORITE : "favorites"
-    USER ||--o{ RECENTLY_VIEWED : "viewed"
-    USER ||--o| INTEREST : "has"
-    USER {
-        string supabaseUserId PK
-        string email
-        string name
-        string role
-        string avatarUrl
-        datetime createdAt
-    }
-    FAVORITE {
-        string id PK
-        string userId FK
-        string targetType "product | expert | ..."
-        string targetId
-        datetime createdAt
-    }
-    RECENTLY_VIEWED {
-        string id PK
-        string userId FK
-        string productId FK
-        datetime viewedAt
-    }
-    INTEREST {
-        string id PK
-        string userId FK
-        string termId FK
-        datetime createdAt
-    }
-    PRODUCT ||--o{ FAVORITE : "favorited by"
-    PRODUCT {
-        string productId PK
-        string name
-        string dataStatus "published | verified | ..."
-    }
-```
-
-### Engagement contract — Frontend vs service-apis
-
-Frontend UI uses `productId`. service-apis uses `{ targetType, targetId }`. The mapping happens in the hook layer, not in the browser client.
-
-```typescript
-// Frontend UI → service-apis (add favorite)
-const body = { targetType: 'product', targetId: productId }
-await client.post('/api/v1/favorites', body, { requireAuth: true })
-
-// service-apis → Frontend UI (favorite response)
-const { id, targetType, targetId, createdAt } = result.data
-// Hook maps back to productId for UI consumption
-```
+| Concern | Mitigation |
+|---------|-----------|
+| Auth token theft | HttpOnly Supabase cookies; Bearer token never stored in localStorage |
+| XSS | React auto-escapes; no `dangerouslySetInnerHTML` without sanitization |
+| CSRF | SameSite cookies; server-side origin check on state-changing routes |
+| Env exposure | `NEXT_PUBLIC_*` vars are public by definition; secrets use server-only vars |
+| Rate limiting | Upstash Redis per-user limits on API routes |
+| SQL injection | Prisma parameterized queries; no raw SQL in frontend code |
 
 ---
 
-## Agent Working Rules
+## Quality and Contributor Guide
 
-When working in this codebase:
+### Code Standards
 
-1. **Read this README first** before making changes to service-apis integration or routing
-2. **Preserve browser/server client separation** — never import `lib/service-apis/server` in Client Components
-3. **Preserve unversioned catalog routes** — catalog routes are `/catalog/*` not `/api/v1/catalog/*`
-4. **Do not log JWTs or access tokens** — only log `alg`/`kid` from JWT header
-5. **Do not introduce mock production paths** — no fake `if (env === 'production')` fallbacks that bypass service-apis
-6. **Migrate one vertical slice at a time** — don't refactor multiple `/app/api/*` routes in one PR
-7. **Do not claim Redis cache is implemented** — caching strategy is not yet designed
-8. **Do not remove `/app/api/*` routes** until the consuming UI component is migrated to the browser client
-9. **Respect the circuit breaker** — don't add retry logic that bypasses circuit open errors without user-visible feedback
-10. **Preserve the auth handshake priority** — auth circuit must be verified before any cache or downstream circuit work proceeds
+- **TypeScript strict mode** — no `any`, explicit return types on exported functions
+- **No `console.log` in production code** — use a structured logger or server-side observability
+- **Separate client/server modules** — never import `lib/service-apis/server.ts` from client components
+- **Error normalization** — always use `normalizeServiceApiError` for service-apis error handling, not raw `response.ok` checks
+- **CSS variable discipline** — follow `--font-dm-sans` / `--font-inter` pattern; never hardcode font weight names
+
+### PR Process
+
+1. **New hooks or service layers** — include unit tests for mappers and type transformations
+2. **API contract changes** — update `catalog-contracts.ts` first; mappers must be updated in the same PR
+3. **New environment variables** — must be added to `env.example` with a comment explaining purpose
+4. **Visual changes** — run `baseline-browser-mapping` and attach a screenshot diff to the PR
+5. **No Co-Authored-By** — per project policy, commits are authored by the primary contributor only
+
+### Documentation Expectations
+
+- Every new hook file includes a JSDoc comment describing inputs, outputs, and side effects
+- API route files (`app/api/`) document their request/response shapes at the top
+- Significant architectural decisions are recorded in `docs/superpowers/specs/` or `docs/superpowers/plans/`
+- This README is the authoritative high-level view; implementation details belong in inline comments or the handbook
+
+### File Organization Rules
+
+| What | Where |
+|------|-------|
+| React components (with JSX) | `components/` |
+| Data-fetching hooks | `hooks/` |
+| Type definitions | `hooks/types/` or co-located near the hook |
+| Transport / HTTP clients | `lib/service-apis/` |
+| Auth utilities | `lib/supabase/` or `lib/auth.ts` |
+| Validation schemas | `lib/validations/` |
+| Shared utilities | `lib/utils/` |
+| Route handlers | `app/api/` |
+| Pages | `app/` (route group or leaf segment) |
 
 ---
 
-## Current Slice 0 Status
-
-Files created by Slice 0:
-
-```
-lib/service-apis/
-  error-utils.ts      — normalizeServiceApiError, isCircuitOpen, normalizeCircuitOpen
-  browser-client.ts   — ServiceApisBrowserClient class (get, post, patch, put, delete)
-  browser.ts          — browser-safe entrypoint (for Client Components)
-  server.ts           — server-only entrypoint (for Server Components)
-```
-
-env.example updated with `NEXT_PUBLIC_SERVICE_APIS_URL`.
-
-**Build note:** Full production build (`npm run build`) currently has unrelated errors in legacy routes (`app/api/user-profile/route.ts`, `app/api/avatar-url/route.ts`) that predate Slice 0. Slice 0 files are lint-clean and type-clean individually.
+*Last updated: May 2026*
