@@ -69,9 +69,9 @@ describe('useCatalogProducts', () => {
 
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.data.count).toBe(3)
-      expect(result.data.results).toHaveLength(1)
-      expect(result.data.results[0].product_id).toBe('p1')
+      expect((result.data as any).count).toBe(3)
+      expect((result.data as any).results).toHaveLength(1)
+      expect((result.data as any).results[0].product_id).toBe('p1')
     }
   })
 

@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 
+import type { User } from '@supabase/supabase-js'
+
 export type AuthUser = {
   id: string
   email: string | null
   role: string | null
-  user: Awaited<ReturnType<ReturnType<typeof createClient>['auth']['getUser']>>['data']['user']
+  user: User | null
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
