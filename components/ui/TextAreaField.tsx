@@ -2,16 +2,14 @@
 
 import React, { useId } from 'react';
 
-interface InputFieldProps {
+interface TextAreaFieldProps {
   placeholder?: string;
   value?: string;
   defaultValue?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
   onClick?: () => void;
-  inputType?: string;
   name?: string;
   id?: string;
   disabled?: boolean;
@@ -21,22 +19,19 @@ interface InputFieldProps {
   hintText?: string;
   error?: boolean;
   errorMessage?: string;
-  leadingIcon?: React.ReactNode;
-  trailingIcon?: React.ReactNode;
   className?: string;
   inputClassName?: string;
+  rows?: number;
 }
 
-export default function InputField({
-  placeholder = 'Search products, industries, and experts',
+export default function TextAreaField({
+  placeholder = '',
   value,
   defaultValue,
   onChange,
   onBlur,
   onFocus,
-  onKeyDown,
   onClick,
-  inputType = 'text',
   name,
   id,
   disabled = false,
@@ -46,11 +41,10 @@ export default function InputField({
   hintText,
   error = false,
   errorMessage,
-  leadingIcon,
-  trailingIcon,
   className = '',
   inputClassName = '',
-}: InputFieldProps) {
+  rows = 4,
+}: TextAreaFieldProps) {
   const generatedId = useId();
   const inputId = id || generatedId;
 
@@ -84,15 +78,9 @@ export default function InputField({
       )}
       <div
         onClick={onClick}
-        className={`${bgClasses} ${borderClasses} flex gap-[8px] items-center ${sizeClasses} rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] w-full transition-colors ${disabled ? 'cursor-not-allowed' : ''}`}
+        className={`${bgClasses} ${borderClasses} flex gap-[8px] items-start ${sizeClasses} rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] w-full transition-colors ${disabled ? 'cursor-not-allowed' : ''}`}
       >
-        {leadingIcon && (
-          <span className="shrink-0 size-[20px] flex items-center justify-center text-[#717680]">
-            {leadingIcon}
-          </span>
-        )}
-        <input
-          type={inputType}
+        <textarea
           id={inputId}
           name={name}
           placeholder={placeholder}
@@ -101,14 +89,14 @@ export default function InputField({
           onChange={onChange}
           onBlur={onBlur}
           onFocus={onFocus}
-          onKeyDown={onKeyDown}
           disabled={disabled}
-          className={`flex-1 font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] text-left bg-transparent outline-none w-full disabled:cursor-not-allowed disabled:text-[#a4a7ae] disabled:placeholder:text-[#a4a7ae] ${inputClassName}`}
+          rows={rows}
+          className={`flex-1 font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] text-left bg-transparent outline-none w-full disabled:cursor-not-allowed disabled:text-[#a4a7ae] disabled:placeholder:text-[#a4a7ae] resize-none ${inputClassName}`}
           style={{ fontVariationSettings: "'opsz' 14" }}
         />
         {error && (
           <svg
-            className="shrink-0 size-[16px] text-[#d92d20]"
+            className="shrink-0 size-[16px] text-[#d92d20] mt-[4px]"
             viewBox="0 0 16 16"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -117,11 +105,6 @@ export default function InputField({
             <path d="M8 5.5V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             <circle cx="8" cy="11" r="0.75" fill="currentColor" />
           </svg>
-        )}
-        {!error && trailingIcon && (
-          <span className="shrink-0 size-[16px] flex items-center justify-center text-[#a4a7ae]">
-            {trailingIcon}
-          </span>
         )}
       </div>
       {bottomText && (
