@@ -1,3 +1,4 @@
+/** @deprecated — proxy shim, use hooks directly, remove after migration */
 import { NextRequest } from 'next/server'
 import { handleApiError, createErrorResponse, normalizeServiceApisError } from '@/lib/utils/errors'
 import { serviceApisFetch } from '@/lib/service-apis/client'
