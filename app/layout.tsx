@@ -36,7 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           <ProployAgentShell>
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 w-full">{children}</main>
           </ProployAgentShell>
         </AuthProvider>
       </body>

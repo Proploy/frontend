@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import ListingExplorer from '@/components/ListingExplorer'
 import Footer from '@/components/Footer'
+import { useCatalogProducts } from '@/hooks/use-catalog-products'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -22,28 +23,8 @@ const CATEGORIES = [
   'Security & Compliance',
 ]
 
-interface Product {
-  product_id: string
-  product_name: string
-  product_description: string | null
-  product_logo: string | null
-  rating?: number | null
-  reviews?: number | null
-}
-
-const FALLBACK_PRODUCTS: Product[] = Array.from({ length: 15 }).map((_, i) => ({
-  product_id: `placeholder-${i}`,
-  product_name: 'The Product Name',
-  product_description:
-    'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.',
-  product_logo: null,
-  rating: 4.8,
-  reviews: 124,
-}))
-
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const { products, loading, error, pagination } = useCatalogProducts({ limit: 30 })
   const [activeCategory, setActiveCategory] = useState('View all')
   const [visible, setVisible] = useState(15)
   const [contact, setContact] = useState({
@@ -54,29 +35,6 @@ export default function ProductsPage() {
     message: '',
     consent: false,
   })
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch('/api/products?limit=30')
-        if (res.ok) {
-          const data = await res.json()
-          if (Array.isArray(data?.data) && data.data.length > 0) {
-            setProducts(data.data)
-          } else {
-            setProducts(FALLBACK_PRODUCTS)
-          }
-        } else {
-          setProducts(FALLBACK_PRODUCTS)
-        }
-      } catch {
-        setProducts(FALLBACK_PRODUCTS)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProducts()
-  }, [])
 
   const filtered = useMemo(() => products, [products])
   const cards = filtered.slice(0, visible)
@@ -117,10 +75,33 @@ export default function ProductsPage() {
             })}
           </div>
 
-          {/* Product card grid */}
+          {/* Error state */}
+          {error && (
+            <div className="flex flex-col items-center gap-[16px] py-[48px]">
+              <p className="text-[16px] text-red-500 font-medium">
+                {error.error.code === 'CIRCUIT_OPEN'
+                  ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
+                  : 'Unable to load products. Please try again.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="px-[16px] py-[8px] bg-[#155eef] text-white rounded-[8px] font-semibold text-[14px]"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Loading state */}
           {loading ? (
             <div className="flex items-center justify-center py-[96px]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+            </div>
+          ) : cards.length === 0 && !error ? (
+            /* Empty state */
+            <div className="flex flex-col items-center gap-[16px] py-[96px]">
+              <p className="text-[16px] text-[#535862]">No products found.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]">
@@ -130,7 +111,7 @@ export default function ProductsPage() {
             </div>
           )}
 
-          {visible < filtered.length && (
+          {pagination && visible < pagination.total && (
             <div className="flex justify-center">
               <button
                 type="button"
@@ -162,7 +143,6 @@ export default function ProductsPage() {
             className="flex flex-col gap-[24px] bg-white rounded-[16px] border border-[#e9eaeb] p-[32px]"
             onSubmit={(e) => {
               e.preventDefault()
-              // submit hook placeholder
               alert('Thanks — Proploy will reach out shortly.')
             }}
           >
@@ -266,10 +246,10 @@ const HIGHLIGHT_STYLES: Record<string, string> = {
   indigo: 'bg-[#eef4ff] border-[#c7d7fe] text-[#3538cd] dot-[#444ce7]',
   success: 'bg-[#ecfdf3] border-[#abefc6] text-[#067647] dot-[#079455]',
   pink: 'bg-[#fdf2fa] border-[#fcceee] text-[#c11574] dot-[#dd2590]',
-  brand: 'bg-[#eff4ff] border-[#b2ccff] text-[#004eeb] dot-[#155eef]',
+  brand: 'bg-[#eff4ff] border-[#b2ddff] text-[#004eeb] dot-[#155eef]',
 }
 
-function ProductCard({ product, highlightIndex }: { product: Product; highlightIndex: number }) {
+function ProductCard({ product, highlightIndex }: { product: { product_id: string; product_name: string; product_description: string | null; product_logo: string | null; rating?: number | null; reviews?: number | null }; highlightIndex: number }) {
   const highlight = HIGHLIGHT_BADGES[highlightIndex % HIGHLIGHT_BADGES.length]
   const tone = HIGHLIGHT_STYLES[highlight.tone]
   return (
