@@ -8,6 +8,7 @@ import ProductInformationTab from '@/components/product/ProductInformationTab'
 import IntegrationsTab from '@/components/product/IntegrationsTab'
 import PricingTab from '@/components/product/PricingTab'
 import ReviewsTab, { ProductReview } from '@/components/product/ReviewsTab'
+import { useProductDetail } from '@/hooks/use-product-detail'
 
 interface PricingPlan {
   plan_name: string
@@ -46,7 +47,7 @@ const PLACEHOLDER_REVIEW: ProductReview = {
 const PLACEHOLDER_INTEGRATIONS = Array.from({ length: 22 }).map((_, i) => ({
   name: 'Linear',
   description: 'Streamline software projects, sprints, and bug tracking.',
-  logo: null as string | null,
+  logo: undefined as string | undefined,
   _idx: i,
 }))
 
@@ -91,42 +92,69 @@ const PLACEHOLDER_PRICING_SECTIONS = [
 export default function ProductDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<ProductTabKey>('product-information')
 
-  useEffect(() => {
-    async function fetchProduct() {
-      try {
-        const response = await fetch(`/api/products/${id}`)
-        if (response.ok) {
-          const result = await response.json()
-          if (result?.data) {
-            setProduct(result.data)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProduct()
-  }, [id])
+  const {
+    product,
+    loading,
+    error,
+    notFound,
+    refetch,
+    pricingPlans,
+    ratings,
+    alternatives,
+    loadPricingPlans,
+    loadRatings,
+    loadAlternatives,
+  } = useProductDetail({ productId: id })
 
-  const resolvedProduct: Product = product ?? {
-    product_id: id,
-    product_name: 'Obsidian',
-    product_description:
-      'A flexible, local-first note-taking app with plugins, Markdown support, and knowledge graph features. Proploy connects you with vetted implementation experts who roll it out end-to-end for your team.',
-    product_logo: null,
-    rating: 4.8,
-    reviews: 124,
-    pricing_plans: [],
-    screenshots: [],
-    videos: [],
-    product_link: '#',
-  }
+  // Load sub-resources when tab becomes relevant
+  useEffect(() => {
+    if (activeTab === 'pricing') {
+      loadPricingPlans()
+    } else if (activeTab === 'reviews') {
+      loadRatings()
+    } else if (activeTab === 'vetted-experts') {
+      loadAlternatives()
+    }
+  }, [activeTab, loadPricingPlans, loadRatings, loadAlternatives])
+
+  const resolvedProduct: Product = product
+    ? {
+        product_id: product.product_id,
+        product_name: product.product_name,
+        product_description: product.short_description,
+        product_logo: null,
+        rating: product.avg_rating,
+        reviews: product.total_reviews,
+        pricing_plans: pricingPlans.map((p) => ({
+          plan_name: p.plan_name,
+          plan_price: p.price_text || '',
+          plan_description: '',
+        })),
+        screenshots: [],
+        videos: [],
+        product_link: product.official_website || '#',
+        features: [],
+        alternatives: alternatives.map((a) => ({
+          name: a.product_name,
+          rating: a.avg_rating ?? 0,
+          reviews: 0,
+          link: `/product/${a.product_id}`,
+        })),
+      }
+    : {
+        product_id: id,
+        product_name: 'Loading...',
+        product_description: null,
+        product_logo: null,
+        rating: null,
+        reviews: null,
+        pricing_plans: [],
+        screenshots: [],
+        videos: [],
+        product_link: '#',
+      }
 
   const pricingTiers = useMemo(() => {
     const plans = resolvedProduct.pricing_plans ?? []
@@ -156,6 +184,39 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen pt-32 flex items-center justify-center bg-white">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-white gap-8">
+        <h1 className="font-semibold text-[36px] text-[#181d27]">Product not found</h1>
+        <a href="/products" className="text-[#004eeb] font-semibold hover:underline">Back to products</a>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-white gap-8">
+        <p className="text-red-500 font-medium">
+          {error.error.code === 'CIRCUIT_OPEN'
+            ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
+            : 'Unable to load product. Please try again.'}
+        </p>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={refetch}
+            className="px-[16px] py-[8px] bg-[#155eef] text-white rounded-[8px] font-semibold text-[14px]"
+          >
+            Retry
+          </button>
+          <a href="/products" className="px-[16px] py-[8px] border border-[#d5d7da] rounded-[8px] font-semibold text-[14px] text-[#414651]">
+            Back to products
+          </a>
+        </div>
       </div>
     )
   }
@@ -235,7 +296,9 @@ export default function ProductDetailPage() {
         {activeTab === 'vetted-experts' && (
           <section className="px-[32px]">
             <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-              20 vetted experts available to implement {resolvedProduct.product_name} for your team.
+              {alternatives.length > 0
+                ? `${alternatives.length} alternative products found.`
+                : `20 vetted experts available to implement ${resolvedProduct.product_name} for your team.`}
             </p>
           </section>
         )}

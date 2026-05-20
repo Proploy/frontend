@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const res = await serviceApisFetch('/api/v1/users/me/interests', {
       requireAuth: true,
       method: 'PATCH',
-      body: { industries, platforms, projectTypes, companySizes },
+      body: JSON.stringify({ industries, platforms, projectTypes, companySizes }),
     })
 
     if (!res.ok) {

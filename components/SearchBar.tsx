@@ -2,12 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { useCatalogSearch } from '@/hooks/use-catalog-search'
 
 interface Product {
   product_id: string
   product_name: string
+  product_description: string | null
   product_logo: string | null
-  product_description?: string
+  rating?: number | null
+  reviews?: number | null
+  primary_category?: string | null
+  vendor_name?: string | null
+  free_plan_available?: boolean
+  free_trial_available?: boolean
 }
 
 interface SearchBarProps {
@@ -16,32 +23,10 @@ interface SearchBarProps {
 
 export default function SearchBar({ className = '' }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<Product[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const searchBarRef = useRef<HTMLDivElement>(null)
 
-  // Handle Search logic
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (searchQuery.trim().length > 1) {
-        try {
-          const res = await fetch(`/api/products?search=${encodeURIComponent(searchQuery)}&limit=5`)
-          const data = await res.json()
-          if (data && data.data) {
-            setSearchResults(data.data)
-            setIsDropdownOpen(true)
-          }
-        } catch (err) {
-          console.error('Search failed:', err)
-        }
-      } else {
-        setSearchResults([])
-        setIsDropdownOpen(false)
-      }
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
+  const { products, loading, error } = useCatalogSearch({ query: searchQuery })
 
   // Click outside handler
   useEffect(() => {
@@ -53,6 +38,8 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const showDropdown = isDropdownOpen && searchQuery.trim().length > 1 && !loading && products.length > 0
 
   return (
     <div ref={searchBarRef} className={`relative w-full max-w-[824px] ${className}`}>
@@ -72,14 +59,28 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
         </div>
       </div>
 
+      {/* Loading indicator */}
+      {loading && searchQuery.trim().length > 1 && (
+        <div className="absolute top-full left-0 w-full bg-white border border-secondary-light rounded-2xl shadow-2xl z-50 overflow-hidden mt-2 p-4">
+          <p className="text-[12px] text-gray-400 text-center">Searching...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && searchQuery.trim().length > 1 && !loading && (
+        <div className="absolute top-full left-0 w-full bg-white border border-secondary-light rounded-2xl shadow-2xl z-50 overflow-hidden mt-2 p-4">
+          <p className="text-[12px] text-red-500 text-center">Unable to search</p>
+        </div>
+      )}
+
       {/* Search Dropdown */}
-      {isDropdownOpen && searchResults.length > 0 && (
+      {showDropdown && (
         <div className="absolute top-full left-0 w-full bg-white border border-secondary-light rounded-2xl shadow-2xl z-50 overflow-hidden mt-2">
           <div className="py-4">
-            {searchResults.map((product) => (
-              <Link 
+            {products.map((product) => (
+              <Link
                 key={product.product_id}
-                href={`/products/${product.product_id}`}
+                href={`/product/${product.product_id}`}
                 className="flex items-center gap-4 px-8 py-4 hover:bg-blue-50 transition-colors group"
               >
                 <div className="w-10 h-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">

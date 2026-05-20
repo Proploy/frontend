@@ -1,20 +1,29 @@
 'use client'
 
 import Link from 'next/link'
-import { Check, User, Bell, FileSearch, Handshake, Mail } from 'lucide-react'
+import { Check, User, Bell, FileSearch, Handshake, Mail, LucideIcon } from 'lucide-react'
 
-const steps = [
+const DEFAULT_STEPS = [
   { icon: Handshake, title: 'Get started', subtitle: 'Create your vendor account' },
   { icon: User, title: 'Your details', subtitle: 'Name and contact info' },
   { icon: Bell, title: 'Preferences', subtitle: 'Updates and consent' },
   { icon: FileSearch, title: 'Review', subtitle: 'Confirm details' },
 ]
 
-interface OnboardingSidebarProps {
-  currentStep: number
+export interface OnboardingStep {
+  icon: LucideIcon
+  title: string
+  subtitle: string
 }
 
-export default function OnboardingSidebar({ currentStep }: OnboardingSidebarProps) {
+interface OnboardingSidebarProps {
+  currentStep: number
+  steps?: OnboardingStep[]
+}
+
+export default function OnboardingSidebar({ currentStep, steps }: OnboardingSidebarProps) {
+  const resolvedSteps = steps ?? DEFAULT_STEPS
+
   return (
     <div className="bg-[#fafafa] flex flex-col justify-between h-full w-full max-w-[440px] shrink-0">
       <div className="flex flex-col gap-[80px] pt-[32px] px-[32px]">
@@ -25,11 +34,11 @@ export default function OnboardingSidebar({ currentStep }: OnboardingSidebarProp
 
         {/* Progress Steps */}
         <div className="flex flex-col pr-[32px]">
-          {steps.map((step, index) => {
+          {resolvedSteps.map((step, index) => {
             const isCompleted = index < currentStep
             const isCurrent = index === currentStep
             const isFuture = index > currentStep
-            const isLast = index === steps.length - 1
+            const isLast = index === resolvedSteps.length - 1
             const Icon = step.icon
 
             return (

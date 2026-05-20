@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'link-color' | 'link-gray';
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'link-color' | 'link-gray' | 'success' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface ButtonProps {
@@ -131,6 +131,24 @@ const variantConfig = {
     loading: '',
     hasOverlay: false,
     isLink: true,
+  },
+  success: {
+    base: 'bg-[#067647] text-white border-2 border-white/12 shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] overflow-clip',
+    hover: 'hover:bg-[#085d3a]',
+    focus: 'focus-visible:ring-4 focus-visible:ring-[#abefc6] focus-visible:outline-none',
+    disabled: 'disabled:bg-[#73cb98] disabled:border-white/12 disabled:cursor-not-allowed',
+    loading: 'bg-[#085d3a]',
+    hasOverlay: true,
+    isLink: false,
+  },
+  danger: {
+    base: 'bg-[#b42318] text-white border-2 border-white/12 shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] overflow-clip',
+    hover: 'hover:bg-[#912018]',
+    focus: 'focus-visible:ring-4 focus-visible:ring-[#fecdca] focus-visible:outline-none',
+    disabled: 'disabled:bg-[#fda29b] disabled:border-white/12 disabled:cursor-not-allowed',
+    loading: 'bg-[#912018]',
+    hasOverlay: true,
+    isLink: false,
   },
 };
 

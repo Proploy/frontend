@@ -1,13 +1,18 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Loader2, Check } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import ProjectList from '@/components/onboarding/ProjectList'
 import ProjectPrioritySelect from '@/components/onboarding/ProjectPrioritySelect'
 import TagInput from '@/components/onboarding/TagInput'
 import UrlListInput from '@/components/onboarding/UrlListInput'
+import InputField from '@/components/ui/InputField'
+import Button from '@/components/ui/Button'
+import Select from '@/components/ui/Select'
+import Checkbox from '@/components/ui/Checkbox'
+import TextAreaField from '@/components/ui/TextAreaField'
 import {
   INDUSTRY_SUGGESTIONS,
   onboardingSteps,
@@ -31,6 +36,7 @@ type ExpertDraftData = Partial<Omit<ExpertFormData, 'featuredProjects'>> & {
   featuredProjects?: ExpertProject[]
   links?: { linkType: string; url: string }[]
   projects?: ExpertProject[]
+  tags?: { tagType: string; tagValue: string }[]
 }
 
 type ExpertFormData = {
@@ -63,11 +69,34 @@ type ExpertFormData = {
   consentContact: boolean
 }
 
+// Config uses snake_case names; form state uses camelCase. This map bridges them.
+const FIELD_NAME_ALIAS: Record<string, keyof ExpertFormData> = {
+  primary_platforms:      'primaryPlatforms',
+  secondary_platforms:    'secondaryPlatforms',
+  industry_expertise:     'industryExpertise',
+  preferred_project_types:'preferredProjectTypes',
+  tools_stack:            'toolsStack',
+  portfolio_links:        'portfolioLinks',
+  case_study_links:       'caseStudyLinks',
+  certification_links:    'certificationLinks',
+  testimonials_links:     'testimonialsLinks',
+  featured_projects:      'featuredProjects',
+}
+
+function resolveFieldKey(name: string): keyof ExpertFormData {
+  return FIELD_NAME_ALIAS[name] ?? (name as keyof ExpertFormData)
+}
+
 const FIELD_SUGGESTIONS: Record<string, string[]> = {
   primaryPlatforms: PLATFORM_SUGGESTIONS,
   secondaryPlatforms: PLATFORM_SUGGESTIONS,
   industryExpertise: INDUSTRY_SUGGESTIONS,
   toolsStack: TOOLS_SUGGESTIONS,
+  // snake_case aliases for config compatibility
+  primary_platforms:   PLATFORM_SUGGESTIONS,
+  secondary_platforms: PLATFORM_SUGGESTIONS,
+  industry_expertise:  INDUSTRY_SUGGESTIONS,
+  tools_stack:         TOOLS_SUGGESTIONS,
 }
 
 const DEFAULT_FORM_DATA: ExpertFormData = {
@@ -110,12 +139,7 @@ const LINK_TYPE_TO_FIELD: Record<string, LinkFieldName> = {
 }
 
 function isValidUrl(value: string) {
-  try {
-    new URL(value)
-    return true
-  } catch {
-    return false
-  }
+  try { new URL(value); return true } catch { return false }
 }
 
 function normalizeNumber(value: number | '') {
@@ -160,9 +184,7 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
 
   for (const link of Array.isArray(data?.links) ? data.links : []) {
     const fieldName = LINK_TYPE_TO_FIELD[link.linkType]
-    if (fieldName) {
-      normalizedLinks[fieldName].push(link.url)
-    }
+    if (fieldName) normalizedLinks[fieldName].push(link.url)
   }
 
   return {
@@ -182,7 +204,6 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
     uniqueStrength: data?.uniqueStrength ?? '',
     idealClients: data?.idealClients ?? '',
     biggestWin: data?.biggestWin ?? '',
-    // Tags → flat arrays (primary and secondary both stored as tagType='platform')
     primaryPlatforms: getTagValues('platform'),
     secondaryPlatforms: [],
     industryExpertise: getTagValues('industry'),
@@ -201,89 +222,66 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
 
 function getPriorityAreaForProjectTypes(projectTypes: string[]) {
   const match = Object.entries(PROJECT_PRIORITY_GROUPS).find(([, values]) =>
-    projectTypes.some((projectType) => values.includes(projectType))
+    projectTypes.some((pt) => values.includes(pt))
   )
-
   return match?.[0] ?? ''
 }
 
 function getStepIndexForField(fieldName: string) {
-  return onboardingSteps.findIndex((step) =>
-    step.fields.some((field) => field.name === fieldName)
-  )
+  return onboardingSteps.findIndex((step) => step.fields.some((f: any) => f.name === fieldName))
 }
 
 function validateField(field: OnboardingField, formData: ExpertFormData) {
   const value = formData[field.name as keyof ExpertFormData]
-
   if (field.required) {
-    if (field.type === 'checkbox' && value !== true) {
+    if (field.type === 'checkbox' && value !== true)
       return `Please complete ${field.label.toLowerCase()}`
-    }
-
-    if ((field.type === 'tags' || field.type === 'url_list' || field.type === 'project_list' || field.type === 'project_priority') &&
-      (!Array.isArray(value) || value.length === 0)
-    ) {
+    if (['tags', 'url_list', 'project_list', 'project_priority'].includes(field.type) &&
+      (!Array.isArray(value) || value.length === 0))
       return `${field.label} is required`
-    }
-
-    if (field.type === 'number' && (value === '' || value === undefined || value === null)) {
+    if (field.type === 'number' && (value === '' || value === undefined || value === null))
       return `${field.label} is required`
-    }
-
-    if ((field.type === 'text' || field.type === 'textarea' || field.type === 'select' || field.type === 'url') &&
-      typeof value === 'string' &&
-      value.trim().length === 0
-    ) {
+    if (['text', 'textarea', 'select', 'url'].includes(field.type) &&
+      typeof value === 'string' && value.trim().length === 0)
       return `${field.label} is required`
-    }
   }
-
-  if (field.type === 'url' && typeof value === 'string' && value.trim() && !isValidUrl(value.trim())) {
+  if (field.type === 'url' && typeof value === 'string' && value.trim() && !isValidUrl(value.trim()))
     return `Please enter a valid ${field.label.toLowerCase()}`
-  }
-
   if (field.name === 'featuredProjects') {
-    const projects = formData.featuredProjects
-    const hasInvalidProjectLink = projects.some((project) => project.link && !isValidUrl(project.link))
-    if (hasInvalidProjectLink) {
+    if (formData.featuredProjects.some((p) => p.link && !isValidUrl(p.link)))
       return 'Please enter valid project links'
-    }
   }
-
   return null
 }
 
 function validateStep(stepIndex: number, formData: ExpertFormData) {
   const errors: Record<string, string> = {}
-
   for (const field of onboardingSteps[stepIndex].fields) {
-    const message = validateField(field, formData)
-    if (message) {
-      errors[field.name] = message
-    }
+    const msg = validateField(field, formData)
+    if (msg) errors[field.name] = msg
   }
-
   return errors
 }
 
 function validateAllSteps(formData: ExpertFormData) {
-  return onboardingSteps.reduce<Record<string, string>>((acc, _step, index) => {
-    return { ...acc, ...validateStep(index, formData) }
-  }, {})
+  return onboardingSteps.reduce<Record<string, string>>((acc, _step, index) => ({
+    ...acc,
+    ...validateStep(index, formData),
+  }), {})
 }
 
 function clearStepErrors(fieldErrors: Record<string, string>, stepIndex: number) {
-  const nextErrors = { ...fieldErrors }
-
-  for (const field of onboardingSteps[stepIndex].fields) {
-    delete nextErrors[field.name]
-  }
-
-  return nextErrors
+  const next = { ...fieldErrors }
+  for (const field of onboardingSteps[stepIndex].fields) delete next[field.name]
+  return next
 }
 
-export default function ExpertApplicationForm() {
+interface ExpertApplicationFormProps {
+  onStepChange?: (step: number) => void
+  onSavingChange?: (saving: boolean) => void
+}
+
+export default function ExpertApplicationForm({ onStepChange, onSavingChange }: ExpertApplicationFormProps = {}) {
   const { user, isLoading: isAuthLoading } = useAuth()
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
@@ -297,6 +295,12 @@ export default function ExpertApplicationForm() {
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasHydratedDraftRef = useRef(false)
   const skipNextAutosaveRef = useRef(true)
+
+  // Notify parent of step changes
+  useEffect(() => { onStepChange?.(currentStep) }, [currentStep, onStepChange])
+
+  // Notify parent of save state
+  useEffect(() => { onSavingChange?.(isSaving) }, [isSaving, onSavingChange])
 
   const persistDraft = useCallback(async (data: ExpertFormData) => {
     setIsSaving(true)
@@ -314,15 +318,11 @@ export default function ExpertApplicationForm() {
   }, [])
 
   const flushDraftSave = useCallback(async (data: ExpertFormData) => {
-    if (!user) {
-      return
-    }
-
+    if (!user) return
     if (autosaveTimeoutRef.current) {
       clearTimeout(autosaveTimeoutRef.current)
       autosaveTimeoutRef.current = null
     }
-
     await persistDraft(data)
   }, [persistDraft, user])
 
@@ -331,13 +331,10 @@ export default function ExpertApplicationForm() {
       try {
         const res = await fetch('/api/experts/me')
         const json = await res.json()
-
         if (json.data) {
-          const normalizedData = normalizeDraftData(json.data)
-          setFormData(normalizedData)
-          setSelectedPriorityArea(
-            getPriorityAreaForProjectTypes(normalizedData.preferredProjectTypes)
-          )
+          const normalized = normalizeDraftData(json.data)
+          setFormData(normalized)
+          setSelectedPriorityArea(getPriorityAreaForProjectTypes(normalized.preferredProjectTypes))
         }
       } catch (err) {
         console.error('Failed to fetch draft', err)
@@ -346,72 +343,39 @@ export default function ExpertApplicationForm() {
         setIsLoading(false)
       }
     }
-
-    if (!isAuthLoading && user) {
-      fetchDraft()
-      return
-    }
-
-    if (!isAuthLoading) {
-      hasHydratedDraftRef.current = true
-      setIsLoading(false)
-    }
+    if (!isAuthLoading && user) { fetchDraft(); return }
+    if (!isAuthLoading) { hasHydratedDraftRef.current = true; setIsLoading(false) }
   }, [isAuthLoading, user])
 
   useEffect(() => {
-    if (!user || !hasHydratedDraftRef.current) {
-      return
-    }
-
-    if (skipNextAutosaveRef.current) {
-      skipNextAutosaveRef.current = false
-      return
-    }
-
-    autosaveTimeoutRef.current = setTimeout(() => {
-      void persistDraft(formData)
-    }, 800)
-
-    return () => {
-      if (autosaveTimeoutRef.current) {
-        clearTimeout(autosaveTimeoutRef.current)
-      }
-    }
+    if (!user || !hasHydratedDraftRef.current) return
+    if (skipNextAutosaveRef.current) { skipNextAutosaveRef.current = false; return }
+    autosaveTimeoutRef.current = setTimeout(() => { void persistDraft(formData) }, 800)
+    return () => { if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current) }
   }, [formData, persistDraft, user])
 
   useEffect(() => {
     if (!selectedPriorityArea && formData.preferredProjectTypes.length > 0) {
-      setSelectedPriorityArea(
-        getPriorityAreaForProjectTypes(formData.preferredProjectTypes)
-      )
+      setSelectedPriorityArea(getPriorityAreaForProjectTypes(formData.preferredProjectTypes))
     }
   }, [formData.preferredProjectTypes, selectedPriorityArea])
 
   const currentStepErrors = useMemo(() => {
     const errors: Record<string, string> = {}
-
     for (const field of onboardingSteps[currentStep].fields) {
-      if (fieldErrors[field.name]) {
-        errors[field.name] = fieldErrors[field.name]
-      }
+      if (fieldErrors[field.name]) errors[field.name] = fieldErrors[field.name]
     }
-
     return errors
   }, [currentStep, fieldErrors])
 
   const updateField = <K extends keyof ExpertFormData>(name: K, value: ExpertFormData[K]) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
-
     setFieldErrors((prev) => {
-      if (!prev[name]) {
-        return prev
-      }
-
+      if (!prev[name]) return prev
       const next = { ...prev }
       delete next[name]
       return next
     })
-
     setError(null)
   }
 
@@ -419,29 +383,22 @@ export default function ExpertApplicationForm() {
     const stepErrors = validateStep(currentStep, formData)
     const nextErrors = { ...clearStepErrors(fieldErrors, currentStep), ...stepErrors }
     setFieldErrors(nextErrors)
-
     if (Object.keys(stepErrors).length > 0) {
       setError('Please fix the highlighted fields before continuing.')
       return
     }
-
     setError(null)
-
     if (currentStep < onboardingSteps.length - 1) {
       await flushDraftSave(formData)
       setCurrentStep((prev) => prev + 1)
       window.scrollTo(0, 0)
       return
     }
-
     await handleSubmit()
   }
 
   const handleBack = async () => {
-    if (currentStep === 0) {
-      return
-    }
-
+    if (currentStep === 0) return
     await flushDraftSave(formData)
     setCurrentStep((prev) => prev - 1)
     window.scrollTo(0, 0)
@@ -450,20 +407,15 @@ export default function ExpertApplicationForm() {
   const handleSubmit = async () => {
     const clientErrors = validateAllSteps(formData)
     setFieldErrors(clientErrors)
-
     if (Object.keys(clientErrors).length > 0) {
       const firstInvalidField = Object.keys(clientErrors)[0]
       const nextStep = getStepIndexForField(firstInvalidField)
-      if (nextStep >= 0) {
-        setCurrentStep(nextStep)
-      }
+      if (nextStep >= 0) setCurrentStep(nextStep)
       setError('Please fix the highlighted fields before submitting.')
       return
     }
-
     setIsSubmitting(true)
     setError(null)
-
     try {
       const res = await fetch('/api/experts/submit', {
         method: 'POST',
@@ -471,23 +423,17 @@ export default function ExpertApplicationForm() {
         body: JSON.stringify(buildPayload(formData)),
       })
       const json = await res.json()
-
       if (!res.ok) {
         const serverFieldErrors = json.details?.fields as Record<string, string> | undefined
-
         if (serverFieldErrors && Object.keys(serverFieldErrors).length > 0) {
           setFieldErrors(serverFieldErrors)
           const firstInvalidField = Object.keys(serverFieldErrors)[0]
           const nextStep = getStepIndexForField(firstInvalidField)
-          if (nextStep >= 0) {
-            setCurrentStep(nextStep)
-          }
+          if (nextStep >= 0) setCurrentStep(nextStep)
         }
-
         setError(json.message || 'Validation failed. Please check all required fields.')
         return
       }
-
       router.push('/become-expert/success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit application.')
@@ -498,187 +444,184 @@ export default function ExpertApplicationForm() {
 
   if (isAuthLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0466E7]" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-[#155eef]" />
       </div>
     )
   }
 
   const step = onboardingSteps[currentStep]
-
   return (
-    <div className="min-h-screen bg-[#F4F8FD] pt-[120px] pb-20 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-12">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <p className="text-[#0466E7] font-semibold text-sm uppercase tracking-wider mb-2">
-                Step {currentStep + 1} of {onboardingSteps.length}
-              </p>
-              <h1 className="text-3xl font-bold text-[#011127] font-dm-sans">{step.title}</h1>
-            </div>
-            {isSaving && (
-              <div className="flex items-center text-gray-400 text-sm gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving draft...
-              </div>
-            )}
-          </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#0466E7] transition-all duration-500 ease-out"
-              style={{ width: `${((currentStep + 1) / onboardingSteps.length) * 100}%` }}
-            />
-          </div>
-        </div>
+    <div className="flex flex-col gap-[32px] w-full">
+      {/* Step header */}
+      <div className="flex flex-col gap-[12px] items-center text-center w-full">
+        <h1 className="display-sm-semibold text-[#181d27] w-full">{step.title}</h1>
+        <p className="text-md-regular text-[#535862] w-full">{step.description}</p>
+      </div>
 
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-blue-50">
-          <p className="text-gray-600 mb-10 text-lg leading-relaxed">{step.description}</p>
+      {/* Fields */}
+      <div className="flex flex-col gap-[20px] w-full">
+        {step.fields.map((field: { name: string; type: string; label: string; required?: boolean; placeholder?: string; options?: string[]; groupedOptions?: any }) => {
+          const fieldKey = resolveFieldKey(field.name)
+          const fieldError = currentStepErrors[field.name]
+          const hasError = Boolean(fieldError)
 
-          <div className="space-y-8">
-            {step.fields.map((field) => {
-              const fieldError = currentStepErrors[field.name]
-              const hasError = Boolean(fieldError)
-              const inputClassName = `w-full rounded-xl bg-[#F4F8FD] border ${
-                hasError ? 'border-red-300' : 'border-transparent'
-              } focus:border-[#0466E7] focus:outline-none transition-all`
-
-              return (
-                <div key={field.name} className="flex flex-col gap-2">
-                  <label className="text-[#011127] font-semibold text-sm">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-
-                  {field.type === 'text' || field.type === 'url' ? (
-                    <input
-                      type={field.type}
-                      value={formData[field.name as keyof ExpertFormData] as string}
-                      onChange={(e) => updateField(field.name as keyof ExpertFormData, e.target.value as never)}
-                      placeholder={field.placeholder}
-                      className={`${inputClassName} h-[56px] px-6 placeholder:text-gray-400`}
-                    />
-                  ) : field.type === 'number' ? (
-                    <input
-                      type="number"
-                      value={formData[field.name as keyof ExpertFormData] as number | ''}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        updateField(
-                          field.name as keyof ExpertFormData,
-                          (value === '' ? '' : Number(value)) as never
-                        )
-                      }}
-                      className={`${inputClassName} h-[56px] px-6`}
-                    />
-                  ) : field.type === 'select' ? (
-                    <select
-                      value={formData[field.name as keyof ExpertFormData] as string}
-                      onChange={(e) => updateField(field.name as keyof ExpertFormData, e.target.value as never)}
-                      className={`${inputClassName} h-[56px] px-6 appearance-none`}
-                    >
-                      <option value="">Select option...</option>
-                      {field.options?.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  ) : field.type === 'textarea' ? (
-                    <textarea
-                      value={formData[field.name as keyof ExpertFormData] as string}
-                      onChange={(e) => updateField(field.name as keyof ExpertFormData, e.target.value as never)}
-                      rows={4}
-                      className={`${inputClassName} p-6`}
-                    />
-                  ) : field.type === 'checkbox' ? (
-                    <label className={`flex items-center gap-3 cursor-pointer group rounded-xl border px-4 py-4 ${hasError ? 'border-red-300 bg-red-50/50' : 'border-transparent bg-[#F4F8FD]'}`}>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(formData[field.name as keyof ExpertFormData])}
-                        onChange={(e) => updateField(field.name as keyof ExpertFormData, e.target.checked as never)}
-                        className="w-5 h-5 rounded border-gray-300 text-[#0466E7] focus:ring-[#0466E7]"
-                      />
-                      <span className="text-gray-700 group-hover:text-black transition-colors">{field.label}</span>
-                    </label>
-                  ) : field.type === 'tags' ? (
-                    <TagInput
-                      values={(formData[field.name as keyof ExpertFormData] as string[]) || []}
-                      label={field.label}
-                      suggestions={FIELD_SUGGESTIONS[field.name] || []}
-                      onChange={(values) => updateField(field.name as keyof ExpertFormData, values as never)}
-                    />
-                  ) : field.type === 'url_list' ? (
-                    <UrlListInput
-                      links={(formData[field.name as keyof ExpertFormData] as string[]) || []}
-                      label={field.label}
-                      onChange={(links) => updateField(field.name as keyof ExpertFormData, links as never)}
-                    />
-                  ) : field.type === 'project_list' ? (
-                    <ProjectList
-                      projects={formData.featuredProjects}
-                      onChange={(projects) => updateField('featuredProjects', projects)}
-                    />
-                  ) : field.type === 'project_priority' ? (
-                    <ProjectPrioritySelect
-                      value={formData.preferredProjectTypes}
-                      groups={field.groupedOptions || {}}
-                      selectedGroup={selectedPriorityArea}
-                      onSelectedGroupChange={setSelectedPriorityArea}
-                      onChange={(values) => updateField('preferredProjectTypes', values)}
-                    />
-                  ) : (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm italic">
-                      Unknown field type &quot;{field.type}&quot;
-                    </div>
-                  )}
-
-                  {fieldError && (
-                    <p className="text-sm text-red-600">{fieldError}</p>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {error && (
-            <div className="mt-8 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-12 pt-8 border-t border-gray-100 flex justify-between items-center gap-4">
-            <button
-              onClick={() => void handleBack()}
-              disabled={currentStep === 0 || isSubmitting}
-              className={`flex items-center gap-2 px-8 py-4 rounded-full font-bold transition-all ${
-                currentStep === 0
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <ChevronLeft size={20} />
-              Back
-            </button>
-
-            <button
-              onClick={() => void handleNext()}
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-10 py-4 bg-[#0466E7] text-white rounded-full font-bold hover:bg-[#0355c0] transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : currentStep === onboardingSteps.length - 1 ? (
-                'Submit Application'
-              ) : (
-                <>
-                  Next Step
-                  <ChevronRight size={20} />
-                </>
+          return (
+            <div key={field.name} className="flex flex-col gap-[6px]">
+              {/* Label (skip for checkbox — it renders its own label) */}
+              {field.type !== 'checkbox' && (
+                <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
+                  {field.label}
+                  {field.required && <span className="text-[#155eef] ml-[2px]">*</span>}
+                </label>
               )}
-            </button>
-          </div>
+
+              {/* text / url */}
+              {(field.type === 'text' || field.type === 'url') && (
+                <InputField
+                  inputType={field.type}
+                  placeholder={field.placeholder}
+                  value={(formData[fieldKey] as string) || ''}
+                  onChange={(e) => updateField(fieldKey, e.target.value as never)}
+                  error={hasError}
+                  errorMessage={fieldError}
+                />
+              )}
+
+              {/* number */}
+              {field.type === 'number' && (
+                <InputField
+                  inputType="number"
+                  value={(formData[fieldKey] as string | number)?.toString() || ''}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    updateField(fieldKey, (v === '' ? '' : Number(v)) as never)
+                  }}
+                  error={hasError}
+                  errorMessage={fieldError}
+                />
+              )}
+
+              {/* select */}
+              {field.type === 'select' && (
+                <Select
+                  options={field.options?.map(opt => ({ value: opt, label: opt })) || []}
+                  value={(formData[fieldKey] as string) || ''}
+                  onChange={(val) => updateField(fieldKey, val as never)}
+                  placeholder="Select option..."
+                  error={hasError}
+                  errorMessage={fieldError}
+                />
+              )}
+
+              {/* textarea */}
+              {field.type === 'textarea' && (
+                <TextAreaField
+                  value={(formData[fieldKey] as string) || ''}
+                  onChange={(e) => updateField(fieldKey, e.target.value as never)}
+                  rows={4}
+                  error={hasError}
+                  errorMessage={fieldError}
+                />
+              )}
+
+              {/* checkbox */}
+              {field.type === 'checkbox' && (
+                <Checkbox
+                  checked={Boolean(formData[fieldKey])}
+                  onChange={(checked) => updateField(fieldKey, checked as never)}
+                  label={field.label}
+                  className={hasError ? 'p-[12px] border border-[#fda29b] bg-[#fef3f2] rounded-[8px]' : 'p-[12px] border border-[#d5d7da] hover:bg-[#fafafa] rounded-[8px]'}
+                />
+              )}
+
+              {/* tags */}
+              {field.type === 'tags' && (
+                <TagInput
+                  values={(formData[fieldKey] as string[]) || []}
+                  label={field.label}
+                  suggestions={FIELD_SUGGESTIONS[field.name] || []}
+                  onChange={(values) => updateField(fieldKey, values as never)}
+                  error={hasError}
+                />
+              )}
+
+              {/* url_list */}
+              {field.type === 'url_list' && (
+                <UrlListInput
+                  links={(formData[fieldKey] as string[]) || []}
+                  label={field.label}
+                  onChange={(links) => updateField(fieldKey, links as never)}
+                  error={hasError}
+                />
+              )}
+
+              {/* project_list */}
+              {field.type === 'project_list' && (
+                <ProjectList
+                  projects={formData.featuredProjects}
+                  onChange={(projects) => updateField('featuredProjects', projects)}
+                />
+              )}
+
+              {/* project_priority */}
+              {field.type === 'project_priority' && (
+                <ProjectPrioritySelect
+                  value={formData.preferredProjectTypes}
+                  groups={field.groupedOptions || {}}
+                  selectedGroup={selectedPriorityArea}
+                  onSelectedGroupChange={setSelectedPriorityArea}
+                  onChange={(values) => updateField('preferredProjectTypes', values)}
+                />
+              )}
+
+              {/* Unknown field type */}
+              {!['text', 'url', 'number', 'select', 'textarea', 'checkbox', 'tags', 'url_list', 'project_list', 'project_priority'].includes(field.type) && (
+                <div className="px-[14px] py-[10px] bg-[#fffaeb] border border-[#fec84b] rounded-[8px] text-[#b54708] text-[14px]">
+                  Unknown field type &quot;{field.type}&quot;
+                </div>
+              )}
+
+              {/* Field error */}
+              {fieldError && (
+                <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#d92d20]">
+                  {fieldError}
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Global error */}
+      {error && (
+        <div className="px-[14px] py-[12px] bg-[#fef3f2] border border-[#fecdca] rounded-[8px] text-[14px] leading-[20px] text-[#d92d20] font-[family-name:var(--font-dm-sans)]">
+          {error}
         </div>
+      )}
+
+      {/* Nav buttons */}
+      <div className="flex flex-col gap-[12px] items-center w-full">
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() => void handleNext()}
+          loading={isSubmitting}
+          loadingText="Submitting..."
+          className="w-full"
+        >
+          {currentStep === onboardingSteps.length - 1 ? 'Submit Application' : 'Continue'}
+        </Button>
+        {currentStep > 0 && (
+          <Button
+            variant="link-gray"
+            size="sm"
+            onClick={() => void handleBack()}
+            disabled={isSubmitting}
+          >
+            Back
+          </Button>
+        )}
       </div>
     </div>
   )
