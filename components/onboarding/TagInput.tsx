@@ -1,70 +1,96 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import Tag from '@/components/ui/Tag'
+import Button from '@/components/ui/Button'
 
 interface TagInputProps {
-  tags: any[]
-  tagType: string
-  onChange: (tags: any[]) => void
+  values: string[]
   label: string
+  suggestions?: string[]
+  onChange: (values: string[]) => void
+  error?: boolean
 }
 
-export default function TagInput({ tags = [], tagType, onChange, label }: TagInputProps) {
+export default function TagInput({ values = [], label, suggestions = [], onChange, error }: TagInputProps) {
   const [input, setInput] = useState('')
 
-  const tagValues = tags
-    .filter((t) => t.tagType === tagType)
-    .map((t) => t.tagValue)
-
-  const addTag = () => {
-    if (input.trim() && !tagValues.includes(input.trim())) {
-      const newTag = { tagType, tagValue: input.trim() }
-      onChange([...tags, newTag])
-      setInput('')
+  const addTag = (value: string = input) => {
+    const trimmed = value.trim()
+    if (trimmed && !values.includes(trimmed)) {
+      onChange([...values, trimmed])
     }
+    if (value === input) setInput('')
   }
 
   const removeTag = (value: string) => {
-    onChange(tags.filter((t) => !(t.tagType === tagType && t.tagValue === value)))
+    onChange(values.filter((v) => v !== value))
   }
 
+  const unusedSuggestions = suggestions.filter((s) => !values.includes(s))
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        {tagValues.map((value) => (
-          <span 
-            key={value} 
-            className="flex items-center gap-1 px-3 py-1.5 bg-[#0466E7]/10 text-[#0466E7] rounded-full text-sm font-medium border border-[#0466E7]/20"
-          >
-            {value}
-            <button 
-              type="button" 
-              onClick={() => removeTag(value)}
-              className="hover:text-red-500 transition-colors"
+    <div className="flex flex-col gap-[12px]">
+      {/* Selected tags */}
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-[8px]">
+          {values.map((value) => (
+            <Tag
+              key={value}
+              size="md"
+              action="x-close"
+              onClose={() => removeTag(value)}
+              className="bg-[#eff4ff] border-[#b2ccff] text-[#004eeb]"
             >
-              <X size={14} />
-            </button>
-          </span>
-        ))}
-      </div>
-      <div className="flex gap-2">
+              {value}
+            </Tag>
+          ))}
+        </div>
+      )}
+
+      {/* Input row */}
+      <div
+        className={`flex gap-[8px] items-center bg-white border rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] px-[14px] py-[10px] transition-colors ${
+          error
+            ? 'border-[#fda29b] focus-within:ring-1 focus-within:ring-[#fda29b]'
+            : 'border-[#d5d7da] focus-within:border-[#2970ff] focus-within:ring-1 focus-within:ring-[#2970ff]'
+        }`}
+      >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
           placeholder={`Add ${label.toLowerCase()}...`}
-          className="flex-1 h-[48px] px-4 rounded-lg bg-[#F4F8FD] border border-transparent focus:border-[#0466E7] focus:outline-none transition-all text-sm"
+          className="flex-1 font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] bg-transparent outline-none"
+          style={{ fontVariationSettings: "'opsz' 14" }}
         />
         <button
           type="button"
-          onClick={addTag}
-          className="p-3 bg-[#0466E7] text-white rounded-lg hover:bg-[#0355c0] transition-colors shadow-sm"
+          onClick={() => addTag()}
+          disabled={!input.trim()}
+          className="shrink-0 size-[28px] rounded-[6px] bg-[#155eef] text-white flex items-center justify-center hover:bg-[#004eeb] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          <Plus size={20} />
+          <Plus size={16} strokeWidth={2.5} />
         </button>
       </div>
+
+      {/* Suggestions */}
+      {unusedSuggestions.length > 0 && (
+        <div className="flex flex-wrap gap-[6px]">
+          {unusedSuggestions.slice(0, 8).map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => addTag(suggestion)}
+              className="inline-flex items-center h-[24px] px-[9px] rounded-[6px] bg-white border border-[#d0d5dd] font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#344054] hover:border-[#2970ff] hover:text-[#004eeb] hover:bg-[#f5f8ff] transition-colors whitespace-nowrap"
+            >
+              + {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
