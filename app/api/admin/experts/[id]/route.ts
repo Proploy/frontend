@@ -95,7 +95,7 @@ export async function POST(
     const res = await serviceApisFetch(`/api/v1/admin/experts/${id}`, {
       requireAuth: true,
       method: 'PATCH',
-      body,
+      body: JSON.stringify(body),
     })
 
     if (!res.ok) {
