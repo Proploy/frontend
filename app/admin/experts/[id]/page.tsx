@@ -4,12 +4,23 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Loader2, ArrowLeft, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
+import Button from '@/components/ui/Button'
+import InputField from '@/components/ui/InputField'
+import TextAreaField from '@/components/ui/TextAreaField'
+import Tag from '@/components/ui/Tag'
 
 type TagGroup = {
   platform: string[]
   industry: string[]
   project_type: string[]
   tool: string[]
+}
+
+const TAG_GROUP_LABELS: Record<string, string> = {
+  platform: 'Platform',
+  industry: 'Industry',
+  project_type: 'Project Type',
+  tool: 'Tool',
 }
 
 export default function ExpertReviewPage() {
@@ -34,33 +45,22 @@ export default function ExpertReviewPage() {
 
   const expertId = params?.id as string
 
-  // Initialize editedTags when expert loads
   useEffect(() => {
     if (!expert?.tags) return
-    const grouped: TagGroup = {
-      platform: [],
-      industry: [],
-      project_type: [],
-      tool: [],
-    }
+    const grouped: TagGroup = { platform: [], industry: [], project_type: [], tool: [] }
     expert.tags.forEach((tag: any) => {
-      if (tag.tagType in grouped) {
-        grouped[tag.tagType as keyof TagGroup].push(tag.tagValue)
-      }
+      if (tag.tagType in grouped) grouped[tag.tagType as keyof TagGroup].push(tag.tagValue)
     })
     setEditedTags(grouped)
   }, [expert])
 
   useEffect(() => {
     if (!expertId) return
-    
     async function fetchExpert() {
       try {
         const res = await fetch(`/api/admin/experts/${expertId}`)
         const json = await res.json()
-        if (json.data) {
-          setExpert(json.data)
-        }
+        if (json.data) setExpert(json.data)
       } catch (err) {
         console.error(err)
       } finally {
@@ -75,16 +75,12 @@ export default function ExpertReviewPage() {
     setIsUpdating(true)
     try {
       const endpointStatus = status === 'changes_requested' ? 'request-changes' : status
-
       const res = await fetch(`/api/admin/experts/${expertId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: endpointStatus, notes: reviewNotes }),
       })
-      if (res.ok) {
-        router.push('/admin/experts')
-        router.refresh()
-      }
+      if (res.ok) { router.push('/admin/experts'); router.refresh() }
     } catch (err) {
       console.error(err)
     } finally {
@@ -96,196 +92,261 @@ export default function ExpertReviewPage() {
     const value = (newTagInputs[tagType] || '').trim()
     if (!value) return
     if (!editedTags[tagType].includes(value)) {
-      setEditedTags(prev => ({ ...prev, [tagType]: [...prev[tagType], value] }))
+      setEditedTags((prev) => ({ ...prev, [tagType]: [...prev[tagType], value] }))
     }
-    setNewTagInputs(prev => ({ ...prev, [tagType]: '' }))
+    setNewTagInputs((prev) => ({ ...prev, [tagType]: '' }))
   }
 
   const removeTag = (tagType: keyof TagGroup, tagValue: string) => {
-    setEditedTags(prev => ({
-      ...prev,
-      [tagType]: prev[tagType].filter(v => v !== tagValue),
-    }))
+    setEditedTags((prev) => ({ ...prev, [tagType]: prev[tagType].filter((v) => v !== tagValue) }))
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0466E7]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#155eef]" />
       </div>
     )
   }
 
   if (!expert) {
-    return <div>Expert not found.</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
+        <p className="font-[family-name:var(--font-dm-sans)] text-[#535862]">Expert not found.</p>
+      </div>
+    )
+  }
+
+  const statusConfig = {
+    approved:  { icon: <CheckCircle size={16} className="text-[#079455]" />, label: 'Approved',  bg: 'bg-[#ecfdf3] text-[#067647] border-[#a9efc5]' },
+    rejected:  { icon: <XCircle size={16} className="text-[#d92d20]" />,    label: 'Rejected',  bg: 'bg-[#fef3f2] text-[#b42318] border-[#fecdca]' },
+    submitted: { icon: <Clock size={16} className="text-[#155eef]" />,       label: 'Submitted', bg: 'bg-[#eff4ff] text-[#004eeb] border-[#b2ccff]' },
+  }
+  const status = statusConfig[expert.status as keyof typeof statusConfig] ?? {
+    icon: null,
+    label: expert.status,
+    bg: 'bg-[#fafafa] text-[#414651] border-[#d5d7da]',
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F8FD] pt-[120px] pb-20 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto">
-        <Link 
-          href="/admin/experts" 
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-[#0466E7] mb-8 font-bold transition-all group"
+    <div className="min-h-screen bg-[#f5f8ff] pt-[104px] pb-20 px-4 md:px-8 w-full flex flex-col">
+      <div className="w-full max-w-[896px] mx-auto">
+        {/* Back link */}
+        <Link
+          href="/admin/experts"
+          className="inline-flex items-center gap-[8px] font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] text-[#535862] hover:text-[#004eeb] mb-8 transition-colors group"
         >
-          <div className="p-2 rounded-full group-hover:bg-blue-50 transition-all">
-            <ArrowLeft size={18} />
-          </div>
+          <ArrowLeft size={16} />
           Back to Applications
         </Link>
 
-        <div className="bg-white rounded-[40px] p-8 md:p-12 shadow-sm border border-blue-50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8">
-             <div className="px-4 py-2 bg-blue-50 rounded-full text-[#0466E7] text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                <ShieldCheck size={14} />
-                Admin Review Mode
-             </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-            <div className="flex-1">
-              <div className="w-24 h-24 rounded-3xl bg-[#0466E7]/5 flex items-center justify-center text-[#0466E7] font-bold text-3xl mb-6">
+        {/* Main card */}
+        <div className="bg-white border border-[#e9eaeb] rounded-[20px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] p-6 md:p-10">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8 pb-8 border-b border-[#e9eaeb]">
+            <div className="flex gap-[16px] items-center w-full sm:w-auto">
+              {/* Avatar */}
+              <div className="shrink-0 size-[64px] rounded-[12px] bg-[#eff4ff] flex items-center justify-center font-[family-name:var(--font-dm-sans)] font-semibold text-[24px] text-[#004eeb]">
                 {expert.displayName?.charAt(0) || 'E'}
               </div>
-              <h1 className="text-4xl font-bold text-[#011127] font-dm-sans mb-3">{expert.displayName}</h1>
-              <p className="text-xl text-gray-500 font-medium">{expert.headline}</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="font-[family-name:var(--font-dm-sans)] font-semibold text-[24px] leading-[32px] text-[#181d27]">
+                  {expert.displayName}
+                </h1>
+                <p className="font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#535862] mt-[2px]">
+                  {expert.headline}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col gap-2 bg-[#F4F8FD] p-6 rounded-3xl border border-blue-50/50">
-               <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Current Status</p>
-               <div className="flex items-center gap-2 text-[#011127] font-bold text-lg">
-                  {expert.status === 'approved' && <CheckCircle className="text-green-500" size={20} />}
-                  {expert.status === 'rejected' && <XCircle className="text-red-500" size={20} />}
-                  {expert.status === 'submitted' && <Clock className="text-blue-500" size={20} />}
-                  <span className="capitalize">{expert.status}</span>
-               </div>
+
+            <div className="flex flex-col gap-[8px] items-start sm:items-end shrink-0">
+              {/* Status badge */}
+              <span className={`inline-flex items-center gap-[6px] h-[28px] px-[10px] rounded-[6px] border font-[family-name:var(--font-dm-sans)] font-medium text-[14px] ${status.bg}`}>
+                {status.icon}
+                {status.label}
+              </span>
+              {/* Admin Review badge */}
+              <span className="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[6px] bg-[#eff4ff] border border-[#b2ccff] font-[family-name:var(--font-dm-sans)] font-medium text-[12px] text-[#004eeb]">
+                <ShieldCheck size={12} />
+                Admin Review Mode
+              </span>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 border-t border-gray-100 pt-12">
-            <section className="space-y-8">
-              <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Location & Logistics</h3>
-                <div className="space-y-3">
-                  <p className="font-bold text-[#011127]">{expert.regionCity}, {expert.regionCountry}</p>
-                  <p className="text-gray-600 font-medium">Timezone: {expert.timezone}</p>
-                  <p className="text-gray-600 font-medium">{expert.availabilityHoursPerWeek} hrs/week available</p>
+          {/* Two-col detail grid */}
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            {/* Left */}
+            <div className="flex flex-col gap-[24px] w-full">
+              <section>
+                <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] leading-[18px] text-[#717680] uppercase tracking-[0.08em] mb-[8px]">
+                  Location & Logistics
+                </p>
+                <div className="flex flex-col gap-[4px] w-full">
+                  <p className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] text-[#181d27] break-words">
+                    {expert.regionCity}, {expert.regionCountry}
+                  </p>
+                  <p className="font-[family-name:var(--font-dm-sans)] text-[14px] text-[#535862] break-words">Timezone: {expert.timezone}</p>
+                  <p className="font-[family-name:var(--font-dm-sans)] text-[14px] text-[#535862] break-words">{expert.availabilityHoursPerWeek} hrs/week available</p>
                 </div>
-              </div>
+              </section>
 
-              <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Experience Metrics</h3>
-                <div className="space-y-3">
-                  <p className="font-bold text-[#011127]">{expert.yearsExperience} Years Professional Experience</p>
-                  <p className="text-gray-600 font-medium">{expert.projectsCompletedTotal} Total Projects Completed</p>
+              <section>
+                <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] leading-[18px] text-[#717680] uppercase tracking-[0.08em] mb-[8px]">
+                  Experience Metrics
+                </p>
+                <div className="flex flex-col gap-[4px]">
+                  <p className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] text-[#181d27]">
+                    {expert.yearsExperience} Years Professional Experience
+                  </p>
+                  <p className="font-[family-name:var(--font-dm-sans)] text-[14px] text-[#535862]">
+                    {expert.projectsCompletedTotal} Total Projects Completed
+                  </p>
                 </div>
-              </div>
+              </section>
 
-              <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Identity & Intent</h3>
-                <div className="space-y-4">
-                   <div>
-                    <p className="text-xs text-gray-400 font-bold mb-1">Entity Type</p>
-                    <p className="text-gray-700 font-medium">{expert.entityType}</p>
-                   </div>
-                   <div>
-                    <p className="text-xs text-gray-400 font-bold mb-1">Why Proploy?</p>
-                    <p className="text-gray-700 font-medium leading-relaxed italic">"{expert.whyPlatform}"</p>
-                   </div>
+              <section>
+                <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] leading-[18px] text-[#717680] uppercase tracking-[0.08em] mb-[8px]">
+                  Identity & Intent
+                </p>
+                <div className="flex flex-col gap-[12px] w-full">
+                  <div className="w-full">
+                    <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] text-[#717680] mb-[2px]">Entity Type</p>
+                    <p className="font-[family-name:var(--font-dm-sans)] text-[14px] text-[#414651] break-words">{expert.entityType}</p>
+                  </div>
+                  <div className="w-full">
+                    <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] text-[#717680] mb-[2px]">Why Proploy?</p>
+                    <p className="font-[family-name:var(--font-dm-sans)] text-[14px] text-[#414651] italic leading-relaxed break-words">
+                      &ldquo;{expert.whyPlatform}&rdquo;
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
 
-            <section className="space-y-8">
-               <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Professional Proof</h3>
-                <div className="space-y-4">
+            {/* Right */}
+            <div className="flex flex-col gap-[24px] w-full">
+              <section>
+                <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] leading-[18px] text-[#717680] uppercase tracking-[0.08em] mb-[8px]">
+                  Professional Proof
+                </p>
+                <div className="flex flex-col gap-[6px]">
                   {expert.links?.map((link: any, idx: number) => (
-                    <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-[#0466E7] hover:bg-white transition-all group">
-                      <span className="text-sm font-bold text-gray-600 group-hover:text-[#0466E7] capitalize">{link.linkType.replace('_', ' ')}</span>
-                      <ExternalLink size={16} className="text-gray-400" />
+                    <a
+                      key={idx}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-[12px] py-[10px] bg-[#fafafa] border border-[#e9eaeb] rounded-[8px] hover:border-[#b2ccff] hover:bg-[#f5f8ff] transition-colors group"
+                    >
+                      <div className="flex items-center gap-[12px] w-full">
+                        <span className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] text-[#414651] group-hover:text-[#004eeb] capitalize truncate">
+                          {link.linkType.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <ExternalLink size={14} className="text-[#a4a7ae] group-hover:text-[#155eef] shrink-0 ml-[8px]" />
                     </a>
                   ))}
                   {expert.introVideoLink && (
-                    <a href={expert.introVideoLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-[#0466E7]/5 rounded-2xl border border-[#0466E7]/10 hover:border-[#0466E7] transition-all group">
-                      <span className="text-sm font-bold text-[#0466E7]">Intro Video</span>
-                      <ExternalLink size={16} className="text-[#0466E7]" />
+                    <a
+                      href={expert.introVideoLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-[12px] py-[10px] bg-[#eff4ff] border border-[#b2ccff] rounded-[8px] hover:border-[#84adff] transition-colors group"
+                    >
+                      <span className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] text-[#004eeb]">Intro Video</span>
+                      <ExternalLink size={14} className="text-[#155eef]" />
                     </a>
                   )}
                 </div>
-              </div>
+              </section>
 
-              <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Platform Expertise</h3>
-                {(Object.keys(editedTags) as Array<keyof TagGroup>).map(tagType => (
-                  <div key={tagType} className="mb-4">
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 capitalize">{tagType.replace('_', ' ')}</p>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {editedTags[tagType].map((val, idx) => (
-                        <span key={idx} className="px-3 py-1.5 bg-[#0466E7]/10 text-[#0466E7] rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          {val}
-                          <button
-                            type="button"
-                            onClick={() => removeTag(tagType, val)}
-                            className="ml-1 hover:text-red-500 transition-colors"
+              <section>
+                <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] leading-[18px] text-[#717680] uppercase tracking-[0.08em] mb-[8px]">
+                  Platform Expertise
+                </p>
+                <div className="flex flex-col gap-[16px]">
+                  {(Object.keys(editedTags) as Array<keyof TagGroup>).map((tagType) => (
+                    <div key={tagType}>
+                      <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] text-[#717680] mb-[6px]">
+                        {TAG_GROUP_LABELS[tagType]}
+                      </p>
+                      <div className="flex flex-wrap gap-[6px] mb-[8px]">
+                        {editedTags[tagType].map((val, idx) => (
+                          <Tag
+                            key={idx}
+                            size="sm"
+                            action="x-close"
+                            onClose={() => removeTag(tagType, val)}
+                            className="bg-[#eff4ff] border-[#b2ccff] text-[#004eeb]"
                           >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                            {val}
+                          </Tag>
+                        ))}
+                      </div>
+                      <div className="flex gap-[8px] w-full items-start">
+                        <InputField
+                          placeholder={`Add ${TAG_GROUP_LABELS[tagType].toLowerCase()}...`}
+                          value={newTagInputs[tagType]}
+                          onChange={(e) => setNewTagInputs((prev) => ({ ...prev, [tagType]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag(tagType))}
+                          className="flex-1"
+                        />
+                        <Button variant="secondary" size="sm" onClick={() => addTag(tagType)}>
+                          Add
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder={`Add ${tagType.replace('_', ' ')}...`}
-                        value={newTagInputs[tagType]}
-                        onChange={e => setNewTagInputs(prev => ({ ...prev, [tagType]: e.target.value }))}
-                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag(tagType))}
-                        className="flex-1 px-3 py-1.5 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-[#0466E7] transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => addTag(tagType)}
-                        className="px-3 py-1.5 text-xs font-bold bg-[#0466E7] text-white rounded-xl hover:bg-[#0356C7] transition-all"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
 
-          <div className="mt-16 pt-12 border-t border-gray-100">
-            <h3 className="text-xl font-bold text-[#011127] mb-6 font-dm-sans">Reviewer Action</h3>
-            <textarea
-              placeholder="Internal review notes (e.g. why rejected, what changes needed...)"
-              value={reviewNotes}
-              onChange={(e) => setReviewNotes(e.target.value)}
-              className="w-full p-6 rounded-3xl bg-[#F4F8FD] border border-blue-50 focus:border-[#0466E7] focus:outline-none transition-all mb-8 text-gray-700 min-h-[120px]"
-            />
+          {/* Reviewer Action */}
+          <div className="border-t border-[#e9eaeb] pt-8">
+            <p className="font-[family-name:var(--font-dm-sans)] font-semibold text-[18px] leading-[28px] text-[#181d27] mb-4">
+              Reviewer Action
+            </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
+            {/* Notes textarea */}
+            <div className="mb-6">
+              <TextAreaField
+                placeholder="Internal review notes (e.g. why rejected, what changes needed...)"
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-[12px]">
+              <Button
+                variant="success"
                 onClick={() => handleUpdateStatus('approved')}
                 disabled={isUpdating}
-                className="flex-1 py-4 bg-green-500 text-white rounded-full font-bold hover:bg-green-600 transition-all shadow-lg shadow-green-100 flex items-center justify-center gap-2"
+                loading={isUpdating}
+                className="flex-1 h-[44px]"
               >
-                {isUpdating ? <Loader2 className="animate-spin" size={20} /> : <><CheckCircle size={20} /> Approve Expert</>}
-              </button>
-              <button
-                onClick={() => handleUpdateStatus('rejected')}
-                disabled={isUpdating}
-                className="flex-1 py-4 bg-red-500 text-white rounded-full font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2"
-              >
-                 {isUpdating ? <Loader2 className="animate-spin" size={20} /> : <><XCircle size={20} /> Reject</>}
-              </button>
-              <button
+                {!isUpdating && <CheckCircle size={18} />} Approve Expert
+              </Button>
+              <Button
+                variant="primary"
                 onClick={() => handleUpdateStatus('changes_requested')}
                 disabled={isUpdating}
-                className="flex-1 py-4 bg-blue-500 text-white rounded-full font-bold hover:bg-blue-600 transition-all shadow-lg shadow-blue-100"
+                loading={isUpdating}
+                className="flex-1 h-[44px]"
               >
-                 Request Changes
-              </button>
+                Request Changes
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => handleUpdateStatus('rejected')}
+                disabled={isUpdating}
+                loading={isUpdating}
+                className="flex-1 h-[44px]"
+              >
+                {!isUpdating && <XCircle size={18} />} Reject
+              </Button>
             </div>
           </div>
         </div>

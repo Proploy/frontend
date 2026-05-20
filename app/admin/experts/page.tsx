@@ -2,6 +2,7 @@
 
 import { Loader2, ExternalLink, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
+import Button from '@/components/ui/Button'
 import { useAdminExperts } from '@/hooks/use-admin-experts'
 
 export default function AdminExpertsPage() {
@@ -22,12 +23,13 @@ export default function AdminExpertsPage() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-red-600 mb-2">Access Error</h1>
           <p className="text-gray-600 mb-4">{error.error?.message ?? 'Failed to load experts'}</p>
-          <button
+          <Button
+            variant="primary"
             onClick={refetch}
-            className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-[#0466E7] text-white rounded-full font-semibold text-sm hover:bg-blue-700 transition-all"
+            className="mx-auto"
           >
             <RefreshCw size={14} /> Retry
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -81,11 +83,10 @@ export default function AdminExpertsPage() {
               </div>
 
               <div className="flex items-center gap-4 w-full md:w-auto shrink-0">
-                <Link
-                  href={`/admin/experts/${expert.id}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-[#011127] text-white rounded-full font-bold text-sm hover:bg-[#022a5e] transition-all"
-                >
-                  Review Application <ExternalLink size={14} />
+                <Link href={`/admin/experts/${expert.id}`}>
+                  <Button variant="primary" className="w-full md:w-auto h-[44px]">
+                    Review Application <ExternalLink size={14} />
+                  </Button>
                 </Link>
               </div>
             </div>
