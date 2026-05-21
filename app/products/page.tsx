@@ -6,26 +6,24 @@ import { ArrowRight } from 'lucide-react'
 import ListingExplorer from '@/components/ListingExplorer'
 import Footer from '@/components/Footer'
 import { useCatalogProducts } from '@/hooks/use-catalog-products'
+import { useCatalogCategories } from '@/hooks/use-catalog-categories'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
-const CATEGORIES = [
-  'View all',
-  'CRM & Sales',
-  'Marketing Automation',
-  'Project Management',
-  'Analytics & Business Intelligence',
-  'Accounting & Finance',
-  'HR & Recruitment',
-  'Customer Support',
-  'Collaboration Tools',
-  'Security & Compliance',
-]
+const VIEW_ALL = 'view-all'
 
 export default function ProductsPage() {
-  const { products, loading, error, pagination } = useCatalogProducts({ limit: 30 })
-  const [activeCategory, setActiveCategory] = useState('View all')
+  const { categories: catList } = useCatalogCategories()
+  const topCategories = useMemo(
+    () => catList.filter((c) => c.taxonomy_type === 'category'),
+    [catList],
+  )
+  const [activeCategory, setActiveCategory] = useState<string>(VIEW_ALL)
+  const { products, loading, error, pagination } = useCatalogProducts({
+    limit: 30,
+    category: activeCategory === VIEW_ALL ? undefined : activeCategory,
+  })
   const [visible, setVisible] = useState(15)
   const [contact, setContact] = useState({
     firstName: '',
@@ -56,20 +54,23 @@ export default function ProductsPage() {
 
           {/* Category filter tabs */}
           <div className="flex flex-wrap justify-center gap-[8px]">
-            {CATEGORIES.map((cat) => {
-              const active = cat === activeCategory
+            {[{ term_id: VIEW_ALL, label: 'View all' }, ...topCategories].map((cat) => {
+              const active = cat.term_id === activeCategory
               return (
                 <button
-                  key={cat}
+                  key={cat.term_id}
                   type="button"
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => {
+                    setActiveCategory(cat.term_id)
+                    setVisible(15)
+                  }}
                   className={`h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors ${
                     active
                       ? 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
                       : 'text-[#717680] hover:text-[#414651]'
                   }`}
                 >
-                  {cat}
+                  {cat.label}
                 </button>
               )
             })}
