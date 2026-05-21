@@ -5,12 +5,20 @@ import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
   try {
     const ip = getClientIP(request)
     const rl = await rateLimit(ip)
     if (!rl.success) return createErrorResponse('RATE_LIMIT_EXCEEDED', 'Too many requests.', 429)
-    const res = await serviceApisFetch('/api/v1/recently-viewed', { requireAuth: true })
+    const { projectId } = await params
+    const body = await request.json()
+    const res = await serviceApisFetch(
+      `/api/v1/experts/me/projects/${encodeURIComponent(projectId)}`,
+      { method: 'PATCH', requireAuth: true, body: JSON.stringify(body) },
+    )
     const data = await res.json().catch(() => null)
     if (!res.ok) return normalizeServiceApisError(res, data)
     return Response.json({ data, rateLimit: { remaining: rl.remaining, limit: rl.limit } })
@@ -19,23 +27,22 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
   try {
     const ip = getClientIP(request)
     const rl = await rateLimit(ip)
     if (!rl.success) return createErrorResponse('RATE_LIMIT_EXCEEDED', 'Too many requests.', 429)
-    const body = await request.json()
-    const targetId = body.targetId ?? body.productId
-    const targetType = body.targetType ?? 'product'
-    if (!targetId) return createErrorResponse('VALIDATION_ERROR', 'targetId required', 400)
-    const res = await serviceApisFetch('/api/v1/recently-viewed', {
-      method: 'POST',
-      requireAuth: true,
-      body: JSON.stringify({ targetType, targetId }),
-    })
+    const { projectId } = await params
+    const res = await serviceApisFetch(
+      `/api/v1/experts/me/projects/${encodeURIComponent(projectId)}`,
+      { method: 'DELETE', requireAuth: true },
+    )
     const data = await res.json().catch(() => null)
     if (!res.ok) return normalizeServiceApisError(res, data)
-    return Response.json({ data, rateLimit: { remaining: rl.remaining, limit: rl.limit } })
+    return Response.json({ data: { success: true }, rateLimit: { remaining: rl.remaining, limit: rl.limit } })
   } catch (error) {
     return handleApiError(error)
   }
