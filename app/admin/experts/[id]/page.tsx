@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button'
 import InputField from '@/components/ui/InputField'
 import TextAreaField from '@/components/ui/TextAreaField'
 import Tag from '@/components/ui/Tag'
+import { useAdminExpertDetail } from '@/hooks/use-admin-expert-detail'
 
 type TagGroup = {
   platform: string[]
@@ -26,9 +27,10 @@ const TAG_GROUP_LABELS: Record<string, string> = {
 export default function ExpertReviewPage() {
   const params = useParams()
   const router = useRouter()
-  const [expert, setExpert] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUpdating, setIsUpdating] = useState(false)
+  const expertId = params?.id as string
+
+  const { expert, loading: isLoading, error, isUpdating, updateStatus } = useAdminExpertDetail(expertId)
+  
   const [reviewNotes, setReviewNotes] = useState('')
   const [editedTags, setEditedTags] = useState<TagGroup>({
     platform: [],
@@ -43,48 +45,21 @@ export default function ExpertReviewPage() {
     tool: '',
   })
 
-  const expertId = params?.id as string
-
   useEffect(() => {
     if (!expert?.tags) return
     const grouped: TagGroup = { platform: [], industry: [], project_type: [], tool: [] }
-    expert.tags.forEach((tag: any) => {
+    expert.tags.forEach((tag: { tagType: string; tagValue: string }) => {
       if (tag.tagType in grouped) grouped[tag.tagType as keyof TagGroup].push(tag.tagValue)
     })
     setEditedTags(grouped)
   }, [expert])
 
-  useEffect(() => {
+  const handleUpdateStatus = async (status: 'approved' | 'changes_requested' | 'rejected') => {
     if (!expertId) return
-    async function fetchExpert() {
-      try {
-        const res = await fetch(`/api/admin/experts/${expertId}`)
-        const json = await res.json()
-        if (json.data) setExpert(json.data)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchExpert()
-  }, [expertId])
-
-  const handleUpdateStatus = async (status: string) => {
-    if (!expertId) return
-    setIsUpdating(true)
-    try {
-      const endpointStatus = status === 'changes_requested' ? 'request-changes' : status
-      const res = await fetch(`/api/admin/experts/${expertId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: endpointStatus, notes: reviewNotes }),
-      })
-      if (res.ok) { router.push('/admin/experts'); router.refresh() }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setIsUpdating(false)
+    const result = await updateStatus(status, reviewNotes)
+    if (result.ok) {
+      router.push('/admin/experts')
+      router.refresh()
     }
   }
 
@@ -101,7 +76,7 @@ export default function ExpertReviewPage() {
     setEditedTags((prev) => ({ ...prev, [tagType]: prev[tagType].filter((v) => v !== tagValue) }))
   }
 
-  if (isLoading) {
+  if (isLoading && !expert) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
         <Loader2 className="w-8 h-8 animate-spin text-[#155eef]" />
@@ -111,8 +86,13 @@ export default function ExpertReviewPage() {
 
   if (!expert) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
-        <p className="font-[family-name:var(--font-dm-sans)] text-[#535862]">Expert not found.</p>
+      <div className="min-h-screen flex flex-col gap-4 items-center justify-center bg-[#f5f8ff]">
+        <p className="font-[family-name:var(--font-dm-sans)] text-[#d92d20]">
+          {error ? `Error: ${error.error.message}` : 'Expert not found.'}
+        </p>
+        <Link href="/admin/experts" className="text-[#004eeb] hover:underline">
+          Return to list
+        </Link>
       </div>
     )
   }
@@ -230,7 +210,7 @@ export default function ExpertReviewPage() {
                   Professional Proof
                 </p>
                 <div className="flex flex-col gap-[6px]">
-                  {expert.links?.map((link: any, idx: number) => (
+                  {expert.links?.map((link: { linkType: string; url: string }, idx: number) => (
                     <a
                       key={idx}
                       href={link.url}
@@ -307,6 +287,12 @@ export default function ExpertReviewPage() {
             <p className="font-[family-name:var(--font-dm-sans)] font-semibold text-[18px] leading-[28px] text-[#181d27] mb-4">
               Reviewer Action
             </p>
+
+            {error && (
+              <div className="mb-4 p-4 bg-[#fef3f2] border border-[#fecdca] rounded-[8px] text-[#b42318] text-[14px]">
+                {error.error.message}
+              </div>
+            )}
 
             {/* Notes textarea */}
             <div className="mb-6">
