@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Menu, X, LogOut, User, Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
+
+const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account']
 
 const NAV_LINKS = [
   { href: '/products', label: 'Explore Products' },
@@ -18,10 +21,14 @@ const BUTTON_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
 export default function Navbar() {
+  const pathname = usePathname()
   const { user, expert, signOut } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  if (hideOnWorkspace) return null
 
   const expertStatus = expert?.status
   const showDashboard = expertStatus === 'approved'
