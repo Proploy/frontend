@@ -24,8 +24,8 @@ export default function ExploreExpertsPage() {
             Connect with certified specialists to accelerate your digital transformation and tool implementation.
           </p>
           <div className="mt-10 flex justify-center">
-            <Link 
-              href="/become-expert" 
+            <Link
+              href="/become-expert"
               className="px-8 py-4 bg-[#0466E7] text-white rounded-full font-bold hover:bg-[#0355c0] transition-all shadow-lg shadow-blue-200"
             >
               Join as an Expert
@@ -50,7 +50,7 @@ export default function ExploreExpertsPage() {
                         Verified
                       </div>
                    </div>
-                   
+
                    <h2 className="text-2xl font-bold text-[#011127] mb-2 font-dm-sans">{expert.displayName}</h2>
                    <p className="text-[#0466E7] text-sm font-bold truncate mb-6">{expert.headline}</p>
 
@@ -78,8 +78,8 @@ export default function ExploreExpertsPage() {
                 </div>
 
                 <div className="p-8 border-t border-gray-50 bg-gray-50/50">
-                   <Link 
-                     href={`/experts/${expert.id}`} // FUTURE: Detailed profile page
+                   <Link
+                     href={`/experts/${expert.id}`}
                      className="w-full flex items-center justify-between font-bold text-[#011127] hover:text-[#0466E7] transition-all group"
                    >
                      View Profile
@@ -94,4 +94,3 @@ export default function ExploreExpertsPage() {
     </div>
   )
 }
-
