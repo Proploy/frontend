@@ -1,29 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Loader2, ExternalLink, MapPin, Briefcase, GraduationCap, ChevronRight } from 'lucide-react'
+import { Loader2, MapPin, Briefcase, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { useApprovedExperts } from '@/hooks/use-approved-experts'
 
 export default function ExploreExpertsPage() {
-  const [experts, setExperts] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { experts, loading } = useApprovedExperts()
 
-  useEffect(() => {
-    async function fetchApproved() {
-      try {
-        const res = await fetch('/api/experts/approved')
-        const data = await res.json()
-        setExperts(data)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchApproved()
-  }, [])
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
         <Loader2 className="w-8 h-8 animate-spin text-[#0466E7]" />
@@ -82,8 +66,8 @@ export default function ExploreExpertsPage() {
                    </div>
 
                    <div className="flex flex-wrap gap-2 mb-8">
-                      {expert.tags?.slice(0, 4).map((tag: any, idx: number) => (
-                        <span key={idx} className="px-3 py-1 bg-[#F4F8FD] text-gray-600 rounded-full text-[11px] font-bold uppercase tracking-wider border border-blue-50/50">
+                      {expert.tags?.slice(0, 4).map((tag) => (
+                        <span key={tag.id} className="px-3 py-1 bg-[#F4F8FD] text-gray-600 rounded-full text-[11px] font-bold uppercase tracking-wider border border-blue-50/50">
                           {tag.tagValue}
                         </span>
                       ))}
