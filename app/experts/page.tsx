@@ -1,32 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Loader2, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import ListingExplorer from '@/components/ListingExplorer'
-
-interface Expert {
-  id: string
-  displayName: string
-  headline?: string
-  regionCity?: string
-  regionCountry?: string
-  yearsExperience?: number
-  tags?: { id: string; name: string }[]
-}
+import { useApprovedExperts } from '@/hooks/use-approved-experts'
+import type { ExpertListItem } from '@/hooks/types/expert-contracts'
 
 export default function ExpertsPage() {
-  const [experts, setExperts] = useState<Expert[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/experts/approved')
-      .then((res) => res.json())
-      .then((payload) => setExperts(payload?.data || []))
-      .catch(() => setExperts([]))
-      .finally(() => setLoading(false))
-  }, [])
+  const { experts, loading } = useApprovedExperts()
+  const typedExperts: ExpertListItem[] = experts
 
   return (
     <div className="relative bg-white min-h-screen">
@@ -69,7 +52,7 @@ export default function ExpertsPage() {
             <div className="flex items-center justify-center py-[96px]">
               <Loader2 size={40} className="animate-spin text-[#155eef]" />
             </div>
-          ) : experts.length === 0 ? (
+          ) : typedExperts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-[96px] gap-[16px]">
               <p
                 className="font-[family-name:var(--font-dm-sans)] font-normal text-[18px] leading-[28px] text-[#535862]"
@@ -139,7 +122,7 @@ export default function ExpertsPage() {
                           className="inline-flex items-center bg-[#eff8ff] border border-[#b2ddff] rounded-full px-[10px] py-[2px] font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#175cd3]"
                           style={{ fontVariationSettings: "'opsz' 14" }}
                         >
-                          {tag.name}
+                          {tag.tagValue}
                         </span>
                       ))}
                     </div>
