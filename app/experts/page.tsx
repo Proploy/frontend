@@ -5,28 +5,34 @@ import { Loader2, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import ListingExplorer from '@/components/ListingExplorer'
+import { useApprovedExperts } from '@/hooks/use-approved-experts'
 
 interface Expert {
   id: string
   displayName: string
-  headline?: string
-  regionCity?: string
-  regionCountry?: string
-  yearsExperience?: number
-  tags?: { id: string; name: string }[]
+  headline?: string | null
+  regionCity?: string | null
+  regionCountry?: string | null
+  yearsExperience?: number | null
+  tags: { id: string; tagType: string; tagValue: string }[]
+  profilePictureUrl?: string | null
 }
 
 export default function ExpertsPage() {
+  const { getApprovedExperts } = useApprovedExperts()
   const [experts, setExperts] = useState<Expert[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/experts/approved')
-      .then((res) => res.json())
-      .then((payload) => setExperts(payload?.data || []))
-      .catch(() => setExperts([]))
-      .finally(() => setLoading(false))
-  }, [])
+    async function loadExperts() {
+      const result = await getApprovedExperts()
+      if (result.ok && result.data) {
+        setExperts(result.data.experts)
+      }
+      setLoading(false)
+    }
+    void loadExperts()
+  }, [getApprovedExperts])
 
   return (
     <div className="relative bg-white min-h-screen">
@@ -139,7 +145,7 @@ export default function ExpertsPage() {
                           className="inline-flex items-center bg-[#eff8ff] border border-[#b2ddff] rounded-full px-[10px] py-[2px] font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#175cd3]"
                           style={{ fontVariationSettings: "'opsz' 14" }}
                         >
-                          {tag.name}
+                          {tag.tagValue}
                         </span>
                       ))}
                     </div>
