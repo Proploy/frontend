@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Loader2, ArrowLeft, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
@@ -17,6 +17,8 @@ type TagGroup = {
   tool: string[]
 }
 
+type AdminExpertDetail = NonNullable<ReturnType<typeof useAdminExpertDetail>['expert']>
+
 const TAG_GROUP_LABELS: Record<string, string> = {
   platform: 'Platform',
   industry: 'Industry',
@@ -24,35 +26,75 @@ const TAG_GROUP_LABELS: Record<string, string> = {
   tool: 'Tool',
 }
 
+function groupExpertTags(tags?: Array<{ tagType: string; tagValue: string }> | null): TagGroup {
+  const grouped: TagGroup = { platform: [], industry: [], project_type: [], tool: [] }
+  tags?.forEach((tag) => {
+    if (tag.tagType in grouped) grouped[tag.tagType as keyof TagGroup].push(tag.tagValue)
+  })
+  return grouped
+}
+
 export default function ExpertReviewPage() {
   const params = useParams()
-  const router = useRouter()
   const expertId = params?.id as string
 
   const { expert, loading: isLoading, error, isUpdating, updateStatus } = useAdminExpertDetail(expertId)
-  
+
+  if (isLoading && !expert) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#155eef]" />
+      </div>
+    )
+  }
+
+  if (!expert) {
+    return (
+      <div className="min-h-screen flex flex-col gap-4 items-center justify-center bg-[#f5f8ff]">
+        <p className="font-[family-name:var(--font-dm-sans)] text-[#d92d20]">
+          {error ? `Error: ${error.error.message}` : 'Expert not found.'}
+        </p>
+        <Link href="/admin/experts" className="text-[#004eeb] hover:underline">
+          Return to list
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <ExpertReviewContent
+      key={expert.id}
+      expert={expert}
+      expertId={expertId}
+      error={error}
+      isUpdating={isUpdating}
+      updateStatus={updateStatus}
+    />
+  )
+}
+
+function ExpertReviewContent({
+  expert,
+  expertId,
+  error,
+  isUpdating,
+  updateStatus,
+}: {
+  expert: AdminExpertDetail
+  expertId: string
+  error: ReturnType<typeof useAdminExpertDetail>['error']
+  isUpdating: boolean
+  updateStatus: ReturnType<typeof useAdminExpertDetail>['updateStatus']
+}) {
+  const router = useRouter()
   const [reviewNotes, setReviewNotes] = useState('')
-  const [editedTags, setEditedTags] = useState<TagGroup>({
-    platform: [],
-    industry: [],
-    project_type: [],
-    tool: [],
-  })
+  const [editedTags, setEditedTags] = useState<TagGroup>(() => groupExpertTags(expert.tags))
   const [newTagInputs, setNewTagInputs] = useState<Record<keyof TagGroup, string>>({
     platform: '',
     industry: '',
     project_type: '',
     tool: '',
   })
-
-  useEffect(() => {
-    if (!expert?.tags) return
-    const grouped: TagGroup = { platform: [], industry: [], project_type: [], tool: [] }
-    expert.tags.forEach((tag: { tagType: string; tagValue: string }) => {
-      if (tag.tagType in grouped) grouped[tag.tagType as keyof TagGroup].push(tag.tagValue)
-    })
-    setEditedTags(grouped)
-  }, [expert])
 
   const handleUpdateStatus = async (status: 'approved' | 'changes_requested' | 'rejected') => {
     if (!expertId) return
@@ -74,27 +116,6 @@ export default function ExpertReviewPage() {
 
   const removeTag = (tagType: keyof TagGroup, tagValue: string) => {
     setEditedTags((prev) => ({ ...prev, [tagType]: prev[tagType].filter((v) => v !== tagValue) }))
-  }
-
-  if (isLoading && !expert) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#155eef]" />
-      </div>
-    )
-  }
-
-  if (!expert) {
-    return (
-      <div className="min-h-screen flex flex-col gap-4 items-center justify-center bg-[#f5f8ff]">
-        <p className="font-[family-name:var(--font-dm-sans)] text-[#d92d20]">
-          {error ? `Error: ${error.error.message}` : 'Expert not found.'}
-        </p>
-        <Link href="/admin/experts" className="text-[#004eeb] hover:underline">
-          Return to list
-        </Link>
-      </div>
-    )
   }
 
   const statusConfig = {
@@ -210,9 +231,9 @@ export default function ExpertReviewPage() {
                   Professional Proof
                 </p>
                 <div className="flex flex-col gap-[6px]">
-                  {expert.links?.map((link: { linkType: string; url: string }, idx: number) => (
+                  {expert.links?.map((link: { linkType: string; url: string }) => (
                     <a
-                      key={idx}
+                      key={`${link.linkType}:${link.url}`}
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -251,9 +272,9 @@ export default function ExpertReviewPage() {
                         {TAG_GROUP_LABELS[tagType]}
                       </p>
                       <div className="flex flex-wrap gap-[6px] mb-[8px]">
-                        {editedTags[tagType].map((val, idx) => (
+                        {editedTags[tagType].map((val) => (
                           <Tag
-                            key={idx}
+                            key={`${tagType}:${val}`}
                             size="sm"
                             action="x-close"
                             onClose={() => removeTag(tagType, val)}
