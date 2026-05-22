@@ -1,17 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import OverviewStep from "@/components/vendor-onboarding/OverviewStep";
-import ExpertiseStep from "@/components/vendor-onboarding/ExpertiseStep";
-import CredentialsStep from "@/components/vendor-onboarding/CredentialsStep";
-import ProjectsStep from "@/components/vendor-onboarding/ProjectsStep";
-import PortfolioStep from "@/components/vendor-onboarding/PortfolioStep";
-import PreferencesStep from "@/components/vendor-onboarding/PreferencesStep";
-import ReviewStep from "@/components/vendor-onboarding/ReviewStep";
-import SubmittedStep from "@/components/vendor-onboarding/SubmittedStep";
-import ProgressStepper from "@/components/vendor-onboarding/ProgressStepper";
-import Button from "@/components/ui/Button";
-import type { VendorOnboardingData } from "@/hooks/types/vendor-contracts";
+import { useState } from 'react';
+import OverviewStep from '@/components/vendor-onboarding/OverviewStep';
+import ExpertiseStep from '@/components/vendor-onboarding/ExpertiseStep';
+import CredentialsStep from '@/components/vendor-onboarding/CredentialsStep';
+import ProjectsStep from '@/components/vendor-onboarding/ProjectsStep';
+import PortfolioStep from '@/components/vendor-onboarding/PortfolioStep';
+import PreferencesStep from '@/components/vendor-onboarding/PreferencesStep';
+import ReviewStep from '@/components/vendor-onboarding/ReviewStep';
+import SubmittedStep from '@/components/vendor-onboarding/SubmittedStep';
+import ProgressStepper from '@/components/vendor-onboarding/ProgressStepper';
+import Button from '@/components/ui/Button';
+import { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
+import { vendorStepSchemas } from '@/lib/validations/vendor';
 
 const STEP_CONFIG = [
   {
@@ -54,32 +55,36 @@ const STEP_CONFIG = [
 ];
 
 const INITIAL_FORM_DATA: VendorOnboardingData = {
+  accountType: '',
   categories: [],
   specializations: [],
   skills: [],
+  platform: '',
+  industry: '',
   certificationFiles: [],
   manualCertifications: [],
-  yearsExperience: "",
+  yearsExperience: '',
   openToAssessment: false,
-  totalProjects: "",
+  totalProjects: '',
   featuredProjects: [],
   portfolioFiles: [],
   portfolioLinks: [],
   visibilitySettings: {},
-  timezone: "",
+  timezone: '',
   regions: [],
-  weeklyAvailability: "",
-  earliestStartDate: "",
+  weeklyAvailability: '',
+  earliestStartDate: '',
   preferredProjectTypes: [],
-  whyPlatforms: "",
+  whyPlatforms: '',
   agreements: [],
 };
 
 export default function VendorOnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<VendorOnboardingData>(INITIAL_FORM_DATA);
+  const [stepError, setStepError] = useState<string | null>(null);
 
-  const updateFormData = (updates: Partial<FormData>) => {
+  const updateFormData = (updates: Partial<VendorOnboardingData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
@@ -89,6 +94,15 @@ export default function VendorOnboardingPage() {
       window.location.href = "/";
       return;
     }
+
+    // Validate current step before advancing
+    const schema = vendorStepSchemas[currentStep];
+    const result = schema.safeParse(formData);
+    if (!result.success) {
+      setStepError(result.error.errors[0]?.message || 'Please fill in all required fields');
+      return;
+    }
+    setStepError(null);
     setCurrentStep((prev) => Math.min(prev + 1, 7));
   };
 
@@ -162,6 +176,13 @@ export default function VendorOnboardingPage() {
           {/* Form Content Area */}
           <div className="w-full max-w-[840px]">
             {renderStepContent()}
+
+            {/* Step error message */}
+            {stepError && (
+              <p className="mt-4 text-center font-[family-name:var(--font-dm-sans)] text-[14px] font-normal text-[#dc2626]">
+                {stepError}
+              </p>
+            )}
 
             {/* Continue Button */}
             <Button
