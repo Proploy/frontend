@@ -1,27 +1,31 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, ExternalLink, MapPin, Briefcase, GraduationCap, ChevronRight } from 'lucide-react'
+import { Loader2, MapPin, Briefcase, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { useApprovedExperts } from '@/hooks/use-approved-experts'
+import type { ExpertListItem } from '@/hooks/types/expert-contracts'
 
 export default function ExploreExpertsPage() {
-  const [experts, setExperts] = useState<any[]>([])
+  const { getApprovedExperts } = useApprovedExperts()
+  const [experts, setExperts] = useState<ExpertListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function fetchApproved() {
       try {
-        const res = await fetch('/api/experts/approved')
-        const data = await res.json()
-        setExperts(data)
+        const result = await getApprovedExperts()
+        if (result.ok && result.data) {
+          setExperts(result.data.experts)
+        }
       } catch (err) {
         console.error(err)
       } finally {
         setIsLoading(false)
       }
     }
-    fetchApproved()
-  }, [])
+    void fetchApproved()
+  }, [getApprovedExperts])
 
   if (isLoading) {
     return (
@@ -82,7 +86,7 @@ export default function ExploreExpertsPage() {
                    </div>
 
                    <div className="flex flex-wrap gap-2 mb-8">
-                      {expert.tags?.slice(0, 4).map((tag: any, idx: number) => (
+                      {expert.tags?.slice(0, 4).map((tag, idx) => (
                         <span key={idx} className="px-3 py-1 bg-[#F4F8FD] text-gray-600 rounded-full text-[11px] font-bold uppercase tracking-wider border border-blue-50/50">
                           {tag.tagValue}
                         </span>
@@ -110,4 +114,3 @@ export default function ExploreExpertsPage() {
     </div>
   )
 }
-

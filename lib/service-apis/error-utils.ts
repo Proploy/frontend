@@ -9,6 +9,8 @@ export interface NormalizedError {
     code: string
     message: string
     retryAfter?: number
+    /** Field-level validation errors, e.g. from VALIDATION_ERROR responses. */
+    fields?: Record<string, string>
   }
 }
 
@@ -95,6 +97,8 @@ export async function normalizeServiceApiError(response: Response): Promise<Norm
       error: {
         code: body.code,
         message: extractMessage({ detail: body.detail }, status),
+        // Preserve field-level validation errors when present
+        ...(typeof body.fields === 'object' && body.fields !== null ? { fields: body.fields as Record<string, string> } : {}),
       },
     }
   }

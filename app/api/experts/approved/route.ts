@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
 
     const list = Array.isArray(data)
       ? data
+      : Array.isArray(data?.experts)
+      ? data.experts
       : Array.isArray(data?.data)
       ? data.data
       : Array.isArray(data?.items)

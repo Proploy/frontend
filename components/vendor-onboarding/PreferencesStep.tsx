@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import Select from '@/components/ui/Select';
+import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface PreferencesStepProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: VendorOnboardingData;
+  setFormData: (data: VendorOnboardingData) => void;
 }
 
 const timezoneOptions = [
@@ -177,7 +178,7 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
   const preferredProjectTypes: string[] = formData?.preferredProjectTypes ?? [];
   const whyPlatforms = formData?.whyPlatforms ?? '';
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: string | string[] | boolean | Date | null) => {
     setFormData({ ...formData, [field]: value });
   };
 

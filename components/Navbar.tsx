@@ -28,18 +28,20 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
-  if (hideOnWorkspace) return null
-
   const expertStatus = expert?.status
   const showDashboard = expertStatus === 'approved'
   const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
   const showApplicationPending = expertStatus === 'submitted'
+  const dashboardHref = '/experts/dashboard'
+  const settingsHref = '/settings'
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  if (hideOnWorkspace) return null
 
   const handleSignOut = async () => {
     await signOut()
@@ -55,7 +57,7 @@ export default function Navbar() {
     : 'Find an Expert'
 
   const ctaHref = showDashboard
-    ? '/expert/dashboard'
+    ? '/experts/dashboard'
     : showCompleteApplication
     ? '/expert/apply'
     : showApplicationPending
@@ -133,22 +135,13 @@ export default function Navbar() {
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <Link
-                    href="/dashboard"
+                    href={dashboardHref}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => setIsProfileOpen(false)}
                   >
                     <User size={16} />
                     Dashboard
                   </Link>
-                  {showDashboard && (
-                    <Link
-                      href="/expert/dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-[#0466e7] hover:bg-blue-50 font-medium"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      Expert Dashboard
-                    </Link>
-                  )}
                   {showCompleteApplication && (
                     <Link
                       href="/expert/apply"
@@ -164,7 +157,7 @@ export default function Navbar() {
                     </div>
                   )}
                   <Link
-                    href="/settings"
+                    href={settingsHref}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => setIsProfileOpen(false)}
                   >
@@ -252,6 +245,20 @@ export default function Navbar() {
                 >
                   Sign Out
                 </button>
+                <Link
+                  href={dashboardHref}
+                  className="text-left text-lg font-semibold text-[#181d27]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href={settingsHref}
+                  className="text-left text-lg font-semibold text-[#181d27]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Settings
+                </Link>
               </div>
             ) : (
               <Link

@@ -1,10 +1,13 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { User } from '@supabase/supabase-js'
+import type { ExpertMe } from '@/hooks/types/expert-contracts'
 
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL || 'http://localhost:8020'
+const SERVICE_APIS_URL = (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || '').replace(/\/$/, '')
+if (!SERVICE_APIS_URL) {
+  console.warn('[AuthProvider] NEXT_PUBLIC_SERVICE_APIS_URL is not set.')
+}
 
 async function syncUserToServiceApis(accessToken: string) {
   try {
@@ -28,33 +31,7 @@ type AuthUser = {
   image?: string
 }
 
-type Expert = {
-  id: string
-  status: string
-  displayName: string
-  headline: string
-  entityType: string
-  regionCountry: string
-  regionCity: string
-  timezone: string
-  yearsExperience: number
-  projectsCompletedTotal: number
-  introVideoLink: string
-  availabilityHoursPerWeek: number
-  availabilityNotes: string
-  whyPlatform: string
-  uniqueStrength: string
-  idealClients: string
-  biggestWin: string
-  primaryPlatforms: string[]
-  secondaryPlatforms: string[]
-  industryExpertise: string[]
-  preferredProjectTypes: string[]
-  toolsStack: string[]
-  tags: { tagType: string; tagValue: string }[]
-  links: { linkType: string; url: string }[]
-  projects: { title: string; summary: string; link: string; outcomes: string }[]
-}
+type Expert = ExpertMe
 
 type AuthContextType = {
   user: AuthUser | null
@@ -72,21 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [expert, setExpert] = useState<Expert | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
-
-  const fetchExpert = async (userId: string) => {
-    try {
-      const res = await fetch('/api/experts/me')
-      if (res.ok) {
-        const json = await res.json()
-        if (json.data) {
-          setExpert(json.data)
-        }
-      }
-    } catch {
-      // expert fetch is best-effort
-    }
-  }
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const getUser = async () => {
@@ -108,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // race condition where subsequent API calls 401 because sync hasn't completed.
       if (session?.access_token) {
         await syncUserToServiceApis(session.access_token)
+      } else {
+        setExpert(null)
       }
 
       const u = {
@@ -117,27 +82,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         image: user.user_metadata?.avatar_url as string,
       }
       setUser(u)
-      await fetchExpert(u.id)
       setIsLoading(false)
     }
 
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, authSession) => {
+      if (authSession?.user) {
         // Sync user to service-apis on auth state change. Await to prevent
         // race condition on first OAuth login where API calls fail before sync completes.
-        if (session.access_token) {
-          await syncUserToServiceApis(session.access_token)
+        if (authSession.access_token) {
+          await syncUserToServiceApis(authSession.access_token)
         }
         const u = {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name as string || session.user.user_metadata?.name as string,
-          image: session.user.user_metadata?.avatar_url as string,
+          id: authSession.user.id,
+          email: authSession.user.email,
+          name: authSession.user.user_metadata?.full_name as string || authSession.user.user_metadata?.name as string,
+          image: authSession.user.user_metadata?.avatar_url as string,
         }
         setUser(u)
-        await fetchExpert(u.id)
+        setExpert(null)
       } else {
         setUser(null)
         setExpert(null)
@@ -167,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    setExpert(null)
   }
 
   const signInWithOAuth = async (provider: 'google' | 'github' | 'azure' | 'linkedin', redirectTo?: string) => {

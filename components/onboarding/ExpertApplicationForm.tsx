@@ -1,9 +1,11 @@
 'use client'
 
-import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Check } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { useExpertApplication } from '@/hooks/use-expert-application'
+import type { ExpertApplyRequest, ExpertMe } from '@/hooks/types/expert-contracts'
 import ProjectList from '@/components/onboarding/ProjectList'
 import ProjectPrioritySelect from '@/components/onboarding/ProjectPrioritySelect'
 import TagInput from '@/components/onboarding/TagInput'
@@ -25,11 +27,22 @@ import {
 type ExpertProject = {
   title: string
   summary: string
-  link: string
+  link?: string | null
   outcomes: string
+  fileUrl?: string | null
+  fileStorageKey?: string | null
+  fileName?: string | null
+  fileContentType?: string | null
+  fileSizeBytes?: number | null
 }
 
 type ExpertDraftData = Partial<Omit<ExpertFormData, 'featuredProjects'>> & {
+  entityType?: string | null
+  displayName?: string | null
+  headline?: string | null
+  regionCountry?: string | null
+  regionCity?: string | null
+  timezone?: string | null
   yearsExperience?: number
   projectsCompletedTotal?: number
   availabilityHoursPerWeek?: number
@@ -37,6 +50,19 @@ type ExpertDraftData = Partial<Omit<ExpertFormData, 'featuredProjects'>> & {
   links?: { linkType: string; url: string }[]
   projects?: ExpertProject[]
   tags?: { tagType: string; tagValue: string }[]
+  schedulingProvider?: string | null
+  schedulingLink?: string | null
+  schedulingLinkEnabled?: boolean
+}
+
+type RenderOnboardingField = OnboardingField & {
+  name: string
+  type: string
+  label: string
+  required?: boolean
+  placeholder?: string
+  options?: string[]
+  groupedOptions?: Record<string, string[]>
 }
 
 type ExpertFormData = {
@@ -64,9 +90,16 @@ type ExpertFormData = {
   caseStudyLinks: string[]
   certificationLinks: string[]
   testimonialsLinks: string[]
+  linkedinLink: string
+  xLink: string
+  websiteLink: string
+  githubLink: string
   featuredProjects: ExpertProject[]
   agreeTerms: boolean
   consentContact: boolean
+  schedulingProvider: string
+  schedulingLink: string
+  schedulingLinkEnabled: boolean
 }
 
 // Config uses snake_case names; form state uses camelCase. This map bridges them.
@@ -124,18 +157,40 @@ const DEFAULT_FORM_DATA: ExpertFormData = {
   caseStudyLinks: [],
   certificationLinks: [],
   testimonialsLinks: [],
+  linkedinLink: '',
+  xLink: '',
+  websiteLink: '',
+  githubLink: '',
   featuredProjects: [],
   agreeTerms: false,
   consentContact: false,
+  schedulingProvider: '',
+  schedulingLink: '',
+  schedulingLinkEnabled: false,
 }
 
 type LinkFieldName = 'portfolioLinks' | 'caseStudyLinks' | 'certificationLinks' | 'testimonialsLinks'
+type SocialLinkFieldName = 'linkedinLink' | 'xLink' | 'websiteLink' | 'githubLink'
 
 const LINK_TYPE_TO_FIELD: Record<string, LinkFieldName> = {
   portfolio: 'portfolioLinks',
   case_study: 'caseStudyLinks',
   certification: 'certificationLinks',
   testimonial: 'testimonialsLinks',
+}
+
+const SOCIAL_LINK_TYPE_TO_FIELD: Record<string, SocialLinkFieldName> = {
+  social_linkedin: 'linkedinLink',
+  social_x: 'xLink',
+  social_website: 'websiteLink',
+  social_github: 'githubLink',
+}
+
+const SOCIAL_FIELD_TO_LINK_TYPE: Record<SocialLinkFieldName, string> = {
+  linkedinLink: 'social_linkedin',
+  xLink: 'social_x',
+  websiteLink: 'social_website',
+  githubLink: 'social_github',
 }
 
 function isValidUrl(value: string) {
@@ -166,14 +221,23 @@ function buildPayload(formData: ExpertFormData) {
       ...formData.caseStudyLinks.map((url) => ({ linkType: 'case_study', url })),
       ...formData.certificationLinks.map((url) => ({ linkType: 'certification', url })),
       ...formData.testimonialsLinks.map((url) => ({ linkType: 'testimonial', url })),
+      ...Object.entries(SOCIAL_FIELD_TO_LINK_TYPE)
+        .map(([fieldName, linkType]) => ({
+          linkType,
+          url: formData[fieldName as SocialLinkFieldName].trim(),
+        }))
+        .filter((link) => link.url.length > 0),
     ],
+    schedulingProvider: formData.schedulingProvider || null,
+    schedulingLink: formData.schedulingLink || null,
+    schedulingLinkEnabled: formData.schedulingLinkEnabled,
   }
 }
 
 function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
   const rawTags = Array.isArray(data?.tags) ? data.tags : []
   const getTagValues = (tagType: string): string[] =>
-    rawTags.filter((t: any) => t.tagType === tagType).map((t: any) => t.tagValue)
+    rawTags.filter((t) => t.tagType === tagType).map((t) => t.tagValue)
 
   const normalizedLinks: Record<LinkFieldName, string[]> = {
     portfolioLinks: [],
@@ -181,29 +245,40 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
     certificationLinks: [],
     testimonialsLinks: [],
   }
+  const normalizedSocialLinks: Record<SocialLinkFieldName, string> = {
+    linkedinLink: '',
+    xLink: '',
+    websiteLink: '',
+    githubLink: '',
+  }
 
   for (const link of Array.isArray(data?.links) ? data.links : []) {
     const fieldName = LINK_TYPE_TO_FIELD[link.linkType]
     if (fieldName) normalizedLinks[fieldName].push(link.url)
+    const socialFieldName = SOCIAL_LINK_TYPE_TO_FIELD[link.linkType]
+    if (socialFieldName) normalizedSocialLinks[socialFieldName] = link.url
   }
+
+  // Cast ExpertMe (or ExpertDraftData) to handle string|null mismatches
+  const d = data as ExpertMe & Record<string, unknown>
 
   return {
     ...DEFAULT_FORM_DATA,
-    entityType: data?.entityType ?? '',
-    displayName: data?.displayName ?? '',
-    headline: data?.headline ?? '',
-    regionCountry: data?.regionCountry ?? '',
-    regionCity: data?.regionCity ?? '',
-    timezone: data?.timezone ?? '',
-    yearsExperience: typeof data?.yearsExperience === 'number' ? data.yearsExperience : '',
-    projectsCompletedTotal: typeof data?.projectsCompletedTotal === 'number' ? data.projectsCompletedTotal : '',
-    introVideoLink: data?.introVideoLink ?? '',
-    availabilityHoursPerWeek: typeof data?.availabilityHoursPerWeek === 'number' ? data.availabilityHoursPerWeek : '',
-    availabilityNotes: data?.availabilityNotes ?? '',
-    whyPlatform: data?.whyPlatform ?? '',
-    uniqueStrength: data?.uniqueStrength ?? '',
-    idealClients: data?.idealClients ?? '',
-    biggestWin: data?.biggestWin ?? '',
+    entityType: d.entityType ?? '',
+    displayName: d.displayName ?? '',
+    headline: d.headline ?? '',
+    regionCountry: d.regionCountry ?? '',
+    regionCity: d.regionCity ?? '',
+    timezone: d.timezone ?? '',
+    yearsExperience: typeof d.yearsExperience === 'number' ? d.yearsExperience : '',
+    projectsCompletedTotal: typeof d.projectsCompletedTotal === 'number' ? d.projectsCompletedTotal : '',
+    introVideoLink: d.introVideoLink ?? '',
+    availabilityHoursPerWeek: typeof d.availabilityHoursPerWeek === 'number' ? d.availabilityHoursPerWeek : '',
+    availabilityNotes: d.availabilityNotes ?? '',
+    whyPlatform: d.whyPlatform ?? '',
+    uniqueStrength: d.uniqueStrength ?? '',
+    idealClients: d.idealClients ?? '',
+    biggestWin: d.biggestWin ?? '',
     primaryPlatforms: getTagValues('platform'),
     secondaryPlatforms: [],
     industryExpertise: getTagValues('industry'),
@@ -213,10 +288,17 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
     caseStudyLinks: normalizedLinks.caseStudyLinks,
     certificationLinks: normalizedLinks.certificationLinks,
     testimonialsLinks: normalizedLinks.testimonialsLinks,
-    featuredProjects: Array.isArray(data?.featuredProjects) ? data.featuredProjects :
-                      Array.isArray(data?.projects) ? data.projects : [],
-    agreeTerms: Boolean(data?.agreeTerms),
-    consentContact: Boolean(data?.consentContact),
+    linkedinLink: normalizedSocialLinks.linkedinLink,
+    xLink: normalizedSocialLinks.xLink,
+    websiteLink: normalizedSocialLinks.websiteLink,
+    githubLink: normalizedSocialLinks.githubLink,
+    featuredProjects: Array.isArray(d.featuredProjects) ? d.featuredProjects :
+                      Array.isArray(d.projects) ? d.projects : [],
+    agreeTerms: Boolean(d.agreeTerms),
+    consentContact: Boolean(d.consentContact),
+    schedulingProvider: d.schedulingProvider ?? '',
+    schedulingLink: d.schedulingLink ?? '',
+    schedulingLinkEnabled: Boolean(d.schedulingLinkEnabled),
   }
 }
 
@@ -228,11 +310,14 @@ function getPriorityAreaForProjectTypes(projectTypes: string[]) {
 }
 
 function getStepIndexForField(fieldName: string) {
-  return onboardingSteps.findIndex((step) => step.fields.some((f: any) => f.name === fieldName))
+  return onboardingSteps.findIndex((step) =>
+    step.fields.some((field: OnboardingField) => field.name === fieldName || resolveFieldKey(field.name) === fieldName)
+  )
 }
 
 function validateField(field: OnboardingField, formData: ExpertFormData) {
-  const value = formData[field.name as keyof ExpertFormData]
+  const fieldKey = resolveFieldKey(field.name)
+  const value = formData[fieldKey]
   if (field.required) {
     if (field.type === 'checkbox' && value !== true)
       return `Please complete ${field.label.toLowerCase()}`
@@ -247,9 +332,14 @@ function validateField(field: OnboardingField, formData: ExpertFormData) {
   }
   if (field.type === 'url' && typeof value === 'string' && value.trim() && !isValidUrl(value.trim()))
     return `Please enter a valid ${field.label.toLowerCase()}`
-  if (field.name === 'featuredProjects') {
+  if (fieldKey === 'featuredProjects') {
     if (formData.featuredProjects.some((p) => p.link && !isValidUrl(p.link)))
       return 'Please enter valid project links'
+  }
+  // schedulingLink: validate as URL only when provided and enabled
+  if (fieldKey === 'schedulingLink' && formData.schedulingLinkEnabled) {
+    if (typeof value === 'string' && value.trim() && !isValidUrl(value.trim()))
+      return 'Please enter a valid scheduling link URL'
   }
   return null
 }
@@ -272,7 +362,10 @@ function validateAllSteps(formData: ExpertFormData) {
 
 function clearStepErrors(fieldErrors: Record<string, string>, stepIndex: number) {
   const next = { ...fieldErrors }
-  for (const field of onboardingSteps[stepIndex].fields) delete next[field.name]
+  for (const field of onboardingSteps[stepIndex].fields) {
+    delete next[field.name]
+    delete next[resolveFieldKey(field.name)]
+  }
   return next
 }
 
@@ -284,86 +377,73 @@ interface ExpertApplicationFormProps {
 export default function ExpertApplicationForm({ onStepChange, onSavingChange }: ExpertApplicationFormProps = {}) {
   const { user, isLoading: isAuthLoading } = useAuth()
   const router = useRouter()
+  const { getApplication, createApplication, submitApplication, getProjectFileUploadUrl, uploadProjectFileToSignedUrl } = useExpertApplication()
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<ExpertFormData>(DEFAULT_FORM_DATA)
   const [selectedPriorityArea, setSelectedPriorityArea] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasExistingApplication, setHasExistingApplication] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const hasHydratedDraftRef = useRef(false)
-  const skipNextAutosaveRef = useRef(true)
+  const loadedApplicationForUserRef = useRef<string | null>(null)
+  const userId = user?.id ?? null
 
   // Notify parent of step changes
   useEffect(() => { onStepChange?.(currentStep) }, [currentStep, onStepChange])
 
-  // Notify parent of save state
-  useEffect(() => { onSavingChange?.(isSaving) }, [isSaving, onSavingChange])
-
-  const persistDraft = useCallback(async (data: ExpertFormData) => {
-    setIsSaving(true)
-    try {
-      await fetch('/api/experts/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload(data)),
-      })
-    } catch (err) {
-      console.error('Failed to save draft', err)
-    } finally {
-      setIsSaving(false)
-    }
-  }, [])
-
-  const flushDraftSave = useCallback(async (data: ExpertFormData) => {
-    if (!user) return
-    if (autosaveTimeoutRef.current) {
-      clearTimeout(autosaveTimeoutRef.current)
-      autosaveTimeoutRef.current = null
-    }
-    await persistDraft(data)
-  }, [persistDraft, user])
+  // This flow does not autosave; service-apis writes only on apply/submit.
+  useEffect(() => { onSavingChange?.(false) }, [onSavingChange])
 
   useEffect(() => {
-    async function fetchDraft() {
-      try {
-        const res = await fetch('/api/experts/me')
-        const json = await res.json()
-        if (json.data) {
-          const normalized = normalizeDraftData(json.data)
-          setFormData(normalized)
-          setSelectedPriorityArea(getPriorityAreaForProjectTypes(normalized.preferredProjectTypes))
-        }
-      } catch (err) {
-        console.error('Failed to fetch draft', err)
-      } finally {
-        hasHydratedDraftRef.current = true
-        setIsLoading(false)
+    let cancelled = false
+
+    async function loadApplication() {
+      if (isAuthLoading) return
+      if (!userId) {
+        loadedApplicationForUserRef.current = null
+        await Promise.resolve()
+        if (!cancelled) setIsLoading(false)
+        return
       }
-    }
-    if (!isAuthLoading && user) { fetchDraft(); return }
-    if (!isAuthLoading) { hasHydratedDraftRef.current = true; setIsLoading(false) }
-  }, [isAuthLoading, user])
+      if (loadedApplicationForUserRef.current === userId) {
+        setIsLoading(false)
+        return
+      }
+      loadedApplicationForUserRef.current = userId
 
-  useEffect(() => {
-    if (!user || !hasHydratedDraftRef.current) return
-    if (skipNextAutosaveRef.current) { skipNextAutosaveRef.current = false; return }
-    autosaveTimeoutRef.current = setTimeout(() => { void persistDraft(formData) }, 800)
-    return () => { if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current) }
-  }, [formData, persistDraft, user])
+      const result = await getApplication()
+      if (cancelled) return
 
-  useEffect(() => {
-    if (!selectedPriorityArea && formData.preferredProjectTypes.length > 0) {
-      setSelectedPriorityArea(getPriorityAreaForProjectTypes(formData.preferredProjectTypes))
+      if (!result.ok) {
+        console.error('Failed to fetch draft', result.error)
+        setIsLoading(false)
+        return
+      }
+      if (result.data) {
+        setHasExistingApplication(true)
+        const normalized = normalizeDraftData(result.data as unknown as ExpertDraftData)
+        setFormData(normalized)
+        setSelectedPriorityArea(getPriorityAreaForProjectTypes(normalized.preferredProjectTypes))
+      } else {
+        setHasExistingApplication(false)
+      }
+      setIsLoading(false)
     }
-  }, [formData.preferredProjectTypes, selectedPriorityArea])
+
+    void loadApplication()
+    return () => { cancelled = true }
+  }, [isAuthLoading, userId, getApplication])
+
+  const effectiveSelectedPriorityArea = selectedPriorityArea
+    || getPriorityAreaForProjectTypes(formData.preferredProjectTypes)
 
   const currentStepErrors = useMemo(() => {
     const errors: Record<string, string> = {}
     for (const field of onboardingSteps[currentStep].fields) {
-      if (fieldErrors[field.name]) errors[field.name] = fieldErrors[field.name]
+      const fieldKey = resolveFieldKey(field.name)
+      const message = fieldErrors[field.name] ?? fieldErrors[fieldKey]
+      if (message) errors[field.name] = message
     }
     return errors
   }, [currentStep, fieldErrors])
@@ -371,9 +451,14 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
   const updateField = <K extends keyof ExpertFormData>(name: K, value: ExpertFormData[K]) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
     setFieldErrors((prev) => {
-      if (!prev[name]) return prev
       const next = { ...prev }
       delete next[name]
+      for (const step of onboardingSteps) {
+        for (const field of step.fields) {
+          if (resolveFieldKey(field.name) === name) delete next[field.name]
+        }
+      }
+      if (Object.keys(next).length === Object.keys(prev).length) return prev
       return next
     })
     setError(null)
@@ -389,7 +474,6 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
     }
     setError(null)
     if (currentStep < onboardingSteps.length - 1) {
-      await flushDraftSave(formData)
       setCurrentStep((prev) => prev + 1)
       window.scrollTo(0, 0)
       return
@@ -399,7 +483,6 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
 
   const handleBack = async () => {
     if (currentStep === 0) return
-    await flushDraftSave(formData)
     setCurrentStep((prev) => prev - 1)
     window.scrollTo(0, 0)
   }
@@ -416,30 +499,37 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
     }
     setIsSubmitting(true)
     setError(null)
-    try {
-      const res = await fetch('/api/experts/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload(formData)),
-      })
-      const json = await res.json()
-      if (!res.ok) {
-        const serverFieldErrors = json.details?.fields as Record<string, string> | undefined
-        if (serverFieldErrors && Object.keys(serverFieldErrors).length > 0) {
-          setFieldErrors(serverFieldErrors)
-          const firstInvalidField = Object.keys(serverFieldErrors)[0]
+    const payload = buildPayload(formData)
+
+    if (!hasExistingApplication) {
+      const createResult = await createApplication(payload as ExpertApplyRequest)
+      if (!createResult.ok && createResult.status !== 409) {
+        if (createResult.error.fields && Object.keys(createResult.error.fields).length > 0) {
+          setFieldErrors(createResult.error.fields)
+          const firstInvalidField = Object.keys(createResult.error.fields)[0]
           const nextStep = getStepIndexForField(firstInvalidField)
           if (nextStep >= 0) setCurrentStep(nextStep)
         }
-        setError(json.message || 'Validation failed. Please check all required fields.')
+        setError(createResult.error.message || 'Failed to create expert application.')
+        setIsSubmitting(false)
         return
       }
-      router.push('/become-expert/success')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit application.')
-    } finally {
-      setIsSubmitting(false)
+      setHasExistingApplication(true)
     }
+
+    const result = await submitApplication(payload)
+    if (!result.ok) {
+      if (result.error.fields && Object.keys(result.error.fields).length > 0) {
+        setFieldErrors(result.error.fields)
+        const firstInvalidField = Object.keys(result.error.fields)[0]
+        const nextStep = getStepIndexForField(firstInvalidField)
+        if (nextStep >= 0) setCurrentStep(nextStep)
+      }
+      setError(result.error.message || 'Validation failed. Please check all required fields.')
+      setIsSubmitting(false)
+      return
+    }
+    router.push('/become-expert/success')
   }
 
   if (isAuthLoading || isLoading) {
@@ -461,7 +551,7 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
 
       {/* Fields */}
       <div className="flex flex-col gap-[20px] w-full">
-        {step.fields.map((field: { name: string; type: string; label: string; required?: boolean; placeholder?: string; options?: string[]; groupedOptions?: any }) => {
+        {step.fields.map((field: RenderOnboardingField) => {
           const fieldKey = resolveFieldKey(field.name)
           const fieldError = currentStepErrors[field.name]
           const hasError = Boolean(fieldError)
@@ -561,6 +651,12 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
                 <ProjectList
                   projects={formData.featuredProjects}
                   onChange={(projects) => updateField('featuredProjects', projects)}
+                  uploadFile={async (clientProjectId, filename, contentType, fileSizeBytes) => {
+                    const result = await getProjectFileUploadUrl(clientProjectId, filename, contentType, fileSizeBytes)
+                    if (!result.ok) throw new Error(result.error.message)
+                    return result.data
+                  }}
+                  uploadToSignedUrl={uploadProjectFileToSignedUrl}
                 />
               )}
 
@@ -569,7 +665,7 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
                 <ProjectPrioritySelect
                   value={formData.preferredProjectTypes}
                   groups={field.groupedOptions || {}}
-                  selectedGroup={selectedPriorityArea}
+                  selectedGroup={effectiveSelectedPriorityArea}
                   onSelectedGroupChange={setSelectedPriorityArea}
                   onChange={(values) => updateField('preferredProjectTypes', values)}
                 />

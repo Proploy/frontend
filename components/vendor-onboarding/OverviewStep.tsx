@@ -1,10 +1,11 @@
 'use client'
 
 import React from 'react';
+import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface OverviewStepProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: VendorOnboardingData;
+  setFormData: (data: VendorOnboardingData) => void;
 }
 
 const checklistItems = [

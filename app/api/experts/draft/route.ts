@@ -3,6 +3,7 @@ import { getUser } from '@/lib/auth'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 import { serviceApisFetch } from '@/lib/service-apis/client'
+import { expertDraftSchema } from '@/lib/validations/expert'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,10 +27,26 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
+    const parsed = expertDraftSchema.safeParse(body)
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.errors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }))
+      return Response.json(
+        {
+          error: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          errors: fieldErrors,
+        },
+        { status: 400 }
+      )
+    }
+
     const res = await serviceApisFetch('/api/v1/experts/me/application', {
       requireAuth: true,
       method: 'PATCH',
-      body,
+      body: JSON.stringify(parsed.data),
     })
 
     if (res.status === 409) {

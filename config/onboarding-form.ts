@@ -47,6 +47,10 @@ export const onboardingSteps: OnboardingField[] = [
             { name: 'case_study_links', label: 'Case Study Links', type: 'url_list', required: false },
             { name: 'certification_links', label: 'Certification Links', type: 'url_list', required: true },
             { name: 'testimonials_links', label: 'Testimonials Links', type: 'url_list', required: true },
+            { name: 'linkedinLink', label: 'LinkedIn URL', type: 'url', placeholder: 'https://linkedin.com/in/your-profile', required: false },
+            { name: 'xLink', label: 'X / Twitter URL', type: 'url', placeholder: 'https://x.com/your-handle', required: false },
+            { name: 'websiteLink', label: 'Website URL', type: 'url', placeholder: 'https://yourwebsite.com', required: false },
+            { name: 'githubLink', label: 'GitHub URL', type: 'url', placeholder: 'https://github.com/your-handle', required: false },
             { name: 'featured_projects', label: 'Featured Projects', type: 'project_list', required: false },
         ],
     },
@@ -57,6 +61,9 @@ export const onboardingSteps: OnboardingField[] = [
         fields: [
             { name: 'availabilityHoursPerWeek', label: 'Availability (Hours/Week)', type: 'number', required: true },
             { name: 'availabilityNotes', label: 'Availability Notes', type: 'textarea', required: true },
+            { name: 'schedulingProvider', label: 'Scheduling Provider', type: 'select', options: ['calendly', 'cal_com', 'other'], required: false },
+            { name: 'schedulingLink', label: 'Scheduling Link', type: 'text', placeholder: 'https://calendly.com/your-link', required: false },
+            { name: 'schedulingLinkEnabled', label: 'Enable scheduling link', type: 'checkbox', required: false },
             { name: 'whyPlatform', label: 'Why join this platform?', type: 'textarea', required: true },
             { name: 'uniqueStrength', label: 'Your unique strength', type: 'textarea', required: true },
             { name: 'idealClients', label: 'Your ideal clients', type: 'textarea', required: true },
@@ -74,4 +81,3 @@ export const onboardingSteps: OnboardingField[] = [
         ],
     },
 ]
-
