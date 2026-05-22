@@ -11,41 +11,7 @@ import ReviewStep from "@/components/vendor-onboarding/ReviewStep";
 import SubmittedStep from "@/components/vendor-onboarding/SubmittedStep";
 import ProgressStepper from "@/components/vendor-onboarding/ProgressStepper";
 import Button from "@/components/ui/Button";
-
-interface FormData {
-  // Step 0 - Overview (no fields, just informational)
-
-  // Step 1 - Expertise
-  categories: string[];
-  specializations: string[];
-  skills: string[];
-
-  // Step 2 - Credentials
-  certifications: string[];
-  yearsOfExperience: string;
-  bio: string;
-
-  // Step 3 - Projects
-  projectTypes: string[];
-  averageProjectSize: string;
-  clientTypes: string[];
-  completedProjectsCount: string;
-
-  // Step 4 - Portfolio
-  portfolioFiles: File[];
-  portfolioLinks: string[];
-  visibilitySettings: Record<string, boolean>;
-
-  // Step 5 - Preferences
-  availability: string;
-  preferredWorkType: string;
-  locationPreference: string;
-  rateRange: string;
-  startDate: string;
-
-  // Step 6 - Review (no additional fields)
-  // Step 7 - Submitted (no additional fields)
-}
+import type { VendorOnboardingData } from "@/hooks/types/vendor-contracts";
 
 const STEP_CONFIG = [
   {
@@ -87,30 +53,31 @@ const STEP_CONFIG = [
   },
 ];
 
-const INITIAL_FORM_DATA: FormData = {
+const INITIAL_FORM_DATA: VendorOnboardingData = {
   categories: [],
   specializations: [],
   skills: [],
-  certifications: [],
-  yearsOfExperience: "",
-  bio: "",
-  projectTypes: [],
-  averageProjectSize: "",
-  clientTypes: [],
-  completedProjectsCount: "",
+  certificationFiles: [],
+  manualCertifications: [],
+  yearsExperience: "",
+  openToAssessment: false,
+  totalProjects: "",
+  featuredProjects: [],
   portfolioFiles: [],
   portfolioLinks: [],
   visibilitySettings: {},
-  availability: "",
-  preferredWorkType: "",
-  locationPreference: "",
-  rateRange: "",
-  startDate: "",
+  timezone: "",
+  regions: [],
+  weeklyAvailability: "",
+  earliestStartDate: "",
+  preferredProjectTypes: [],
+  whyPlatforms: "",
+  agreements: [],
 };
 
 export default function VendorOnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
+  const [formData, setFormData] = useState<VendorOnboardingData>(INITIAL_FORM_DATA);
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -148,7 +115,7 @@ export default function VendorOnboardingPage() {
     handleBack();
   };
 
-  const replaceFormData = (newData: any) => {
+  const replaceFormData = (newData: VendorOnboardingData) => {
     setFormData(newData);
   };
 
