@@ -1,9 +1,13 @@
-'use client'
-
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+/**
+ * Approved experts hook.
+ * Calls service-apis directly from the browser — no Next.js proxy routes.
+ *
+ * Uses ServiceApisBrowserClient with requireAuth: false (public endpoint).
+ */
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
-import { type NormalizedError } from '@/lib/service-apis/error-utils'
-import type { ExpertListItem, ExpertListResponse } from './types/expert-contracts'
+import type { NormalizedError } from '@/lib/service-apis/error-utils'
+import type { ExpertListItem, ExpertListResponse } from '@/hooks/types/expert-contracts'
 
 interface UseApprovedExpertsResult {
   experts: ExpertListItem[]
@@ -12,15 +16,13 @@ interface UseApprovedExpertsResult {
   refetch: () => void
 }
 
+const client = new ServiceApisBrowserClient()
+
 export function useApprovedExperts(): UseApprovedExpertsResult {
   const [experts, setExperts] = useState<ExpertListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<NormalizedError | null>(null)
 
-  // One client instance per component lifecycle
-  const client = useMemo(() => new ServiceApisBrowserClient(), [])
-
-  // Guard against stale state updates after unmount or param change
   const mountedRef = useRef(true)
 
   const fetch_ = useCallback(async () => {
@@ -28,10 +30,9 @@ export function useApprovedExperts(): UseApprovedExpertsResult {
     setLoading(true)
     setError(null)
 
-    const result = await client.get<ExpertListResponse>(
-      '/api/v1/experts',
-      { requireAuth: false },
-    )
+    const result = await client.get<ExpertListResponse>('/api/v1/experts', {
+      requireAuth: false,
+    })
 
     if (!mountedRef.current) return
 
@@ -41,9 +42,9 @@ export function useApprovedExperts(): UseApprovedExpertsResult {
       return
     }
 
-    setExperts(result.data.data)
+    setExperts(result.data.experts)
     setLoading(false)
-  }, [client])
+  }, [])
 
   useEffect(() => {
     mountedRef.current = true
