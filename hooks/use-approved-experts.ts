@@ -4,25 +4,55 @@
  *
  * Uses ServiceApisBrowserClient with requireAuth: false (public endpoint).
  */
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type { ExpertListItem, ExpertListResponse } from '@/hooks/types/expert-contracts'
 
-const client = new ServiceApisBrowserClient()
-
-export type GetApprovedExpertsResult = { ok: true; data: ExpertListResponse } | NormalizedError
-
-/**
- * GET /api/v1/experts
- */
-async function getApprovedExperts(): Promise<GetApprovedExpertsResult> {
-  const result = await client.get<ExpertListResponse>('/api/v1/experts', {
-    requireAuth: false,
-  })
-  if (!result.ok) return result
-  return { ok: true, data: result.data }
+interface UseApprovedExpertsResult {
+  experts: ExpertListItem[]
+  loading: boolean
+  error: NormalizedError | null
+  refetch: () => void
 }
 
-export const useApprovedExperts = () => ({
-  getApprovedExperts,
-})
+const client = new ServiceApisBrowserClient()
+
+export function useApprovedExperts(): UseApprovedExpertsResult {
+  const [experts, setExperts] = useState<ExpertListItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<NormalizedError | null>(null)
+
+  const mountedRef = useRef(true)
+
+  const fetch_ = useCallback(async () => {
+    mountedRef.current = true
+    setLoading(true)
+    setError(null)
+
+    const result = await client.get<ExpertListResponse>('/api/v1/experts', {
+      requireAuth: false,
+    })
+
+    if (!mountedRef.current) return
+
+    if (!result.ok) {
+      setError(result)
+      setLoading(false)
+      return
+    }
+
+    setExperts(result.data.experts)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    mountedRef.current = true
+    fetch_() // eslint-disable-line react-hooks/set-state-in-effect
+    return () => {
+      mountedRef.current = false
+    }
+  }, [fetch_])
+
+  return { experts, loading, error, refetch: fetch_ }
+}

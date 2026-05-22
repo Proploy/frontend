@@ -1,11 +1,10 @@
 'use client'
 
 import React from 'react';
-import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface ReviewStepProps {
-  formData: VendorOnboardingData;
-  setFormData: (data: VendorOnboardingData) => void;
+  formData: any;
+  setFormData: (data: any) => void;
   onEditStep: (step: number) => void;
 }
 
@@ -13,7 +12,7 @@ const summaryRows = [
   {
     step: 1,
     title: 'Account type',
-    getValue: (formData: VendorOnboardingData) => {
+    getValue: (formData: any) => {
       const type = formData?.accountType;
       if (type === 'business') return 'Business or team';
       if (type === 'individual') return 'Individual';
@@ -23,7 +22,7 @@ const summaryRows = [
   {
     step: 1,
     title: 'Platforms and industries',
-    getValue: (formData: VendorOnboardingData) => {
+    getValue: (formData: any) => {
       const platforms = formData?.categories?.length ?? 0;
       const industries = formData?.specializations?.length ?? 0;
       return `${platforms || 1} platforms, ${industries || 1} industries`;
@@ -32,25 +31,25 @@ const summaryRows = [
   {
     step: 2,
     title: 'Experience and certifications',
-    getValue: (formData: VendorOnboardingData) => {
-      const experience = formData?.yearsExperience || 'Not specified';
-      const certs = formData?.manualCertifications?.length ?? 0;
+    getValue: (formData: any) => {
+      const experience = formData?.yearsOfExperience || 'Not specified';
+      const certs = formData?.certifications?.length ?? 0;
       return `${experience} experience, ${certs || 1} certifications`;
     },
   },
   {
     step: 3,
     title: 'Projects and featured work',
-    getValue: (formData: VendorOnboardingData) => {
-      const total = formData?.totalProjects || '12';
-      const featured = formData?.featuredProjects?.length ?? 0;
+    getValue: (formData: any) => {
+      const total = formData?.completedProjectsCount || '12';
+      const featured = formData?.projectTypes?.length ?? 0;
       return `${total} total projects, ${featured || 1} featured`;
     },
   },
   {
     step: 4,
     title: 'Portfolio items and visibility',
-    getValue: (formData: VendorOnboardingData) => {
+    getValue: (formData: any) => {
       const files = formData?.portfolioFiles?.length ?? 0;
       const links = formData?.portfolioLinks?.length ?? 0;
       return `${files} files, ${links || 1} links`;
@@ -59,9 +58,9 @@ const summaryRows = [
   {
     step: 5,
     title: 'Preferences and availability',
-    getValue: (formData: VendorOnboardingData) => {
-      const projectTypes = formData?.preferredProjectTypes?.length ?? 0;
-      const regions = formData?.regions?.length ?? 0;
+    getValue: (formData: any) => {
+      const projectTypes = formData?.projectTypes?.length ?? 0;
+      const regions = formData?.locationPreference ? 1 : 0;
       return `${projectTypes || 1} project types, ${regions || 1} regions`;
     },
   },

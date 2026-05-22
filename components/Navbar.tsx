@@ -27,21 +27,22 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
-  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
-  const expertStatus = expert?.status
-  const showDashboard = expertStatus === 'approved'
-  const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
-  const showApplicationPending = expertStatus === 'submitted'
-  const dashboardHref = '/experts/dashboard'
-  const settingsHref = '/settings'
-
+  // Must be called before any early returns - rules-of-hooks
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
   if (hideOnWorkspace) return null
+
+  const expertStatus = expert?.status
+  const showDashboard = expertStatus === 'approved'
+  const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
+  const showApplicationPending = expertStatus === 'submitted'
+  const dashboardHref = '/experts/dashboard'
+  const settingsHref = '/settings'
 
   const handleSignOut = async () => {
     await signOut()

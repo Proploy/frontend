@@ -6,7 +6,7 @@ import { serviceApisFetch } from '@/lib/service-apis/client'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const ip = getClientIP(request)
     const rateLimitResult = await rateLimit(ip)
@@ -24,24 +24,14 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('UNAUTHORIZED', 'Not authenticated', 401)
     }
 
-    const body = await request.json()
+    const res = await serviceApisFetch('/api/v1/experts/me/dashboard', { requireAuth: true })
 
-    const res = await serviceApisFetch('/api/v1/experts/me/application', {
-      requireAuth: true,
-      method: 'PATCH',
-      body,
-    })
-
-    if (res.status === 409) {
-      return createErrorResponse(
-        'CONFLICT',
-        'Cannot update application in its current status',
-        409
-      )
+    if (res.status === 403) {
+      return createErrorResponse('FORBIDDEN', 'You must be an approved expert to access the dashboard', 403)
     }
 
     if (!res.ok) {
-      return createErrorResponse('SERVICE_APIS_ERROR', `Failed to save draft: ${res.status}`, res.status)
+      return createErrorResponse('SERVICE_APIS_ERROR', `Failed to fetch dashboard: ${res.status}`, res.status)
     }
 
     const data = await res.json()

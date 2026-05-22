@@ -1,3 +1,6 @@
+// vendor-contracts.ts
+// Type contracts for vendor/expert onboarding.
+
 export interface VendorOnboardingData {
   // Overview step
   accountType?: string

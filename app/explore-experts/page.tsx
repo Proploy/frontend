@@ -1,33 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Loader2, MapPin, Briefcase, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useApprovedExperts } from '@/hooks/use-approved-experts'
-import type { ExpertListItem } from '@/hooks/types/expert-contracts'
 
 export default function ExploreExpertsPage() {
-  const { getApprovedExperts } = useApprovedExperts()
-  const [experts, setExperts] = useState<ExpertListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { experts, loading } = useApprovedExperts()
 
-  useEffect(() => {
-    async function fetchApproved() {
-      try {
-        const result = await getApprovedExperts()
-        if (result.ok && result.data) {
-          setExperts(result.data.experts)
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    void fetchApproved()
-  }, [getApprovedExperts])
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
         <Loader2 className="w-8 h-8 animate-spin text-[#0466E7]" />
@@ -44,8 +24,8 @@ export default function ExploreExpertsPage() {
             Connect with certified specialists to accelerate your digital transformation and tool implementation.
           </p>
           <div className="mt-10 flex justify-center">
-            <Link 
-              href="/become-expert" 
+            <Link
+              href="/become-expert"
               className="px-8 py-4 bg-[#0466E7] text-white rounded-full font-bold hover:bg-[#0355c0] transition-all shadow-lg shadow-blue-200"
             >
               Join as an Expert
@@ -70,7 +50,7 @@ export default function ExploreExpertsPage() {
                         Verified
                       </div>
                    </div>
-                   
+
                    <h2 className="text-2xl font-bold text-[#011127] mb-2 font-dm-sans">{expert.displayName}</h2>
                    <p className="text-[#0466E7] text-sm font-bold truncate mb-6">{expert.headline}</p>
 
@@ -98,8 +78,8 @@ export default function ExploreExpertsPage() {
                 </div>
 
                 <div className="p-8 border-t border-gray-50 bg-gray-50/50">
-                   <Link 
-                     href={`/experts/${expert.id}`} // FUTURE: Detailed profile page
+                   <Link
+                     href={`/experts/${expert.id}`}
                      className="w-full flex items-center justify-between font-bold text-[#011127] hover:text-[#0466E7] transition-all group"
                    >
                      View Profile

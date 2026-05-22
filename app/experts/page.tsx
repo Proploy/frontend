@@ -1,38 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Loader2, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import ListingExplorer from '@/components/ListingExplorer'
 import { useApprovedExperts } from '@/hooks/use-approved-experts'
-
-interface Expert {
-  id: string
-  displayName: string
-  headline?: string | null
-  regionCity?: string | null
-  regionCountry?: string | null
-  yearsExperience?: number | null
-  tags: { id: string; tagType: string; tagValue: string }[]
-  profilePictureUrl?: string | null
-}
+import type { ExpertListItem } from '@/hooks/types/expert-contracts'
 
 export default function ExpertsPage() {
-  const { getApprovedExperts } = useApprovedExperts()
-  const [experts, setExperts] = useState<Expert[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function loadExperts() {
-      const result = await getApprovedExperts()
-      if (result.ok && result.data) {
-        setExperts(result.data.experts)
-      }
-      setLoading(false)
-    }
-    void loadExperts()
-  }, [getApprovedExperts])
+  const { experts, loading } = useApprovedExperts()
+  const typedExperts: ExpertListItem[] = experts
 
   return (
     <div className="relative bg-white min-h-screen">
@@ -75,7 +52,7 @@ export default function ExpertsPage() {
             <div className="flex items-center justify-center py-[96px]">
               <Loader2 size={40} className="animate-spin text-[#155eef]" />
             </div>
-          ) : experts.length === 0 ? (
+          ) : typedExperts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-[96px] gap-[16px]">
               <p
                 className="font-[family-name:var(--font-dm-sans)] font-normal text-[18px] leading-[28px] text-[#535862]"

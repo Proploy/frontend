@@ -3,7 +3,6 @@
 import React, { useCallback, useRef } from 'react';
 import { Upload, Trash2, Plus } from 'lucide-react';
 import Select from '@/components/ui/Select';
-import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface UploadedFile {
   name: string;
@@ -18,8 +17,8 @@ interface CredentialsFormData {
 }
 
 interface CredentialsStepProps {
-  formData: VendorOnboardingData;
-  updateFormData: (data: Partial<VendorOnboardingData>) => void;
+  formData: any;
+  updateFormData: (data: any) => void;
 }
 
 const experienceOptions = [

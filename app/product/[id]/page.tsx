@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
 import Footer from '@/components/Footer'
-import ProductHeader from '@/components/product/ProductHeader'
-import { ProductTabKey } from '@/components/product/product-tabs'
+import ProductHeader, { ProductTabKey } from '@/components/product/ProductHeader'
 import ProductInformationTab from '@/components/product/ProductInformationTab'
 import IntegrationsTab from '@/components/product/IntegrationsTab'
 import PricingTab from '@/components/product/PricingTab'
@@ -103,6 +101,7 @@ export default function ProductDetailPage() {
     notFound,
     refetch,
     pricingPlans,
+    ratings,
     alternatives,
     loadPricingPlans,
     loadRatings,
@@ -120,9 +119,31 @@ export default function ProductDetailPage() {
     }
   }, [activeTab, loadPricingPlans, loadRatings, loadAlternatives])
 
-  const resolvedProduct: Product = useMemo(() => {
-    if (!product) {
-      return {
+  const resolvedProduct: Product = product
+    ? {
+        product_id: product.product_id,
+        product_name: product.product_name,
+        product_description: product.short_description,
+        product_logo: null,
+        rating: product.avg_rating,
+        reviews: product.total_reviews,
+        pricing_plans: pricingPlans.map((p) => ({
+          plan_name: p.plan_name,
+          plan_price: p.price_text || '',
+          plan_description: '',
+        })),
+        screenshots: [],
+        videos: [],
+        product_link: product.official_website || '#',
+        features: [],
+        alternatives: alternatives.map((a) => ({
+          name: a.product_name,
+          rating: a.avg_rating ?? 0,
+          reviews: 0,
+          link: `/product/${a.product_id}`,
+        })),
+      }
+    : {
         product_id: id,
         product_name: 'Loading...',
         product_description: null,
@@ -134,32 +155,6 @@ export default function ProductDetailPage() {
         videos: [],
         product_link: '#',
       }
-    }
-
-    return {
-      product_id: product.product_id,
-      product_name: product.product_name,
-      product_description: product.short_description,
-      product_logo: null,
-      rating: product.avg_rating,
-      reviews: product.total_reviews,
-      pricing_plans: pricingPlans.map((p) => ({
-        plan_name: p.plan_name,
-        plan_price: p.price_text || '',
-        plan_description: '',
-      })),
-      screenshots: [],
-      videos: [],
-      product_link: product.official_website || '#',
-      features: [],
-      alternatives: alternatives.map((a) => ({
-        name: a.product_name,
-        rating: a.avg_rating ?? 0,
-        reviews: 0,
-        link: `/product/${a.product_id}`,
-      })),
-    }
-  }, [alternatives, id, pricingPlans, product])
 
   const pricingTiers = useMemo(() => {
     const plans = resolvedProduct.pricing_plans ?? []
@@ -197,7 +192,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-white gap-8">
         <h1 className="font-semibold text-[36px] text-[#181d27]">Product not found</h1>
-        <Link href="/products" className="text-[#004eeb] font-semibold hover:underline">Back to products</Link>
+        <a href="/products" className="text-[#004eeb] font-semibold hover:underline">Back to products</a>
       </div>
     )
   }
@@ -218,9 +213,9 @@ export default function ProductDetailPage() {
           >
             Retry
           </button>
-          <Link href="/products" className="px-[16px] py-[8px] border border-[#d5d7da] rounded-[8px] font-semibold text-[14px] text-[#414651]">
+          <a href="/products" className="px-[16px] py-[8px] border border-[#d5d7da] rounded-[8px] font-semibold text-[14px] text-[#414651]">
             Back to products
-          </Link>
+          </a>
         </div>
       </div>
     )

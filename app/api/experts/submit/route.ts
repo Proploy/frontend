@@ -3,7 +3,6 @@ import { getUser } from '@/lib/auth'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'
 import { rateLimit, getClientIP } from '@/lib/utils/ratelimit'
 import { serviceApisFetch } from '@/lib/service-apis/client'
-import { expertSubmitSchema } from '@/lib/validations/expert'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,27 +24,13 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('UNAUTHORIZED', 'Not authenticated', 401)
     }
 
+    // Send the full body — service-apis validates required fields server-side
     const body = await request.json()
-    const parsed = expertSubmitSchema.safeParse(body)
-    if (!parsed.success) {
-      const fieldErrors = parsed.error.errors.map((err) => ({
-        field: err.path.join('.'),
-        message: err.message,
-      }))
-      return Response.json(
-        {
-          error: 'VALIDATION_ERROR',
-          message: 'Validation failed',
-          errors: fieldErrors,
-        },
-        { status: 400 }
-      )
-    }
 
     const res = await serviceApisFetch('/api/v1/experts/me/application/submit', {
       requireAuth: true,
       method: 'POST',
-      body: JSON.stringify(parsed.data),
+      body,
     })
 
     if (res.status === 400) {

@@ -29,6 +29,8 @@ export async function GET(request: Request) {
         if (!syncRes.ok) {
           const errorText = await syncRes.text()
           console.error('[auth/callback] sync failed:', syncRes.status, errorText)
+          // Sync failure is a hard error — user should not land on frontend
+          // without being provisioned in service-apis. Redirect to error page.
           return NextResponse.redirect(`${origin}/sign-in?error=sync_failed`)
         }
       } catch (syncErr) {

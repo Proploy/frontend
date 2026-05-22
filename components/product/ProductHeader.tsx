@@ -2,11 +2,26 @@
 
 import Image from 'next/image'
 import { MoreHorizontal } from 'lucide-react'
-import { PRODUCT_TABS } from './product-tabs'
-import type { ProductTabKey } from './product-tabs'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
+
+export type ProductTabKey =
+  | 'product-information'
+  | 'integrations'
+  | 'pricing'
+  | 'reviews'
+  | 'features'
+  | 'vetted-experts'
+
+export const PRODUCT_TABS: Array<{ key: ProductTabKey; label: string; badge?: string }> = [
+  { key: 'product-information', label: 'Product Information' },
+  { key: 'integrations', label: 'Integrations' },
+  { key: 'pricing', label: 'Pricing' },
+  { key: 'reviews', label: 'Reviews' },
+  { key: 'features', label: 'Features' },
+  { key: 'vetted-experts', label: 'Vetted Expert Implementation', badge: '20' },
+]
 
 interface ProductHeaderProps {
   name: string

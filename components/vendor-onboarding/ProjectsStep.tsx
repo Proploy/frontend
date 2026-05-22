@@ -2,7 +2,16 @@
 
 import React, { useCallback } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import type { VendorOnboardingData, FeaturedProject } from '@/hooks/types/vendor-contracts';
+
+interface FeaturedProject {
+  title: string;
+  clientIndustry: string;
+  platform: string;
+  delivered: string;
+  outcome: string;
+  link: string;
+  ndaSafe: boolean;
+}
 
 interface ProjectsFormData {
   totalProjects: string;
@@ -10,8 +19,8 @@ interface ProjectsFormData {
 }
 
 interface ProjectsStepProps {
-  formData: VendorOnboardingData;
-  updateFormData: (data: Partial<VendorOnboardingData>) => void;
+  formData: any;
+  updateFormData: (data: any) => void;
 }
 
 const emptyProject: FeaturedProject = {
