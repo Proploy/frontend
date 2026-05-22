@@ -210,9 +210,9 @@ export default function ExpertReviewPage() {
                   Professional Proof
                 </p>
                 <div className="flex flex-col gap-[6px]">
-                  {expert.links?.map((link: { linkType: string; url: string }, idx: number) => (
+                  {expert.links?.map((link: { linkType: string; url: string }) => (
                     <a
-                      key={idx}
+                      key={`${link.linkType}:${link.url}`}
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -251,9 +251,9 @@ export default function ExpertReviewPage() {
                         {TAG_GROUP_LABELS[tagType]}
                       </p>
                       <div className="flex flex-wrap gap-[6px] mb-[8px]">
-                        {editedTags[tagType].map((val, idx) => (
+                        {editedTags[tagType].map((val) => (
                           <Tag
-                            key={idx}
+                            key={`${tagType}:${val}`}
                             size="sm"
                             action="x-close"
                             onClose={() => removeTag(tagType, val)}

@@ -86,8 +86,8 @@ export default function ExploreExpertsPage() {
                    </div>
 
                    <div className="flex flex-wrap gap-2 mb-8">
-                      {expert.tags?.slice(0, 4).map((tag, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-[#F4F8FD] text-gray-600 rounded-full text-[11px] font-bold uppercase tracking-wider border border-blue-50/50">
+                      {expert.tags?.slice(0, 4).map((tag) => (
+                        <span key={tag.id} className="px-3 py-1 bg-[#F4F8FD] text-gray-600 rounded-full text-[11px] font-bold uppercase tracking-wider border border-blue-50/50">
                           {tag.tagValue}
                         </span>
                       ))}
