@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Select from '@/components/ui/Select';
+import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface ExpertiseStepProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: VendorOnboardingData;
+  setFormData: (data: VendorOnboardingData) => void;
 }
 
 const accountTypes = [

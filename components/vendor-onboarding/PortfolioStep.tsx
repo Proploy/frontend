@@ -2,15 +2,11 @@
 
 import React, { useState } from 'react';
 import { Upload, Link as LinkIcon, X } from 'lucide-react';
+import type { VendorOnboardingData, AddedLink } from '@/hooks/types/vendor-contracts';
 
 interface PortfolioStepProps {
-  formData: any;
-  setFormData: (data: any) => void;
-}
-
-interface AddedLink {
-  url: string;
-  visible: boolean;
+  formData: VendorOnboardingData;
+  setFormData: (data: VendorOnboardingData) => void;
 }
 
 function FileUploadArea({ helperText }: { helperText: string }) {
@@ -35,8 +31,13 @@ function FileUploadArea({ helperText }: { helperText: string }) {
   );
 }
 
+function isValidUrl(url: string): boolean {
+  return URL.canParse(url) && (url.startsWith('http://') || url.startsWith('https://'));
+}
+
 export default function PortfolioStep({ formData, setFormData }: PortfolioStepProps) {
   const [linkInput, setLinkInput] = useState('');
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   const links: AddedLink[] = formData?.portfolioLinks ?? [];
 
@@ -44,9 +45,15 @@ export default function PortfolioStep({ formData, setFormData }: PortfolioStepPr
     const trimmed = linkInput.trim();
     if (!trimmed) return;
 
+    if (!isValidUrl(trimmed)) {
+      setLinkError('Please enter a valid URL (e.g., https://example.com)');
+      return;
+    }
+
     const updatedLinks = [...links, { url: trimmed, visible: true }];
     setFormData({ ...formData, portfolioLinks: updatedLinks });
     setLinkInput('');
+    setLinkError(null);
   };
 
   const handleRemoveLink = (index: number) => {
@@ -66,6 +73,11 @@ export default function PortfolioStep({ formData, setFormData }: PortfolioStepPr
       e.preventDefault();
       handleAddLink();
     }
+  };
+
+  const handleLinkInputChange = (value: string) => {
+    setLinkInput(value);
+    if (linkError) setLinkError(null);
   };
 
   return (
@@ -98,14 +110,21 @@ export default function PortfolioStep({ formData, setFormData }: PortfolioStepPr
           </label>
 
           <div className="flex gap-[8px]">
-            <input
-              type="url"
-              value={linkInput}
-              onChange={(e) => setLinkInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Website, Notion, Drive folder, public case study"
-              className="flex-1 h-[44px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] shadow-xs font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors"
-            />
+            <div className="flex-1 flex flex-col gap-[4px]">
+              <input
+                type="url"
+                value={linkInput}
+                onChange={(e) => handleLinkInputChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Website, Notion, Drive folder, public case study"
+                className="h-[44px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] shadow-xs font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors"
+              />
+              {linkError && (
+                <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[12px] leading-[18px] text-[#dc2626]">
+                  {linkError}
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={handleAddLink}
