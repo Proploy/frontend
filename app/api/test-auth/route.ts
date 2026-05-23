@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL || 'http://localhost:8020'
+const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
 
 async function testEndpoint(path: string, method = 'GET', body?: object) {
   const supabase = await createClient()

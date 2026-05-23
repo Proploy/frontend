@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL || 'http://localhost:8020'
+const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
 
 async function syncUserToServiceApis(accessToken: string) {
   try {
