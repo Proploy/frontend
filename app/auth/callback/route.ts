@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getAuthIntentFromCookie, AUTH_INTENT_COOKIE } from '@/lib/utils/auth-intent'
 
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL || 'http://localhost:8020'
+const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
