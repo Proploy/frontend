@@ -9,4 +9,4 @@
   NEXT_PUBLIC_SERVICE_APIS_URL = "https://service-apis-731353524841.australia-southeast1.run.app"
 
 [[plugins]]
-  package = "@netlify/nextjs"
+  package = "@netlify/plugin-nextjs"
