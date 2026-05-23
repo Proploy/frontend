@@ -7,6 +7,3 @@
   NEXT_PUBLIC_SUPABASE_URL = "https://eczlamdmamicyugklabj.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjemxhbWRtYW1pY3l1Z2tsYWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTA3NDksImV4cCI6MjA5MTE2Njc0OX0.TC_s9UFBwAGNnwKe9qohAWOTD_J4TYY96JES_hmAi-0"
   NEXT_PUBLIC_SERVICE_APIS_URL = "https://service-apis-731353524841.australia-southeast1.run.app"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
