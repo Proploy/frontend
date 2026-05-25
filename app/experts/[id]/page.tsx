@@ -6,15 +6,16 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
   MoreHorizontal,
-  ExternalLink,
   Clock,
   ArrowUpRight,
   BadgeCheck,
-  MapPin,
   Star,
   ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import Footer from '@/components/Footer'
+import { useExpertProfile } from '@/hooks/use-expert-profile'
+import type { ExpertPublic } from '@/hooks/types/expert-contracts'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -44,37 +45,6 @@ interface ExpertProfile {
   verified?: boolean
 }
 
-const FALLBACK_PROFILE: ExpertProfile = {
-  id: 'amelie-laurent',
-  displayName: 'Amélie Laurent',
-  headline: "I'm a Product Designer based in Melbourne.",
-  bio: `I'm a Product Designer based in Melbourne, Australia. I enjoy working on product design, design systems, and Webflow projects, but I don't take myself too seriously.
-
-I've worked with some of the world's most exciting companies, including Coinbase, Stripe, and Linear. I'm passionate about helping startups grow, improve their UX and customer experience, and to raise venture capital through good design.
-
-My work has been featured on Typewolf, Mindsparkle Magazine, Webflow, Fonts In Use, CSS Winner, httpster, Siteinspire, and Best Website Gallery.`,
-  regionCity: 'Melbourne',
-  regionCountry: 'AU',
-  email: 'hello@amelie.com',
-  timezone: 'AWST; UTC+08:00',
-  socials: [
-    { kind: 'x', href: '#' },
-    { kind: 'linkedin', href: '#' },
-    { kind: 'globe', href: '#' },
-  ],
-  specializations: ['Software', 'Software', 'Software', 'Software', 'Software', 'Software'],
-  softwares: Array.from({ length: 6 }).map(() => ({
-    name: 'Linear',
-    description: 'Streamline software projects, sprints, an',
-  })),
-  projects: [
-    { role: 'Lead Product Designer', company: 'ContrastAI', period: 'May 2020 — Present', stars: 5, category: 'web-design' },
-    { role: 'Product Designer', company: 'Sisyphus', period: 'May 2020 — Present', stars: 5, category: 'product-design' },
-    { role: 'UX Designer', company: 'Ephemeral', period: 'May 2020 — Present', stars: 5, category: 'branding' },
-  ],
-  verified: true,
-}
-
 const PROJECT_TABS = [
   { key: 'all' as const, label: 'View all' },
   { key: 'web-design' as const, label: 'Web design' },
@@ -82,28 +52,110 @@ const PROJECT_TABS = [
   { key: 'branding' as const, label: 'Branding' },
 ]
 
+type ExpertPublicWithOptionalProfileFields = ExpertPublic & {
+  bio?: string | null
+  email?: string | null
+  avatarUrl?: string | null
+  socials?: Array<{ kind: string; href: string }>
+}
+
+type ProjectCategory = NonNullable<ExpertProfile['projects']>[number]['category']
+
+function unique(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value))))
+}
+
+function stringArray(values: string[] | null | undefined) {
+  return Array.isArray(values) ? values : []
+}
+
+function getProjectCategory(): ProjectCategory {
+  return undefined
+}
+
+function mapExpertProfile(data: ExpertPublic): ExpertProfile {
+  const profile = data as ExpertPublicWithOptionalProfileFields
+  const tagValues = Array.isArray(profile.tags) ? profile.tags.map((tag) => tag.tagValue) : []
+  const specializations = unique([
+    ...stringArray(profile.primaryPlatforms),
+    ...stringArray(profile.industryExpertise),
+    ...stringArray(profile.preferredProjectTypes),
+    ...tagValues,
+  ])
+
+  return {
+    id: profile.id,
+    displayName: profile.displayName,
+    headline: profile.headline,
+    bio: profile.bio ?? profile.headline,
+    avatarUrl: profile.profilePictureUrl ?? profile.avatarUrl,
+    regionCity: profile.regionCity,
+    regionCountry: profile.regionCountry,
+    email: profile.email,
+    timezone: profile.timezone,
+    socials: profile.socials,
+    specializations,
+    softwares: stringArray(profile.toolsStack).map((name) => ({ name })),
+    projects: (Array.isArray(profile.projects) ? profile.projects : []).map((project) => ({
+      role: project.title,
+      company: project.summary || 'Project',
+      period: project.outcomes,
+      stars: 0,
+      category: getProjectCategory(),
+    })),
+    verified: true,
+  }
+}
+
 export default function ExpertProfilePage() {
   const params = useParams()
   const id = params.id as string
-  const [profile, setProfile] = useState<ExpertProfile>(FALLBACK_PROFILE)
+  const { getExpertProfile } = useExpertProfile()
+  const [profile, setProfile] = useState<ExpertProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [projectFilter, setProjectFilter] = useState<(typeof PROJECT_TABS)[number]['key']>('all')
 
   useEffect(() => {
     async function fetchExpert() {
-      try {
-        const res = await fetch(`/api/experts/${id}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data?.data) {
-            setProfile({ ...FALLBACK_PROFILE, ...data.data })
-          }
-        }
-      } catch {
-        // fall back to placeholder
+      setLoading(true)
+      setError(null)
+      const result = await getExpertProfile(id)
+      if (result.ok) {
+        setProfile(mapExpertProfile(result.data))
+      } else {
+        setProfile(null)
+        setError(result.error.message)
       }
+      setLoading(false)
     }
-    fetchExpert()
-  }, [id])
+    if (id) void fetchExpert()
+  }, [getExpertProfile, id])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white pt-[120px] flex items-center justify-center font-[family-name:var(--font-dm-sans)]">
+        <Loader2 className="size-[32px] animate-spin text-[#155eef]" />
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-white pt-[120px] flex flex-col font-[family-name:var(--font-dm-sans)]">
+        <main className="max-w-[720px] mx-auto w-full px-[32px] py-[80px] flex flex-col gap-[12px]">
+          <h1 className="font-semibold text-[24px] leading-[32px] text-[#181d27]">Expert not found</h1>
+          <p className="font-normal text-[16px] leading-[24px] text-[#535862]">
+            {error ?? 'This expert profile is unavailable.'}
+          </p>
+          <Link href="/experts" className="font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline">
+            Back to experts
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   const visibleProjects = profile.projects?.filter(
     (p) => projectFilter === 'all' || p.category === projectFilter,
