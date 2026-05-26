@@ -60,7 +60,7 @@ export default function Navbar() {
   const ctaHref = showDashboard
     ? '/experts/dashboard'
     : showCompleteApplication
-    ? '/expert/apply'
+    ? '/become-expert'
     : showApplicationPending
     ? '#'
     : '/experts'
@@ -70,10 +70,10 @@ export default function Navbar() {
       e.preventDefault()
       return
     }
-    if (!user && ctaHref === '/expert/apply') {
+    if (!user && ctaHref === '/become-expert') {
       e.preventDefault()
-      setAuthIntent('/expert/apply')
-      window.location.href = '/sign-in?redirect=/expert/apply'
+      setAuthIntent('/become-expert')
+      window.location.href = '/sign-in?redirect=/become-expert'
     }
   }
 
@@ -145,7 +145,7 @@ export default function Navbar() {
                   </Link>
                   {showCompleteApplication && (
                     <Link
-                      href="/expert/apply"
+                      href="/become-expert"
                       className="flex items-center gap-2 px-4 py-2 text-sm text-[#0466e7] hover:bg-blue-50 font-medium"
                       onClick={() => setIsProfileOpen(false)}
                     >

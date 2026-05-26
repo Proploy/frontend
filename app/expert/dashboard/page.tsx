@@ -49,7 +49,7 @@ export default function ExpertDashboardPage() {
       <div className="min-h-screen bg-[#F4F8FD] flex items-center justify-center px-4">
         <div className="text-center">
           <p className="text-gray-500 mb-4">Unable to load dashboard.</p>
-          <Link href="/expert/apply" className="text-[#0466E7] font-medium hover:underline">
+          <Link href="/become-expert" className="text-[#0466E7] font-medium hover:underline">
             Complete your application
           </Link>
         </div>
