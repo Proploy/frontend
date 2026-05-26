@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  const isProtectedRoute = pathname.startsWith('/expert/apply') || 
+  const isProtectedRoute = pathname.startsWith('/become-expert') || 
                           pathname.startsWith('/expert-dashboard') ||
                           pathname.startsWith('/dashboard') ||
                           pathname.startsWith('/favorites') ||

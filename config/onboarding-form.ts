@@ -62,6 +62,9 @@ export const onboardingSteps: OnboardingField[] = [
             { name: 'idealClients', label: 'Your ideal clients', type: 'textarea', required: true },
             { name: 'biggestWin', label: 'Your biggest win', type: 'textarea', required: true },
             { name: 'tools_stack', label: 'Tools Stack', type: 'tags', required: true },
+            { name: 'schedulingProvider', label: 'Scheduling Provider', type: 'text', required: false },
+            { name: 'schedulingLink', label: 'Scheduling Link', type: 'url', required: false },
+            { name: 'schedulingLinkEnabled', label: 'Enable scheduling link on profile', type: 'checkbox', required: false },
         ],
     },
     {
@@ -74,4 +77,3 @@ export const onboardingSteps: OnboardingField[] = [
         ],
     },
 ]
-

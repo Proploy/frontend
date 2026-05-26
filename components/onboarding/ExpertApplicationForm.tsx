@@ -58,6 +58,9 @@ type ExpertDraftData = {
   links?: { linkType: string; url: string }[]
   projects?: ExpertProject[]
   tags?: { tagType: string; tagValue: string }[]
+  schedulingProvider?: string | null
+  schedulingLink?: string | null
+  schedulingLinkEnabled?: boolean | null
 }
 
 type ExpertFormData = {
@@ -88,6 +91,19 @@ type ExpertFormData = {
   featuredProjects: ExpertProject[]
   agreeTerms: boolean
   consentContact: boolean
+  schedulingProvider: string
+  schedulingLink: string
+  schedulingLinkEnabled: boolean
+}
+
+type RenderField = {
+  name: string
+  type: string
+  label: string
+  required?: boolean
+  placeholder?: string
+  options?: string[]
+  groupedOptions?: Record<string, string[]>
 }
 
 type RenderField = {
@@ -158,6 +174,9 @@ const DEFAULT_FORM_DATA: ExpertFormData = {
   featuredProjects: [],
   agreeTerms: false,
   consentContact: false,
+  schedulingProvider: '',
+  schedulingLink: '',
+  schedulingLinkEnabled: false,
 }
 
 type LinkFieldName = 'portfolioLinks' | 'caseStudyLinks' | 'certificationLinks' | 'testimonialsLinks'
@@ -202,6 +221,9 @@ function buildPayload(formData: ExpertFormData): ExpertDraftRequest {
     projects: formData.featuredProjects,
     agreeTerms: formData.agreeTerms,
     consentContact: formData.consentContact,
+    schedulingProvider: formData.schedulingProvider || null,
+    schedulingLink: formData.schedulingLink || null,
+    schedulingLinkEnabled: formData.schedulingLinkEnabled,
     tags: [
       ...formData.primaryPlatforms.map((tagValue) => ({ tagType: 'platform', tagValue })),
       ...formData.secondaryPlatforms.map((tagValue) => ({ tagType: 'platform', tagValue })),
@@ -272,6 +294,9 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
                       Array.isArray(data?.projects) ? data.projects : [],
     agreeTerms: Boolean(data?.agreeTerms),
     consentContact: Boolean(data?.consentContact),
+    schedulingProvider: data?.schedulingProvider ?? '',
+    schedulingLink: data?.schedulingLink ?? '',
+    schedulingLinkEnabled: Boolean(data?.schedulingLinkEnabled),
   }
 }
 
@@ -361,7 +386,13 @@ interface ExpertApplicationFormProps {
 export default function ExpertApplicationForm({ onStepChange, onSavingChange }: ExpertApplicationFormProps = {}) {
   const { user, isLoading: isAuthLoading } = useAuth()
   const router = useRouter()
-  const { getApplication, saveApplicationDraft, submitApplication } = useExpertApplication()
+  const {
+    getApplication,
+    saveApplicationDraft,
+    submitApplication,
+    getProjectFileUploadUrl,
+    uploadProjectFileToSignedUrl,
+  } = useExpertApplication()
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<ExpertFormData>(DEFAULT_FORM_DATA)
   const [selectedPriorityArea, setSelectedPriorityArea] = useState('')
@@ -631,6 +662,8 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
                 <ProjectList
                   projects={formData.featuredProjects}
                   onChange={(projects) => updateField('featuredProjects', projects)}
+                  uploadFile={getProjectFileUploadUrl}
+                  uploadToSignedUrl={uploadProjectFileToSignedUrl}
                 />
               )}
 
@@ -648,7 +681,7 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
               {/* Unknown field type */}
               {!['text', 'url', 'number', 'select', 'textarea', 'checkbox', 'tags', 'url_list', 'project_list', 'project_priority'].includes(field.type) && (
                 <div className="px-[14px] py-[10px] bg-[#fffaeb] border border-[#fec84b] rounded-[8px] text-[#b54708] text-[14px]">
-                  Unknown field type &quot;{field.type}&quot;
+                  Unknown field type `{field.type}`
                 </div>
               )}
 
