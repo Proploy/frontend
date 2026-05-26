@@ -106,6 +106,16 @@ type RenderField = {
   groupedOptions?: Record<string, string[]>
 }
 
+type RenderField = {
+  name: string
+  type: string
+  label: string
+  required?: boolean
+  placeholder?: string
+  options?: string[]
+  groupedOptions?: Record<string, string[]>
+}
+
 // Config uses snake_case names; form state uses camelCase. This map bridges them.
 const FIELD_NAME_ALIAS: Record<string, keyof ExpertFormData> = {
   primary_platforms:      'primaryPlatforms',

@@ -9,6 +9,7 @@ export interface NormalizedError {
     code: string
     message: string
     retryAfter?: number
+    fields?: Record<string, string>
   }
 }
 
@@ -73,7 +74,16 @@ export async function normalizeServiceApiError(response: Response): Promise<Norm
 
     const code = (detail.code as string) || (detail.error as string) || mapStatusToCode(status)
     const message = extractMessage(detail, status)
-    return { ok: false, status, error: { code, message, retryAfter: detail.retryAfter as number | undefined } }
+    return {
+      ok: false,
+      status,
+      error: {
+        code,
+        message,
+        retryAfter: detail.retryAfter as number | undefined,
+        fields: extractFieldErrors(detail),
+      },
+    }
   }
 
   // ── top-level { code, detail } — AppException style ──
@@ -95,6 +105,7 @@ export async function normalizeServiceApiError(response: Response): Promise<Norm
       error: {
         code: body.code,
         message: extractMessage({ detail: body.detail }, status),
+        fields: extractFieldErrors(body),
       },
     }
   }
@@ -137,6 +148,16 @@ function extractMessage(detail: Record<string, unknown>, status: number): string
     return 'Something went wrong'
   }
   return `Request failed with status ${status}`
+}
+
+function extractFieldErrors(body: Record<string, unknown>): Record<string, string> | undefined {
+  const fields = body.fields
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return undefined
+
+  return Object.fromEntries(
+    Object.entries(fields as Record<string, unknown>)
+      .filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+  )
 }
 
 /**
