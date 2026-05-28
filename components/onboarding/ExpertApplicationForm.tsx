@@ -21,6 +21,13 @@ import {
   TOOLS_SUGGESTIONS,
   type OnboardingField,
 } from '@/config/onboarding-form'
+import {
+  COUNTRY_OPTIONS,
+  OTHER_CITY_VALUE,
+  TIMEZONE_OPTIONS,
+  getCityOptionsForCountry,
+  isKnownCityForCountry,
+} from '@/config/location-options'
 import { useExpertApplication } from '@/hooks/use-expert-application'
 import type { ExpertDraftRequest } from '@/hooks/types/expert-contracts'
 
@@ -88,22 +95,16 @@ type ExpertFormData = {
   caseStudyLinks: string[]
   certificationLinks: string[]
   testimonialsLinks: string[]
+  linkedinUrl: string
+  githubUrl: string
+  xUrl: string
+  websiteUrl: string
   featuredProjects: ExpertProject[]
   agreeTerms: boolean
   consentContact: boolean
   schedulingProvider: string
   schedulingLink: string
   schedulingLinkEnabled: boolean
-}
-
-type RenderField = {
-  name: string
-  type: string
-  label: string
-  required?: boolean
-  placeholder?: string
-  options?: string[]
-  groupedOptions?: Record<string, string[]>
 }
 
 type RenderField = {
@@ -171,6 +172,10 @@ const DEFAULT_FORM_DATA: ExpertFormData = {
   caseStudyLinks: [],
   certificationLinks: [],
   testimonialsLinks: [],
+  linkedinUrl: '',
+  githubUrl: '',
+  xUrl: '',
+  websiteUrl: '',
   featuredProjects: [],
   agreeTerms: false,
   consentContact: false,
@@ -179,21 +184,17 @@ const DEFAULT_FORM_DATA: ExpertFormData = {
   schedulingLinkEnabled: false,
 }
 
-type LinkFieldName = 'portfolioLinks' | 'caseStudyLinks' | 'certificationLinks' | 'testimonialsLinks'
-
-const LINK_TYPE_TO_FIELD: Record<string, LinkFieldName> = {
-  portfolio: 'portfolioLinks',
-  case_study: 'caseStudyLinks',
-  certification: 'certificationLinks',
-  testimonial: 'testimonialsLinks',
-}
-
 function isValidUrl(value: string) {
   try { new URL(value); return true } catch { return false }
 }
 
 function normalizeNumber(value: number | '') {
   return typeof value === 'number' ? value : undefined
+}
+
+function linkFromValue(linkType: string, value: string) {
+  const url = value.trim()
+  return url ? [{ linkType, url }] : []
 }
 
 function buildPayload(formData: ExpertFormData): ExpertDraftRequest {
@@ -232,10 +233,14 @@ function buildPayload(formData: ExpertFormData): ExpertDraftRequest {
       ...formData.toolsStack.map((tagValue) => ({ tagType: 'tool', tagValue })),
     ],
     links: [
-      ...formData.portfolioLinks.map((url) => ({ linkType: 'portfolio', url })),
-      ...formData.caseStudyLinks.map((url) => ({ linkType: 'case_study', url })),
-      ...formData.certificationLinks.map((url) => ({ linkType: 'certification', url })),
-      ...formData.testimonialsLinks.map((url) => ({ linkType: 'testimonial', url })),
+      ...linkFromValue('linkedin', formData.linkedinUrl),
+      ...linkFromValue('github', formData.githubUrl),
+      ...linkFromValue('x', formData.xUrl),
+      ...linkFromValue('website', formData.websiteUrl),
+      ...formData.portfolioLinks.filter((url) => url.trim()).map((url) => ({ linkType: 'portfolio', url: url.trim() })),
+      ...formData.caseStudyLinks.filter((url) => url.trim()).map((url) => ({ linkType: 'case_study', url: url.trim() })),
+      ...formData.certificationLinks.filter((url) => url.trim()).map((url) => ({ linkType: 'certification', url: url.trim() })),
+      ...formData.testimonialsLinks.filter((url) => url.trim()).map((url) => ({ linkType: 'testimonial', url: url.trim() })),
     ],
   }
 }
@@ -252,16 +257,47 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
     return getTagValues(tagType)
   }
 
-  const normalizedLinks: Record<LinkFieldName, string[]> = {
+  const normalizedLinks: Pick<ExpertFormData, 'portfolioLinks' | 'caseStudyLinks' | 'certificationLinks' | 'testimonialsLinks'> = {
     portfolioLinks: [],
     caseStudyLinks: [],
     certificationLinks: [],
     testimonialsLinks: [],
   }
+  const normalizedSocialLinks: Pick<ExpertFormData, 'linkedinUrl' | 'githubUrl' | 'xUrl' | 'websiteUrl'> = {
+    linkedinUrl: '',
+    githubUrl: '',
+    xUrl: '',
+    websiteUrl: '',
+  }
 
   for (const link of Array.isArray(data?.links) ? data.links : []) {
-    const fieldName = LINK_TYPE_TO_FIELD[link.linkType]
-    if (fieldName) normalizedLinks[fieldName].push(link.url)
+    switch (link.linkType.toLowerCase()) {
+      case 'portfolio':
+        normalizedLinks.portfolioLinks.push(link.url)
+        break
+      case 'case_study':
+        normalizedLinks.caseStudyLinks.push(link.url)
+        break
+      case 'certification':
+        normalizedLinks.certificationLinks.push(link.url)
+        break
+      case 'testimonial':
+        normalizedLinks.testimonialsLinks.push(link.url)
+        break
+      case 'linkedin':
+        normalizedSocialLinks.linkedinUrl ||= link.url
+        break
+      case 'github':
+        normalizedSocialLinks.githubUrl ||= link.url
+        break
+      case 'x':
+      case 'twitter':
+        normalizedSocialLinks.xUrl ||= link.url
+        break
+      case 'website':
+        normalizedSocialLinks.websiteUrl ||= link.url
+        break
+    }
   }
 
   return {
@@ -290,6 +326,10 @@ function normalizeDraftData(data: ExpertDraftData): ExpertFormData {
     caseStudyLinks: normalizedLinks.caseStudyLinks,
     certificationLinks: normalizedLinks.certificationLinks,
     testimonialsLinks: normalizedLinks.testimonialsLinks,
+    linkedinUrl: normalizedSocialLinks.linkedinUrl,
+    githubUrl: normalizedSocialLinks.githubUrl,
+    xUrl: normalizedSocialLinks.xUrl,
+    websiteUrl: normalizedSocialLinks.websiteUrl,
     featuredProjects: Array.isArray(data?.featuredProjects) ? data.featuredProjects :
                       Array.isArray(data?.projects) ? data.projects : [],
     agreeTerms: Boolean(data?.agreeTerms),
@@ -327,7 +367,7 @@ function validateField(field: OnboardingField, formData: ExpertFormData) {
       return `${field.label} is required`
     if (field.type === 'number' && (value === '' || value === undefined || value === null))
       return `${field.label} is required`
-    if (['text', 'textarea', 'select', 'url'].includes(field.type) &&
+    if (['text', 'textarea', 'select', 'city_select', 'url'].includes(field.type) &&
       typeof value === 'string' && value.trim().length === 0)
       return `${field.label} is required`
   }
@@ -396,14 +436,19 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<ExpertFormData>(DEFAULT_FORM_DATA)
   const [selectedPriorityArea, setSelectedPriorityArea] = useState('')
+  const [isOtherCitySelected, setIsOtherCitySelected] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasHydratedDraftRef = useRef(false)
-  const skipNextAutosaveRef = useRef(true)
+  const hasUserEditedFormRef = useRef(false)
+  const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const lastSavedPayloadRef = useRef<string | null>(null)
+  // Ref-based debounce avoids recreating the callback on every formData change.
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const DEBOUNCE_MS = 800
 
   // Notify parent of step changes
   useEffect(() => { onStepChange?.(currentStep) }, [currentStep, onStepChange])
@@ -411,25 +456,51 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
   // Notify parent of save state
   useEffect(() => { onSavingChange?.(isSaving) }, [isSaving, onSavingChange])
 
-  const persistDraft = useCallback(async (data: ExpertFormData) => {
+  const persistDraft = useCallback(async (data: ExpertFormData): Promise<boolean> => {
+    const payload = buildPayload(data)
+    const payloadKey = JSON.stringify(payload)
+    setError(null)
+
+    if (payloadKey === lastSavedPayloadRef.current) return true
+    if (saveInFlightRef.current) {
+      const completed = await saveInFlightRef.current.catch(() => false)
+      if (!completed) return false
+    }
+    if (payloadKey === lastSavedPayloadRef.current) return true
+
     setIsSaving(true)
-    try {
-      const result = await saveApplicationDraft(buildPayload(data))
+
+    const savePromise = (async () => {
+      const result = await saveApplicationDraft(payload)
       if (!result.ok) throw new Error(result.error.message)
+      lastSavedPayloadRef.current = payloadKey
+      return true
+    })()
+
+    saveInFlightRef.current = savePromise
+
+    try {
+      return await savePromise
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save draft.'
+      setError(message)
       console.error('Failed to save draft', err)
+      return false
     } finally {
+      if (saveInFlightRef.current === savePromise) saveInFlightRef.current = null
       setIsSaving(false)
     }
   }, [saveApplicationDraft])
 
-  const flushDraftSave = useCallback(async (data: ExpertFormData) => {
-    if (!user) return
-    if (autosaveTimeoutRef.current) {
-      clearTimeout(autosaveTimeoutRef.current)
-      autosaveTimeoutRef.current = null
+  const flushDraftSave = useCallback(async (data: ExpertFormData): Promise<boolean> => {
+    if (!user) return true
+    // Cancel any pending debounced save
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
     }
-    await persistDraft(data)
+    hasUserEditedFormRef.current = false
+    return await persistDraft(data)
   }, [persistDraft, user])
 
   useEffect(() => {
@@ -439,7 +510,9 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
         if (result.ok && result.data) {
           const normalized = normalizeDraftData(result.data)
           setFormData(normalized)
+          lastSavedPayloadRef.current = JSON.stringify(buildPayload(normalized))
           setSelectedPriorityArea(getPriorityAreaForProjectTypes(normalized.preferredProjectTypes))
+          setError(null)
         } else if (!result.ok) {
           setError(result.error.message)
         }
@@ -456,9 +529,12 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
 
   useEffect(() => {
     if (!user || !hasHydratedDraftRef.current) return
-    if (skipNextAutosaveRef.current) { skipNextAutosaveRef.current = false; return }
-    autosaveTimeoutRef.current = setTimeout(() => { void persistDraft(formData) }, 800)
-    return () => { if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current) }
+    if (!hasUserEditedFormRef.current) return
+    debounceTimerRef.current = setTimeout(() => {
+      hasUserEditedFormRef.current = false
+      void persistDraft(formData)
+    }, DEBOUNCE_MS)
+    return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current) }
   }, [formData, persistDraft, user])
 
   useEffect(() => {
@@ -466,6 +542,13 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
       setSelectedPriorityArea(getPriorityAreaForProjectTypes(formData.preferredProjectTypes))
     }
   }, [formData.preferredProjectTypes, selectedPriorityArea])
+
+  useEffect(() => {
+    if (!formData.regionCity) return
+    if (!isKnownCityForCountry(formData.regionCountry, formData.regionCity)) {
+      setIsOtherCitySelected(true)
+    }
+  }, [formData.regionCountry, formData.regionCity])
 
   const currentStepErrors = useMemo(() => {
     const errors: Record<string, string> = {}
@@ -477,10 +560,28 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
   }, [currentStep, fieldErrors])
 
   const updateField = <K extends keyof ExpertFormData>(name: K, value: ExpertFormData[K]) => {
+    hasUserEditedFormRef.current = true
     setFormData((prev) => ({ ...prev, [name]: value }))
     setFieldErrors((prev) => {
       if (!getFieldError(prev, name)) return prev
       return removeFieldError(prev, name)
+    })
+    setError(null)
+  }
+
+  const updateCountry = (country: string) => {
+    hasUserEditedFormRef.current = true
+    setIsOtherCitySelected(false)
+    setFormData((prev) => ({
+      ...prev,
+      regionCountry: country,
+      regionCity: '',
+    }))
+    setFieldErrors((prev) => {
+      let next = prev
+      if (getFieldError(next, 'regionCountry')) next = removeFieldError(next, 'regionCountry')
+      if (getFieldError(next, 'regionCity')) next = removeFieldError(next, 'regionCity')
+      return next
     })
     setError(null)
   }
@@ -495,7 +596,8 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
     }
     setError(null)
     if (currentStep < onboardingSteps.length - 1) {
-      await flushDraftSave(formData)
+      const saved = await flushDraftSave(formData)
+      if (!saved) return
       setCurrentStep((prev) => prev + 1)
       window.scrollTo(0, 0)
       return
@@ -505,7 +607,8 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
 
   const handleBack = async () => {
     if (currentStep === 0) return
-    await flushDraftSave(formData)
+    const saved = await flushDraftSave(formData)
+    if (!saved) return
     setCurrentStep((prev) => prev - 1)
     window.scrollTo(0, 0)
   }
@@ -566,6 +669,19 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
           const fieldKey = resolveFieldKey(field.name)
           const fieldError = currentStepErrors[field.name]
           const hasError = Boolean(fieldError)
+          const isCountryField = field.name === 'regionCountry'
+          const isTimezoneField = field.name === 'timezone'
+          const isCityField = field.type === 'city_select'
+          const cityIsKnown = isKnownCityForCountry(formData.regionCountry, formData.regionCity)
+          const citySelectValue = formData.regionCity
+            ? cityIsKnown ? formData.regionCity : OTHER_CITY_VALUE
+            : isOtherCitySelected ? OTHER_CITY_VALUE : ''
+          const showOtherCityInput = isCityField && (isOtherCitySelected || (formData.regionCity !== '' && !cityIsKnown))
+          const selectOptions = isCountryField
+            ? COUNTRY_OPTIONS
+            : isTimezoneField
+              ? TIMEZONE_OPTIONS
+              : field.options?.map(opt => ({ value: opt, label: opt })) || []
 
           return (
             <div key={field.name} className="flex flex-col gap-[6px]">
@@ -606,13 +722,52 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
               {/* select */}
               {field.type === 'select' && (
                 <Select
-                  options={field.options?.map(opt => ({ value: opt, label: opt })) || []}
+                  options={selectOptions}
                   value={(formData[fieldKey] as string) || ''}
-                  onChange={(val) => updateField(fieldKey, val as never)}
+                  onChange={(val) => {
+                    if (isCountryField) {
+                      updateCountry(val)
+                      return
+                    }
+                    updateField(fieldKey, val as never)
+                  }}
                   placeholder="Select option..."
                   error={hasError}
                   errorMessage={fieldError}
                 />
+              )}
+
+              {/* dependent city select with free-text fallback */}
+              {isCityField && (
+                <div className="flex flex-col gap-[10px]">
+                  <Select
+                    options={getCityOptionsForCountry(formData.regionCountry)}
+                    value={citySelectValue}
+                    onChange={(val) => {
+                      if (val === OTHER_CITY_VALUE) {
+                        setIsOtherCitySelected(true)
+                        updateField('regionCity', '' as never)
+                        return
+                      }
+                      setIsOtherCitySelected(false)
+                      updateField('regionCity', val as never)
+                    }}
+                    placeholder={formData.regionCountry ? 'Select city...' : 'Select country first...'}
+                    disabled={!formData.regionCountry}
+                    error={hasError && !showOtherCityInput}
+                    errorMessage={!showOtherCityInput ? fieldError : undefined}
+                  />
+                  {showOtherCityInput && (
+                    <InputField
+                      inputType="text"
+                      placeholder="Enter your city"
+                      value={formData.regionCity}
+                      onChange={(e) => updateField('regionCity', e.target.value)}
+                      error={hasError}
+                      errorMessage={fieldError}
+                    />
+                  )}
+                </div>
               )}
 
               {/* textarea */}
@@ -679,7 +834,7 @@ export default function ExpertApplicationForm({ onStepChange, onSavingChange }: 
               )}
 
               {/* Unknown field type */}
-              {!['text', 'url', 'number', 'select', 'textarea', 'checkbox', 'tags', 'url_list', 'project_list', 'project_priority'].includes(field.type) && (
+              {!['text', 'url', 'number', 'select', 'city_select', 'textarea', 'checkbox', 'tags', 'url_list', 'project_list', 'project_priority'].includes(field.type) && (
                 <div className="px-[14px] py-[10px] bg-[#fffaeb] border border-[#fec84b] rounded-[8px] text-[#b54708] text-[14px]">
                   Unknown field type `{field.type}`
                 </div>

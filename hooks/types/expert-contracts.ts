@@ -92,7 +92,7 @@ export interface ExpertTagInput {
 }
 
 export interface ExpertLinkInput {
-  linkType: string  // portfolio | case_study | certification | testimonial
+  linkType: string  // portfolio | case_study | certification | testimonial | linkedin | github | x | website
   url: string
 }
 
@@ -145,9 +145,6 @@ export interface ExpertApplyRequest extends ExpertDraftRequest {
   yearsExperience: number
 }
 
-// ExpertSubmitRequest extends ExpertDraftRequest with no additional fields
-export type ExpertSubmitRequest = ExpertDraftRequest
-
 export interface ExpertTagResponse {
   id: string
   tagType: string
@@ -175,6 +172,7 @@ export interface ExpertProjectResponse {
 
 export interface ExpertPublic {
   id: string
+  email?: string | null
   displayName: string
   headline?: string | null
   entityType?: string | null
@@ -183,6 +181,12 @@ export interface ExpertPublic {
   timezone?: string | null
   yearsExperience?: number | null
   projectsCompletedTotal?: number | null
+  introVideoLink?: string | null
+  availabilityNotes?: string | null
+  whyPlatform?: string | null
+  uniqueStrength?: string | null
+  idealClients?: string | null
+  biggestWin?: string | null
   primaryPlatforms: string[]
   secondaryPlatforms: string[]
   industryExpertise: string[]

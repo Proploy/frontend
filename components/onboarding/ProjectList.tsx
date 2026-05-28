@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Plus, Trash2, Upload, X, FileText, Loader2, CheckCircle } from 'lucide-react'
-import type { ExpertProjectInput } from '@/hooks/types/expert-contracts'
+import { Plus, Trash2, Upload, FileText, Loader2 } from 'lucide-react'
+import type { GetUploadUrlResult } from '@/hooks/use-expert-application'
 
 interface ProjectFileState {
   file: File | null
@@ -37,7 +37,7 @@ interface ProjectListProps {
     filename: string,
     contentType: string,
     fileSizeBytes: number,
-  ) => Promise<{ uploadUrl: string; storageKey: string }>
+  ) => Promise<GetUploadUrlResult>
   uploadToSignedUrl?: (uploadUrl: string, file: File) => Promise<void>
 }
 
@@ -50,8 +50,8 @@ const EMPTY_PROJECT: ProjectListProject = {
   outcomes: '',
 }
 
-function isArray(values: unknown): values is unknown[] {
-  return Array.isArray(values)
+function createClientProjectId(): string {
+  return `client-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 function getFileContentType(file: File): string {
@@ -66,14 +66,18 @@ export default function ProjectList({
 }: ProjectListProps) {
   const [newProject, setNewProject] = useState<ProjectListProject>(EMPTY_PROJECT)
   const [fileStates, setFileStates] = useState<Record<number, ProjectFileState>>({})
+  const [newProjectFileState, setNewProjectFileState] = useState<ProjectFileState | null>(null)
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
+  const newProjectFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const addProject = useCallback(() => {
     if (newProject.title && newProject.summary && newProject.outcomes) {
-      const clientId = `client-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      const clientId = newProject.clientId || createClientProjectId()
       const withClientId = { ...newProject, clientId }
       onChange([...projects, withClientId])
       setNewProject(EMPTY_PROJECT)
+      setNewProjectFileState(null)
+      if (newProjectFileInputRef.current) newProjectFileInputRef.current.value = ''
     }
   }, [newProject, projects, onChange])
 
@@ -88,7 +92,7 @@ export default function ProjectList({
     async (projectIndex: number, file: File | null) => {
       if (!file || !uploadFile || !uploadToSignedUrl) return
 
-      const clientId = projects[projectIndex]?.clientId
+      const clientId = projects[projectIndex]?.clientId || projects[projectIndex]?.id
       if (!clientId) return
 
       const contentType = getFileContentType(file)
@@ -108,12 +112,16 @@ export default function ProjectList({
       }))
 
       try {
-        const { uploadUrl, storageKey } = await uploadFile(
+        const uploadResult = await uploadFile(
           clientId,
           file.name,
           contentType,
           fileSizeBytes,
         )
+
+        if (!uploadResult.ok) throw new Error(uploadResult.error.message)
+
+        const { uploadUrl, storageKey } = uploadResult.data
 
         setFileStates((prev) => ({
           ...prev,
@@ -157,13 +165,87 @@ export default function ProjectList({
     [projects, uploadFile, uploadToSignedUrl, onChange],
   )
 
+  const handleNewProjectFileChange = useCallback(
+    async (file: File | null) => {
+      if (!file || !uploadFile || !uploadToSignedUrl) return
+
+      const clientId = newProject.clientId || createClientProjectId()
+      const contentType = getFileContentType(file)
+      const fileSizeBytes = file.size
+
+      setNewProject((prev) => ({ ...prev, clientId }))
+      setNewProjectFileState({
+        file,
+        uploadProgress: 0,
+        error: null,
+        storageKey: null,
+        fileName: file.name,
+        fileContentType: contentType,
+        fileSizeBytes,
+      })
+
+      try {
+        const uploadResult = await uploadFile(
+          clientId,
+          file.name,
+          contentType,
+          fileSizeBytes,
+        )
+
+        if (!uploadResult.ok) throw new Error(uploadResult.error.message)
+
+        const { uploadUrl, storageKey } = uploadResult.data
+
+        setNewProjectFileState((prev) => prev ? {
+          ...prev,
+          uploadProgress: 50,
+        } : prev)
+
+        await uploadToSignedUrl(uploadUrl, file)
+
+        setNewProjectFileState((prev) => prev ? {
+          ...prev,
+          uploadProgress: null,
+          storageKey,
+        } : prev)
+
+        setNewProject((prev) => ({
+          ...prev,
+          clientId,
+          fileName: file.name,
+          fileContentType: contentType,
+          fileSizeBytes,
+          fileStorageKey: storageKey,
+        }))
+      } catch (err) {
+        setNewProjectFileState((prev) => prev ? {
+          ...prev,
+          uploadProgress: null,
+          error: err instanceof Error ? err.message : 'Upload failed',
+        } : {
+          file,
+          uploadProgress: null,
+          error: err instanceof Error ? err.message : 'Upload failed',
+          storageKey: null,
+          fileName: file.name,
+          fileContentType: contentType,
+          fileSizeBytes,
+        })
+      }
+    },
+    [newProject.clientId, uploadFile, uploadToSignedUrl],
+  )
+
+  const isNewProjectUploading = typeof newProjectFileState?.uploadProgress === 'number'
+  const newProjectHasFile = !!newProject.fileStorageKey || !!newProjectFileState?.storageKey
+
   return (
     <div className="space-y-6">
       {/* Expert project list */}
       <div className="grid gap-4">
         {projects.map((project, idx) => {
           const fileState = fileStates[idx]
-          const isUploading = fileState?.uploadProgress !== null
+          const isUploading = typeof fileState?.uploadProgress === 'number'
           const hasError = !!fileState?.error
           const hasFile = !!project.fileStorageKey || !!fileState?.storageKey
 
@@ -192,7 +274,18 @@ export default function ProjectList({
               {/* File upload section */}
               {uploadFile && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Project Document</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Project Document</p>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRefs.current[idx]?.click()}
+                      disabled={isUploading}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-[#b2ccff] bg-[#eff4ff] px-2.5 py-1.5 text-xs font-semibold text-[#004eeb] transition-colors hover:bg-[#d1e0ff] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                      {hasFile ? 'Replace file' : 'Upload file'}
+                    </button>
+                  </div>
 
                   <input
                     ref={(el) => { fileInputRefs.current[idx] = el }}
@@ -205,7 +298,7 @@ export default function ProjectList({
                   {isUploading && (
                     <div className="mt-2 flex items-center gap-2 text-xs text-blue-600">
                       <Loader2 size={12} className="animate-spin" />
-                      <span>Uploading... {Math.round(fileState.uploadProgress)}%</span>
+                      <span>Uploading... {Math.round(fileState.uploadProgress ?? 0)}%</span>
                     </div>
                   )}
 
@@ -229,13 +322,9 @@ export default function ProjectList({
                   )}
 
                   {!hasFile && !isUploading && (
-                    <button
-                      onClick={() => fileInputRefs.current[idx]?.click()}
-                      className="mt-2 flex items-center gap-1.5 text-xs text-[#0466E7] hover:underline"
-                    >
-                      <Upload size={12} />
-                      Upload proof document (PDF, image)
-                    </button>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Attach a project file as PDF, document, text file, or image.
+                    </p>
                   )}
                 </div>
               )}
@@ -276,6 +365,65 @@ export default function ProjectList({
             className="w-full p-4 rounded-lg bg-[#F4F8FD] border border-transparent focus:border-[#0466E7] focus:outline-none transition-all text-sm"
             rows={2}
           />
+
+          {uploadFile && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Project Document</p>
+                <button
+                  type="button"
+                  onClick={() => newProjectFileInputRef.current?.click()}
+                  disabled={isNewProjectUploading}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#b2ccff] bg-[#eff4ff] px-2.5 py-1.5 text-xs font-semibold text-[#004eeb] transition-colors hover:bg-[#d1e0ff] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isNewProjectUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                  {newProjectHasFile ? 'Replace file' : 'Upload file'}
+                </button>
+              </div>
+
+              <input
+                ref={newProjectFileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+                onChange={(e) => handleNewProjectFileChange(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+
+              {isNewProjectUploading && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-blue-600">
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>Uploading... {Math.round(newProjectFileState?.uploadProgress ?? 0)}%</span>
+                </div>
+              )}
+
+              {newProjectFileState?.error && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-red-500">
+                  <span>{newProjectFileState.error}</span>
+                </div>
+              )}
+
+              {newProject.fileName && !isNewProjectUploading && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                  <FileText size={12} />
+                  <span className="truncate max-w-[220px]">{newProject.fileName}</span>
+                  <button
+                    type="button"
+                    onClick={() => newProjectFileInputRef.current?.click()}
+                    className="text-[#0466E7] hover:underline ml-1"
+                  >
+                    Replace
+                  </button>
+                </div>
+              )}
+
+              {!newProjectHasFile && !isNewProjectUploading && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Attach a project file as PDF, document, text file, or image.
+                </p>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={addProject}

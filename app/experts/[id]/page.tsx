@@ -1,136 +1,95 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
-  MoreHorizontal,
-  Clock,
   ArrowUpRight,
   BadgeCheck,
-  Star,
-  ChevronRight,
+  Briefcase,
+  Clock,
+  ExternalLink,
   Loader2,
+  Mail,
+  MapPin,
+  PlayCircle,
 } from 'lucide-react'
 import Footer from '@/components/Footer'
+import { ProjectDocumentViewer } from '@/components/experts/ProjectDocumentViewer'
 import { useExpertProfile } from '@/hooks/use-expert-profile'
-import type { ExpertPublic } from '@/hooks/types/expert-contracts'
+import type { ExpertLinkResponse, ExpertProjectResponse, ExpertPublic } from '@/hooks/types/expert-contracts'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
-
-interface ExpertProfile {
-  id: string
-  displayName: string
-  headline?: string | null
-  bio?: string | null
-  avatarUrl?: string | null
-  regionCity?: string | null
-  regionCountry?: string | null
-  regionCountryCode?: string | null
-  email?: string | null
-  timezone?: string | null
-  socials?: Array<{ kind: string; href: string }>
-  specializations?: string[]
-  softwares?: Array<{ name: string; description?: string }>
-  projects?: Array<{
-    role: string
-    company: string
-    period: string
-    stars?: number
-    category?: 'web-design' | 'product-design' | 'branding'
-    avatarColor?: string
-  }>
-  verified?: boolean
-}
-
-const PROJECT_TABS = [
-  { key: 'all' as const, label: 'View all' },
-  { key: 'web-design' as const, label: 'Web design' },
-  { key: 'product-design' as const, label: 'Product design' },
-  { key: 'branding' as const, label: 'Branding' },
-]
-
-type ExpertPublicWithOptionalProfileFields = ExpertPublic & {
-  bio?: string | null
-  email?: string | null
-  avatarUrl?: string | null
-  socials?: Array<{ kind: string; href: string }>
-}
-
-type ProjectCategory = NonNullable<ExpertProfile['projects']>[number]['category']
 
 function unique(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))))
 }
 
-function stringArray(values: string[] | null | undefined) {
-  return Array.isArray(values) ? values : []
-}
-
-function getProjectCategory(): ProjectCategory {
-  return undefined
-}
-
-function mapExpertProfile(data: ExpertPublic): ExpertProfile {
-  const profile = data as ExpertPublicWithOptionalProfileFields
-  const tagValues = Array.isArray(profile.tags) ? profile.tags.map((tag) => tag.tagValue) : []
-  const specializations = unique([
-    ...stringArray(profile.primaryPlatforms),
-    ...stringArray(profile.industryExpertise),
-    ...stringArray(profile.preferredProjectTypes),
-    ...tagValues,
+function getExpertise(profile: ExpertPublic) {
+  return unique([
+    ...profile.primaryPlatforms,
+    ...profile.secondaryPlatforms,
+    ...profile.industryExpertise,
+    ...profile.preferredProjectTypes,
+    ...profile.toolsStack,
+    ...profile.tags.map((tag) => tag.tagValue),
   ])
+}
 
-  return {
-    id: profile.id,
-    displayName: profile.displayName,
-    headline: profile.headline,
-    bio: profile.bio ?? profile.headline,
-    avatarUrl: profile.profilePictureUrl ?? profile.avatarUrl,
-    regionCity: profile.regionCity,
-    regionCountry: profile.regionCountry,
-    email: profile.email,
-    timezone: profile.timezone,
-    socials: profile.socials,
-    specializations,
-    softwares: stringArray(profile.toolsStack).map((name) => ({ name })),
-    projects: (Array.isArray(profile.projects) ? profile.projects : []).map((project) => ({
-      role: project.title,
-      company: project.summary || 'Project',
-      period: project.outcomes,
-      stars: 0,
-      category: getProjectCategory(),
-    })),
-    verified: true,
-  }
+function isSocialLink(link: ExpertLinkResponse) {
+  return ['linkedin', 'github', 'x', 'twitter'].includes(link.linkType.toLowerCase())
+}
+
+function labelForLinkType(linkType: string) {
+  return linkType.replace(/_/g, ' ')
+}
+
+function firstPortfolioLink(links: ExpertLinkResponse[]) {
+  return links.find((link) => ['portfolio', 'case_study'].includes(link.linkType))
 }
 
 export default function ExpertProfilePage() {
   const params = useParams()
   const id = params.id as string
   const { getExpertProfile } = useExpertProfile()
-  const [profile, setProfile] = useState<ExpertProfile | null>(null)
+  const [profile, setProfile] = useState<ExpertPublic | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [projectFilter, setProjectFilter] = useState<(typeof PROJECT_TABS)[number]['key']>('all')
 
   useEffect(() => {
+    let cancelled = false
+
     async function fetchExpert() {
       setLoading(true)
       setError(null)
       const result = await getExpertProfile(id)
+      if (cancelled) return
       if (result.ok) {
-        setProfile(mapExpertProfile(result.data))
+        setProfile(result.data)
       } else {
         setProfile(null)
         setError(result.error.message)
       }
       setLoading(false)
     }
+
     if (id) void fetchExpert()
+
+    return () => {
+      cancelled = true
+    }
   }, [getExpertProfile, id])
+
+  const derived = useMemo(() => {
+    if (!profile) return null
+    const expertise = getExpertise(profile)
+    const socialLinks = profile.links.filter(isSocialLink)
+    const professionalLinks = profile.links.filter((link) => !isSocialLink(link))
+    const portfolioLink = firstPortfolioLink(profile.links)
+    return { expertise, socialLinks, professionalLinks, portfolioLink }
+  }, [profile])
 
   if (loading) {
     return (
@@ -140,7 +99,7 @@ export default function ExpertProfilePage() {
     )
   }
 
-  if (!profile) {
+  if (!profile || !derived) {
     return (
       <div className="min-h-screen bg-white pt-[120px] flex flex-col font-[family-name:var(--font-dm-sans)]">
         <main className="max-w-[720px] mx-auto w-full px-[32px] py-[80px] flex flex-col gap-[12px]">
@@ -157,265 +116,238 @@ export default function ExpertProfilePage() {
     )
   }
 
-  const visibleProjects = profile.projects?.filter(
-    (p) => projectFilter === 'all' || p.category === projectFilter,
-  ) ?? []
-
   return (
     <div className="min-h-screen bg-white pt-[120px] flex flex-col font-[family-name:var(--font-dm-sans)]">
-      <div className="max-w-[1440px] mx-auto w-full px-[80px] py-[40px] flex flex-col gap-[40px]">
-        {/* Page header */}
-        <header className="flex flex-col gap-[24px] px-[32px]">
-          <div className="flex items-center gap-[20px] w-full">
-            <div className="size-[160px] rounded-full bg-[#e9eaeb] overflow-hidden relative shrink-0">
-              {profile.avatarUrl ? (
-                <Image src={profile.avatarUrl} alt={profile.displayName} fill className="object-cover" />
-              ) : (
-                <div className="size-full bg-gradient-to-br from-[#fde68a] to-[#c084fc] flex items-center justify-center text-white font-bold text-[48px]">
-                  {profile.displayName.charAt(0)}
-                </div>
-              )}
-              {profile.verified && (
-                <span className="absolute bottom-[6px] right-[6px] size-[28px] rounded-full bg-white flex items-center justify-center">
-                  <BadgeCheck size={24} className="text-[#155eef]" />
-                </span>
-              )}
-            </div>
-            <div className="flex-1 flex flex-col gap-[16px] min-w-0">
-              <div className="flex flex-wrap items-start gap-[16px] w-full">
-                <div className="flex-1 flex flex-col gap-[4px] min-w-[240px]">
-                  <h1 className="font-semibold text-[24px] leading-[32px] text-[#181d27]">
-                    {profile.displayName}
-                  </h1>
-                  {profile.headline && (
-                    <p className="font-normal text-[16px] leading-[24px] text-[#535862]">
-                      {profile.headline}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-[12px]">
-                  <button
-                    type="button"
-                    aria-label="More actions"
-                    className={`bg-white border border-[#d5d7da] rounded-[8px] p-[10px] ${BUTTON_SKEUO_SHADOW}`}
-                  >
-                    <MoreHorizontal size={20} className="text-[#414651]" />
-                  </button>
-                  <button
-                    type="button"
-                    className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}
-                  >
-                    View portfolio
-                  </button>
-                  <button
-                    type="button"
-                    className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white ${BUTTON_SKEUO_SHADOW}`}
-                  >
-                    Contact
-                  </button>
-                </div>
+      <main className="max-w-[1180px] mx-auto w-full px-[24px] md:px-[48px] py-[40px] flex flex-col gap-[40px]">
+        <header className="flex flex-col gap-[24px] md:flex-row md:items-center">
+          <div className="size-[144px] rounded-full bg-[#e9eaeb] overflow-hidden relative shrink-0">
+            {profile.profilePictureUrl ? (
+              <Image src={profile.profilePictureUrl} alt={profile.displayName} fill className="object-cover" />
+            ) : (
+              <div className="size-full bg-gradient-to-br from-[#fde68a] to-[#c084fc] flex items-center justify-center text-white font-bold text-[48px]">
+                {profile.displayName.charAt(0)}
               </div>
+            )}
+            <span className="absolute bottom-[6px] right-[6px] size-[30px] rounded-full bg-white flex items-center justify-center">
+              <BadgeCheck size={24} className="text-[#155eef]" />
+            </span>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-[30px] leading-[38px] text-[#181d27]">{profile.displayName}</h1>
+            {profile.headline ? (
+              <p className="mt-[4px] font-normal text-[18px] leading-[28px] text-[#535862]">{profile.headline}</p>
+            ) : null}
+            <div className="mt-[16px] flex flex-wrap gap-[12px] text-[14px] leading-[20px] text-[#414651]">
+              <span className="inline-flex items-center gap-[6px]">
+                <MapPin size={16} className="text-[#717680]" />
+                {[profile.regionCity, profile.regionCountry].filter(Boolean).join(', ') || 'Location not set'}
+              </span>
+              {profile.timezone ? (
+                <span className="inline-flex items-center gap-[6px]">
+                  <Clock size={16} className="text-[#717680]" />
+                  {profile.timezone}
+                </span>
+              ) : null}
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-[12px]">
+            {derived.portfolioLink ? (
+              <a
+                href={derived.portfolioLink.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}
+              >
+                View portfolio
+              </a>
+            ) : null}
+            {profile.email ? (
+              <a
+                href={`mailto:${profile.email}`}
+                className={`inline-flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white ${BUTTON_SKEUO_SHADOW}`}
+              >
+                <Mail size={16} />
+                Contact
+              </a>
+            ) : null}
           </div>
         </header>
 
-        {/* About + Details */}
-        <section className="flex flex-wrap gap-[32px] px-[32px]">
-          <div className="flex-1 min-w-[320px] max-w-[640px] flex flex-col gap-[16px]">
-            <p className="font-medium text-[16px] leading-[24px] text-[#181d27]">About me</p>
-            <p className="font-normal text-[16px] leading-[24px] text-[#535862] whitespace-pre-line">
-              {profile.bio}
-            </p>
-            <button type="button" className="self-start font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline">
-              Read more
-            </button>
-          </div>
-
-          <div className="w-[400px] max-w-full flex flex-wrap gap-x-[24px] gap-y-[24px] items-start">
-            <Detail label="Location">
-              <span className="inline-flex items-center gap-[8px]">
-                {profile.regionCountry && (
-                  <span className="size-[20px] rounded-full bg-[#e0e7ff] text-[#3538cd] text-[10px] font-bold flex items-center justify-center">
-                    {profile.regionCountry}
-                  </span>
-                )}
-                <span className="font-normal text-[16px] leading-[24px] text-[#181d27]">
-                  {profile.regionCity}, {profile.regionCountry}
-                </span>
-              </span>
-            </Detail>
-
-            <Detail label="Email">
-              <a
-                href={profile.email ? `mailto:${profile.email}` : '#'}
-                className="inline-flex items-center gap-[4px] font-semibold text-[16px] leading-[24px] text-[#004eeb] hover:underline"
-              >
-                {profile.email}
-                <ArrowUpRight size={16} />
-              </a>
-            </Detail>
-
-            <Detail label="Timezone">
-              <span className="inline-flex items-center gap-[6px] font-normal text-[14px] leading-[20px] text-[#414651]">
-                <Clock size={20} className="text-[#717680]" />
-                {profile.timezone}
-              </span>
-            </Detail>
-
-            <Detail label="Socials">
-              <div className="flex items-center gap-[16px]">
-                {profile.socials?.map((s, i) => (
-                  <a
-                    key={`${s.kind}-${i}`}
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.kind}
-                    className="size-[20px] flex items-center justify-center text-[#717680] hover:text-[#414651]"
-                  >
-                    <SocialIcon kind={s.kind} />
-                  </a>
-                ))}
-              </div>
-            </Detail>
-
-            <Detail label="Specialization" className="w-full">
-              <div className="flex flex-wrap gap-[8px]">
-                {profile.specializations?.map((tag, i) => (
-                  <span
-                    key={`${tag}-${i}`}
-                    className="inline-flex items-center gap-[6px] bg-[#eff4ff] border border-[#b2ccff] rounded-full px-[10px] py-[2px] font-medium text-[14px] leading-[20px] text-[#004eeb]"
-                  >
-                    <span className="size-[6px] rounded-full bg-[#004eeb]" />
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </Detail>
-          </div>
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-[16px]">
+          <StatCard label="Years experience" value={profile.yearsExperience ?? 0} />
+          <StatCard label="Projects completed" value={profile.projectsCompletedTotal ?? 0} />
+          <StatCard label="Portfolio projects" value={profile.projects.length} />
         </section>
 
-        {/* Softwares */}
-        <section className="flex flex-col gap-[16px] px-[32px]">
-          <div className="flex flex-col gap-[4px]">
-            <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Softwares</p>
-            <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-              I specialise in UX/UI design, brand strategy, and Webflow development.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-            {profile.softwares?.map((soft, i) => (
-              <div key={i} className="flex items-center gap-[12px] bg-white border border-[#e9eaeb] rounded-[12px] p-[20px]">
-                <div className="size-[48px] rounded-[12px] bg-[#155eef] flex items-center justify-center text-white font-bold text-[18px] shrink-0">
-                  {soft.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[16px] leading-[24px] text-[#181d27] truncate">{soft.name}</p>
-                  <p className="font-normal text-[14px] leading-[20px] text-[#535862] truncate">{soft.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-[32px]">
+          <div className="flex flex-col gap-[32px]">
+            <ProfileSection title="About">
+              <AboutGrid profile={profile} />
+            </ProfileSection>
 
-        {/* Past Projects */}
-        <section className="flex flex-col gap-[16px] px-[32px]">
-          <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Past Projects</p>
-
-          <div className="flex items-center gap-[4px] p-[4px] bg-[#fafafa] border border-[#e9eaeb] rounded-[10px] self-start">
-            {PROJECT_TABS.map((tab) => {
-              const active = tab.key === projectFilter
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setProjectFilter(tab.key)}
-                  className={`h-[36px] px-[12px] rounded-[6px] font-semibold text-[14px] leading-[20px] transition-colors ${
-                    active
-                      ? 'bg-white text-[#414651] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
-                      : 'text-[#717680] hover:text-[#414651]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[16px]">
-            {visibleProjects.map((p, i) => (
-              <article key={i} className="bg-white border border-[#e9eaeb] rounded-[16px] overflow-hidden flex flex-col">
-                <div className="p-[20px] flex flex-col gap-[20px]">
-                  <div className="flex items-center gap-[12px]">
-                    <div
-                      className="size-[48px] rounded-full flex items-center justify-center text-white font-bold text-[18px] shrink-0"
-                      style={{ background: p.avatarColor || '#7c3aed' }}
+            <ProfileSection title="Expertise">
+              {derived.expertise.length > 0 ? (
+                <div className="flex flex-wrap gap-[8px]">
+                  {derived.expertise.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-[6px] bg-[#eff4ff] border border-[#b2ccff] rounded-full px-[10px] py-[2px] font-medium text-[14px] leading-[20px] text-[#004eeb]"
                     >
-                      {p.company.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[16px] leading-[24px] text-[#181d27] truncate">{p.role}</p>
-                      <p className="font-normal text-[14px] leading-[20px] text-[#535862] truncate">{p.company}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-normal text-[14px] leading-[20px] text-[#535862]">{p.period}</span>
-                    <div className="flex items-center gap-[4px]">
-                      {Array.from({ length: 5 }).map((_, k) => (
-                        <Star
-                          key={k}
-                          size={16}
-                          className={k < (p.stars ?? 0) ? 'fill-[#facc15] text-[#facc15]' : 'text-[#e9eaeb]'}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                      <span className="size-[6px] rounded-full bg-[#004eeb]" />
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <div className="border-t border-[#e9eaeb] px-[20px] py-[14px]">
-                  <Link href="#" className="inline-flex items-center gap-[4px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline">
-                    View details
-                    <ChevronRight size={16} />
-                  </Link>
+              ) : (
+                <EmptyText>No expertise tags returned by service-apis.</EmptyText>
+              )}
+            </ProfileSection>
+
+            <ProfileSection title="Projects">
+              {profile.projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+                  {profile.projects.map((project) => (
+                    <ProjectCard key={project.id} expertId={profile.id} project={project} />
+                  ))}
                 </div>
-              </article>
-            ))}
+              ) : (
+                <EmptyText>No projects returned by service-apis.</EmptyText>
+              )}
+            </ProfileSection>
           </div>
+
+          <aside className="flex flex-col gap-[24px]">
+            <ProfileSection title="Contact">
+              <div className="flex flex-col gap-[14px]">
+                {profile.email ? (
+                  <a href={`mailto:${profile.email}`} className="inline-flex items-center gap-[8px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
+                    <Mail size={16} />
+                    {profile.email}
+                  </a>
+                ) : (
+                  <EmptyText>Email is not returned by service-apis.</EmptyText>
+                )}
+                {profile.schedulingLink && profile.schedulingLinkEnabled ? (
+                  <a href={profile.schedulingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-[8px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
+                    <ArrowUpRight size={16} />
+                    Scheduling link
+                  </a>
+                ) : null}
+                {profile.introVideoLink ? (
+                  <a href={profile.introVideoLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-[8px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
+                    <PlayCircle size={16} />
+                    Intro video
+                  </a>
+                ) : null}
+              </div>
+            </ProfileSection>
+
+            <ProfileSection title="Links">
+              {profile.links.length > 0 ? (
+                <div className="flex flex-col gap-[10px]">
+                  {[...derived.socialLinks, ...derived.professionalLinks].map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] bg-white px-[14px] py-[12px] hover:border-[#b2ccff]"
+                    >
+                      <span className="truncate text-[14px] leading-[20px] font-medium text-[#414651] capitalize">
+                        {labelForLinkType(link.linkType)}
+                      </span>
+                      <ExternalLink size={16} className="shrink-0 text-[#717680]" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <EmptyText>No links returned by service-apis.</EmptyText>
+              )}
+            </ProfileSection>
+          </aside>
         </section>
-      </div>
+      </main>
 
       <Footer />
     </div>
   )
 }
 
-function Detail({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
+function ProfileSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className={`flex flex-col gap-[8px] ${className}`}>
-      <p className="font-medium text-[14px] leading-[20px] text-[#181d27]">{label}</p>
-      {children}
+    <section className="rounded-[16px] border border-[#e9eaeb] bg-white p-[24px]">
+      <h2 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{title}</h2>
+      <div className="mt-[16px]">{children}</div>
+    </section>
+  )
+}
+
+function AboutGrid({ profile }: { profile: ExpertPublic }) {
+  const rows = [
+    { label: 'Why Proploy', value: profile.whyPlatform },
+    { label: 'Unique strength', value: profile.uniqueStrength },
+    { label: 'Ideal clients', value: profile.idealClients },
+    { label: 'Biggest win', value: profile.biggestWin },
+    { label: 'Availability notes', value: profile.availabilityNotes },
+  ].filter((row) => row.value)
+
+  if (rows.length === 0) return <EmptyText>No about fields returned by service-apis.</EmptyText>
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+      {rows.map((row) => (
+        <div key={row.label} className="rounded-[12px] bg-[#fafafa] p-[16px]">
+          <p className="text-[13px] leading-[18px] font-medium text-[#717680]">{row.label}</p>
+          <p className="mt-[6px] whitespace-pre-line text-[15px] leading-[22px] text-[#414651]">{row.value}</p>
+        </div>
+      ))}
     </div>
   )
 }
 
-function SocialIcon({ kind }: { kind: string }) {
-  if (kind === 'x') {
-    return (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="size-full" aria-hidden>
-        <path d="M11.93 8.46 18.36 1h-1.52l-5.58 6.49L6.79 1H1.5l6.74 9.81L1.5 19h1.52l5.9-6.86L13.62 19h5.29l-7-10.54Zm-2.09 2.43-.68-.98L3.57 2.17h2.34l4.39 6.28.69.98 5.7 8.16h-2.34l-4.51-6.55Z" />
-      </svg>
-    )
-  }
-  if (kind === 'linkedin') {
-    return (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="size-full" aria-hidden>
-        <path d="M16.34 16.34h-2.86v-4.48c0-1.07-.02-2.44-1.49-2.44-1.49 0-1.72 1.16-1.72 2.36v4.56H7.41V7.59h2.74v1.2h.04c.38-.72 1.31-1.49 2.7-1.49 2.89 0 3.43 1.9 3.43 4.38v4.66ZM4.21 6.39a1.66 1.66 0 1 1 0-3.32 1.66 1.66 0 0 1 0 3.32Zm-1.43 9.95h2.86V7.59H2.78v8.75Z" />
-      </svg>
-    )
-  }
+function ProjectCard({ expertId, project }: { expertId: string; project: ExpertProjectResponse }) {
+  const { getProjectFileDownloadUrl } = useExpertProfile()
+
   return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="size-full" aria-hidden>
-      <circle cx="10" cy="10" r="7.5" />
-      <path d="M2.5 10h15M10 2.5c2 2.5 3 5 3 7.5s-1 5-3 7.5c-2-2.5-3-5-3-7.5s1-5 3-7.5Z" />
-    </svg>
+    <article className="rounded-[12px] border border-[#e9eaeb] bg-[#fafafa] p-[18px]">
+      <div className="flex items-start justify-between gap-[12px]">
+        <div className="min-w-0">
+          <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{project.title}</p>
+          <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">{project.summary}</p>
+        </div>
+        <Briefcase size={18} className="shrink-0 text-[#717680]" />
+      </div>
+      {project.outcomes ? (
+        <p className="mt-[12px] text-[14px] leading-[20px] text-[#414651]">{project.outcomes}</p>
+      ) : null}
+      {project.link ? (
+        <a href={project.link} target="_blank" rel="noopener noreferrer" className="mt-[12px] inline-flex items-center gap-[6px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
+          Project link
+          <ArrowUpRight size={16} />
+        </a>
+      ) : null}
+      <ProjectDocumentViewer
+        project={project}
+        getDownloadUrl={(projectId) => getProjectFileDownloadUrl(expertId, projectId)}
+        compact
+      />
+    </article>
+  )
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[16px] border border-[#e9eaeb] bg-white p-[20px]">
+      <p className="text-[14px] leading-[20px] font-medium text-[#535862]">{label}</p>
+      <p className="mt-[8px] text-[30px] leading-[38px] font-semibold text-[#181d27]">{value}</p>
+    </div>
+  )
+}
+
+function EmptyText({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[14px] leading-[20px] text-[#717680]">{children}</p>
   )
 }
