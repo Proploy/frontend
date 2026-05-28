@@ -1,13 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getAuthIntentFromCookie, AUTH_INTENT_COOKIE } from '@/lib/utils/auth-intent'
-
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
+import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const redirectParam = searchParams.get('next') ?? '/'
+  const redirectParam = searchParams.get('next') ?? searchParams.get('redirectTo') ?? '/'
 
   if (code) {
     const supabase = await createClient()
@@ -18,23 +17,8 @@ export async function GET(request: Request) {
 
       // Sync user to service-apis DB — MUST complete before redirect
       // so getCurrentUser() in subsequent requests finds the user
-      try {
-        const syncRes = await fetch(`${SERVICE_APIS_URL}/api/v1/auth/sync`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        if (!syncRes.ok) {
-          const errorText = await syncRes.text()
-          console.error('[auth/callback] sync failed:', syncRes.status, errorText)
-          // Sync failure is a hard error — user should not land on frontend
-          // without being provisioned in service-apis. Redirect to error page.
-          return NextResponse.redirect(`${origin}/sign-in?error=sync_failed`)
-        }
-      } catch (syncErr) {
-        console.error('[auth/callback] sync network error:', syncErr)
+      const synced = await syncUserToServiceApis(accessToken)
+      if (!synced) {
         return NextResponse.redirect(`${origin}/sign-in?error=sync_failed`)
       }
 
