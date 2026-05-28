@@ -1,107 +1,110 @@
-// use-expert-self.ts
-// Hook for expert self-management endpoints (PATCH profile, links, projects, uploads).
-// All operations go through Next proxies under /api/experts/me/*.
+/**
+ * use-expert-self.ts
+ * Hook for expert self-management endpoints (profile, links, projects, uploads).
+ * Calls service-apis directly from the browser — no Next.js proxy routes.
+ *
+ * Uses ServiceApisBrowserClient with requireAuth: true.
+ * Discriminated union result style: { ok: true, data: T } | NormalizedError
+ */
 
-import { useCallback } from 'react'
+import { useMemo } from 'react'
+import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
+import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
-interface ProfilePatch {
-  displayName?: string | null
-  headline?: string | null
-  regionCountry?: string | null
-  regionCity?: string | null
-  [k: string]: unknown
+const client = new ServiceApisBrowserClient()
+
+export type PatchProfileResult = { ok: true; data: unknown } | NormalizedError
+export type RestoreApplicationResult = { ok: true; data: unknown } | NormalizedError
+export type AddLinkResult = { ok: true; data: unknown } | NormalizedError
+export type DeleteLinkResult = { ok: true; data: unknown } | NormalizedError
+export type CreateProjectResult = { ok: true; data: unknown } | NormalizedError
+export type UpdateProjectResult = { ok: true; data: unknown } | NormalizedError
+export type DeleteProjectResult = { ok: true; data: unknown } | NormalizedError
+export type GetProfilePictureUploadUrlResult = { ok: true; data: { uploadUrl: string; storageKey: string } } | NormalizedError
+export type PatchProfilePictureResult = { ok: true; data: unknown } | NormalizedError
+export type GetProjectUploadUrlResult = { ok: true; data: { uploadUrl: string; storageKey: string } } | NormalizedError
+
+async function patchProfile(body: Record<string, unknown>): Promise<PatchProfileResult> {
+  const result = await client.patch('/api/v1/experts/me/profile', body, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
 }
 
-interface ProjectInput {
-  title: string
-  summary: string
-  outcomes: string
-  link?: string | null
-  fileUrl?: string | null
-  [k: string]: unknown
+async function restoreApplication(): Promise<RestoreApplicationResult> {
+  const result = await client.post('/api/v1/experts/me/application/restore', undefined, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
 }
 
-async function call<T>(path: string, init?: RequestInit): Promise<T | null> {
-  const res = await fetch(path, { credentials: 'include', ...init })
-  if (!res.ok) return null
-  const json = await res.json().catch(() => null)
-  return (json?.data ?? json) as T
+async function addLink(linkType: string, url: string): Promise<AddLinkResult> {
+  const result = await client.post('/api/v1/experts/me/links', { linkType, url }, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function deleteLink(linkId: string): Promise<DeleteLinkResult> {
+  const result = await client.delete(`/api/v1/experts/me/links/${encodeURIComponent(linkId)}`, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function createProject(body: Record<string, unknown>): Promise<CreateProjectResult> {
+  const result = await client.post('/api/v1/experts/me/projects', body, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function updateProject(projectId: string, body: Record<string, unknown>): Promise<UpdateProjectResult> {
+  const result = await client.patch(
+    `/api/v1/experts/me/projects/${encodeURIComponent(projectId)}`,
+    body,
+    { requireAuth: true },
+  )
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function deleteProject(projectId: string): Promise<DeleteProjectResult> {
+  const result = await client.delete(`/api/v1/experts/me/projects/${encodeURIComponent(projectId)}`, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function getProfilePictureUploadUrl(
+  filename: string,
+  contentType = 'image/jpeg',
+): Promise<GetProfilePictureUploadUrlResult> {
+  const result = await client.post<{ uploadUrl: string; storageKey: string }>(
+    '/api/v1/experts/me/profile-picture-url',
+    { filename, contentType },
+    { requireAuth: true },
+  )
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function patchProfilePicture(body: Record<string, unknown>): Promise<PatchProfilePictureResult> {
+  const result = await client.patch('/api/v1/experts/me/profile-picture', body, { requireAuth: true })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+async function getProjectUploadUrl(
+  projectId: string,
+  filename: string,
+  contentType = 'application/pdf',
+): Promise<GetProjectUploadUrlResult> {
+  const result = await client.post<{ uploadUrl: string; storageKey: string }>(
+    '/api/v1/experts/me/projects/upload-url',
+    { projectId, filename, contentType },
+    { requireAuth: true },
+  )
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
 }
 
 export function useExpertSelf() {
-  const patchProfile = useCallback((body: ProfilePatch) =>
-    call('/api/experts/me/profile', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    }),
-  [])
-
-  const restoreApplication = useCallback(() =>
-    call('/api/experts/me/application/restore', { method: 'POST' }),
-  [])
-
-  const addLink = useCallback((linkType: string, url: string) =>
-    call('/api/experts/me/links', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ linkType, url }),
-    }),
-  [])
-
-  const deleteLink = useCallback((linkId: string) =>
-    call(`/api/experts/me/links/${encodeURIComponent(linkId)}`, { method: 'DELETE' }),
-  [])
-
-  const createProject = useCallback((body: ProjectInput) =>
-    call('/api/experts/me/projects', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    }),
-  [])
-
-  const updateProject = useCallback((projectId: string, body: ProjectInput) =>
-    call(`/api/experts/me/projects/${encodeURIComponent(projectId)}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    }),
-  [])
-
-  const deleteProject = useCallback((projectId: string) =>
-    call(`/api/experts/me/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE' }),
-  [])
-
-  const getProfilePictureUploadUrl = useCallback(
-    (filename: string, content_type = 'image/jpeg') =>
-      call<{ url: string; key: string }>('/api/experts/me/profile-picture-url', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ filename, content_type }),
-      }),
-    [],
-  )
-
-  const patchProfilePicture = useCallback((body: { profilePictureUrl?: string | null }) =>
-    call('/api/experts/me/profile-picture', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    }),
-  [])
-
-  const getProjectUploadUrl = useCallback(
-    (projectId: string, filename: string, content_type = 'application/pdf') =>
-      call<{ url: string; key: string }>('/api/experts/me/projects/upload-url', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ projectId, filename, content_type }),
-      }),
-    [],
-  )
-
-  return {
+  return useMemo(() => ({
     patchProfile,
     restoreApplication,
     addLink,
@@ -112,5 +115,5 @@ export function useExpertSelf() {
     getProfilePictureUploadUrl,
     patchProfilePicture,
     getProjectUploadUrl,
-  }
+  }), [])
 }
