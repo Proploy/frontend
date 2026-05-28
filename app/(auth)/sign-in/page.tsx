@@ -8,6 +8,7 @@ import InputField from '@/components/ui/InputField'
 import Button from '@/components/ui/Button'
 import Checkbox from '@/components/ui/Checkbox'
 import { createClient } from '@/lib/supabase/client'
+import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
 
 const oauthProviders = [
   { label: 'Continue with Google', provider: 'google' as const },
@@ -42,12 +43,16 @@ export default function SignInPage() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       })
 
       if (error) throw error
+      if (data.session?.access_token) {
+        const synced = await syncUserToServiceApis(data.session.access_token)
+        if (!synced) throw new Error('Unable to sync account with service APIs')
+      }
 
       router.push(redirectTo)
       router.refresh()
@@ -152,7 +157,7 @@ export default function SignInPage() {
           </div>
 
           <p className="text-center font-inter text-[14px] text-[#535862]">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/sign-up" className="text-[#004eeb] font-semibold hover:underline">
               Create an account
             </Link>

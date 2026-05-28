@@ -422,6 +422,20 @@ __tests__/                 # Shared test utilities
 | Route handlers | `app/api/` |
 | Pages | `app/` (route group or leaf segment) |
 
+
+
+## Supabase Auth URL Configuration
+
+For staged production, Supabase Auth should use:
+
+- Site URL: `https://dev-stage1.netlify.app`
+- Redirect URLs:
+  - `https://dev-stage1.netlify.app/auth/callback`
+  - `https://dev-stage1.netlify.app/**`
+  - `http://localhost:3000/**` for local testing
+
+Do not leave Site URL as `http://localhost:3000` for staged/production auth testing.
+
 ---
 
-*Last updated: May 2026*
+*Last updated: 28 May 2026*

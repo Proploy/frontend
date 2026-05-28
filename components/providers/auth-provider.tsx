@@ -1,26 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
-
-async function syncUserToServiceApis(accessToken: string) {
-  if (!SERVICE_APIS_URL) return false
-
-  try {
-    const res = await fetch(`${SERVICE_APIS_URL}/api/v1/auth/sync`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-    return res.ok
-  } catch {
-    return false
-  }
-}
+import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
 
 type AuthUser = {
   id: string
@@ -44,6 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = useMemo(() => createClient(), [])
+  const syncedTokenRef = useRef<string | null>(null)
+
+  const syncSessionOnce = async (accessToken?: string | null) => {
+    if (!accessToken || syncedTokenRef.current === accessToken) return
+    const synced = await syncUserToServiceApis(accessToken)
+    if (synced) syncedTokenRef.current = accessToken
+  }
 
   useEffect(() => {
     const getUser = async () => {
@@ -56,6 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false)
         return
       }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      await syncSessionOnce(session?.access_token)
 
       const u = {
         id: user.id,
@@ -71,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        await syncSessionOnce(session.access_token)
         const u = {
           id: session.user.id,
           email: session.user.email,
@@ -93,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     })
     if (!error && data.session?.access_token) {
-      await syncUserToServiceApis(data.session.access_token)
+      await syncSessionOnce(data.session.access_token)
     }
     return { error: error as Error | null }
   }
@@ -104,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     })
     if (!error && data.session?.access_token) {
-      await syncUserToServiceApis(data.session.access_token)
+      await syncSessionOnce(data.session.access_token)
     }
     return { error: error as Error | null }
   }

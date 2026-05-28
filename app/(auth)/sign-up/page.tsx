@@ -7,6 +7,7 @@ import Image from 'next/image'
 import InputField from '@/components/ui/InputField'
 import Button from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase/client'
+import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
 
 const oauthProviders = [
   { label: 'Sign up with Google', provider: 'google' as const },
@@ -51,7 +52,7 @@ export default function SignUpPage() {
       const lastName = rest.join(' ')
       const origin = window.location.origin
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -65,6 +66,10 @@ export default function SignUpPage() {
       })
 
       if (error) throw error
+      if (data.session?.access_token) {
+        const synced = await syncUserToServiceApis(data.session.access_token)
+        if (!synced) throw new Error('Unable to sync account with service APIs')
+      }
 
       router.push('/check-email')
     } catch (err) {
