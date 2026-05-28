@@ -9,9 +9,7 @@
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type {
-  ExpertApplyRequest,
   ExpertDraftRequest,
-  ExpertSubmitRequest,
   ExpertMe,
   ExpertProjectUploadUrlResponse,
   ExpertProjectDownloadUrlResponse,
@@ -21,7 +19,6 @@ const client = new ServiceApisBrowserClient()
 let inFlightApplicationRequest: Promise<GetApplicationResult> | null = null
 
 export type GetApplicationResult = { ok: true; data: ExpertMe | null } | NormalizedError
-export type CreateApplicationResult = { ok: true; data: ExpertMe } | NormalizedError
 export type SaveApplicationDraftResult = { ok: true; data: ExpertMe } | NormalizedError
 export type SubmitApplicationResult = { ok: true; data: ExpertMe } | NormalizedError
 export type GetUploadUrlResult = { ok: true; data: ExpertProjectUploadUrlResponse } | NormalizedError
@@ -57,19 +54,6 @@ async function getApplication(): Promise<GetApplicationResult> {
   }
 }
 
-/**
- * POST /api/v1/experts/apply
- * Create the first draft application for the current user.
- */
-async function createApplication(payload: ExpertApplyRequest): Promise<CreateApplicationResult> {
-  const result = await client.post<ExpertMe>('/api/v1/experts/apply', payload, {
-    requireAuth: true,
-  })
-
-  if (!result.ok) return result
-  return { ok: true, data: result.data }
-}
-
 async function saveApplicationDraft(
   payload: ExpertDraftRequest,
 ): Promise<SaveApplicationDraftResult> {
@@ -84,15 +68,15 @@ async function saveApplicationDraft(
 }
 
 /**
- * POST /api/v1/experts/me/application/submit
+ * POST /api/v1/experts/apply
  * Submit the application. On validation error, result.error.fields contains
  * field-level error messages keyed by field name.
  */
 async function submitApplication(
-  payload: ExpertSubmitRequest,
+  payload: ExpertDraftRequest,
 ): Promise<SubmitApplicationResult> {
   const result = await client.post<ExpertMe>(
-    '/api/v1/experts/me/application/submit',
+    '/api/v1/experts/apply',
     payload,
     { requireAuth: true },
   )
@@ -158,7 +142,6 @@ async function getProjectFileDownloadUrl(
 
 export const useExpertApplication = () => ({
   getApplication,
-  createApplication,
   saveApplicationDraft,
   submitApplication,
   getProjectFileUploadUrl,

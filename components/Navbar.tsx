@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Menu, X, LogOut, User, Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { useExpertApplication } from '@/hooks/use-expert-application'
+import type { ExpertMe } from '@/hooks/types/expert-contracts'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
 
 const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account']
@@ -22,10 +24,14 @@ const BUTTON_SHADOW =
 
 export default function Navbar() {
   const pathname = usePathname()
-  const { user, expert, signOut } = useAuth()
+  const { user, signOut } = useAuth()
+  const { getApplication } = useExpertApplication()
+  const [expertState, setExpertState] = useState<{ userId: string; expert: ExpertMe | null } | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  const userId = user?.id
 
   // Must be called before any early returns - rules-of-hooks
   useEffect(() => {
@@ -34,9 +40,28 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  useEffect(() => {
+    if (!userId || hideOnWorkspace) return
+    const currentUserId = userId
+
+    let cancelled = false
+
+    async function loadExpertStatus() {
+      const result = await getApplication()
+      if (cancelled) return
+      setExpertState({ userId: currentUserId, expert: result.ok ? result.data : null })
+    }
+
+    void loadExpertStatus()
+
+    return () => {
+      cancelled = true
+    }
+  }, [getApplication, hideOnWorkspace, userId])
+
   if (hideOnWorkspace) return null
 
+  const expert = expertState && expertState.userId === userId ? expertState.expert : null
   const expertStatus = expert?.status
   const showDashboard = expertStatus === 'approved'
   const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
