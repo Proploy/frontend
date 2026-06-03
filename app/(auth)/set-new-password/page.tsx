@@ -65,7 +65,7 @@ export default function SetNewPasswordPage() {
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-gray-300 border-2 border-white" />
+                <div key={i} className="size-10 rounded-full bg-gray-300 border-2 border-white" />
               ))}
             </div>
             <div>
@@ -134,7 +134,7 @@ export default function SetNewPasswordPage() {
 
             <div className="space-y-3">
               <div className="flex gap-2 items-center">
-                <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center ${formData.password.length >= 8 ? 'bg-green-100' : 'bg-gray-200'}`}>
+                <div className={`size-5 rounded-full flex-shrink-0 flex items-center justify-center ${formData.password.length >= 8 ? 'bg-green-100' : 'bg-gray-200'}`}>
                   {formData.password.length >= 8 && <span className="text-green-600 text-sm">✓</span>}
                 </div>
                 <span className={`font-inter text-[14px] ${formData.password.length >= 8 ? 'text-[#414651]' : 'text-[#999]'}`}>
@@ -142,7 +142,7 @@ export default function SetNewPasswordPage() {
                 </span>
               </div>
               <div className="flex gap-2 items-center">
-                <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center ${/[!@#$%^&*]/.test(formData.password) ? 'bg-green-100' : 'bg-gray-200'}`}>
+                <div className={`size-5 rounded-full flex-shrink-0 flex items-center justify-center ${/[!@#$%^&*]/.test(formData.password) ? 'bg-green-100' : 'bg-gray-200'}`}>
                   {/[!@#$%^&*]/.test(formData.password) && <span className="text-green-600 text-sm">✓</span>}
                 </div>
                 <span className={`font-inter text-[14px] ${/[!@#$%^&*]/.test(formData.password) ? 'text-[#414651]' : 'text-[#999]'}`}>
@@ -163,7 +163,7 @@ export default function SetNewPasswordPage() {
             onClick={() => router.push('/sign-in')}
             className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to log in
