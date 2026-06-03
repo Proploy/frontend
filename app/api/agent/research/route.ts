@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(body),
       signal: controller.signal,
+      cache: 'no-store',
     })
 
     clearTimeout(timeout)
