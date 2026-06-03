@@ -184,7 +184,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen pt-32 flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+        <div className="animate-spin rounded-full size-12 border-b-2 border-[#0466e7]" />
       </div>
     )
   }

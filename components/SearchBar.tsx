@@ -83,7 +83,7 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
                 href={`/product/${product.product_id}`}
                 className="flex items-center gap-4 px-8 py-4 hover:bg-blue-50 transition-colors group"
               >
-                <div className="w-10 h-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">
+                <div className="size-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">
                   {product.product_logo ? (
                     <img src={product.product_logo} alt="" className="w-full h-full object-contain" />
                   ) : (
