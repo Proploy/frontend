@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
@@ -184,7 +185,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen pt-32 flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+        <div className="animate-spin rounded-full size-12 border-b-2 border-[#0466e7]" />
       </div>
     )
   }
