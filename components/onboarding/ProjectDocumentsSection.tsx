@@ -64,7 +64,7 @@ export default function ProjectDocumentsSection({
             className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100"
           >
             {/* File icon */}
-            <div className="w-8 h-8 rounded-lg bg-[#0466E7]/10 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="size-8 rounded-lg bg-[#0466E7]/10 flex items-center justify-center shrink-0 mt-0.5">
               <FileText size={16} className="text-[#0466E7]" />
             </div>
 

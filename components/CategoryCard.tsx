@@ -28,8 +28,8 @@ export default function CategoryCard({
       {/* Top Row: Icon and Growth Badge */}
       <div className="flex items-start justify-between mb-4">
         {/* Icon in Blue Square */}
-        <div className="w-12 h-12 rounded-xl bg-[#197CFF] flex items-center justify-center">
-          <Icon className="w-6 h-6 text-white" />
+        <div className="size-12 rounded-xl bg-[#197CFF] flex items-center justify-center">
+          <Icon className="size-6 text-white" />
         </div>
 
         {/* Growth Percentage Badge */}

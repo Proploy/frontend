@@ -10,7 +10,7 @@ export default function ExploreExpertsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0466E7]" />
+        <Loader2 className="size-8 animate-spin text-[#0466E7]" />
       </div>
     )
   }
@@ -43,7 +43,7 @@ export default function ExploreExpertsPage() {
               <div key={expert.id} className="bg-white rounded-[32px] overflow-hidden flex flex-col shadow-sm border border-blue-50/50 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300">
                 <div className="p-8 flex-1">
                    <div className="flex items-start justify-between mb-6">
-                      <div className="w-16 h-16 rounded-2xl bg-[#0466E7]/5 flex items-center justify-center text-[#0466E7] font-bold text-2xl">
+                      <div className="size-16 rounded-2xl bg-[#0466E7]/5 flex items-center justify-center text-[#0466E7] font-bold text-2xl">
                         {expert.displayName?.charAt(0) || 'E'}
                       </div>
                       <div className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-widest rounded-full border border-green-100/50">
