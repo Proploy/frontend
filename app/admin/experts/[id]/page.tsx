@@ -79,7 +79,7 @@ export default function ExpertReviewPage() {
   if (isLoading && !expert) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f8ff]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#155eef]" />
+        <Loader2 className="size-8 animate-spin text-[#155eef]" />
       </div>
     )
   }

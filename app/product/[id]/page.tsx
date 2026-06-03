@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import Footer from '@/components/Footer'
 import ProductHeader, { ProductTabKey } from '@/components/product/ProductHeader'
@@ -183,7 +184,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen pt-32 flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+        <div className="animate-spin rounded-full size-12 border-b-2 border-[#0466e7]" />
       </div>
     )
   }
@@ -192,7 +193,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-white gap-8">
         <h1 className="font-semibold text-[36px] text-[#181d27]">Product not found</h1>
-        <a href="/products" className="text-[#004eeb] font-semibold hover:underline">Back to products</a>
+        <Link href="/products" className="text-[#004eeb] font-semibold hover:underline">Back to products</Link>
       </div>
     )
   }
@@ -213,9 +214,9 @@ export default function ProductDetailPage() {
           >
             Retry
           </button>
-          <a href="/products" className="px-[16px] py-[8px] border border-[#d5d7da] rounded-[8px] font-semibold text-[14px] text-[#414651]">
+          <Link href="/products" className="px-[16px] py-[8px] border border-[#d5d7da] rounded-[8px] font-semibold text-[14px] text-[#414651]">
             Back to products
-          </a>
+          </Link>
         </div>
       </div>
     )

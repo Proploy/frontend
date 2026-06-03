@@ -3,6 +3,7 @@ import { DM_Sans, Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
 import ProployAgentShell from '@/components/agent/ProployAgentShell'
 import { AuthProvider } from '@/components/providers/auth-provider'
+import { MotionProvider } from '@/components/providers/motion-provider'
 
 import './globals.css'
 
@@ -33,12 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable} ${inter.variable}`}>
       <body className="antialiased font-inter flex flex-col min-h-screen">
-        <AuthProvider>
-          <ProployAgentShell>
-            <Navbar />
-            <main className="flex-1 w-full">{children}</main>
-          </ProployAgentShell>
-        </AuthProvider>
+        <MotionProvider>
+          <AuthProvider>
+            <ProployAgentShell>
+              <Navbar />
+              <main className="flex-1 w-full">{children}</main>
+            </ProployAgentShell>
+          </AuthProvider>
+        </MotionProvider>
       </body>
     </html>
   )

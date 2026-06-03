@@ -148,7 +148,7 @@ export default function Navbar() {
                     className="rounded-full"
                   />
                 ) : (
-                  <div className="w-9 h-9 bg-[#0466e7] rounded-full flex items-center justify-center text-white font-medium">
+                  <div className="size-9 bg-[#0466e7] rounded-full flex items-center justify-center text-white font-medium">
                     {user.name?.[0] || user.email?.[0] || 'U'}
                   </div>
                 )}
@@ -253,7 +253,7 @@ export default function Navbar() {
                       className="rounded-full"
                     />
                   ) : (
-                    <div className="w-10 h-10 bg-[#0466e7] rounded-full flex items-center justify-center text-white font-medium">
+                    <div className="size-10 bg-[#0466e7] rounded-full flex items-center justify-center text-white font-medium">
                       {user.name?.[0] || user.email?.[0] || 'U'}
                     </div>
                   )}

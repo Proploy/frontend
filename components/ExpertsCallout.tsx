@@ -9,7 +9,7 @@ export default function ExpertsCallout({ className = '' }: ExpertsCalloutProps) 
   return (
     <div className={`bg-white rounded-[32px] p-8 shadow-md border border-gray-100 overflow-hidden relative group ${className}`}>
       {/* Background Decorative Element */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#197CFF] opacity-[0.03] rounded-full group-hover:scale-110 transition-transform duration-700" />
+      <div className="absolute -top-24 -right-24 size-48 bg-[#197CFF] opacity-[0.03] rounded-full group-hover:scale-110 transition-transform duration-700" />
       
       <h3 className="text-[18px] font-extrabold text-[#011127] mb-6 relative">Find Vetted Experts</h3>
       
@@ -24,7 +24,7 @@ export default function ExpertsCallout({ className = '' }: ExpertsCalloutProps) 
           'Guaranteed Implementation'
         ].map((item, idx) => (
           <li key={idx} className="flex items-center gap-3 text-[13px] font-medium text-[#181D27]">
-            <CheckCircle2 className="w-5 h-5 text-[#12B76A]" />
+            <CheckCircle2 className="size-5 text-[#12B76A]" />
             {item}
           </li>
         ))}
