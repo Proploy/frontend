@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-gray-300 border-2 border-white" />
+                <div key={i} className="size-10 rounded-full bg-gray-300 border-2 border-white" />
               ))}
             </div>
             <div>
@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
             onClick={() => router.push('/sign-in')}
             className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to log in

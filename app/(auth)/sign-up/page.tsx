@@ -140,13 +140,13 @@ export default function SignUpPage() {
 
               <div className="space-y-2 mt-3">
                 <div className="flex items-center gap-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center ${errors.minChars ? 'bg-gray-200' : 'bg-green-100'}`}>
+                  <div className={`size-5 rounded-full flex items-center justify-center ${errors.minChars ? 'bg-gray-200' : 'bg-green-100'}`}>
                     {!errors.minChars && <span className="text-green-600 text-sm">&#10003;</span>}
                   </div>
                   <span className={`font-inter text-[14px] ${errors.minChars ? 'text-[#999]' : 'text-[#414651]'}`}>Must be at least 8 characters</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center ${errors.specialChar ? 'bg-gray-200' : 'bg-green-100'}`}>
+                  <div className={`size-5 rounded-full flex items-center justify-center ${errors.specialChar ? 'bg-gray-200' : 'bg-green-100'}`}>
                     {!errors.specialChar && <span className="text-green-600 text-sm">&#10003;</span>}
                   </div>
                   <span className={`font-inter text-[14px] ${errors.specialChar ? 'text-[#999]' : 'text-[#414651]'}`}>Must contain one special character</span>
