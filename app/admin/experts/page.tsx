@@ -11,7 +11,7 @@ export default function AdminExpertsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0466E7]" />
+        <Loader2 className="size-8 animate-spin text-[#0466E7]" />
       </div>
     )
   }
@@ -20,7 +20,7 @@ export default function AdminExpertsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F8FD]">
         <div className="text-center p-8 bg-white rounded-3xl shadow-sm border border-red-50 max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <AlertCircle className="size-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-red-600 mb-2">Access Error</h1>
           <p className="text-gray-600 mb-4">{error.error?.message ?? 'Failed to load experts'}</p>
           <Button
@@ -65,7 +65,7 @@ export default function AdminExpertsPage() {
           ) : experts.map((expert) => (
             <div key={expert.id} className="bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm border border-blue-50/50 hover:shadow-md transition-all group">
               <div className="flex items-center gap-6 flex-1 min-w-0">
-                <div className="w-16 h-16 rounded-2xl bg-[#0466E7]/5 flex items-center justify-center text-[#0466E7] font-bold text-xl shrink-0 group-hover:bg-[#0466E7] group-hover:text-white transition-all duration-300">
+                <div className="size-16 rounded-2xl bg-[#0466E7]/5 flex items-center justify-center text-[#0466E7] font-bold text-xl shrink-0 group-hover:bg-[#0466E7] group-hover:text-white transition-all duration-300">
                   {expert.displayName?.charAt(0) || 'E'}
                 </div>
                 <div className="min-w-0 pr-4">
