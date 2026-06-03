@@ -29,7 +29,7 @@ export default function CategoryCard({
       <div className="flex items-start justify-between mb-4">
         {/* Icon in Blue Square */}
         <div className="size-12 rounded-xl bg-[#197CFF] flex items-center justify-center">
-          <Icon className="w-6 h-6 text-white" />
+          <Icon className="size-6 text-white" />
         </div>
 
         {/* Growth Percentage Badge */}

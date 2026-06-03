@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import Footer from '@/components/Footer'
 import ProductHeader, { ProductTabKey } from '@/components/product/ProductHeader'
 import ProductInformationTab from '@/components/product/ProductInformationTab'
