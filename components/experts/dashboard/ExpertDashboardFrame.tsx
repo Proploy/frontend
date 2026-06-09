@@ -10,16 +10,18 @@ import {
   FolderClosed,
   Home,
   Inbox,
-  LayoutGrid,
   LifeBuoy,
   Loader2,
+  MessageSquare,
   Search,
   Settings,
+  TrendingUp,
   Users,
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useExpertDashboard } from '@/hooks/use-expert-dashboard'
+import { MOCK_ENABLED, MOCK_AUTH_USER, MOCK_DASHBOARD } from '@/lib/service-apis/dashboard-mock'
 import type { ExpertDashboardResponse, ExpertMe } from '@/hooks/types/expert-contracts'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
@@ -44,16 +46,17 @@ export type DashboardLoadState = {
 
 const NAV_PRIMARY: NavItem[] = [
   { label: 'Home', icon: Home, href: '/experts/dashboard' },
-  { label: 'Workspace', icon: LayoutGrid, disabled: true },
+  { label: 'Sales', icon: TrendingUp, href: '/experts/dashboard/sales' },
   { label: 'Projects', icon: FolderClosed, href: '/experts/dashboard/projects' },
-  { label: 'Leads', icon: Inbox, disabled: true },
-  { label: 'Earnings', icon: Wallet, disabled: true },
-  { label: 'Clients', icon: Users, disabled: true },
+  { label: 'Messages', icon: MessageSquare, href: '/experts/chat' },
+  { label: 'Leads', icon: Inbox, href: '/experts/dashboard/leads' },
+  { label: 'Earnings', icon: Wallet, href: '/experts/dashboard/earnings' },
+  { label: 'Clients', icon: Users, href: '/experts/dashboard/clients' },
 ]
 
 const NAV_SECONDARY: NavItem[] = [
-  { label: 'Settings', icon: Settings, disabled: true },
-  { label: 'Support', icon: LifeBuoy, disabled: true },
+  { label: 'Settings', icon: Settings, href: '/experts/account' },
+  { label: 'Support', icon: LifeBuoy, href: '/experts/dashboard/support' },
 ]
 
 export function getDashboardErrorMessage(error: NormalizedError): string {
@@ -81,6 +84,7 @@ export function useExpertDashboardData(): DashboardLoadState {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    if (MOCK_ENABLED) return
     if (isAuthLoading) return
     if (!user) return
 
@@ -108,6 +112,15 @@ export function useExpertDashboardData(): DashboardLoadState {
       cancelled = true
     }
   }, [getDashboard, isAuthLoading, user])
+
+  if (MOCK_ENABLED) {
+    return {
+      user: MOCK_AUTH_USER,
+      dashboard: MOCK_DASHBOARD,
+      dashboardError: null,
+      isPending: false,
+    }
+  }
 
   return {
     user,
@@ -144,7 +157,7 @@ export function DashboardShell({
   )
 }
 
-function Sidebar({ expert }: { expert?: ExpertMe }) {
+export function Sidebar({ expert }: { expert?: ExpertMe }) {
   return (
     <aside className="hidden lg:flex flex-col w-[296px] shrink-0 h-screen sticky top-0 bg-white border-r border-[#e9eaeb] px-[16px] py-[24px] gap-[24px]">
       <div className="px-[8px] flex items-center gap-[10px]">

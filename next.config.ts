@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  // Pin workspace root to this dir (multiple lockfiles confuse inference)
+  turbopack: {
+    root: projectRoot,
+  },
   // Skip type checking during build (pre-existing errors)
   typescript: {
     ignoreBuildErrors: true,

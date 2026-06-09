@@ -483,3 +483,52 @@ body {
         background-clip: text;
     }
 }
+
+/* ===========================================================================
+   Compare page (/compare) — animations, scrollbars, and responsive reflow.
+   Ported from the design prototype's host <style>.
+   =========================================================================== */
+
+@keyframes compareShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+@keyframes compareToast {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.compare-shimmer {
+    background: linear-gradient(90deg, #eef1f5 25%, #f6f8fb 50%, #eef1f5 75%);
+    background-size: 200% 100%;
+    animation: compareShimmer 1.3s linear infinite;
+}
+.compare-toast { animation: compareToast 240ms cubic-bezier(.4, 0, .2, 1); }
+
+/* Hide scrollbars on the tab strip and mobile swipe rail */
+.tabbar-scroll::-webkit-scrollbar,
+.mobile-swipe::-webkit-scrollbar { height: 0; }
+
+/* The mobile sticky action bar is desktop-hidden, shown on narrow viewports */
+.mobile-actionbar { display: none; }
+
+/* brief & discussion grids collapse to one column on smaller desktops */
+@media (max-width: 1040px) {
+    .brief-grid { grid-template-columns: 1fr !important; }
+    .disc-grid  { grid-template-columns: 1fr !important; }
+}
+
+/* builder selector row becomes a horizontal swipe rail on mobile */
+@media (max-width: 860px) {
+    .builder-grid {
+        display: flex !important;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 6px;
+    }
+    .builder-grid > * {
+        flex: 0 0 78% !important;
+        scroll-snap-align: start;
+    }
+    .mobile-actionbar { display: flex !important; }
+}
