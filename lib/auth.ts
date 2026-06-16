@@ -1,8 +1,4 @@
 import { createClient, createAdminClient } from './supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-
-const ADMIN_EMAILS = process.env.ADMIN_EMAILS || ''
 
 export async function getUser() {
   try {
@@ -21,24 +17,6 @@ export async function requireUser() {
     throw new Error('UNAUTHORIZED')
   }
   return user
-}
-
-export async function isAdmin() {
-  try {
-    const user = await getUser()
-    if (!user || !user.email) return false
-    const adminList = ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase())
-    return adminList.includes(user.email.toLowerCase())
-  } catch {
-    return false
-  }
-}
-
-export async function verifyAdmin() {
-  const admin = await isAdmin()
-  if (!admin) {
-    throw new Error('UNAUTHORIZED: Admin access required')
-  }
 }
 
 export async function getUserWithProfile() {

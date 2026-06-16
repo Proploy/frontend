@@ -36,8 +36,7 @@ export async function proxy(request: NextRequest) {
                           pathname.startsWith('/expert-dashboard') ||
                           pathname.startsWith('/dashboard') ||
                           pathname.startsWith('/favorites') ||
-                          pathname.startsWith('/profile') ||
-                          pathname.startsWith('/admin')
+                          pathname.startsWith('/profile')
   
   const isAuthRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
 
