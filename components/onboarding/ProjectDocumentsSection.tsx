@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { FileText, Download, Loader2 } from 'lucide-react'
-import { useExpertDashboard } from '@/hooks/use-expert-dashboard'
-import type { ExpertProjectResponse } from '@/hooks/types/expert-contracts'
+import { useExpertDashboard } from '@/features/experts/use-expert-dashboard'
+import type { ExpertProjectResponse } from '@/features/experts/types'
 
 interface ProjectDocumentsSectionProps {
   /** Projects to display — must include fileStorageKey to show upload status */

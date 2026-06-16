@@ -10,7 +10,7 @@ import {
   DashboardShell,
   useExpertDashboardData,
 } from '@/components/experts/dashboard/ExpertDashboardFrame'
-import type { ExpertDashboardResponse, ExpertMe } from '@/hooks/types/expert-contracts'
+import type { ExpertDashboardResponse, ExpertMe } from '@/features/experts/types'
 
 type Metric = { label: string; value: string; sub: string }
 type ActivityItem = { title: string; body: string; tone: string }

@@ -20,9 +20,9 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
-import { useExpertDashboard } from '@/hooks/use-expert-dashboard'
+import { useExpertDashboard } from '@/features/experts/use-expert-dashboard'
 import { MOCK_ENABLED, MOCK_AUTH_USER, MOCK_DASHBOARD } from '@/lib/service-apis/dashboard-mock'
-import type { ExpertDashboardResponse, ExpertMe } from '@/hooks/types/expert-contracts'
+import type { ExpertDashboardResponse, ExpertMe } from '@/features/experts/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
 export const BUTTON_SKEUO =

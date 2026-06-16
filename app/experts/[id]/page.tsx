@@ -13,12 +13,12 @@ import {
   Loader2,
   Mail,
   MapPin,
-  PlayCircle,
 } from 'lucide-react'
 import Footer from '@/components/Footer'
 import { ProjectDocumentViewer } from '@/components/experts/ProjectDocumentViewer'
-import { useExpertProfile } from '@/hooks/use-expert-profile'
-import type { ExpertLinkResponse, ExpertProjectResponse, ExpertPublic } from '@/hooks/types/expert-contracts'
+import { InlineVideo } from '@/components/media/InlineVideo'
+import { useExpertProfile } from '@/features/experts/use-expert-profile'
+import type { ExpertLinkResponse, ExpertProjectResponse, ExpertPublic } from '@/features/experts/types'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -205,6 +205,17 @@ export default function ExpertProfilePage() {
               )}
             </ProfileSection>
 
+            {profile.introVideoLink ? (
+              <ProfileSection title="Intro Video">
+                <div className="aspect-video overflow-hidden rounded-[12px]">
+                  <InlineVideo
+                    url={profile.introVideoLink}
+                    title={`${profile.displayName} intro video`}
+                  />
+                </div>
+              </ProfileSection>
+            ) : null}
+
             <ProfileSection title="Projects">
               {profile.projects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
@@ -233,12 +244,6 @@ export default function ExpertProfilePage() {
                   <a href={profile.schedulingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-[8px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
                     <ArrowUpRight size={16} />
                     Scheduling link
-                  </a>
-                ) : null}
-                {profile.introVideoLink ? (
-                  <a href={profile.introVideoLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-[8px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
-                    <PlayCircle size={16} />
-                    Intro video
                   </a>
                 ) : null}
               </div>

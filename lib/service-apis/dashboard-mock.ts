@@ -1,4 +1,4 @@
-import type { ExpertDashboardResponse, ExpertMe } from '@/hooks/types/expert-contracts'
+import type { ExpertDashboardResponse, ExpertMe } from '@/features/experts/types'
 
 // Dev-only fixture so the gated expert dashboard UI renders without auth/backend.
 // Toggle with NEXT_PUBLIC_DASHBOARD_MOCK=1 in .env (never enable in production).

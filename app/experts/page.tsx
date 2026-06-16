@@ -4,8 +4,8 @@ import { Loader2, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import ListingExplorer from '@/components/ListingExplorer'
-import { useApprovedExperts } from '@/hooks/use-approved-experts'
-import type { ExpertListItem } from '@/hooks/types/expert-contracts'
+import { useApprovedExperts } from '@/features/experts/use-approved-experts'
+import type { ExpertListItem } from '@/features/experts/types'
 
 export default function ExpertsPage() {
   const { experts, loading } = useApprovedExperts()

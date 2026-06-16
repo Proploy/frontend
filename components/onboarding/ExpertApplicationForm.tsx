@@ -28,8 +28,8 @@ import {
   getCityOptionsForCountry,
   isKnownCityForCountry,
 } from '@/config/location-options'
-import { useExpertApplication } from '@/hooks/use-expert-application'
-import type { ExpertDraftRequest } from '@/hooks/types/expert-contracts'
+import { useExpertApplication } from '@/features/experts/use-expert-application'
+import type { ExpertDraftRequest } from '@/features/experts/types'
 
 type ExpertProject = {
   title: string
