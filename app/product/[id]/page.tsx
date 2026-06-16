@@ -1,94 +1,17 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
 import Footer from '@/components/Footer'
-import ProductHeader, { ProductTabKey } from '@/components/product/ProductHeader'
+import { InlineVideo } from '@/components/media/InlineVideo'
+import ProductHeader from '@/components/product/ProductHeader'
+import { ProductTabKey } from '@/components/product/product-tabs'
 import ProductInformationTab from '@/components/product/ProductInformationTab'
 import IntegrationsTab from '@/components/product/IntegrationsTab'
 import PricingTab from '@/components/product/PricingTab'
-import ReviewsTab, { ProductReview } from '@/components/product/ReviewsTab'
-import { useProductDetail } from '@/hooks/use-product-detail'
-
-interface PricingPlan {
-  plan_name: string
-  plan_price: string
-  plan_description: string
-  features?: string[]
-}
-
-interface Product {
-  product_id: string
-  product_name: string
-  product_description: string | null
-  product_logo: string | null
-  rating: number | null
-  reviews: number | null
-  category?: { name: string; link?: string }
-  pricing_plans?: PricingPlan[]
-  screenshots?: string[]
-  videos?: string[]
-  product_link?: string
-  features?: Array<{ name: string; features: string[] }>
-  alternatives?: Array<{ name: string; rating: number; reviews: number; link: string }>
-  comparisons?: Array<{ name: string; logo: string; link: string }>
-}
-
-const PLACEHOLDER_REVIEW: ProductReview = {
-  authorName: 'Sienna Hewitt',
-  authorHandle: '@siennahewitt',
-  verified: true,
-  title: 'A main quote of the title of the thing',
-  rating: 5,
-  content:
-    "We've been using Untitled to kick start every new project and can't imagine working without it. We've been using Untitled to kick start every new project and can't imagine working without it. We've been using Untitled to kick start every new project and can't imagine working without it. We've been using Untitled to kick start every new project and can't imagine working without it.",
-}
-
-const PLACEHOLDER_INTEGRATIONS = Array.from({ length: 22 }).map((_, i) => ({
-  name: 'Linear',
-  description: 'Streamline software projects, sprints, and bug tracking.',
-  logo: undefined as string | undefined,
-  _idx: i,
-}))
-
-const PLACEHOLDER_SPECIALIZATIONS = ['Productivity', 'Knowledge Base', 'Markdown', 'Local-first', 'Plugins', 'Note-taking']
-
-const PLACEHOLDER_PRICING_SECTIONS = [
-  {
-    title: 'Overview',
-    rows: [
-      { name: 'Basic features', values: [{ type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Users', values: [{ type: 'text' as const, value: '10' }, { type: 'text' as const, value: '20' }, { type: 'text' as const, value: 'Unlimited' }] },
-      { name: 'Individual data', values: [{ type: 'text' as const, value: '20 GB' }, { type: 'text' as const, value: '40 GB' }, { type: 'text' as const, value: 'Unlimited' }] },
-      { name: 'Support', values: [{ type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Automated workflows', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: '200+ integrations', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-    ],
-  },
-  {
-    title: 'Reporting and analytics',
-    rows: [
-      { name: 'Analytics', values: [{ type: 'text' as const, value: 'Basic' }, { type: 'text' as const, value: 'Advanced' }, { type: 'text' as const, value: 'Advanced' }] },
-      { name: 'Export reports', values: [{ type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Scheduled reports', values: [{ type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'API Access', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Advanced reports', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Saved reports', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Customer properties', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }] },
-      { name: 'Custom fields', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }] },
-    ],
-  },
-  {
-    title: 'User access',
-    rows: [
-      { name: 'SSO/SAML authentication', values: [{ type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Advanced permissions', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }, { type: 'bool' as const, value: true }] },
-      { name: 'Audit log', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }] },
-      { name: 'Data history', values: [{ type: 'bool' as const, value: false }, { type: 'bool' as const, value: false }, { type: 'bool' as const, value: true }] },
-    ],
-  },
-]
+import { mapMediaAssetsToPreview, useProductDetail } from '@/features/catalog'
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -101,85 +24,7 @@ export default function ProductDetailPage() {
     error,
     notFound,
     refetch,
-    pricingPlans,
-    ratings,
-    alternatives,
-    loadPricingPlans,
-    loadRatings,
-    loadAlternatives,
   } = useProductDetail({ productId: id })
-
-  // Load sub-resources when tab becomes relevant
-  useEffect(() => {
-    if (activeTab === 'pricing') {
-      loadPricingPlans()
-    } else if (activeTab === 'reviews') {
-      loadRatings()
-    } else if (activeTab === 'vetted-experts') {
-      loadAlternatives()
-    }
-  }, [activeTab, loadPricingPlans, loadRatings, loadAlternatives])
-
-  const resolvedProduct: Product = product
-    ? {
-        product_id: product.product_id,
-        product_name: product.product_name,
-        product_description: product.short_description,
-        product_logo: null,
-        rating: product.avg_rating,
-        reviews: product.total_reviews,
-        pricing_plans: pricingPlans.map((p) => ({
-          plan_name: p.plan_name,
-          plan_price: p.price_text || '',
-          plan_description: '',
-        })),
-        screenshots: [],
-        videos: [],
-        product_link: product.official_website || '#',
-        features: [],
-        alternatives: alternatives.map((a) => ({
-          name: a.product_name,
-          rating: a.avg_rating ?? 0,
-          reviews: 0,
-          link: `/product/${a.product_id}`,
-        })),
-      }
-    : {
-        product_id: id,
-        product_name: 'Loading...',
-        product_description: null,
-        product_logo: null,
-        rating: null,
-        reviews: null,
-        pricing_plans: [],
-        screenshots: [],
-        videos: [],
-        product_link: '#',
-      }
-
-  const pricingTiers = useMemo(() => {
-    const plans = resolvedProduct.pricing_plans ?? []
-    const fallback = [
-      { name: 'Basic', price: '$10', period: 'per month', description: 'Basic features for up to 10 users.', popular: true },
-      { name: 'Business', price: '$20', period: 'per month', description: 'Advanced features and reporting, better workflows and automation.' },
-      { name: 'Enterprise', price: '$40', period: 'per month', description: 'Personalised service and enterprise security for large teams.' },
-    ]
-    if (plans.length === 0) return fallback
-    return plans.slice(0, 3).map((p, i) => ({
-      name: p.plan_name,
-      price: p.plan_price,
-      period: 'per month',
-      description: p.plan_description,
-      popular: i === 0,
-    }))
-  }, [resolvedProduct])
-
-  const media = useMemo(() => {
-    const items: Array<{ url: string; type?: 'image' | 'video' }> = []
-    resolvedProduct.screenshots?.forEach((s) => items.push({ url: s, type: 'image' }))
-    resolvedProduct.videos?.forEach((v) => items.push({ url: v, type: 'video' }))
-    return items
-  }, [resolvedProduct])
 
   if (loading) {
     return (
@@ -222,70 +67,138 @@ export default function ProductDetailPage() {
     )
   }
 
-  const websiteUrl = resolvedProduct.product_link || '#'
+  if (!product) {
+    return null
+  }
+
+  const media = mapMediaAssetsToPreview(product.media)
 
   return (
     <div className="min-h-screen bg-white pt-[120px] flex flex-col">
       <div className="max-w-[1440px] mx-auto w-full px-[80px] py-[40px] flex flex-col gap-[40px]">
         <ProductHeader
-          name={resolvedProduct.product_name}
-          description={resolvedProduct.product_description || ''}
-          logo={resolvedProduct.product_logo}
-          ctaHref={websiteUrl}
+          name={product.product_name}
+          description={product.short_description || ''}
+          logo={product.product_logo}
+          ctaHref={product.official_website}
+          product={product}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
 
         {activeTab === 'product-information' && (
           <ProductInformationTab
-            description={resolvedProduct.product_description || ''}
-            sellerName={resolvedProduct.product_name}
-            sellerLogo={resolvedProduct.product_logo}
-            websiteName={`${resolvedProduct.product_name} Website`}
-            websiteUrl={websiteUrl}
-            specializations={PLACEHOLDER_SPECIALIZATIONS}
+            description={product.short_description || ''}
+            sellerName={product.product_name}
+            sellerLogo={product.product_logo}
+            websiteName={`${product.product_name} Website`}
+            websiteUrl={product.official_website}
+            specializations={product.core_features.length > 0 ? product.core_features : []}
             pricingPlan={
-              pricingTiers[0]
+              product.pricing_plans[0]
                 ? {
-                    name: pricingTiers[0].name + ' plan',
-                    price: pricingTiers[0].price,
-                    period: pricingTiers[0].period,
-                    description: pricingTiers[0].description,
+                    name: product.pricing_plans[0].plan_name,
+                    price: product.pricing_plans[0].price_text || '',
+                    period: product.pricing_plans[0].billing_period || 'per month',
+                    description: product.pricing_plans[0].features[0]?.value || '',
                   }
                 : undefined
             }
-            integrations={PLACEHOLDER_INTEGRATIONS}
+            integrations={product.integration_labels.map(label => ({ name: label, description: '', logo: undefined }))}
             media={media.slice(0, 4)}
           />
         )}
 
         {activeTab === 'integrations' && (
-          <IntegrationsTab integrations={[...PLACEHOLDER_INTEGRATIONS, ...PLACEHOLDER_INTEGRATIONS, ...PLACEHOLDER_INTEGRATIONS]} />
+          <IntegrationsTab integrations={product.integration_labels.map((label, i) => ({
+            name: label,
+            description: '',
+            logo: undefined,
+            _idx: i,
+          }))} />
         )}
 
         {activeTab === 'pricing' && (
-          <PricingTab tiers={pricingTiers} sections={PLACEHOLDER_PRICING_SECTIONS} />
+          <PricingTab
+            tiers={product.pricing_plans.map((p, i) => ({
+              name: p.plan_name,
+              price: p.price_text || '',
+              period: p.billing_period || 'per month',
+              description: p.features[0]?.value || '',
+              popular: i === 0 && p.is_free === false,
+            }))}
+            sections={[]}
+          />
         )}
 
         {activeTab === 'reviews' && (
-          <ReviewsTab reviews={[PLACEHOLDER_REVIEW]} />
+          <section className="px-[32px] flex flex-col gap-[24px]">
+            {product.ratings.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+                {product.ratings.map((rating) => (
+                  <div
+                    key={`${rating.source_kind}-${rating.source_name}`}
+                    className="border border-[#e9eaeb] rounded-[12px] p-[20px]"
+                  >
+                    <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">
+                      {rating.source_name}
+                    </p>
+                    <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                      {rating.avg_rating ?? 'No rating'} · {rating.total_reviews ?? 0} reviews
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col items-center justify-center py-[48px] text-center">
+              <p className="font-normal text-[16px] leading-[24px] text-[#535862] max-w-[480px]">
+                Written reviews are not currently available.
+              </p>
+            </div>
+          </section>
         )}
 
         {activeTab === 'features' && (
           <section className="px-[32px]">
             <div className="grid gap-[16px]">
-              {resolvedProduct.features?.map((f) => (
-                <div key={f.name} className="border border-[#e9eaeb] rounded-[12px] p-[20px]">
-                  <p className="font-semibold text-[16px] leading-[24px] text-[#181d27] mb-[8px]">{f.name}</p>
-                  <ul className="space-y-[6px]">
-                    {f.features.map((feat, i) => (
-                      <li key={i} className="font-normal text-[14px] leading-[20px] text-[#535862]">
-                        • {feat}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )) ?? (
+              {product.core_features.length > 0 ? (
+                <>
+                  <div className="border border-[#e9eaeb] rounded-[12px] p-[20px]">
+                    <p className="font-semibold text-[16px] leading-[24px] text-[#181d27] mb-[8px]">Core Features</p>
+                    <ul className="space-y-[6px]">
+                      {product.core_features.map((feat) => (
+                        <li key={feat} className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                          • {feat}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {product.integration_labels.length > 0 && (
+                    <div className="border border-[#e9eaeb] rounded-[12px] p-[20px]">
+                      <p className="font-semibold text-[16px] leading-[24px] text-[#181d27] mb-[8px]">Integrations</p>
+                      <ul className="space-y-[6px]">
+                        {product.integration_labels.map((label) => (
+                          <li key={label} className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                            • {label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {product.compliance_labels.length > 0 && (
+                    <div className="border border-[#e9eaeb] rounded-[12px] p-[20px]">
+                      <p className="font-semibold text-[16px] leading-[24px] text-[#181d27] mb-[8px]">Compliance</p>
+                      <ul className="space-y-[6px]">
+                        {product.compliance_labels.map((label) => (
+                          <li key={label} className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                            • {label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
                   Feature details coming soon.
                 </p>
@@ -294,13 +207,34 @@ export default function ProductDetailPage() {
           </section>
         )}
 
-        {activeTab === 'vetted-experts' && (
+        {activeTab === 'media' && (
           <section className="px-[32px]">
-            <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-              {alternatives.length > 0
-                ? `${alternatives.length} alternative products found.`
-                : `20 vetted experts available to implement ${resolvedProduct.product_name} for your team.`}
-            </p>
+            {media.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-[16px]">
+                {media.map((item) => (
+                  <div key={item.id} className="relative aspect-video rounded-[12px] overflow-hidden border border-[#e9eaeb]">
+                    {item.type === 'video' ? (
+                      <InlineVideo
+                        url={item.url}
+                        title={item.alt || `${product.product_name} video`}
+                        mode="direct"
+                      />
+                    ) : (
+                      <CatalogImage
+                        src={item.url}
+                        alt={item.alt}
+                        className="size-full object-cover"
+                        fallback={<span className="flex size-full items-center justify-center bg-[#fafafa] px-[16px] text-center text-[14px] font-medium text-[#717680]">Media unavailable</span>}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-[64px] text-center">
+                <p className="font-normal text-[16px] leading-[24px] text-[#535862]">No media assets available.</p>
+              </div>
+            )}
           </section>
         )}
       </div>

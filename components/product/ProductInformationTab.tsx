@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
-import { ArrowUpRight, ExternalLink } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { InlineVideo } from '@/components/media/InlineVideo'
 
 interface ProductInformationTabProps {
   description: string
   sellerName: string
   sellerLogo?: string | null
   websiteName: string
-  websiteUrl: string
+  websiteUrl: string | null
   specializations: string[]
   pricingPlan?: {
     name: string
@@ -18,12 +19,8 @@ interface ProductInformationTabProps {
     description: string
   }
   integrations: Array<{ name: string; logo?: string }>
-  media?: Array<{ url: string; type?: 'image' | 'video' }>
+  media?: Array<{ id: string; url: string; type?: 'image' | 'video'; alt?: string }>
 }
-
-const BRAND_DOT_TONES = [
-  'bg-[#eff4ff] text-[#004eeb] border-[#b2ccff]',
-]
 
 export default function ProductInformationTab({
   description,
@@ -65,7 +62,12 @@ export default function ProductInformationTab({
           <LabelText label="Seller">
             <div className="flex items-center gap-[8px]">
               {sellerLogo ? (
-                <Image src={sellerLogo} alt={sellerName} width={20} height={20} className="rounded" />
+                <CatalogImage
+                  src={sellerLogo}
+                  alt={sellerName}
+                  className="size-[20px] rounded object-contain"
+                  fallback={<span className="flex size-[20px] items-center justify-center rounded bg-[#155eef] text-[10px] font-bold text-white">{sellerName.charAt(0)}</span>}
+                />
               ) : (
                 <div className="size-[20px] rounded bg-[#155eef] text-white text-[10px] font-bold flex items-center justify-center">
                   {sellerName.charAt(0)}
@@ -76,15 +78,21 @@ export default function ProductInformationTab({
           </LabelText>
 
           <LabelText label="Product Website" className="flex-1 min-w-[200px]">
-            <a
-              href={websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-[4px] font-semibold text-[16px] leading-[24px] text-[#004eeb] hover:underline"
-            >
-              {websiteName}
-              <ArrowUpRight size={16} />
-            </a>
+            {websiteUrl ? (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-[4px] font-semibold text-[16px] leading-[24px] text-[#004eeb] hover:underline"
+              >
+                {websiteName}
+                <ArrowUpRight size={16} />
+              </a>
+            ) : (
+              <span className="font-normal text-[16px] leading-[24px] text-[#535862]">
+                Not provided
+              </span>
+            )}
           </LabelText>
 
           <LabelText label="Specialization" className="w-full">
@@ -149,7 +157,12 @@ export default function ProductInformationTab({
               >
                 <div className="size-[22px] rounded bg-[#155eef]/10 flex items-center justify-center text-[#155eef] text-[10px] font-bold">
                   {integration.logo ? (
-                    <Image src={integration.logo} alt={integration.name} width={18} height={18} />
+                    <CatalogImage
+                      src={integration.logo}
+                      alt={integration.name}
+                      className="size-[18px] object-contain"
+                      fallback={integration.name.charAt(0)}
+                    />
                   ) : (
                     integration.name.charAt(0)
                   )}
@@ -178,9 +191,14 @@ export default function ProductInformationTab({
               >
                 {item ? (
                   item.type === 'video' ? (
-                    <video src={item.url} controls className="size-full object-cover" />
+                    <InlineVideo url={item.url} title={item.alt || 'Product video'} mode="direct" />
                   ) : (
-                    <Image src={item.url} alt="" width={286} height={184} className="size-full object-cover" />
+                    <CatalogImage
+                      src={item.url}
+                      alt={item.alt ?? ''}
+                      className="size-full object-cover"
+                      fallback={<span className="px-[12px] text-center text-[13px] font-medium text-[#717680]">Media unavailable</span>}
+                    />
                   )
                 ) : (
                   <div className="size-full bg-[#181d27]" />
