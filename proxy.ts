@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const publicRoutes = ['/', '/sign-in', '/sign-up', '/auth/callback', '/become-expert']
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -36,8 +36,7 @@ export async function proxy(request: NextRequest) {
                           pathname.startsWith('/expert-dashboard') ||
                           pathname.startsWith('/dashboard') ||
                           pathname.startsWith('/favorites') ||
-                          pathname.startsWith('/profile') ||
-                          pathname.startsWith('/admin')
+                          pathname.startsWith('/profile')
   
   const isAuthRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
 
@@ -53,6 +52,8 @@ export async function proxy(request: NextRequest) {
 
   return response
 }
+
+export default proxy
 
 export const config = {
   matcher: [

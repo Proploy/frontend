@@ -2,20 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useCatalogSearch } from '@/hooks/use-catalog-search'
-
-interface Product {
-  product_id: string
-  product_name: string
-  product_description: string | null
-  product_logo: string | null
-  rating?: number | null
-  reviews?: number | null
-  primary_category?: string | null
-  vendor_name?: string | null
-  free_plan_available?: boolean
-  free_trial_available?: boolean
-}
+import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { getProductDetailHref, useKeywordSearch } from '@/features/catalog'
 
 interface SearchBarProps {
   className?: string
@@ -26,7 +14,16 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const searchBarRef = useRef<HTMLDivElement>(null)
 
-  const { products, loading, error } = useCatalogSearch({ query: searchQuery })
+  const { products, loading, error, search, clear } = useKeywordSearch()
+
+  // The hook debounces requests and invalidates any previous in-flight search.
+  useEffect(() => {
+    if (searchQuery.trim().length > 1) {
+      void search(searchQuery)
+    } else {
+      clear()
+    }
+  }, [searchQuery, search, clear])
 
   // Click outside handler
   useEffect(() => {
@@ -51,7 +48,10 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
           <input 
             type="text" 
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setIsDropdownOpen(true)
+            }}
             onFocus={() => searchQuery.length > 1 && setIsDropdownOpen(true)}
             placeholder="Search products..."
             className="w-full h-10 md:h-full bg-transparent outline-none text-[15px] md:text-[16px] text-text-primary placeholder:text-gray-400 px-2"
@@ -80,12 +80,17 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
             {products.map((product) => (
               <Link
                 key={product.product_id}
-                href={`/product/${product.product_id}`}
+                href={getProductDetailHref(product.product_id)}
                 className="flex items-center gap-4 px-8 py-4 hover:bg-blue-50 transition-colors group"
               >
                 <div className="size-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">
                   {product.product_logo ? (
-                    <img src={product.product_logo} alt="" className="w-full h-full object-contain" />
+                    <CatalogImage
+                      src={product.product_logo}
+                      alt=""
+                      className="size-full object-contain"
+                      fallback={<span className="flex size-full items-center justify-center font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
+                    />
                   ) : (
                     <div className="w-full h-full bg-gray-200 rounded animate-pulse" />
                   )}
@@ -98,7 +103,7 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
             ))}
           </div>
           <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
-            <Link href={`/product?search=${searchQuery}`} className="text-cta-button font-bold text-[12px] hover:underline">
+            <Link href={`/products?search=${searchQuery}`} className="text-cta-button font-bold text-[12px] hover:underline">
               View all results for &quot;{searchQuery}&quot;
             </Link>
           </div>

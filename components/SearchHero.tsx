@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Search, ChevronDown, MapPin, DollarSign, ListFilter, FilterIcon, X } from 'lucide-react'
 
@@ -10,6 +9,7 @@ const BUTTON_SKEUO_SHADOW =
 interface SearchHeroProps {
   onMoreFilters?: () => void
   onSearch?: (query: string) => void
+  initialQuery?: string
   activeLabels?: string[]
   onRemoveLabel?: (label: string) => void
   announcementHref?: string
@@ -19,13 +19,12 @@ interface SearchHeroProps {
 export default function SearchHero({
   onMoreFilters,
   onSearch,
+  initialQuery = '',
   activeLabels = ['Label'],
   onRemoveLabel,
   announcementHref = '#',
   announcement = { tag: "What's new?", text: 'Fruition Joined!' },
 }: SearchHeroProps) {
-  const [query, setQuery] = useState('')
-
   return (
     <div className="flex flex-col gap-[48px] items-center w-full font-[family-name:var(--font-dm-sans)]">
       <div className="flex flex-col gap-[24px] items-center max-w-[1024px] w-full">
@@ -63,14 +62,16 @@ export default function SearchHero({
           className="flex gap-[16px] items-start w-full"
           onSubmit={(e) => {
             e.preventDefault()
-            onSearch?.(query)
+            const formData = new FormData(e.currentTarget)
+            onSearch?.(String(formData.get('query') ?? ''))
           }}
         >
           <div className="flex-1 flex items-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[12px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
             <input
               type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              key={initialQuery}
+              name="query"
+              defaultValue={initialQuery}
               placeholder="Search products, industries, and experts"
               className="flex-1 font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none"
             />

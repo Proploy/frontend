@@ -72,11 +72,9 @@ Catalog data flows through three layers: **contract types** (`hooks/types/catalo
 frontend/
 ├── app/                          # Next.js App Router
 │   ├── (auth)/                   # Auth route group — sign-in, sign-up, reset-password
-│   ├── admin/                    # Admin-only pages (protected)
 │   ├── api/                      # BFF API routes (proxies to service-apis)
 │   │   ├── products/             # Product list / detail / search shims
 │   │   ├── experts/              # Expert application shims
-│   │   ├── admin/                # Admin review shims
 │   │   └── favorites/            # User favorites shim
 │   ├── products/                 # Product listing and search pages
 │   ├── product/[id]/            # Product detail page
@@ -129,7 +127,6 @@ frontend/
 │   │   ├── api.ts              # API response Zod schemas
 │   │   └── expert.ts           # Expert form Zod schemas
 │   ├── auth.ts                  # Auth utility re-exports
-│   └── admin.ts                 # Admin check utilities
 │
 ├── docs/                        # Architecture and onboarding docs
 ├── scripts/                     # Build and code-generation scripts
@@ -291,7 +288,7 @@ NEXT_PUBLIC_SERVICE_APIS_URL   # service-apis gateway URL (browser-accessible)
 
 **Server-only** (never bundled into browser):
 ```
-SUPABASE_SERVICE_ROLE_KEY      # Server-side Supabase admin
+SUPABASE_SERVICE_ROLE_KEY      # Server-side privileged Supabase client
 DATABASE_URL                   # Direct DB connection (if needed)
 SERVICE_APIS_BASE_URL          # service-apis gateway (server-side proxy)
 UPSTASH_REDIS_REST_URL

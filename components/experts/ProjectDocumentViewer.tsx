@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Download, ExternalLink, Eye, FileImage, FileText, Loader2, X } from 'lucide-react'
-import type { ExpertProjectDownloadUrlResponse, ExpertProjectResponse } from '@/hooks/types/expert-contracts'
+import type { ExpertProjectDownloadUrlResponse, ExpertProjectResponse } from '@/features/experts/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
 type ProjectFileResult = { ok: true; data: ExpertProjectDownloadUrlResponse } | NormalizedError

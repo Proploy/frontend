@@ -6,11 +6,11 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Menu, X, LogOut, User, Settings } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
-import { useExpertApplication } from '@/hooks/use-expert-application'
-import type { ExpertMe } from '@/hooks/types/expert-contracts'
+import { useExpertApplication } from '@/features/experts/use-expert-application'
+import type { ExpertMe } from '@/features/experts/types'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
 
-const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account']
+const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account', '/experts/chat']
 
 const NAV_LINKS = [
   { href: '/products', label: 'Explore Products' },

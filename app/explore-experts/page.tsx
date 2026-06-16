@@ -2,7 +2,7 @@
 
 import { Loader2, MapPin, Briefcase, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { useApprovedExperts } from '@/hooks/use-approved-experts'
+import { useApprovedExperts } from '@/features/experts/use-approved-experts'
 
 export default function ExploreExpertsPage() {
   const { experts, loading } = useApprovedExperts()

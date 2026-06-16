@@ -1,0 +1,292 @@
+'use client'
+
+// components/compare/CompareTable.tsx — comparison table shell
+// Ported from the design prototype (table.jsx): toolbar, tabs, desktop matrix, mobile cards.
+
+import React from 'react'
+import { Icon, LogoTile, Pill, ScoreRing, Btn } from './CompareUI'
+import { buildRows, PathCard, ImplCtas, AltCard, type Row } from './CompareRows'
+import { NoData } from './CompareUI'
+import { TYPE_META, type Entity, type Tab } from '@/lib/compare/data'
+
+const VETTED_EXPERTS = {
+  default: [
+    { initial: 'MC', name: 'Maya Chen', meta: 'PM rollout · 4.9 · NA', tone: 'indigo' as const },
+    { initial: 'DP', name: 'Devlin Partners', meta: 'Platinum partner · 4.8', tone: 'success' as const },
+  ],
+}
+
+// rows for Experts tab (richer than data rows)
+function expertsRows(): Row[] {
+  return [
+    { label: 'Recommended expert path', cell: (e) => <PathCard entity={e} /> },
+    {
+      label: 'Vetted experts',
+      cell: (e) =>
+        e.type === 'expert' ? (
+          e.reviews.outcomes ? (
+            <div className="flex flex-col gap-[6px]">
+              {e.reviews.outcomes.map((o, i) => (
+                <span key={i} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}>
+                  <Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <NoData />
+          )
+        ) : (
+          <div className="flex flex-col gap-[7px]">
+            <span style={{ fontSize: 13, color: '#717680' }}>
+              <strong className="font-[family-name:var(--font-dm-sans)]" style={{ color: '#181d27' }}>{e.expertCount}</strong> available for {e.name}
+            </span>
+            {VETTED_EXPERTS.default.map((x, i) => (
+              <div key={i} className="flex items-center gap-[9px]" style={{ padding: '7px 9px', borderRadius: 10, border: '1px solid #e9eaeb' }}>
+                <LogoTile initial={x.initial} tone={x.tone} size={30} type="expert" />
+                <div className="min-w-0">
+                  <div className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 13, color: '#181d27' }}>{x.name}</div>
+                  <div style={{ fontSize: 11.5, color: '#717680' }}>{x.meta}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ),
+    },
+    { label: 'Take action', cell: () => <ImplCtas /> },
+  ]
+}
+
+function alternativesRows(): Row[] {
+  return [
+    {
+      label: 'Similar options',
+      sub: 'Add any to your comparison',
+      cell: (e) => <div className="flex flex-col gap-[8px]">{e.alternatives.map((a, i) => <AltCard key={i} alt={a} />)}</div>,
+    },
+  ]
+}
+
+export function getRows(tab: Tab | string): Row[] {
+  if (tab === 'Experts') return expertsRows()
+  if (tab === 'Alternatives') return alternativesRows()
+  return buildRows(tab)
+}
+
+// ---- Results toolbar (save / share / add) --------------------------------
+export function ResultsToolbar({
+  count, onSave, onShare, onAdd, canAdd, saved,
+}: {
+  count: number
+  onSave: () => void
+  onShare: () => void
+  onAdd: () => void
+  canAdd: boolean
+  saved: boolean
+}) {
+  return (
+    <div style={{ maxWidth: 1440, margin: '28px auto 0', padding: '0 32px' }}>
+      <div className="flex items-center justify-between gap-[14px] flex-wrap">
+        <div className="flex items-center gap-[10px]">
+          <h2 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 22, letterSpacing: '-0.01em', color: '#181d27' }}>Detailed comparison</h2>
+          <Pill tone="neutral">{count} options</Pill>
+        </div>
+        <div className="flex items-center gap-[10px]">
+          <Btn variant="secondary" size="sm" icon={saved ? 'check' : 'bookmark'} onClick={onSave}>{saved ? 'Saved' : 'Save'}</Btn>
+          <Btn variant="secondary" size="sm" icon="share" onClick={onShare}>Share</Btn>
+          {canAdd && <Btn variant="secondary" size="sm" icon="plus" onClick={onAdd}>Add option</Btn>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---- Tab bar --------------------------------------------------------------
+export function TabBar({ tabs, active, onChange }: { tabs: readonly string[]; active: string; onChange: (t: string) => void }) {
+  return (
+    <div style={{ borderBottom: '1px solid #e9eaeb', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(8px)' }}>
+      <div className="tabbar-scroll flex gap-[4px] overflow-x-auto" style={{ maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
+        {tabs.map((t) => {
+          const on = t === active
+          return (
+            <button
+              key={t}
+              onClick={() => onChange(t)}
+              className="relative cursor-pointer whitespace-nowrap font-[family-name:var(--font-dm-sans)] font-semibold"
+              style={{ border: 'none', background: 'transparent', padding: '14px 14px', fontSize: 14.5, color: on ? '#004eeb' : '#717680', transition: 'color 150ms' }}
+              onMouseEnter={(e) => { if (!on) e.currentTarget.style.color = '#414651' }}
+              onMouseLeave={(e) => { if (!on) e.currentTarget.style.color = '#717680' }}
+            >
+              {t}
+              {on && <span style={{ position: 'absolute', left: 10, right: 10, bottom: -1, height: 2.5, borderRadius: 3, background: '#155eef' }} />}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ---- entity column header card -------------------------------------------
+export function ColumnHeader({
+  entity, onRemove, canRemove, density,
+}: {
+  entity: Entity
+  onRemove: () => void
+  canRemove: boolean
+  density: 'compact' | 'regular'
+}) {
+  const m = TYPE_META[entity.type]
+  return (
+    <div className="relative flex flex-col gap-[9px]" style={{ padding: density === 'compact' ? '12px 12px' : '16px 14px' }}>
+      {canRemove && (
+        <button
+          onClick={onRemove}
+          aria-label="Remove column"
+          className="absolute flex cursor-pointer"
+          style={{ top: 8, right: 8, border: 'none', background: 'transparent', padding: 4, borderRadius: 6, color: '#c4c6cb' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#fef3f2'; e.currentTarget.style.color = '#d92d20' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#c4c6cb' }}
+        >
+          <Icon name="x" size={15} />
+        </button>
+      )}
+      <div className="flex items-center gap-[10px]">
+        <LogoTile initial={entity.initial} tone={entity.logoTone} size={40} type={entity.type} />
+        <div className="min-w-0" style={{ paddingRight: 18 }}>
+          <div className="font-[family-name:var(--font-dm-sans)] font-bold whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 16, color: '#181d27', letterSpacing: '-0.01em' }}>{entity.name}</div>
+          <span className="inline-flex items-center gap-[5px]" style={{ marginTop: 2 }}>
+            <span className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 11, color: m.color, background: m.bg, border: `1px solid ${m.border}`, borderRadius: 9999, padding: '0 7px', lineHeight: '16px' }}>{m.label}</span>
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-[9px]">
+        <ScoreRing value={entity.fitScore} size={38} />
+        <div style={{ lineHeight: 1.1 }}>
+          <div className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 11, color: '#717680' }}>FIT SCORE</div>
+          <div style={{ fontSize: 11.5, color: '#a4a7ae' }}>vs your filters</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface TableProps {
+  entities: Entity[]
+  tab: string
+  tabs: readonly string[]
+  onTab: (t: string) => void
+  onRemove: (i: number) => void
+  density: 'compact' | 'regular'
+  highlight?: boolean
+  striping?: boolean
+}
+
+// ---- DESKTOP matrix -------------------------------------------------------
+export function DesktopTable({ entities, tab, tabs, onTab, onRemove, density, highlight = true, striping = true }: TableProps) {
+  const rows = getRows(tab)
+  const n = entities.length
+  const cols = `220px repeat(${n}, minmax(0, 1fr))`
+  const rowPadV = density === 'compact' ? '11px' : '16px'
+  return (
+    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
+      {/* overflow:clip (not hidden) keeps the rounded corners WITHOUT turning the card
+          into a scroll container — an overflow:hidden ancestor would break the sticky header. */}
+      <div className="overflow-clip" style={{ border: '1px solid #e9eaeb', borderRadius: 16, background: '#fff', boxShadow: 'var(--shadow-sm)' }}>
+        {/* sticky tabs + header */}
+        <div style={{ position: 'sticky', top: 80, zIndex: 30 }}>
+          <TabBar tabs={tabs} active={tab} onChange={onTab} />
+          <div style={{ display: 'grid', gridTemplateColumns: cols, background: '#fff', borderBottom: '1px solid #e9eaeb' }}>
+            <div className="flex items-end" style={{ padding: '14px 18px', borderRight: '1px solid #f0f0f0' }}>
+              <span className="font-[family-name:var(--font-dm-sans)] font-semibold uppercase" style={{ fontSize: 12, color: '#a4a7ae', letterSpacing: '0.05em' }}>{tab}</span>
+            </div>
+            {entities.map((e, i) => (
+              <div key={e.id} style={{ borderRight: i < n - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                <ColumnHeader entity={e} onRemove={() => onRemove(i)} canRemove={n > 1} density={density} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* body rows */}
+        <div>
+          {rows.map((r, ri) => {
+            const bestId = highlight && r.best ? r.best(entities) : null
+            if (r.full) {
+              return (
+                <div key={ri} style={{ padding: '14px 18px', borderTop: '1px solid #f0f0f0', background: '#fafafa' }}>{r.cell(entities[0])}</div>
+              )
+            }
+            return (
+              <div key={ri} style={{ display: 'grid', gridTemplateColumns: cols, borderTop: ri === 0 ? 'none' : '1px solid #f0f0f0', background: striping && ri % 2 ? '#fcfcfd' : '#fff' }}>
+                <div className="flex flex-col justify-center gap-[2px]" style={{ padding: `${rowPadV} 18px`, borderRight: '1px solid #f0f0f0' }}>
+                  <span className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 13.5, color: '#414651' }}>{r.label}</span>
+                  {r.sub && <span style={{ fontSize: 11.5, color: '#a4a7ae' }}>{r.sub}</span>}
+                </div>
+                {entities.map((e, ci) => {
+                  const isBest = bestId === e.id
+                  return (
+                    <div
+                      key={e.id}
+                      className="relative flex items-center"
+                      style={{ padding: `${rowPadV} 16px`, borderRight: ci < n - 1 ? '1px solid #f0f0f0' : 'none', background: isBest ? '#f5f9ff' : r.highlight ? '#fcfcff' : 'transparent' }}
+                    >
+                      {isBest && <span style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: '#155eef' }} />}
+                      <div style={{ width: '100%' }}>{r.cell(e)}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <p className="flex items-center gap-[7px]" style={{ margin: '12px 2px 0', fontSize: 12.5, color: '#a4a7ae' }}>
+        <span className="inline-flex" style={{ width: 10, height: 10, borderRadius: 3, background: '#f5f9ff', border: '1px solid #b2ccff' }} />
+        Highlighted cells indicate the strongest option for that row, given your filters.
+      </p>
+    </div>
+  )
+}
+
+// ---- MOBILE swipeable cards ----------------------------------------------
+export function MobileCards({ entities, tab, tabs, onTab, onRemove, density, highlight = true }: TableProps) {
+  const rows = getRows(tab).filter((r) => !r.full)
+  const n = entities.length
+  return (
+    <div>
+      <div style={{ position: 'sticky', top: 80, zIndex: 30 }}>
+        <TabBar tabs={tabs} active={tab} onChange={onTab} />
+      </div>
+      <div className="flex items-center gap-[6px] justify-center" style={{ padding: '8px 0 4px', color: '#a4a7ae', fontSize: 12.5 }}>
+        <Icon name="swap" size={14} color="#a4a7ae" /> Swipe to compare {n} options
+      </div>
+      <div className="mobile-swipe flex gap-[14px] overflow-x-auto" style={{ padding: '4px 20px 8px', scrollSnapType: 'x mandatory' }}>
+        {entities.map((e, i) => (
+          <div
+            key={e.id}
+            className="overflow-hidden"
+            style={{ flex: '0 0 86%', maxWidth: 360, scrollSnapAlign: 'center', border: '1px solid #e9eaeb', borderRadius: 16, background: '#fff', boxShadow: 'var(--shadow-sm)' }}
+          >
+            <div style={{ borderBottom: '1px solid #f0f0f0' }}>
+              <ColumnHeader entity={e} onRemove={() => onRemove(i)} canRemove={n > 1} density={density} />
+            </div>
+            <div>
+              {rows.map((r, ri) => {
+                const bestId = highlight && r.best ? r.best(entities) : null
+                const isBest = bestId === e.id
+                return (
+                  <div key={ri} style={{ padding: '12px 14px', borderTop: ri === 0 ? 'none' : '1px solid #f5f5f5', background: isBest ? '#f5f9ff' : '#fff' }}>
+                    <div className="flex items-center gap-[6px]" style={{ marginBottom: 6 }}>
+                      <span className="font-[family-name:var(--font-dm-sans)] font-semibold uppercase" style={{ fontSize: 12, color: '#a4a7ae', letterSpacing: '0.04em' }}>{r.label}</span>
+                      {isBest && <Pill tone="brand" dot>Best</Pill>}
+                    </div>
+                    <div>{r.cell(e)}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

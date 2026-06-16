@@ -37,18 +37,3 @@ export async function requireUser(): Promise<AuthUser> {
 
   return user
 }
-
-export function isAdminEmail(email: string | null) {
-  if (!email) return false
-
-  const adminEmails = (process.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean)
-
-  return adminEmails.includes(email.toLowerCase())
-}
-
-export function hasAdminRole(role: string | null) {
-  return ['admin', 'super_admin', 'owner'].includes((role || '').toLowerCase())
-}

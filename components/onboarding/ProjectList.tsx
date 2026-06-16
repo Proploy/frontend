@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Plus, Trash2, Upload, FileText, Loader2 } from 'lucide-react'
-import type { GetUploadUrlResult } from '@/hooks/use-expert-application'
+import type { GetUploadUrlResult } from '@/features/experts/use-expert-application'
 
 interface ProjectFileState {
   file: File | null

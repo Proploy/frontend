@@ -18,13 +18,13 @@ export async function syncUserToServiceApis(accessToken: string): Promise<boolea
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => '')
-      console.error('[auth-sync] sync failed:', res.status, errorText)
+      console.warn('[auth-sync] sync failed (non-blocking):', res.status, errorText)
       return false
     }
 
     return true
   } catch (err) {
-    console.error('[auth-sync] sync network error:', err)
+    console.warn('[auth-sync] sync network error (non-blocking):', err)
     return false
   }
 }

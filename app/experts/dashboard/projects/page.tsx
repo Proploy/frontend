@@ -11,8 +11,8 @@ import {
   DashboardShell,
   useExpertDashboardData,
 } from '@/components/experts/dashboard/ExpertDashboardFrame'
-import { useExpertDashboard } from '@/hooks/use-expert-dashboard'
-import type { ExpertProjectResponse } from '@/hooks/types/expert-contracts'
+import { useExpertDashboard } from '@/features/experts/use-expert-dashboard'
+import type { ExpertProjectResponse } from '@/features/experts/types'
 
 export default function ExpertDashboardProjectsPage() {
   const state = useExpertDashboardData()

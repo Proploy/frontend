@@ -1,28 +1,74 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
 import ListingExplorer from '@/components/ListingExplorer'
 import Footer from '@/components/Footer'
-import { useCatalogProducts } from '@/hooks/use-catalog-products'
-import { useCatalogCategories } from '@/hooks/use-catalog-categories'
+import {
+  getProductDetailHref,
+  useCategoryFilters,
+  useProductList,
+  type CardProduct,
+} from '@/features/catalog'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
 const VIEW_ALL = 'view-all'
 
+const ACTIVE_BUTTON_CLASS = 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
+const INACTIVE_BUTTON_CLASS = 'text-[#717680] hover:text-[#414651]'
+const BASE_BUTTON_CLASS = 'h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors'
+
+function CategoryTabs({ categories, activeCategory, onChange }: {
+  categories: { term_id: string; label: string; taxonomy_type: string }[]
+  activeCategory: string
+  onChange: (termId: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap justify-center gap-[8px]">
+      {categories.map((cat) => {
+        const active = cat.term_id === activeCategory
+        const buttonClass = active ? ACTIVE_BUTTON_CLASS : INACTIVE_BUTTON_CLASS
+        return (
+          <button
+            key={cat.term_id}
+            type="button"
+            onClick={() => onChange(cat.term_id)}
+            className={`${BASE_BUTTON_CLASS} ${buttonClass}`}
+          >
+            {cat.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function ProductsPage() {
-  const { categories: catList } = useCatalogCategories()
+  return (
+    <Suspense fallback={null}>
+      <ProductsPageContent />
+    </Suspense>
+  )
+}
+
+function ProductsPageContent() {
+  const searchParams = useSearchParams()
+  const search = searchParams.get('search')?.trim() || undefined
+  const { filters: catList, loading: catLoading, error: catError } = useCategoryFilters()
   const topCategories = useMemo(
-    () => catList.filter((c) => c.taxonomy_type === 'category'),
+    () => catList.filter((c) => c.taxonomy_type === 'product_category'),
     [catList],
   )
   const [activeCategory, setActiveCategory] = useState<string>(VIEW_ALL)
-  const { products, loading, error, pagination } = useCatalogProducts({
+  const { products, loading, error, pagination, refetch } = useProductList({
     limit: 30,
     category: activeCategory === VIEW_ALL ? undefined : activeCategory,
+    search,
   })
   const [visible, setVisible] = useState(15)
   const [contact, setContact] = useState({
@@ -36,6 +82,11 @@ export default function ProductsPage() {
 
   const filtered = useMemo(() => products, [products])
   const cards = filtered.slice(0, visible)
+
+  const allCategories = useMemo(() => [
+    { term_id: VIEW_ALL, label: 'View all', taxonomy_type: 'all' },
+    ...topCategories,
+  ], [topCategories])
 
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] flex flex-col">
@@ -53,28 +104,24 @@ export default function ProductsPage() {
           </div>
 
           {/* Category filter tabs */}
-          <div className="flex flex-wrap justify-center gap-[8px]">
-            {[{ term_id: VIEW_ALL, label: 'View all' }, ...topCategories].map((cat) => {
-              const active = cat.term_id === activeCategory
-              return (
-                <button
-                  key={cat.term_id}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory(cat.term_id)
-                    setVisible(15)
-                  }}
-                  className={`h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors ${
-                    active
-                      ? 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
-                      : 'text-[#717680] hover:text-[#414651]'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              )
-            })}
-          </div>
+          {catLoading ? (
+            <div className="flex justify-center">
+              <span className="text-[#717680] text-[14px]">Loading categories...</span>
+            </div>
+          ) : catError ? (
+            <div className="flex justify-center">
+              <span className="text-red-500 text-[14px]">Failed to load categories</span>
+            </div>
+          ) : (
+            <CategoryTabs
+              categories={allCategories}
+              activeCategory={activeCategory}
+              onChange={(termId) => {
+                setActiveCategory(termId)
+                setVisible(15)
+              }}
+            />
+          )}
 
           {/* Error state */}
           {error && (
@@ -86,7 +133,7 @@ export default function ProductsPage() {
               </p>
               <button
                 type="button"
-                onClick={() => window.location.reload()}
+                onClick={refetch}
                 className="px-[16px] py-[8px] bg-[#155eef] text-white rounded-[8px] font-semibold text-[14px]"
               >
                 Retry
@@ -100,7 +147,6 @@ export default function ProductsPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
             </div>
           ) : cards.length === 0 && !error ? (
-            /* Empty state */
             <div className="flex flex-col items-center gap-[16px] py-[96px]">
               <p className="text-[16px] text-[#535862]">No products found.</p>
             </div>
@@ -250,7 +296,7 @@ const HIGHLIGHT_STYLES: Record<string, string> = {
   brand: 'bg-[#eff4ff] border-[#b2ddff] text-[#004eeb] dot-[#155eef]',
 }
 
-function ProductCard({ product, highlightIndex }: { product: { product_id: string; product_name: string; product_description: string | null; product_logo: string | null; rating?: number | null; reviews?: number | null }; highlightIndex: number }) {
+function ProductCard({ product, highlightIndex }: { product: CardProduct; highlightIndex: number }) {
   const highlight = HIGHLIGHT_BADGES[highlightIndex % HIGHLIGHT_BADGES.length]
   const tone = HIGHLIGHT_STYLES[highlight.tone]
   return (
@@ -258,7 +304,16 @@ function ProductCard({ product, highlightIndex }: { product: { product_id: strin
       <div className="flex flex-col gap-[12px]">
         <div className="flex items-start justify-between">
           <div className={`size-[48px] rounded-[10px] border border-[#d5d7da] bg-white flex items-center justify-center text-[#155eef] font-bold text-[18px] ${BUTTON_SKEUO_SHADOW}`}>
-            {product.product_name?.charAt(0) ?? 'P'}
+            {product.product_logo ? (
+              <CatalogImage
+                src={product.product_logo}
+                alt={`${product.product_name} logo`}
+                className="size-full rounded-[10px] object-contain p-[4px]"
+                fallback={<span aria-hidden="true">{product.product_name?.charAt(0) ?? 'P'}</span>}
+              />
+            ) : (
+              product.product_name?.charAt(0) ?? 'P'
+            )}
           </div>
           <span className={`inline-flex items-center gap-[6px] rounded-full border px-[10px] py-[2px] font-medium text-[14px] leading-[20px] ${tone}`}>
             <span className="size-[6px] rounded-full bg-current" />
@@ -266,7 +321,7 @@ function ProductCard({ product, highlightIndex }: { product: { product_id: strin
           </span>
         </div>
         <Link
-          href={`/product/${product.product_id}`}
+          href={getProductDetailHref(product.product_id)}
           className="font-semibold text-[18px] leading-[28px] text-[#181d27] hover:text-[#0466e7]"
         >
           {product.product_name}
@@ -285,7 +340,7 @@ function ProductCard({ product, highlightIndex }: { product: { product_id: strin
           ))}
         </div>
         <Link
-          href={`/product/${product.product_id}`}
+          href={getProductDetailHref(product.product_id)}
           className="inline-flex items-center gap-[4px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
         >
           Learn More

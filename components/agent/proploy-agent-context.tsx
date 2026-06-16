@@ -52,7 +52,7 @@ const defaultPageContext = (route = '/'): AgentPageContext => ({
 
 function inferPageType(route: string): string {
   if (route === '/') return 'homepage'
-  if (route.startsWith('/products/')) return 'product'
+  if (route.startsWith('/products/') || route.startsWith('/product/')) return 'product'
   if (route.startsWith('/products')) return 'catalog'
   if (route.startsWith('/experts')) return 'experts'
   if (route.startsWith('/for-businesses')) return 'businesses'
