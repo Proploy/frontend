@@ -36,10 +36,10 @@ export default function MethodologyStep({
             />
           </div>
         ) : (
-          <Image 
-            src={icon} 
-            alt={title} 
-            width={64} 
+          <Image
+            src={icon}
+            alt={title}
+            width={64}
             height={64}
             className="size-16 h-16"
           />
