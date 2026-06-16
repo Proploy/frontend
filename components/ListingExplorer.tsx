@@ -46,6 +46,7 @@ function ListingExplorerInner({ kind }: ListingExplorerProps) {
           <SearchHero
             onMoreFilters={() => setDrawerOpen(true)}
             onSearch={handleSearch}
+            initialQuery={searchParams.get('search') ?? ''}
             activeLabels={activeLabels}
             onRemoveLabel={(label) => setActiveLabels((l) => l.filter((x) => x !== label))}
           />
