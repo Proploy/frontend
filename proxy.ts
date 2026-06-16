@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const publicRoutes = ['/', '/sign-in', '/sign-up', '/auth/callback', '/become-expert']
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
