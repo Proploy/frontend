@@ -16,6 +16,7 @@ import {
   PlayCircle,
 } from 'lucide-react'
 import Footer from '@/components/Footer'
+import { CATEGORIES, CategoryDirectory } from '@/components/experts/CategoryDirectory'
 import { ProjectDocumentViewer } from '@/components/experts/ProjectDocumentViewer'
 import { useExpertProfile } from '@/hooks/use-expert-profile'
 import type { ExpertLinkResponse, ExpertProjectResponse, ExpertPublic } from '@/hooks/types/expert-contracts'
@@ -53,6 +54,7 @@ function firstPortfolioLink(links: ExpertLinkResponse[]) {
 export default function ExpertProfilePage() {
   const params = useParams()
   const id = params.id as string
+  const isCategory = Boolean(CATEGORIES[id])
   const { getExpertProfile } = useExpertProfile()
   const [profile, setProfile] = useState<ExpertPublic | null>(null)
   const [loading, setLoading] = useState(true)
@@ -75,12 +77,12 @@ export default function ExpertProfilePage() {
       setLoading(false)
     }
 
-    if (id) void fetchExpert()
+    if (id && !isCategory) void fetchExpert()
 
     return () => {
       cancelled = true
     }
-  }, [getExpertProfile, id])
+  }, [getExpertProfile, id, isCategory])
 
   const derived = useMemo(() => {
     if (!profile) return null
@@ -90,6 +92,19 @@ export default function ExpertProfilePage() {
     const portfolioLink = firstPortfolioLink(profile.links)
     return { expertise, socialLinks, professionalLinks, portfolioLink }
   }, [profile])
+
+  // Hire-by-category directory shares this dynamic segment (e.g. /experts/engineering)
+  // because a sibling [category] route would collide with [id]. Dispatch by slug.
+  if (isCategory) {
+    return (
+      <div className="min-h-screen bg-white pt-[80px] font-[family-name:var(--font-dm-sans)] flex flex-col">
+        <div className="flex-1">
+          <CategoryDirectory slug={id} />
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   if (loading) {
     return (

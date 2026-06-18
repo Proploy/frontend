@@ -1,8 +1,19 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowDownRight, ArrowUpRight, Download, Search, Wallet } from 'lucide-react'
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  CheckCircle2,
+  Download,
+  Globe,
+  Lock,
+  Search,
+  Send,
+  ShieldCheck,
+  Wallet,
+} from 'lucide-react'
 import {
   BUTTON_SKEUO,
   CARD_SHADOW,
@@ -60,6 +71,44 @@ type Txn = {
   status: EarningStatus
 }
 
+/* ── Escrow lifecycle ──────────────────────────────────────────────────
+   Money moves Funded → Held → Released → Paid out. We derive each stage
+   from the payout statuses already present on a transaction. */
+type EscrowStage = 'Funded' | 'Held' | 'Released' | 'Paid out'
+
+const ESCROW_STAGES: {
+  stage: EscrowStage
+  blurb: string
+  color: string
+  icon: typeof Wallet
+  match: (s: EarningStatus) => boolean
+}[] = [
+  { stage: 'Funded', blurb: 'Client paid into escrow', color: '#f79009', icon: Wallet, match: (s) => s === 'Awaiting client payment' },
+  { stage: 'Held', blurb: 'Secured while you work', color: '#6938ef', icon: ShieldCheck, match: (s) => s === 'Held in escrow' },
+  { stage: 'Released', blurb: 'Approved on acceptance', color: '#0086c0', icon: CheckCircle2, match: (s) => s === 'Milestone approved' || s === 'Payout pending' },
+  { stage: 'Paid out', blurb: 'Settled to your account', color: '#17b26a', icon: Send, match: (s) => s === 'Paid out' },
+]
+
+/* ── FX (multi-currency payout preview) ────────────────────────────────
+   Proploy locks the rate at release and charges a flat conversion fee. */
+const FX = {
+  currency: 'EUR',
+  symbol: '€',
+  rate: 0.92, // 1 USD → 0.92 EUR, locked at release
+  feePct: 0.4, // flat conversion fee
+}
+
+const formatFx = (cents: number) =>
+  `${FX.symbol}${((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+/* CSV-safe field (quote + escape embedded quotes). */
+const csvCell = (v: string | number) => {
+  const s = String(v)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+const money = (cents: number) => ((cents || 0) / 100).toFixed(2)
+
 export default function EarningsPage() {
   const { clients, projects } = useClients()
   const [tab, setTab] = useState<'All' | EarningStatus>('All')
@@ -106,6 +155,73 @@ export default function EarningsPage() {
     return arr
   }, [txns])
 
+  // Escrow lifecycle: count + value at each stage of the money pipeline.
+  const escrow = useMemo(
+    () =>
+      ESCROW_STAGES.map((stage) => {
+        const matched = txns.filter((t) => stage.match(t.status))
+        return {
+          ...stage,
+          count: matched.length,
+          amountCents: matched.reduce((s, t) => s + t.netCents, 0),
+        }
+      }),
+    [txns],
+  )
+
+  // FX preview — locked-rate conversion on the most recent paid-out payout.
+  const fxPreview = useMemo(() => {
+    const lastPaid = txns.find((t) => PAID(t.status)) ?? txns[0]
+    if (!lastPaid) return null
+    const usdCents = lastPaid.netCents
+    const convFeeCents = Math.round(usdCents * (FX.feePct / 100))
+    const convertedCents = Math.round((usdCents - convFeeCents) * FX.rate)
+    return { projectName: lastPaid.projectName, usdCents, convFeeCents, convertedCents }
+  }, [txns])
+
+  // Currency split — illustrative breakdown of where payouts settle.
+  const currencyBreakdown = useMemo(() => {
+    const paidTotal = txns.filter((t) => PAID(t.status)).reduce((s, t) => s + t.netCents, 0) || 1
+    return [
+      { code: 'USD', label: 'US Dollar', pct: 72, color: '#155eef' },
+      { code: 'EUR', label: 'Euro', pct: 19, color: '#6938ef' },
+      { code: 'GBP', label: 'Pound Sterling', pct: 9, color: '#0086c0' },
+    ].map((c) => ({ ...c, amountCents: Math.round((paidTotal * c.pct) / 100) }))
+  }, [txns])
+
+  const exportStatement = useCallback(() => {
+    const header = ['Date', 'Client', 'Project', 'Invoice', 'Gross (USD)', 'Platform fee (USD)', 'Net payout (USD)', 'Status']
+    const rows = txns.map((t) => [
+      t.date,
+      t.clientName,
+      t.projectName,
+      t.id,
+      money(t.amountCents),
+      money(t.feeCents),
+      money(t.netCents),
+      t.status,
+    ])
+    const totals = [
+      'Totals', '', '', '',
+      money(txns.reduce((s, t) => s + t.amountCents, 0)),
+      money(txns.reduce((s, t) => s + t.feeCents, 0)),
+      money(txns.reduce((s, t) => s + t.netCents, 0)),
+      '',
+    ]
+    const csv = [header, ...rows, totals]
+      .map((r) => r.map(csvCell).join(','))
+      .join('\r\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `proploy-earnings-statement-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [txns])
+
   const filtered = txns
     .filter((t) => (tab === 'All' ? true : t.status === tab))
     .filter((t) => {
@@ -128,8 +244,13 @@ export default function EarningsPage() {
                 Payments, platform fees and payouts across your projects.
               </p>
             </div>
-            <button type="button" className={`flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] text-[#414651] ${BUTTON_SKEUO}`}>
-              <Download size={18} className="text-[#717680]" /> Export
+            <button
+              type="button"
+              onClick={exportStatement}
+              disabled={txns.length === 0}
+              className={`flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] text-[#414651] disabled:opacity-50 disabled:cursor-not-allowed ${BUTTON_SKEUO}`}
+            >
+              <Download size={18} className="text-[#717680]" /> Export statement
             </button>
           </div>
 
@@ -139,6 +260,102 @@ export default function EarningsPage() {
             <Metric label="Pending payout" value={formatCurrency(metrics.pending)} />
             <Metric label="Paid this month" value={formatCurrency(metrics.thisMonth)} delta={metrics.delta} />
             <Metric label="Platform fees" value={formatCurrency(metrics.fees)} muted />
+          </div>
+
+          {/* Escrow lifecycle */}
+          <section className={`bg-white border border-[#e9eaeb] rounded-[12px] p-[24px] flex flex-col gap-[20px] ${CARD_SHADOW}`}>
+            <div className="flex flex-wrap items-center justify-between gap-[8px]">
+              <div className="flex flex-col gap-[2px]">
+                <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Escrow lifecycle</p>
+                <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                  Every milestone is funded up-front, held securely, then released to you on acceptance.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-[6px] rounded-full border border-[#e9eaeb] bg-[#fafafa] px-[10px] py-[4px] text-[12px] font-medium text-[#414651]">
+                <ShieldCheck size={14} className="text-[#17b26a]" /> Funds protected by Proploy escrow
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
+              {escrow.map((s, i) => {
+                const Icon = s.icon
+                return (
+                  <div key={s.stage} className="relative flex flex-col gap-[10px] rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] p-[16px]">
+                    {i < escrow.length - 1 && (
+                      <span className="hidden lg:block absolute top-1/2 -right-[7px] -translate-y-1/2 text-[#d5d7da]">→</span>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex size-[32px] items-center justify-center rounded-full" style={{ background: `${s.color}1a`, color: s.color }}>
+                        <Icon size={17} />
+                      </span>
+                      <span className="rounded-full border border-[#e9eaeb] bg-white px-[8px] py-[1px] text-[12px] font-medium text-[#414651] tabular-nums">
+                        {s.count}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-[2px]">
+                      <p className="font-semibold text-[14px] leading-[20px] text-[#181d27]">{s.stage}</p>
+                      <p className="font-normal text-[12px] leading-[16px] text-[#717680]">{s.blurb}</p>
+                    </div>
+                    <p className="font-semibold text-[18px] leading-[26px] text-[#181d27] tabular-nums">{formatCurrency(s.amountCents)}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Multi-currency / FX */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-[20px]">
+            <section className={`bg-white border border-[#e9eaeb] rounded-[12px] p-[24px] flex flex-col gap-[16px] ${CARD_SHADOW}`}>
+              <div className="flex items-center gap-[8px]">
+                <Globe size={18} className="text-[#155eef]" />
+                <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Multi-currency payout</p>
+              </div>
+              {fxPreview ? (
+                <>
+                  <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                    Get paid in your local currency. We lock the rate the moment a milestone is released — no surprises.
+                  </p>
+                  <div className="rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] p-[16px] flex flex-col gap-[10px]">
+                    <p className="text-[12px] font-medium text-[#717680] truncate">{fxPreview.projectName}</p>
+                    <FxRow label="Net payout" value={formatCurrency(fxPreview.usdCents)} />
+                    <FxRow label={`Conversion fee (${FX.feePct}% flat)`} value={`-${formatCurrency(fxPreview.convFeeCents)}`} muted />
+                    <div className="flex items-center gap-[6px] text-[12px] text-[#717680]">
+                      <Lock size={12} className="text-[#155eef]" />
+                      Rate locked: 1 USD = {FX.rate.toFixed(2)} {FX.currency}
+                    </div>
+                    <div className="border-t border-[#e9eaeb] pt-[10px] flex items-center justify-between">
+                      <span className="text-[14px] font-semibold text-[#181d27]">You receive</span>
+                      <span className="text-[18px] font-semibold text-[#181d27] tabular-nums">{formatFx(fxPreview.convertedCents)}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="font-normal text-[14px] leading-[20px] text-[#717680]">No payouts to convert yet.</p>
+              )}
+            </section>
+
+            <section className={`bg-white border border-[#e9eaeb] rounded-[12px] p-[24px] flex flex-col gap-[16px] ${CARD_SHADOW}`}>
+              <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Settlement by currency</p>
+              <div className="flex flex-col gap-[14px]">
+                {currencyBreakdown.map((c) => (
+                  <div key={c.code} className="flex flex-col gap-[6px]">
+                    <div className="flex items-center justify-between text-[14px]">
+                      <span className="flex items-center gap-[8px]">
+                        <span className="size-[8px] rounded-full" style={{ background: c.color }} />
+                        <span className="font-medium text-[#181d27]">{c.code}</span>
+                        <span className="text-[#717680]">{c.label}</span>
+                      </span>
+                      <span className="font-semibold text-[#181d27] tabular-nums">{formatCurrency(c.amountCents)}</span>
+                    </div>
+                    <div className="h-[6px] rounded-full bg-[#e9eaeb] overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${c.pct}%`, background: c.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="font-normal text-[12px] leading-[16px] text-[#717680]">
+                One transparent flat fee per conversion. No hidden spread.
+              </p>
+            </section>
           </div>
 
           {/* Chart */}
@@ -245,6 +462,15 @@ function EarningsChart({ monthly }: { monthly: number[] }) {
       <div className="flex justify-between">
         {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[12px] font-medium text-[#717680]">{m}</span>)}
       </div>
+    </div>
+  )
+}
+
+function FxRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-center justify-between text-[14px]">
+      <span className="text-[#535862]">{label}</span>
+      <span className={`tabular-nums ${muted ? 'text-[#717680]' : 'text-[#181d27]'}`}>{value}</span>
     </div>
   )
 }

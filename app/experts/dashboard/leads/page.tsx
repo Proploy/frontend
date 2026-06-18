@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -219,8 +219,31 @@ const fmtDate = (iso: string) =>
 
 /* ============================== Page ============================== */
 
+const STORAGE_KEY = 'proploy.leads.v1'
+
 export default function ExpertLeadsPage() {
   const [rows, setRows] = useState<Lead[]>(makeSeed)
+  const hydrated = useRef(false)
+
+  // Hydrate from localStorage after mount (avoids SSR hydration mismatch).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) setRows(JSON.parse(raw) as Lead[])
+    } catch {
+      /* ignore corrupt storage */
+    }
+    hydrated.current = true
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated.current) return
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rows))
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [rows])
   const [tab, setTab] = useState('View all')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())

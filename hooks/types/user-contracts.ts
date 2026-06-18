@@ -3,7 +3,7 @@ export interface UserProfileResponse {
   email: string
   name?: string | null
   avatarUrl?: string | null
-  role: 'user' | 'expert' | 'admin' | string
+  role: 'user' | 'expert' | 'business' | 'admin' | string
   profilePictureUrl?: string | null
   profilePictureKey?: string | null
   createdAt?: string | null

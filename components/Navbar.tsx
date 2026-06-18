@@ -10,7 +10,7 @@ import { useExpertApplication } from '@/hooks/use-expert-application'
 import type { ExpertMe } from '@/hooks/types/expert-contracts'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
 
-const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account', '/experts/chat']
+const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account', '/experts/chat', '/business/dashboard']
 
 const NAV_LINKS = [
   { href: '/products', label: 'Explore Products' },

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Search,
   Home,
@@ -35,6 +35,37 @@ import {
 } from 'lucide-react'
 
 import { Sidebar as ExpertSidebar } from '@/components/experts/dashboard/ExpertDashboardFrame'
+import { FileDropzone } from '@/components/experts/dashboard/FileDropzone'
+
+// ── localStorage persistence ─────────────────────────────────────────────────
+// This route lives outside the dashboard layout, so there are no context
+// providers. We persist editable settings page-locally and hydrate AFTER mount
+// to avoid SSR hydration mismatches (server renders defaults; client swaps in
+// any saved values on the first effect tick).
+const STORAGE_KEYS = {
+  details: 'proploy.account.details.v1',
+  notifications: 'proploy.account.notifications.v1',
+  integrations: 'proploy.account.integrations.v1',
+} as const
+
+function loadJSON<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : null
+  } catch {
+    return null
+  }
+}
+
+function saveJSON(key: string, value: unknown): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* storage unavailable / quota — non-fatal for a settings page */
+  }
+}
 
 const BUTTON_SKEUO =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -310,6 +341,11 @@ export default function ExpertsAccountPage() {
   const [activeTab, setActiveTab] = useState<Tab>('My details')
   // "My details" toggles between a read-only view and an editable form.
   const [editing, setEditing] = useState(false)
+  // The header Save/Cancel buttons live in this component, but the editable
+  // state lives inside MyDetailsPanel. We bump these counters so the panel can
+  // run its own persist/revert logic for whichever button the user clicked.
+  const [saveSignal, setSaveSignal] = useState(0)
+  const [cancelSignal, setCancelSignal] = useState(0)
 
   return (
     <div className="min-h-screen bg-[#fafafa] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
@@ -330,14 +366,14 @@ export default function ExpertsAccountPage() {
                     <div className="flex items-center gap-[12px]">
                       <button
                         type="button"
-                        onClick={() => setEditing(false)}
+                        onClick={() => setCancelSignal((n) => n + 1)}
                         className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
-                        onClick={() => setEditing(false)}
+                        onClick={() => setSaveSignal((n) => n + 1)}
                         className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
                       >
                         Save
@@ -393,7 +429,12 @@ export default function ExpertsAccountPage() {
 
             {/* Tab content */}
             {activeTab === 'My details' && (
-              <MyDetailsPanel editing={editing} onDone={() => setEditing(false)} />
+              <MyDetailsPanel
+                editing={editing}
+                saveSignal={saveSignal}
+                cancelSignal={cancelSignal}
+                onDone={() => setEditing(false)}
+              />
             )}
             {activeTab === 'Password' && <PasswordPanel />}
             {activeTab === 'Team' && <TeamPanel />}
@@ -411,17 +452,111 @@ export default function ExpertsAccountPage() {
 }
 
 // ── My details panel ─────────────────────────────────────────────────────────
-function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => void }) {
-  const [firstName, setFirstName] = useState('Olivia')
-  const [lastName, setLastName] = useState('Bennett')
-  const [email, setEmail] = useState('olivia.bennett@proploy.io')
-  const [role, setRole] = useState('Procurement Consultant')
-  const [country, setCountry] = useState<(typeof COUNTRIES)[number]['code']>('AU')
-  const [timezone, setTimezone] = useState<(typeof TIMEZONES)[number]>(TIMEZONES[6])
-  const [bio, setBio] = useState(
-    "Procurement consultant on Proploy with 12+ years across strategic sourcing, vendor negotiation and procure-to-pay rollouts. I help SaaS and industrial clients cut spend and de-risk their supplier base.",
-  )
+type DetailsState = {
+  firstName: string
+  lastName: string
+  email: string
+  role: string
+  country: (typeof COUNTRIES)[number]['code']
+  timezone: (typeof TIMEZONES)[number]
+  bio: string
+  // avatar stored as a data URL (FileReader output) so the preview survives reload
+  avatar: string | null
+  // user-added case-study attachments (names only — kept lightweight)
+  caseStudies: string[]
+}
+
+const DEFAULT_DETAILS: DetailsState = {
+  firstName: 'Olivia',
+  lastName: 'Bennett',
+  email: 'olivia.bennett@proploy.io',
+  role: 'Procurement Consultant',
+  country: 'AU',
+  timezone: TIMEZONES[6],
+  bio: "Procurement consultant on Proploy with 12+ years across strategic sourcing, vendor negotiation and procure-to-pay rollouts. I help SaaS and industrial clients cut spend and de-risk their supplier base.",
+  avatar: null,
+  caseStudies: [],
+}
+
+function MyDetailsPanel({
+  editing,
+  saveSignal,
+  cancelSignal,
+  onDone,
+}: {
+  editing: boolean
+  saveSignal: number
+  cancelSignal: number
+  onDone: () => void
+}) {
+  const [details, setDetails] = useState<DetailsState>(DEFAULT_DETAILS)
+  // Snapshot taken when entering edit mode so Cancel can revert cleanly.
+  const [snapshot, setSnapshot] = useState<DetailsState | null>(null)
   const ro = !editing
+
+  // Hydrate from localStorage after mount (avoids SSR mismatch).
+  useEffect(() => {
+    const saved = loadJSON<Partial<DetailsState>>(STORAGE_KEYS.details)
+    if (saved) setDetails((prev) => ({ ...prev, ...saved }))
+  }, [])
+
+  // Capture a snapshot when an edit session begins.
+  useEffect(() => {
+    if (editing) setSnapshot((prev) => prev ?? details)
+    else setSnapshot(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing])
+
+  const set = <K extends keyof DetailsState>(key: K, value: DetailsState[K]) =>
+    setDetails((prev) => ({ ...prev, [key]: value }))
+
+  const handleSave = () => {
+    saveJSON(STORAGE_KEYS.details, details)
+    setSnapshot(null)
+    onDone()
+  }
+
+  const handleCancel = () => {
+    if (snapshot) setDetails(snapshot)
+    setSnapshot(null)
+    onDone()
+  }
+
+  // React to the header Save / Cancel buttons (which live in the parent).
+  useEffect(() => {
+    if (saveSignal > 0) handleSave()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveSignal])
+  useEffect(() => {
+    if (cancelSignal > 0) handleCancel()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancelSignal])
+
+  const handleAvatar = (files: File[]) => {
+    const file = files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => set('avatar', typeof reader.result === 'string' ? reader.result : null)
+    reader.readAsDataURL(file)
+  }
+
+  const handleCaseStudies = (files: File[]) => {
+    if (!files.length) return
+    setDetails((prev) => ({
+      ...prev,
+      caseStudies: [...prev.caseStudies, ...files.map((f) => f.name)].filter(
+        (name, i, arr) => arr.indexOf(name) === i,
+      ),
+    }))
+  }
+
+  const removeCaseStudy = (name: string) =>
+    setDetails((prev) => ({
+      ...prev,
+      caseStudies: prev.caseStudies.filter((n) => n !== name),
+    }))
+
+  const initial = (details.firstName.trim()[0] ?? 'O').toUpperCase()
 
   return (
     <>
@@ -438,14 +573,14 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
         <FormRow label="Name*">
           <div className="flex gap-[24px]">
             <TextInput
-              value={firstName}
-              onChange={setFirstName}
+              value={details.firstName}
+              onChange={(v) => set('firstName', v)}
               placeholder="First name"
               disabled={ro}
             />
             <TextInput
-              value={lastName}
-              onChange={setLastName}
+              value={details.lastName}
+              onChange={(v) => set('lastName', v)}
               placeholder="Last name"
               disabled={ro}
             />
@@ -462,9 +597,9 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
             />
             <input
               type="email"
-              value={email}
+              value={details.email}
               disabled={ro}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => set('email', e.target.value)}
               className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[40px] pr-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 disabled:bg-[#fafafa] disabled:text-[#414651] disabled:cursor-default ${INPUT_SHADOW}`}
             />
           </div>
@@ -478,30 +613,64 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
           align="start"
         >
           <div className="flex items-start gap-[20px]">
-            <div
-              className="size-[64px] rounded-full shrink-0 bg-gradient-to-br from-[#fde68a] via-[#fbcfe8] to-[#c084fc] flex items-center justify-center text-white font-semibold text-[20px] border border-[rgba(0,0,0,0.08)]"
-              aria-label="Profile photo for Olivia"
-            >
-              O
+            <div className="relative shrink-0">
+              {details.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={details.avatar}
+                  alt={`Profile photo for ${details.firstName}`}
+                  className="size-[64px] rounded-full object-cover border border-[rgba(0,0,0,0.08)]"
+                />
+              ) : (
+                <div
+                  className="size-[64px] rounded-full bg-gradient-to-br from-[#fde68a] via-[#fbcfe8] to-[#c084fc] flex items-center justify-center text-white font-semibold text-[20px] border border-[rgba(0,0,0,0.08)]"
+                  aria-label={`Profile photo for ${details.firstName}`}
+                >
+                  {initial}
+                </div>
+              )}
+              {editing && details.avatar && (
+                <button
+                  type="button"
+                  onClick={() => set('avatar', null)}
+                  aria-label="Remove photo"
+                  className="absolute -right-[4px] -top-[4px] size-[22px] rounded-full bg-white border border-[#d5d7da] flex items-center justify-center text-[#717680] hover:text-[#181d27] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.10)]"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
-            {editing && <FileUpload title="SVG, PNG, JPG or GIF (max. 800x400px)" />}
+            {editing && (
+              <div className="flex-1 min-w-0">
+                <FileDropzone
+                  accept={{ 'image/*': ['.svg', '.png', '.jpg', '.jpeg', '.gif'] }}
+                  hint="SVG, PNG, JPG or GIF (max. 800x400px)"
+                  onFiles={handleAvatar}
+                />
+              </div>
+            )}
           </div>
         </FormRow>
 
         <Divider />
 
         <FormRow label="Role">
-          <TextInput value={role} onChange={setRole} placeholder="Role" disabled={ro} />
+          <TextInput
+            value={details.role}
+            onChange={(v) => set('role', v)}
+            placeholder="Role"
+            disabled={ro}
+          />
         </FormRow>
 
         <Divider />
 
         <FormRow label="Country">
           <SelectField
-            value={country}
-            onChange={(v) => setCountry(v as (typeof COUNTRIES)[number]['code'])}
+            value={details.country}
+            onChange={(v) => set('country', v as (typeof COUNTRIES)[number]['code'])}
             options={COUNTRIES.map((c) => ({ value: c.code, label: c.label }))}
-            leadingFlag={country}
+            leadingFlag={details.country}
             disabled={ro}
           />
         </FormRow>
@@ -510,8 +679,8 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
 
         <FormRow label="Timezone">
           <SelectField
-            value={timezone}
-            onChange={(v) => setTimezone(v as (typeof TIMEZONES)[number])}
+            value={details.timezone}
+            onChange={(v) => set('timezone', v as (typeof TIMEZONES)[number])}
             options={TIMEZONES.map((t) => ({ value: t, label: t }))}
             disabled={ro}
             leadingIcon={
@@ -531,7 +700,7 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
         <Divider />
 
         <FormRow label="Bio*" sublabel="Write a short introduction." align="start">
-          <BioEditor value={bio} onChange={setBio} disabled={ro} />
+          <BioEditor value={details.bio} onChange={(v) => set('bio', v)} disabled={ro} />
         </FormRow>
 
         <Divider />
@@ -542,7 +711,40 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
           align="start"
         >
           <div className="flex flex-col gap-[16px]">
-            {editing && <FileUpload title="PDF, MP4 or FIG (max. 25MB)" />}
+            {editing && (
+              <FileDropzone
+                multiple
+                accept={{
+                  'application/pdf': ['.pdf'],
+                  'video/mp4': ['.mp4'],
+                  'application/octet-stream': ['.fig'],
+                }}
+                hint="PDF, MP4 or FIG (max. 25MB)"
+                onFiles={handleCaseStudies}
+              />
+            )}
+            {details.caseStudies.length > 0 && (
+              <div className="flex flex-wrap gap-[8px]">
+                {details.caseStudies.map((name) => (
+                  <span
+                    key={name}
+                    className="inline-flex items-center gap-[6px] max-w-full rounded-full border border-[#e9eaeb] bg-white pl-[10px] pr-[6px] py-[4px] text-[12px] leading-[18px] font-medium text-[#414651]"
+                  >
+                    <span className="truncate">{name}</span>
+                    {editing && (
+                      <button
+                        type="button"
+                        onClick={() => removeCaseStudy(name)}
+                        aria-label={`Remove ${name}`}
+                        className="flex size-[18px] shrink-0 items-center justify-center rounded-full text-[#717680] hover:bg-[#fafafa] hover:text-[#181d27]"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
             {PORTFOLIO_FILES.map((f) => (
               <FileUploadItem key={f.name} file={f} />
             ))}
@@ -550,7 +752,9 @@ function MyDetailsPanel({ editing, onDone }: { editing: boolean; onDone: () => v
         </FormRow>
       </div>
 
-      {editing && <FooterActions primaryLabel="Save" onCancel={onDone} onPrimary={onDone} />}
+      {editing && (
+        <FooterActions primaryLabel="Save" onCancel={handleCancel} onPrimary={handleSave} />
+      )}
     </>
   )
 }
@@ -1077,6 +1281,28 @@ function NotificationsPanel() {
   const [state, setState] = useState<Record<string, NotifChannels>>(() =>
     Object.fromEntries(NOTIFICATION_ROWS.map((r) => [r.key, { ...r.defaults }])),
   )
+  const [hydrated, setHydrated] = useState(false)
+
+  // Hydrate after mount to avoid SSR mismatch.
+  useEffect(() => {
+    const saved = loadJSON<Record<string, NotifChannels>>(STORAGE_KEYS.notifications)
+    if (saved) {
+      setState((prev) => {
+        const next = { ...prev }
+        for (const r of NOTIFICATION_ROWS) {
+          if (saved[r.key]) next[r.key] = { ...prev[r.key], ...saved[r.key] }
+        }
+        return next
+      })
+    }
+    setHydrated(true)
+  }, [])
+
+  // Persist on change, but only after hydration so we never clobber saved
+  // values with the initial defaults on first render.
+  useEffect(() => {
+    if (hydrated) saveJSON(STORAGE_KEYS.notifications, state)
+  }, [state, hydrated])
 
   const set = (key: string, channel: keyof NotifChannels, value: boolean) =>
     setState((prev) => ({ ...prev, [key]: { ...prev[key], [channel]: value } }))
@@ -1148,40 +1374,66 @@ function IntegrationsPanel() {
   const [state, setState] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(INTEGRATIONS.map((a) => [a.key, a.on])),
   )
+  const [hydrated, setHydrated] = useState(false)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
+  // Hydrate after mount to avoid SSR mismatch.
+  useEffect(() => {
+    const saved = loadJSON<Record<string, boolean>>(STORAGE_KEYS.integrations)
+    if (saved) {
+      setState((prev) => {
+        const next = { ...prev }
+        for (const a of INTEGRATIONS) {
+          if (typeof saved[a.key] === 'boolean') next[a.key] = saved[a.key]
+        }
+        return next
+      })
+    }
+    setHydrated(true)
+  }, [])
+
+  // Persist after hydration so defaults don't overwrite saved values.
+  useEffect(() => {
+    if (hydrated) saveJSON(STORAGE_KEYS.integrations, state)
+  }, [state, hydrated])
 
   return (
     <>
       {/* Update banner */}
-      <div className="bg-white border border-[#e9eaeb] rounded-[12px] overflow-hidden flex flex-col sm:flex-row shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
-        <div
-          className="w-full sm:w-[204px] h-[140px] sm:h-auto shrink-0 bg-gradient-to-br from-[#fbcfe8] via-[#c4b5fd] to-[#93c5fd]"
-          aria-hidden="true"
-        />
-        <div className="flex flex-col gap-[16px] p-[24px]">
-          <div className="flex flex-col gap-[4px]">
-            <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">
-              Proploy just got an upgrade!
-            </p>
-            <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-              Your new expert dashboard surfaces hotter leads and faster payouts.
-            </p>
-          </div>
-          <div className="flex items-center gap-[12px]">
-            <button
-              type="button"
-              className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
-            >
-              Dismiss
-            </button>
-            <button
-              type="button"
-              className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
-            >
-              Changelog
-            </button>
+      {!bannerDismissed && (
+        <div className="bg-white border border-[#e9eaeb] rounded-[12px] overflow-hidden flex flex-col sm:flex-row shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
+          <div
+            className="w-full sm:w-[204px] h-[140px] sm:h-auto shrink-0 bg-gradient-to-br from-[#fbcfe8] via-[#c4b5fd] to-[#93c5fd]"
+            aria-hidden="true"
+          />
+          <div className="flex flex-col gap-[16px] p-[24px]">
+            <div className="flex flex-col gap-[4px]">
+              <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">
+                Proploy just got an upgrade!
+              </p>
+              <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                Your new expert dashboard surfaces hotter leads and faster payouts.
+              </p>
+            </div>
+            <div className="flex items-center gap-[12px]">
+              <button
+                type="button"
+                onClick={() => setBannerDismissed(true)}
+                className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+              >
+                Dismiss
+              </button>
+              <a
+                href="/experts/dashboard"
+                className={`inline-flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
+              >
+                View dashboard
+                <ArrowUpRight size={16} />
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Connected apps header */}
       <div className="flex flex-wrap items-start justify-between gap-[16px] pt-[20px]">
@@ -1655,27 +1907,6 @@ function ToolbarBtn({
     >
       {children}
     </button>
-  )
-}
-
-function FileUpload({ title }: { title: string }) {
-  return (
-    <div className="w-full bg-white border border-[#e9eaeb] rounded-[12px] px-[24px] py-[16px] flex flex-col items-center gap-[12px]">
-      <div
-        className={`size-[40px] rounded-[8px] bg-white border border-[#d5d7da] flex items-center justify-center text-[#414651] ${BUTTON_SKEUO}`}
-      >
-        <UploadCloud size={20} />
-      </div>
-      <div className="flex flex-col items-center gap-[4px]">
-        <p className="font-normal text-[14px] leading-[20px] text-[#535862] text-center">
-          <span className="font-semibold text-[#004eeb] hover:underline cursor-pointer">
-            Click to upload
-          </span>{' '}
-          or drag and drop
-        </p>
-        <p className="font-normal text-[12px] leading-[18px] text-[#535862] text-center">{title}</p>
-      </div>
-    </div>
   )
 }
 

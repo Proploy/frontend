@@ -86,7 +86,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] w-full">
+    <div className="flex h-screen w-full pt-[80px]">
       <div className="hidden lg:flex flex-[3] relative flex-col items-center justify-center overflow-hidden">
         <Image alt="" src="/login-backdrop.png" fill className="absolute inset-0 object-cover" />
         <div className="absolute inset-0 bg-[#0040c1] opacity-80"></div>
@@ -106,7 +106,7 @@ export default function SignInPage() {
       </div>
 
       <div className="w-full flex flex-col items-center justify-center bg-white px-[100px] py-12 h-full min-w-[480px] lg:flex-[2] overflow-auto">
-        <div className="w-full">
+        <div className="w-full max-w-[400px]">
           <Image alt="Proploy" src="/proploy-logomark.png" width={48} height={48} className="mb-8" />
 
           <div className="mb-8">

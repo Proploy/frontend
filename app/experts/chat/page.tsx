@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   Search,
@@ -27,6 +27,11 @@ import {
 } from 'lucide-react'
 
 import { Sidebar as ExpertSidebar } from '@/components/experts/dashboard/ExpertDashboardFrame'
+import { FileDropzone } from '@/components/experts/dashboard/FileDropzone'
+import { useDemo, addMessage, notify, DEMO_BUSINESS } from '@/lib/demo/demo-store'
+
+// Conversation id for the live demo-synced thread with the business dashboard.
+const DEMO_CONVO_ID = 'northwind'
 
 const BUTTON_SKEUO =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -44,6 +49,16 @@ type Conversation = {
 }
 
 const CONVERSATIONS: Conversation[] = [
+  {
+    id: DEMO_CONVO_ID,
+    name: DEMO_BUSINESS,
+    handle: 'Client · CRM migration',
+    avatarBg: '#c7d7fe',
+    time: 'live',
+    preview: 'Live conversation with your client.',
+    unread: true,
+    online: true,
+  },
   {
     id: 'phoenix',
     name: 'Phoenix Baker',
@@ -116,12 +131,45 @@ type Message = {
   from: 'them' | 'you'
   time: string
   read?: boolean
-  kind: 'text' | 'file' | 'audio'
+  kind: 'text' | 'file' | 'audio' | 'image'
   text?: string
   file?: { name: string; size: string }
+  image?: { name: string; size: string; dataUrl: string }
   audio?: { duration: string }
   reactions?: string[]
   day: 'before' | 'today'
+}
+
+const STORAGE_KEY = 'proploy.chat.v1'
+
+// Per-conversation message store, persisted to localStorage (page-local).
+type ChatStore = Record<string, Message[]>
+
+const EMOJI = ['👍', '❤️', '😂', '🎉', '🙌', '👀', '🔥', '✅', '🙏', '😅', '👌', '💡']
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function newId(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? `m-${crypto.randomUUID().slice(0, 8)}`
+    : `m-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`
+}
+
+function loadStore(): ChatStore {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') return parsed as ChatStore
+    return {}
+  } catch {
+    return {}
+  }
 }
 
 const INITIAL_MESSAGES: Message[] = [
@@ -187,32 +235,143 @@ const INITIAL_MESSAGES: Message[] = [
 ]
 
 export default function ExpertsChatPage() {
-  const [activeId, setActiveId] = useState('andi')
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
+  const demo = useDemo()
+  const [activeId, setActiveId] = useState(DEMO_CONVO_ID)
+  // Per-conversation store. Starts as the seeded thread for the default convo;
+  // hydrated from localStorage after mount to avoid an SSR hydration mismatch.
+  const [store, setStore] = useState<ChatStore>({ andi: INITIAL_MESSAGES })
+  const [hydrated, setHydrated] = useState(false)
   const [draft, setDraft] = useState('')
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const active = CONVERSATIONS.find((c) => c.id === activeId) ?? CONVERSATIONS[1]
+  const active = CONVERSATIONS.find((c) => c.id === activeId) ?? CONVERSATIONS[0]
+  const isDemoThread = activeId === DEMO_CONVO_ID
+
+  // Hydrate after mount, merging persisted threads over the seed.
+  useEffect(() => {
+    // SSR-safe hydration: merge persisted threads over the seed after mount.
+    const persisted = loadStore()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStore((prev) => ({ ...prev, ...persisted }))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHydrated(true)
+  }, [])
+
+  // Persist whenever the store changes (only after hydration so we never
+  // clobber saved data with the pre-hydration seed).
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+    } catch {
+      // ignore quota / serialization errors (e.g. very large images)
+    }
+  }, [store, hydrated])
+
+  const messages = useMemo<Message[]>(() => {
+    if (activeId === DEMO_CONVO_ID) {
+      return demo.messages.map((m) => ({
+        id: m.id,
+        from: m.from === 'expert' ? 'you' : 'them',
+        time: 'now',
+        read: true,
+        kind: 'text',
+        text: m.text,
+        day: 'today',
+      }))
+    }
+    return store[activeId] ?? (activeId === 'andi' ? INITIAL_MESSAGES : [])
+  }, [store, activeId, demo.messages])
+
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    })
+  }, [])
+
+  const appendMessage = useCallback(
+    (message: Message) => {
+      setStore((prev) => {
+        const existing = prev[activeId] ?? (activeId === 'andi' ? INITIAL_MESSAGES : [])
+        return { ...prev, [activeId]: [...existing, message] }
+      })
+      scrollToBottom()
+    },
+    [activeId, scrollToBottom],
+  )
 
   const sendMessage = () => {
     const text = draft.trim()
     if (!text) return
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `m${prev.length + 1}-${Date.now()}`,
-        from: 'you',
+    if (isDemoThread) {
+      addMessage('expert', text)
+      notify({
+        role: 'business',
+        kind: 'message',
+        title: `New message from your expert`,
+        body: text.length > 60 ? `${text.slice(0, 60)}…` : text,
+        href: '/business/dashboard/messages',
+      })
+      setDraft('')
+      setEmojiOpen(false)
+      scrollToBottom()
+      return
+    }
+    appendMessage({
+      id: newId(),
+      from: 'you',
+      time: 'Just now',
+      read: false,
+      kind: 'text',
+      text,
+      day: 'today',
+    })
+    setDraft('')
+    setEmojiOpen(false)
+  }
+
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const file = files[0]
+      if (!file) return
+      const base = {
+        id: newId(),
+        from: 'you' as const,
         time: 'Just now',
         read: false,
-        kind: 'text',
-        text,
-        day: 'today',
-      },
-    ])
-    setDraft('')
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-    })
+        day: 'today' as const,
+      }
+      const size = formatBytes(file.size)
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = () => {
+          appendMessage({
+            ...base,
+            kind: 'image',
+            image: { name: file.name, size, dataUrl: String(reader.result) },
+          })
+        }
+        reader.readAsDataURL(file)
+      } else {
+        appendMessage({ ...base, kind: 'file', file: { name: file.name, size } })
+      }
+    },
+    [appendMessage],
+  )
+
+  const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : []
+    if (files.length) handleFiles(files)
+    e.target.value = ''
+  }
+
+  const insertEmoji = (emoji: string) => {
+    setDraft((prev) => prev + emoji)
+    setEmojiOpen(false)
+    requestAnimationFrame(() => textareaRef.current?.focus())
   }
 
   return (
@@ -332,11 +491,24 @@ export default function ExpertsChatPage() {
 
         {/* Composer */}
         <div className="px-[24px] py-[24px] shrink-0">
-          <div className="max-w-[856px] mx-auto">
+          <div className="max-w-[856px] mx-auto flex flex-col gap-[12px]">
+            {/* Drag-and-drop attachment target (also wired to the paperclip button) */}
+            <FileDropzone
+              multiple={false}
+              hint="Drag a file or image here, or click to browse"
+              onFiles={handleFiles}
+            />
             <div
               className={`relative bg-white border border-[#d5d7da] rounded-[8px] px-[14px] pt-[12px] pb-[12px] ${BUTTON_SKEUO}`}
             >
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={onFileInputChange}
+              />
               <textarea
+                ref={textareaRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -354,17 +526,51 @@ export default function ExpertsChatPage() {
                   <button
                     type="button"
                     aria-label="Attach file"
-                    className="flex items-center justify-center size-[28px] rounded-[6px] text-[#a4a7ae] hover:text-[#414651] hover:bg-[#fafafa]"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center size-[28px] rounded-[6px] text-[#a4a7ae] hover:text-[#414651] hover:bg-[#fafafa] transition-colors"
                   >
                     <Paperclip size={18} />
                   </button>
-                  <button
-                    type="button"
-                    aria-label="Add emoji"
-                    className="flex items-center justify-center size-[28px] rounded-[6px] text-[#a4a7ae] hover:text-[#414651] hover:bg-[#fafafa]"
-                  >
-                    <Smile size={18} />
-                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-label="Add emoji"
+                      aria-expanded={emojiOpen}
+                      onClick={() => setEmojiOpen((v) => !v)}
+                      className={`flex items-center justify-center size-[28px] rounded-[6px] transition-colors ${
+                        emojiOpen
+                          ? 'text-[#155eef] bg-[#eff4ff]'
+                          : 'text-[#a4a7ae] hover:text-[#414651] hover:bg-[#fafafa]'
+                      }`}
+                    >
+                      <Smile size={18} />
+                    </button>
+                    {emojiOpen && (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Close emoji picker"
+                          className="fixed inset-0 z-10 cursor-default"
+                          onClick={() => setEmojiOpen(false)}
+                        />
+                        <div
+                          role="menu"
+                          className={`absolute bottom-[36px] left-0 z-20 grid grid-cols-6 gap-[2px] rounded-[10px] border border-[#e9eaeb] bg-white p-[6px] ${BUTTON_SKEUO}`}
+                        >
+                          {EMOJI.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => insertEmoji(emoji)}
+                              className="flex size-[32px] items-center justify-center rounded-[6px] text-[18px] hover:bg-[#fafafa] transition-colors"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -456,6 +662,32 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
             <div className="min-w-0">
               <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">{message.file.name}</p>
               <p className="text-[14px] leading-[20px] text-[#535862]">{message.file.size}</p>
+            </div>
+          </div>
+        )}
+
+        {message.kind === 'image' && message.image && (
+          <div
+            className={`overflow-hidden bg-white border border-[#e9eaeb] rounded-[8px] w-[280px] ${
+              isYou ? 'rounded-tr-[2px]' : 'rounded-tl-[2px]'
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={message.image.dataUrl}
+              alt={message.image.name}
+              className="block w-full max-h-[280px] object-cover bg-[#fafafa]"
+            />
+            <div className="flex items-center gap-[8px] px-[12px] py-[10px] border-t border-[#e9eaeb]">
+              <span className="flex items-center justify-center size-[28px] rounded-[6px] bg-[#eff8ff] text-[#155eef] shrink-0">
+                <FileText size={16} />
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">
+                  {message.image.name}
+                </p>
+                <p className="text-[14px] leading-[20px] text-[#535862]">{message.image.size}</p>
+              </div>
             </div>
           </div>
         )}
