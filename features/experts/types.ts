@@ -244,13 +244,26 @@ export interface ExpertMe {
 // View model for expert listing (explore-experts page)
 export interface ExpertListItem {
   id: string
+  email?: string | null
   displayName: string
   headline: string | null
+  entityType?: string | null
   regionCity: string | null
   regionCountry: string | null
+  timezone?: string | null
   yearsExperience: number | null
+  projectsCompletedTotal?: number | null
+  availabilityNotes?: string | null
+  primaryPlatforms?: string[]
+  secondaryPlatforms?: string[]
+  industryExpertise?: string[]
+  preferredProjectTypes?: string[]
+  toolsStack?: string[]
   tags: ExpertTagResponse[]
+  projects?: ExpertProjectResponse[]
   profilePictureUrl: string | null
+  schedulingLink?: string | null
+  schedulingLinkEnabled?: boolean
 }
 
 // API response wrapper for list
