@@ -1,49 +1,118 @@
 'use client'
 
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ChevronDown } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import ListingExplorer from '@/components/ListingExplorer'
 import Footer from '@/components/Footer'
 import {
   getProductDetailHref,
-  useCategoryFilters,
+  useCategoryTree,
   useProductList,
   type CardProduct,
+  type CategoryNode,
 } from '@/features/catalog'
+import {
+  DEFAULT_PRODUCT_FILTERS,
+  type ProductFilterValues,
+} from '@/components/filters/ProductFiltersDrawer'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
-
-const VIEW_ALL = 'view-all'
 
 const ACTIVE_BUTTON_CLASS = 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
 const INACTIVE_BUTTON_CLASS = 'text-[#717680] hover:text-[#414651]'
 const BASE_BUTTON_CLASS = 'h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors'
 
-function CategoryTabs({ categories, activeCategory, onChange }: {
-  categories: { term_id: string; label: string; taxonomy_type: string }[]
-  activeCategory: string
-  onChange: (termId: string) => void
+function CategoryNavigation({
+  categories,
+  activeCategory,
+  onChange,
+}: {
+  categories: CategoryNode[]
+  activeCategory: string | null
+  onChange: (category: CategoryNode | null) => void
 }) {
+  const [openRootId, setOpenRootId] = useState<string | null>(null)
+
   return (
-    <div className="flex flex-wrap justify-center gap-[8px]">
-      {categories.map((cat) => {
-        const active = cat.term_id === activeCategory
-        const buttonClass = active ? ACTIVE_BUTTON_CLASS : INACTIVE_BUTTON_CLASS
-        return (
+    <div className="flex flex-wrap items-start justify-center gap-[8px]">
+      <button
+        type="button"
+        onClick={() => onChange(null)}
+        className={`${BASE_BUTTON_CLASS} ${activeCategory === null ? ACTIVE_BUTTON_CLASS : INACTIVE_BUTTON_CLASS}`}
+      >
+        View all
+      </button>
+      {categories.map((root) => (
+        <div
+          key={root.term_id}
+          className="relative"
+          onMouseEnter={() => setOpenRootId(root.term_id)}
+          onMouseLeave={() => setOpenRootId(null)}
+          onFocus={() => setOpenRootId(root.term_id)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setOpenRootId(null)
+          }}
+        >
           <button
-            key={cat.term_id}
             type="button"
-            onClick={() => onChange(cat.term_id)}
-            className={`${BASE_BUTTON_CLASS} ${buttonClass}`}
+            aria-expanded={openRootId === root.term_id}
+            aria-haspopup="menu"
+            onClick={() => setOpenRootId(root.term_id)}
+            className={`${BASE_BUTTON_CLASS} inline-flex items-center gap-[6px] ${
+              root.children.some((child) => child.term_id === activeCategory)
+                ? ACTIVE_BUTTON_CLASS
+                : INACTIVE_BUTTON_CLASS
+            }`}
           >
-            {cat.label}
+            {root.label}
+            <ChevronDown
+              size={16}
+              className={`transition-transform ${openRootId === root.term_id ? 'rotate-180' : ''}`}
+            />
           </button>
-        )
-      })}
+
+          {openRootId === root.term_id && (
+            <div
+              role="menu"
+              className="absolute left-1/2 top-full z-40 mt-[8px] w-[320px] -translate-x-1/2 rounded-[12px] border border-[#e9eaeb] bg-white p-[8px] shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08),0px_8px_8px_-4px_rgba(10,13,18,0.03)]"
+            >
+              <div className="px-[10px] pb-[8px] pt-[6px]">
+                <p className="text-[14px] font-semibold leading-[20px] text-[#181d27]">{root.label}</p>
+                {root.description && (
+                  <p className="mt-[2px] text-[12px] leading-[18px] text-[#717680]">{root.description}</p>
+                )}
+              </div>
+              <div className="max-h-[360px] overflow-y-auto">
+                {root.children.map((child) => (
+                  <button
+                    key={child.term_id}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      onChange(child)
+                      setOpenRootId(null)
+                    }}
+                    className={`flex w-full items-center justify-between gap-[12px] rounded-[8px] px-[10px] py-[9px] text-left hover:bg-[#fafafa] ${
+                      child.term_id === activeCategory ? 'bg-[#eff4ff]' : ''
+                    }`}
+                  >
+                    <span className="text-[14px] font-medium leading-[20px] text-[#414651]">
+                      {child.label}
+                    </span>
+                    <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">
+                      {child.product_count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
@@ -59,18 +128,33 @@ export default function ProductsPage() {
 function ProductsPageContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')?.trim() || undefined
-  const { filters: catList, loading: catLoading, error: catError } = useCategoryFilters()
-  const topCategories = useMemo(
-    () => catList.filter((c) => c.taxonomy_type === 'product_category'),
-    [catList],
+  const categoryParam = searchParams.get('category')
+  const { tree, loading: catLoading, error: catError } = useCategoryTree()
+  const roots = useMemo(
+    () => tree.filter((node) => node.taxonomy_type === 'ui_category' && node.parent_term_id === null),
+    [tree],
   )
-  const [activeCategory, setActiveCategory] = useState<string>(VIEW_ALL)
+  const selectedFromUrl = useMemo(
+    () => roots.flatMap((root) => root.children).find((child) => child.term_id === categoryParam) ?? null,
+    [categoryParam, roots],
+  )
+  const [activeCategory, setActiveCategory] = useState<CategoryNode | null>(selectedFromUrl)
+  const [limit, setLimit] = useState(15)
+  const [filters, setFilters] = useState<ProductFilterValues>(DEFAULT_PRODUCT_FILTERS)
+
+  useEffect(() => {
+    setActiveCategory(selectedFromUrl)
+  }, [selectedFromUrl])
+
   const { products, loading, error, pagination, refetch } = useProductList({
-    limit: 30,
-    category: activeCategory === VIEW_ALL ? undefined : activeCategory,
+    limit,
+    category: activeCategory?.term_id,
     search,
+    pricing_bucket: filters.pricingBucket || undefined,
+    free_plan: filters.freePlan || undefined,
+    free_trial: filters.freeTrial || undefined,
+    sort: filters.sort,
   })
-  const [visible, setVisible] = useState(15)
   const [contact, setContact] = useState({
     firstName: '',
     lastName: '',
@@ -80,17 +164,16 @@ function ProductsPageContent() {
     consent: false,
   })
 
-  const filtered = useMemo(() => products, [products])
-  const cards = filtered.slice(0, visible)
-
-  const allCategories = useMemo(() => [
-    { term_id: VIEW_ALL, label: 'View all', taxonomy_type: 'all' },
-    ...topCategories,
-  ], [topCategories])
-
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] flex flex-col">
-      <ListingExplorer kind="products" />
+      <ListingExplorer
+        kind="products"
+        productFilters={filters}
+        onProductFiltersChange={(values) => {
+          setFilters(values)
+          setLimit(15)
+        }}
+      />
 
       <section className="py-[96px]">
         <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
@@ -113,14 +196,27 @@ function ProductsPageContent() {
               <span className="text-red-500 text-[14px]">Failed to load categories</span>
             </div>
           ) : (
-            <CategoryTabs
-              categories={allCategories}
-              activeCategory={activeCategory}
-              onChange={(termId) => {
-                setActiveCategory(termId)
-                setVisible(15)
+            <CategoryNavigation
+              categories={roots}
+              activeCategory={activeCategory?.term_id ?? null}
+              onChange={(category) => {
+                setActiveCategory(category)
+                setLimit(15)
               }}
             />
+          )}
+
+          {activeCategory && (
+            <div className="mx-auto -mt-[40px] max-w-[720px] text-center">
+              <p className="text-[14px] font-semibold leading-[20px] text-[#004eeb]">
+                {activeCategory.label}
+              </p>
+              {activeCategory.description && (
+                <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  {activeCategory.description}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Error state */}
@@ -146,26 +242,26 @@ function ProductsPageContent() {
             <div className="flex items-center justify-center py-[96px]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
             </div>
-          ) : cards.length === 0 && !error ? (
+          ) : products.length === 0 && !error ? (
             <div className="flex flex-col items-center gap-[16px] py-[96px]">
               <p className="text-[16px] text-[#535862]">No products found.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]">
-              {cards.map((p, idx) => (
+              {products.map((p, idx) => (
                 <ProductCard key={p.product_id} product={p} highlightIndex={idx} />
               ))}
             </div>
           )}
 
-          {pagination && visible < pagination.total && (
+          {pagination?.hasNextPage && (
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => setVisible((v) => v + 9)}
+                onClick={() => setLimit((current) => current + 15)}
                 className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}
               >
-                View more
+                Load more products
               </button>
             </div>
           )}

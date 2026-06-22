@@ -3,10 +3,21 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import SearchHero from './SearchHero'
-import FiltersDrawer, { FilterValues } from './FiltersDrawer'
+import {
+  ProductFiltersDrawer,
+  type ProductFilterValues,
+} from './filters/ProductFiltersDrawer'
+import {
+  ExpertFiltersDrawer,
+  type ExpertFilterValues,
+} from './filters/ExpertFiltersDrawer'
 
 interface ListingExplorerProps {
   kind: 'products' | 'experts'
+  productFilters?: ProductFilterValues
+  expertFilters?: ExpertFilterValues
+  onProductFiltersChange?: (values: ProductFilterValues) => void
+  onExpertFiltersChange?: (values: ExpertFilterValues) => void
 }
 
 export default function ListingExplorer(props: ListingExplorerProps) {
@@ -17,7 +28,13 @@ export default function ListingExplorer(props: ListingExplorerProps) {
   )
 }
 
-function ListingExplorerInner({ kind }: ListingExplorerProps) {
+function ListingExplorerInner({
+  kind,
+  productFilters,
+  expertFilters,
+  onProductFiltersChange,
+  onExpertFiltersChange,
+}: ListingExplorerProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -30,20 +47,12 @@ function ListingExplorerInner({ kind }: ListingExplorerProps) {
     router.push(`/${kind}?${params.toString()}`)
   }
 
-  const handleApply = (values: FilterValues) => {
-    const labels: string[] = []
-    labels.push(...values.categories)
-    labels.push(...values.types)
-    if (values.location) labels.push(values.location)
-    setActiveLabels(labels)
-    setDrawerOpen(false)
-  }
-
   return (
     <>
       <section className="pt-[120px] pb-[64px] bg-white">
         <div className="max-w-[1280px] mx-auto px-[32px]">
           <SearchHero
+            kind={kind}
             onMoreFilters={() => setDrawerOpen(true)}
             onSearch={handleSearch}
             initialQuery={searchParams.get('search') ?? ''}
@@ -52,7 +61,41 @@ function ListingExplorerInner({ kind }: ListingExplorerProps) {
           />
         </div>
       </section>
-      <FiltersDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onApply={handleApply} />
+      {drawerOpen && kind === 'products' && productFilters ? (
+        <ProductFiltersDrawer
+          key={JSON.stringify(productFilters)}
+          open={drawerOpen}
+          values={productFilters}
+          onClose={() => setDrawerOpen(false)}
+          onApply={(values) => {
+            setActiveLabels([
+              values.pricingBucket,
+              values.freePlan ? 'Free plan' : '',
+              values.freeTrial ? 'Free trial' : '',
+            ].filter(Boolean))
+            onProductFiltersChange?.(values)
+          }}
+        />
+      ) : null}
+      {drawerOpen && kind === 'experts' && expertFilters ? (
+        <ExpertFiltersDrawer
+          key={JSON.stringify(expertFilters)}
+          open={drawerOpen}
+          values={expertFilters}
+          onClose={() => setDrawerOpen(false)}
+          onApply={(values) => {
+            setActiveLabels([
+              values.location,
+              values.entityType,
+              values.platform,
+              values.industry,
+              values.projectType,
+              values.minimumYears ? `${values.minimumYears}+ years` : '',
+            ].filter(Boolean))
+            onExpertFiltersChange?.(values)
+          }}
+        />
+      ) : null}
     </>
   )
 }
