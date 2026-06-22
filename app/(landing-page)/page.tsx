@@ -2,9 +2,12 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { CatalogImage } from '@/components/catalog/CatalogImage';
 import InputField from '@/components/ui/InputField';
 import Button from '@/components/ui/Button';
-import { useProployAgent } from '@/components/agent/proploy-agent-context';
+import { getProductDetailHref, useKeywordSearch } from '@/features/catalog';
 
 const imgBitbucket = "/figma-assets/037e84947c2a4908a5313764d597a0d5a6a0f084.svg";
 const imgBorder = "/figma-assets/29599994635cb0e4374299477bfaf89fac007270.svg";
@@ -432,24 +435,99 @@ function CompanyLogo({ className, company = "3Portals", darkMode = false, logote
 }
 
 function HeroSearch() {
-  const { setIsOpen, sendMessage } = useProployAgent();
+  const router = useRouter();
+  const { products, loading, error, search, clear } = useKeywordSearch();
   const [query, setQuery] = React.useState('');
+  const [open, setOpen] = React.useState(false);
 
-  const handleSubmit = async () => {
-    setIsOpen(true);
+  React.useEffect(() => {
+    const value = query.trim();
+    if (value.length < 2) {
+      clear();
+      return;
+    }
+
+    void search(value, 8);
+  }, [clear, query, search]);
+
+  const handleSubmit = () => {
     const value = query.trim();
     if (!value) return;
-    setQuery('');
-    await sendMessage(value);
+    setOpen(false);
+    router.push(`/products?search=${encodeURIComponent(value)}`);
   };
 
   return (
-    <>
-      <InputField
-        className="w-[480px] shrink-0"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+    <div className="relative flex gap-[16px]">
+      <div className="relative w-[480px] shrink-0">
+        <InputField
+          className="w-[480px] shrink-0"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Search products..."
+        />
+
+        {open && query.trim().length >= 2 && (
+          <div className="absolute left-0 right-0 top-full z-50 mt-[8px] overflow-hidden rounded-[12px] border border-[#e9eaeb] bg-white text-left shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08),0px_8px_8px_-4px_rgba(10,13,18,0.03)]">
+            {loading ? (
+              <p className="px-[16px] py-[20px] text-[14px] text-[#717680]">Searching products…</p>
+            ) : error ? (
+              <p className="px-[16px] py-[20px] text-[14px] text-[#b42318]">
+                Product search is temporarily unavailable.
+              </p>
+            ) : products.length > 0 ? (
+              <>
+                <div className="max-h-[360px] overflow-y-auto p-[6px]">
+                  {products.map((product) => (
+                    <Link
+                      key={product.product_id}
+                      href={getProductDetailHref(product.product_id)}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-[12px] rounded-[8px] px-[10px] py-[10px] hover:bg-[#fafafa]"
+                    >
+                      <div className="flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white text-[14px] font-bold text-[#155eef]">
+                        {product.product_logo ? (
+                          <CatalogImage
+                            src={product.product_logo}
+                            alt=""
+                            className="size-full object-contain p-[4px]"
+                            fallback={product.product_name.charAt(0)}
+                          />
+                        ) : (
+                          product.product_name.charAt(0)
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                          {product.product_name}
+                        </p>
+                        <p className="truncate text-[12px] leading-[18px] text-[#717680]">
+                          {[product.vendor_name, product.primary_category].filter(Boolean).join(' · ') || 'Product'}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="w-full border-t border-[#e9eaeb] bg-[#fafafa] px-[16px] py-[12px] text-left text-[14px] font-semibold text-[#004eeb] hover:bg-[#f5f8ff]"
+                >
+                  View all results for “{query.trim()}”
+                </button>
+              </>
+            ) : (
+              <p className="px-[16px] py-[20px] text-[14px] text-[#717680]">
+                No matching products found.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
       <Button
         variant="primary"
         size="lg"
@@ -466,7 +544,7 @@ function HeroSearch() {
       >
         Find Your Software
       </Button>
-    </>
+    </div>
   );
 }
 
