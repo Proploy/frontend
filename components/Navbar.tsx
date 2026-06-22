@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { Menu, X, LogOut, User, Settings } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, Menu, X, LogOut, User, Settings } from 'lucide-react'
+import CatalogMegaMenu from '@/components/catalog/CatalogMegaMenu'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useExpertApplication } from '@/features/experts/use-expert-application'
 import type { ExpertMe } from '@/features/experts/types'
@@ -13,7 +14,6 @@ import { setAuthIntent } from '@/lib/utils/auth-intent-client'
 const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account', '/experts/chat']
 
 const NAV_LINKS = [
-  { href: '/products', label: 'Explore Products' },
   { href: '/experts', label: 'Explore Experts' },
   { href: '/for-businesses', label: 'For Businesses' },
   { href: '/for-experts', label: 'For Experts' },
@@ -30,6 +30,9 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false)
+  const [isMobileCatalogOpen, setIsMobileCatalogOpen] = useState(false)
+  const catalogCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
   const userId = user?.id
 
@@ -58,6 +61,10 @@ export default function Navbar() {
       cancelled = true
     }
   }, [getApplication, hideOnWorkspace, userId])
+
+  useEffect(() => () => {
+    if (catalogCloseTimerRef.current) clearTimeout(catalogCloseTimerRef.current)
+  }, [])
 
   if (hideOnWorkspace) return null
 
@@ -102,6 +109,22 @@ export default function Navbar() {
     }
   }
 
+  const keepCatalogOpen = () => {
+    if (catalogCloseTimerRef.current) {
+      clearTimeout(catalogCloseTimerRef.current)
+      catalogCloseTimerRef.current = null
+    }
+    setIsCatalogOpen(true)
+  }
+
+  const scheduleCatalogClose = () => {
+    if (catalogCloseTimerRef.current) clearTimeout(catalogCloseTimerRef.current)
+    catalogCloseTimerRef.current = setTimeout(() => {
+      setIsCatalogOpen(false)
+      catalogCloseTimerRef.current = null
+    }, 220)
+  }
+
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 h-[80px] flex items-center bg-[#fafbfc]/95 backdrop-blur-md transition-all duration-300 ${
@@ -109,7 +132,14 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-[1280px] mx-auto w-full px-4 md:px-[32px] flex items-center justify-between">
-        <Link href="/" className="flex items-center shrink-0">
+        <Link
+          href="/"
+          className="flex items-center shrink-0"
+          onClick={() => {
+            setIsCatalogOpen(false)
+            setIsMenuOpen(false)
+          }}
+        >
           <Image
             src="/PROPLOY.svg"
             alt="Proploy"
@@ -121,10 +151,40 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center gap-[36px]">
+          <div
+            className="relative"
+            onMouseEnter={keepCatalogOpen}
+            onMouseLeave={scheduleCatalogClose}
+          >
+            <button
+              type="button"
+              aria-expanded={isCatalogOpen}
+              aria-haspopup="menu"
+              onClick={() => setIsCatalogOpen(true)}
+              onFocus={() => setIsCatalogOpen(true)}
+              className="flex items-center gap-[6px] rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
+            >
+              Explore Products
+              <ChevronDown size={16} className={`transition-transform ${isCatalogOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isCatalogOpen && (
+              <div
+                role="menu"
+                onMouseEnter={keepCatalogOpen}
+                onMouseLeave={scheduleCatalogClose}
+                className="fixed left-1/2 top-[64px] w-[min(960px,calc(100vw-48px))] -translate-x-1/2 pt-[16px]"
+              >
+                <CatalogMegaMenu onNavigate={() => setIsCatalogOpen(false)} />
+              </div>
+            )}
+          </div>
+
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
+              onClick={() => setIsCatalogOpen(false)}
               className="font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-[#414651] hover:text-[#0466e7] transition-colors px-[6px] py-[4px] rounded-[8px]"
             >
               {link.label}
@@ -228,7 +288,24 @@ export default function Navbar() {
       </div>
 
       {isMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
+        <div className="lg:hidden absolute top-full left-0 max-h-[calc(100vh-80px)] w-full overflow-y-auto bg-white border-t border-gray-100 shadow-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
+          <div>
+            <button
+              type="button"
+              aria-expanded={isMobileCatalogOpen}
+              onClick={() => setIsMobileCatalogOpen((open) => !open)}
+              className="flex w-full items-center justify-between text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
+            >
+              Explore Products
+              <ChevronDown size={20} className={`transition-transform ${isMobileCatalogOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isMobileCatalogOpen && (
+              <div className="mt-[14px]">
+                <CatalogMegaMenu mobile onNavigate={() => setIsMenuOpen(false)} />
+              </div>
+            )}
+          </div>
+
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
