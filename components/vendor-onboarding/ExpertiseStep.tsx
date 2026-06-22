@@ -1,11 +1,14 @@
 'use client'
 
 import React from 'react';
-import Select from '@/components/ui/Select';
+import InputField from '@/components/ui/InputField';
+import TagInput from '@/components/onboarding/TagInput';
+import { useProductList } from '@/features/catalog';
+import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface ExpertiseStepProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: VendorOnboardingData;
+  setFormData: (data: VendorOnboardingData) => void;
 }
 
 const accountTypes = [
@@ -21,28 +24,23 @@ const accountTypes = [
   },
 ];
 
-const platformOptions = [
-  { value: 'monday', label: 'monday.com' },
-  { value: 'salesforce', label: 'Salesforce' },
-  { value: 'hubspot', label: 'HubSpot' },
-  { value: 'zendesk', label: 'Zendesk' },
-  { value: 'jira', label: 'Jira / Atlassian' },
-  { value: 'asana', label: 'Asana' },
-  { value: 'servicenow', label: 'ServiceNow' },
-];
-
 const industryOptions = [
-  { value: 'technology', label: 'Technology' },
-  { value: 'finance', label: 'Finance & Banking' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'education', label: 'Education' },
-  { value: 'retail', label: 'Retail & E-commerce' },
-  { value: 'manufacturing', label: 'Manufacturing' },
-  { value: 'consulting', label: 'Consulting' },
+  'Technology',
+  'Finance & Banking',
+  'Healthcare',
+  'Education',
+  'Retail & E-commerce',
+  'Manufacturing',
+  'Consulting',
 ];
 
 export default function ExpertiseStep({ formData, setFormData }: ExpertiseStepProps) {
   const selectedType = formData?.accountType ?? '';
+  const { products, loading } = useProductList({ limit: 100, sort: 'name' });
+  const platformOptions = React.useMemo(
+    () => products.map((product) => product.product_name),
+    [products],
+  );
 
   const handleAccountTypeSelect = (value: string) => {
     setFormData({ ...formData, accountType: value });
@@ -83,26 +81,77 @@ export default function ExpertiseStep({ formData, setFormData }: ExpertiseStepPr
         </div>
       </div>
 
-      {/* Platforms field */}
-      <Select
-        label="Which platforms do you work with?"
+      <InputField
+        label="Public display name"
         required
-        options={platformOptions}
-        value={formData?.platform ?? ''}
-        onChange={(val) => setFormData({ ...formData, platform: val })}
-        placeholder="Select platforms..."
-        hintText="Select at least 1. Add more later."
+        value={formData.displayName}
+        onChange={(event) => setFormData({ ...formData, displayName: event.target.value })}
+        placeholder="e.g., Alex Tan or Acme Consulting"
       />
 
-      {/* Industries field */}
-      <Select
-        label="Which industries have you worked in?"
-        options={industryOptions}
-        value={formData?.industry ?? ''}
-        onChange={(val) => setFormData({ ...formData, industry: val })}
-        placeholder="Select industries..."
-        hintText="Pick up to 5 to improve matching."
+      <InputField
+        label="Professional headline"
+        required
+        value={formData.headline}
+        onChange={(event) => setFormData({ ...formData, headline: event.target.value })}
+        placeholder="e.g., HubSpot and Salesforce implementation specialist"
       />
+
+      {/* Platforms field */}
+      <div className="flex flex-col gap-[6px]">
+        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
+          Which platforms do you work with? <span className="text-[#dc2626]">*</span>
+        </label>
+        <TagInput
+          values={formData.categories}
+          label="platforms"
+          suggestions={platformOptions}
+          loading={loading}
+          allowCustom={false}
+          onChange={(categories) => setFormData({
+            ...formData,
+            categories,
+            platform: categories[0] ?? '',
+          })}
+        />
+        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#535862]">
+          Select products from the live Proploy catalog.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-[6px]">
+        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
+          Secondary platforms
+        </label>
+        <TagInput
+          values={formData.specializations}
+          label="secondary platforms"
+          suggestions={platformOptions.filter((platform) => !formData.categories.includes(platform))}
+          loading={loading}
+          allowCustom={false}
+          onChange={(specializations) => setFormData({ ...formData, specializations })}
+        />
+      </div>
+
+      <div className="flex flex-col gap-[6px]">
+        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
+          Which industries have you worked in?
+        </label>
+        <TagInput
+          values={formData.industries}
+          label="industries"
+          suggestions={industryOptions}
+          allowCustom={false}
+          onChange={(industries) => setFormData({
+            ...formData,
+            industries,
+            industry: industries[0] ?? '',
+          })}
+        />
+        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#535862]">
+          Pick up to 5 to improve matching.
+        </p>
+      </div>
     </div>
   );
 }
