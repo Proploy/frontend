@@ -24,7 +24,9 @@ const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
 function unique(values: Array<string | null | undefined>) {
-  return Array.from(new Set(values.filter((value): value is string => Boolean(value))))
+  return Array.from(new Set(values.filter(
+    (value): value is string => typeof value === 'string' && value.length > 0 && value.length <= 64,
+  )))
 }
 
 function getExpertise(profile: ExpertPublic) {
@@ -218,7 +220,7 @@ export default function ExpertProfilePage() {
 
             <ProfileSection title="Projects">
               {profile.projects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+                <div className="grid grid-cols-1 gap-[16px]">
                   {profile.projects.map((project) => (
                     <ProjectCard key={project.id} expertId={profile.id} project={project} />
                   ))}
