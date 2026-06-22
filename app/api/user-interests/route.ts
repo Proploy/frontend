@@ -1,3 +1,20 @@
+/**
+ * @deprecated
+ *
+ * The underlying endpoint (`/api/v1/users/me/interests`) is exposed by the
+ * deployed service-apis and the proxy currently works correctly. It is
+ * marked deprecated only because the proxy is unnecessary — the page that
+ * uses interests should call the service-apis endpoint directly via
+ * `ServiceApisBrowserClient` (mirroring the pattern in
+ * `features/catalog/shared/client-api.ts` and `features/experts/*`).
+ *
+ * Per project policy, the only Supabase use allowed is the auth session.
+ * service-apis is the source of truth for interests data.
+ *
+ * Replacement: a hook under `features/users/` that calls
+ * `GET/PATCH /api/v1/users/me/interests` directly. Functionality is
+ * preserved until the migration lands.
+ */
 import { NextRequest } from 'next/server'
 import { getUser } from '@/lib/auth'
 import { handleApiError, createErrorResponse } from '@/lib/utils/errors'

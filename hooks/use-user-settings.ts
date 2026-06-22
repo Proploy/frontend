@@ -1,5 +1,23 @@
 'use client'
 
+/**
+ * @deprecated
+ *
+ * Reaches `GET /api/v1/users/me` and `PATCH /api/v1/users/me`, which are not
+ * exposed by the deployed service-apis (both return 404). The avatar-upload
+ * endpoint `/api/v1/users/me/avatar-url` is also not deployed yet.
+ *
+ * Per project policy, the only Supabase use allowed is the auth session; the
+ * Supabase `user` table is NOT a valid substitute for `/api/v1/users/me`.
+ * service-apis is the source of truth for user data.
+ *
+ * Replacement: a new hook under `features/users/` (TBD) that calls the
+ * service-apis user-profile endpoints once those are deployed. Until then,
+ * `/settings` renders in its broken/error state.
+ *
+ * Do NOT add `supabase.auth.updateUser` or direct `user` table reads as a
+ * workaround. Do NOT reinstate the deleted `/api/users/me` proxy shim.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'

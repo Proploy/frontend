@@ -1,4 +1,20 @@
-// TODO: Move to service-apis endpoint - currently blocked by schema mismatch
+/**
+ * @deprecated
+ *
+ * Reads the Supabase `favorite`, `recently_viewed`, and `products` tables
+ * directly via the admin client. Per project policy, the only allowed
+ * Supabase use is the auth session — service-apis is the source of truth
+ * for favorites, recently-viewed, and product data.
+ *
+ * Replacement: call `/api/v1/users/favorites*` and
+ * `/api/v1/users/recently-viewed*` (with a user-id filter or via the auth
+ * session on the request) and `/api/v1/catalog/products/ui` directly from
+ * service-apis — no Supabase reads. Until those endpoints replace this
+ * route, the personalized listing uses stale Supabase data and should not
+ * be relied on.
+ *
+ * Do NOT extend this file with more Supabase direct reads.
+ */
 import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getUser } from '@/lib/auth'
