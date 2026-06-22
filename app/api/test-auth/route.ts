@@ -1,3 +1,19 @@
+/**
+ * @deprecated
+ *
+ * Debug route that probes 4 service-apis paths. Two of them
+ * (`/api/v1/users/me`, `/api/v1/favorites`) return 404 on the deployed
+ * service — they have no deployed equivalent yet. The other two
+ * (`/api/v1/experts/me/application`, `/api/v1/experts`) work correctly.
+ *
+ * Replacement: a new diagnostic route under `app/api/` (TBD) that probes
+ * only the deployed endpoints, ideally via the same
+ * `ServiceApisBrowserClient` paths the production hooks use, so the probe
+ * reflects what the UI actually calls.
+ *
+ * Do NOT resurrect the deleted `/api/users/me` proxy shim to make this
+ * route "work again".
+ */
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
