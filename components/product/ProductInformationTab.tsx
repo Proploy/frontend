@@ -181,32 +181,33 @@ export default function ProductInformationTab({
       {/* Media */}
       <div className="flex flex-col gap-[16px] w-full">
         <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Media</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-[24px]">
-          {Array.from({ length: 4 }).map((_, i) => {
-            const item = media[i]
-            return (
+        {media.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-[24px]">
+            {media.slice(0, 4).map((item) => (
               <div
-                key={i}
+                key={item.id}
                 className="aspect-[286/184] rounded-[12px] overflow-hidden bg-[#e9eaeb] flex items-center justify-center"
               >
-                {item ? (
-                  item.type === 'video' ? (
-                    <InlineVideo url={item.url} title={item.alt || 'Product video'} mode="direct" />
-                  ) : (
-                    <CatalogImage
-                      src={item.url}
-                      alt={item.alt ?? ''}
-                      className="size-full object-cover"
-                      fallback={<span className="px-[12px] text-center text-[13px] font-medium text-[#717680]">Media unavailable</span>}
-                    />
-                  )
+                {item.type === 'video' ? (
+                  <InlineVideo url={item.url} title={item.alt || 'Product video'} mode="direct" />
                 ) : (
-                  <div className="size-full bg-[#181d27]" />
+                  <CatalogImage
+                    src={item.url}
+                    alt={item.alt ?? ''}
+                    className="size-full object-cover"
+                    fallback={<span className="px-[12px] text-center text-[13px] font-medium text-[#717680]">Media unavailable</span>}
+                  />
                 )}
               </div>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[12px] border border-dashed border-[#d5d7da] bg-[#fafafa] px-[24px] py-[40px] text-center">
+            <p className="text-[14px] font-medium leading-[20px] text-[#717680]">
+              No product media has been published yet.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   )
