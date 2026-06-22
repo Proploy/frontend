@@ -92,6 +92,8 @@ const mockProductDetail: ProductDetail = {
   pricing_plans: [mockPricingPlan],
   ratings: [mockRating],
   logo_url: 'https://example.com/logo.png',
+  pros: [],
+  cons: [],
 }
 
 const mockMedia: ProductMediaAssetItem[] = [
