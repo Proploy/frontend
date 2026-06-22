@@ -4,6 +4,8 @@
 export interface VendorOnboardingData {
   // Overview step
   accountType?: string
+  displayName: string
+  headline: string
 
   // Step 1 - Expertise
   categories: string[]
@@ -11,9 +13,10 @@ export interface VendorOnboardingData {
   skills: string[]
   platform?: string
   industry?: string
+  industries: string[]
 
   // Step 2 - Credentials
-  certificationFiles: { name: string; size: number }[]
+  certificationFiles: { name: string; size: number; file?: File }[]
   manualCertifications: string[]
   yearsExperience: string
   openToAssessment: boolean
@@ -40,6 +43,7 @@ export interface VendorOnboardingData {
 }
 
 export interface FeaturedProject {
+  clientProjectId: string
   title: string
   clientIndustry: string
   platform: string
@@ -47,6 +51,10 @@ export interface FeaturedProject {
   outcome: string
   link: string
   ndaSafe: boolean
+  fileStorageKey?: string | null
+  fileName?: string | null
+  fileContentType?: string | null
+  fileSizeBytes?: number | null
 }
 
 export interface AddedLink {
