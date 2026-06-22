@@ -3,7 +3,9 @@ import { z } from 'zod'
 // Step 1 - Expertise (ExpertiseStep uses accountType, platform, industry)
 const expertiseStepSchema = z.object({
   accountType: z.string().min(1, 'Account type is required'),
-  platform: z.string().min(1, 'At least one platform is required'),
+  displayName: z.string().min(1, 'Display name is required'),
+  headline: z.string().min(1, 'Professional headline is required'),
+  categories: z.array(z.string()).min(1, 'At least one platform is required'),
 })
 
 // Step 2 - Credentials (CredentialsStep uses yearsExperience; bio is not collected)
@@ -35,11 +37,14 @@ const preferencesStepSchema = z.object({
 // Full submit schema — mirrors VendorOnboardingData field names
 export const vendorSubmitSchema = z.object({
   accountType: z.string().min(1),
-  categories: z.array(z.string()),
+  displayName: z.string().min(1),
+  headline: z.string().min(1),
+  categories: z.array(z.string()).min(1),
   specializations: z.array(z.string()),
   skills: z.array(z.string()),
-  platform: z.string().min(1),
+  platform: z.string(),
   industry: z.string(),
+  industries: z.array(z.string()),
   certificationFiles: z.array(z.object({ name: z.string(), size: z.number() })),
   manualCertifications: z.array(z.string()),
   yearsExperience: z.string().min(1),

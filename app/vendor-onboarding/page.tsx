@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import OverviewStep from '@/components/vendor-onboarding/OverviewStep';
 import ExpertiseStep from '@/components/vendor-onboarding/ExpertiseStep';
 import CredentialsStep from '@/components/vendor-onboarding/CredentialsStep';
@@ -13,6 +13,12 @@ import ProgressStepper from '@/components/vendor-onboarding/ProgressStepper';
 import Button from '@/components/ui/Button';
 import { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 import { vendorStepSchemas } from '@/lib/validations/vendor';
+import { useAuth } from '@/components/providers/auth-provider';
+import { useExpertApplication } from '@/features/experts/use-expert-application';
+import {
+  hydrateVendorOnboardingFromExpert,
+  mapVendorOnboardingToExpertDraft,
+} from '@/features/experts/onboarding-mappers';
 
 const STEP_CONFIG = [
   {
@@ -56,11 +62,14 @@ const STEP_CONFIG = [
 
 const INITIAL_FORM_DATA: VendorOnboardingData = {
   accountType: '',
+  displayName: '',
+  headline: '',
   categories: [],
   specializations: [],
   skills: [],
   platform: '',
   industry: '',
+  industries: [],
   certificationFiles: [],
   manualCertifications: [],
   yearsExperience: '',
@@ -80,18 +89,65 @@ const INITIAL_FORM_DATA: VendorOnboardingData = {
 };
 
 export default function VendorOnboardingPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const {
+    getApplication,
+    saveApplicationDraft,
+    submitApplication,
+    getProjectFileUploadUrl,
+    uploadProjectFileToSignedUrl,
+  } = useExpertApplication();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<VendorOnboardingData>(INITIAL_FORM_DATA);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(true);
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (authLoading || hydratedRef.current) return;
+    hydratedRef.current = true;
+
+    if (!user) return;
+
+    void getApplication().then((result) => {
+      if (result.ok && result.data) {
+        const application = result.data;
+        setFormData((current) => hydrateVendorOnboardingFromExpert(current, application));
+      } else if (!result.ok) {
+        setStepError(result.error.message);
+      }
+      setIsHydrating(false);
+    });
+  }, [authLoading, getApplication, user]);
+
+  const onboardingLoading = authLoading || Boolean(user && isHydrating);
 
   const updateFormData = (updates: Partial<VendorOnboardingData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
-  const handleContinue = () => {
+  const persistDraft = async () => {
+    if (!user) {
+      setStepError('Sign in before saving your expert application.');
+      return false;
+    }
+
+    setIsSaving(true);
+    const result = await saveApplicationDraft(mapVendorOnboardingToExpertDraft(formData));
+    setIsSaving(false);
+
+    if (!result.ok) {
+      setStepError(result.error.message);
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleContinue = async () => {
     if (currentStep === 7) {
-      // "Go to dashboard" action
-      window.location.href = "/";
+      window.location.href = "/experts/dashboard";
       return;
     }
 
@@ -103,6 +159,29 @@ export default function VendorOnboardingPage() {
       return;
     }
     setStepError(null);
+
+    if (currentStep === 6) {
+      if (!user) {
+        setStepError('Sign in before submitting your expert application.');
+        return;
+      }
+      if (!formData.agreements.every(Boolean)) {
+        setStepError('Accept all agreements before submitting.');
+        return;
+      }
+
+      setIsSaving(true);
+      const result = await submitApplication(mapVendorOnboardingToExpertDraft(formData));
+      setIsSaving(false);
+      if (!result.ok) {
+        setStepError(result.error.message);
+        return;
+      }
+      setCurrentStep(7);
+      return;
+    }
+
+    if (currentStep > 0 && !(await persistDraft())) return;
     setCurrentStep((prev) => Math.min(prev + 1, 7));
   };
 
@@ -142,7 +221,14 @@ export default function VendorOnboardingPage() {
       case 2:
         return <CredentialsStep formData={formData} updateFormData={updateFormData} />;
       case 3:
-        return <ProjectsStep formData={formData} updateFormData={updateFormData} />;
+        return (
+          <ProjectsStep
+            formData={formData}
+            updateFormData={updateFormData}
+            getUploadUrl={getProjectFileUploadUrl}
+            uploadToSignedUrl={uploadProjectFileToSignedUrl}
+          />
+        );
       case 4:
         return <PortfolioStep formData={formData} setFormData={replaceFormData} />;
       case 5:
@@ -175,7 +261,11 @@ export default function VendorOnboardingPage() {
 
           {/* Form Content Area */}
           <div className="w-full max-w-[840px]">
-            {renderStepContent()}
+            {onboardingLoading ? (
+              <div className="py-[96px] text-center text-[16px] text-[#717680]">
+                Loading your application…
+              </div>
+            ) : renderStepContent()}
 
             {/* Step error message */}
             {stepError && (
@@ -189,9 +279,10 @@ export default function VendorOnboardingPage() {
               variant="primary"
               size="lg"
               onClick={handleContinue}
+              disabled={onboardingLoading || isSaving}
               className="w-full mt-8"
             >
-              {getContinueLabel()}
+              {isSaving ? 'Saving…' : getContinueLabel()}
             </Button>
 
             {/* Review step note */}

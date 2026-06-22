@@ -1,9 +1,12 @@
 'use client'
 
-import React, { useCallback } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { Loader2, Plus, Upload } from 'lucide-react';
+import type { GetUploadUrlResult } from '@/features/experts/use-expert-application';
+import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface FeaturedProject {
+  clientProjectId: string;
   title: string;
   clientIndustry: string;
   platform: string;
@@ -11,6 +14,10 @@ interface FeaturedProject {
   outcome: string;
   link: string;
   ndaSafe: boolean;
+  fileStorageKey?: string | null;
+  fileName?: string | null;
+  fileContentType?: string | null;
+  fileSizeBytes?: number | null;
 }
 
 interface ProjectsFormData {
@@ -19,11 +26,19 @@ interface ProjectsFormData {
 }
 
 interface ProjectsStepProps {
-  formData: any;
-  updateFormData: (data: any) => void;
+  formData: VendorOnboardingData;
+  updateFormData: (data: Partial<VendorOnboardingData>) => void;
+  getUploadUrl?: (
+    clientProjectId: string,
+    filename: string,
+    contentType: string,
+    fileSizeBytes: number,
+  ) => Promise<GetUploadUrlResult>;
+  uploadToSignedUrl?: (uploadUrl: string, file: File) => Promise<void>;
 }
 
 const emptyProject: FeaturedProject = {
+  clientProjectId: '',
   title: '',
   clientIndustry: '',
   platform: '',
@@ -42,7 +57,18 @@ const labelClasses =
 const textareaBase =
   'w-full px-[14px] py-[10px] bg-white border border-[#d5d7da] rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors resize-none';
 
-export default function ProjectsStep({ formData, updateFormData }: ProjectsStepProps) {
+function createClientProjectId() {
+  return `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export default function ProjectsStep({
+  formData,
+  updateFormData,
+  getUploadUrl,
+  uploadToSignedUrl,
+}: ProjectsStepProps) {
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const projects: ProjectsFormData = {
     totalProjects: formData.totalProjects ?? '',
     featuredProjects: formData.featuredProjects ?? [],
@@ -66,7 +92,12 @@ export default function ProjectsStep({ formData, updateFormData }: ProjectsStepP
 
   const addProject = useCallback(() => {
     if (projects.featuredProjects.length >= 3) return;
-    update({ featuredProjects: [...projects.featuredProjects, { ...emptyProject }] });
+    update({
+      featuredProjects: [
+        ...projects.featuredProjects,
+        { ...emptyProject, clientProjectId: createClientProjectId() },
+      ],
+    });
   }, [projects.featuredProjects, update]);
 
   const removeProject = useCallback(
@@ -77,6 +108,37 @@ export default function ProjectsStep({ formData, updateFormData }: ProjectsStepP
     },
     [projects.featuredProjects, update],
   );
+
+  const uploadProjectFile = async (index: number, file: File | null) => {
+    if (!file || !getUploadUrl || !uploadToSignedUrl) return;
+    const project = projects.featuredProjects[index];
+    const clientProjectId = project.clientProjectId || createClientProjectId();
+    const contentType = file.type || 'application/octet-stream';
+
+    setUploadingIndex(index);
+    setUploadError(null);
+    const result = await getUploadUrl(clientProjectId, file.name, contentType, file.size);
+    if (!result.ok) {
+      setUploadError(result.error.message);
+      setUploadingIndex(null);
+      return;
+    }
+
+    try {
+      await uploadToSignedUrl(result.data.uploadUrl, file);
+      updateProject(index, {
+        clientProjectId,
+        fileStorageKey: result.data.storageKey,
+        fileName: file.name,
+        fileContentType: contentType,
+        fileSizeBytes: file.size,
+      });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Project file upload failed');
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-[24px]">
@@ -206,6 +268,32 @@ export default function ProjectsStep({ formData, updateFormData }: ProjectsStepP
             />
           </div>
 
+          {getUploadUrl && uploadToSignedUrl && (
+            <div className="flex flex-col gap-[8px]">
+              <label className={labelClasses}>Project evidence (optional)</label>
+              <label className="flex cursor-pointer items-center justify-center gap-[8px] rounded-[8px] border border-dashed border-[#b2ccff] bg-white px-[14px] py-[12px] text-[14px] font-semibold text-[#004eeb]">
+                {uploadingIndex === idx ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {uploadingIndex === idx
+                  ? 'Uploading…'
+                  : project.fileName
+                    ? `Replace ${project.fileName}`
+                    : 'Upload project file'}
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+                  disabled={uploadingIndex === idx}
+                  onChange={(event) => void uploadProjectFile(idx, event.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+              </label>
+              {project.fileName && (
+                <p className="text-[12px] leading-[18px] text-[#535862]">
+                  Uploaded: {project.fileName}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* NDA-safe toggle */}
           <label className="flex items-center gap-[10px] cursor-pointer">
             <button
@@ -229,6 +317,12 @@ export default function ProjectsStep({ formData, updateFormData }: ProjectsStepP
           </label>
         </div>
       ))}
+
+      {uploadError && (
+        <p className="rounded-[8px] border border-[#fda29b] bg-[#fef3f2] px-[12px] py-[10px] text-[14px] text-[#b42318]">
+          {uploadError}
+        </p>
+      )}
 
       {/* Add featured project link */}
       {projects.featuredProjects.length < 3 && (

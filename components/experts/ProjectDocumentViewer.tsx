@@ -59,9 +59,17 @@ export function ProjectDocumentViewer({
   const Icon = previewKind === 'image' ? FileImage : FileText
 
   const resolveSignedUrl = async () => {
+    if (project.fileUrl) return project.fileUrl
+
     const result = await getDownloadUrl(project.id)
     if (!result.ok) {
-      setFileError(result.error.message)
+      setFileError(
+        result.status >= 500
+          ? 'Project evidence is temporarily unavailable because the storage signing service is not configured correctly.'
+          : result.status === 0
+            ? 'Project evidence is unavailable because storage could not create a signed URL. Check the service-role credential and stored object path.'
+            : result.error.message,
+      )
       return null
     }
     return result.data.downloadUrl

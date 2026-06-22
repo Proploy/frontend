@@ -47,6 +47,7 @@ interface UseProductDetailResult {
   product: ProductPageModel | null
   loading: boolean
   error: NormalizedError | null
+  mediaError: NormalizedError | null
   notFound: boolean
   refetch: () => void
 }
@@ -142,6 +143,7 @@ export function useProductDetail({ productId }: UseProductDetailOptions): UsePro
   const [product, setProduct] = useState<ProductPageModel | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<NormalizedError | null>(null)
+  const [mediaError, setMediaError] = useState<NormalizedError | null>(null)
   const [notFound, setNotFound] = useState(false)
   const requestGuardRef = useRef(createLatestRequestGuard())
 
@@ -154,12 +156,14 @@ export function useProductDetail({ productId }: UseProductDetailOptions): UsePro
       setProduct(null)
       setLoading(false)
       setError(null)
+      setMediaError(null)
       setNotFound(false)
       return
     }
 
     setLoading(true)
     setError(null)
+    setMediaError(null)
     setNotFound(false)
 
     // Fetch detail and media in parallel
@@ -179,6 +183,7 @@ export function useProductDetail({ productId }: UseProductDetailOptions): UsePro
 
     const detail: ProductDetail = detailResult.data
     const media: ProductMediaAssetItem[] = mediaResult.ok ? mediaResult.data : []
+    setMediaError(mediaResult.ok ? null : mediaResult)
 
     const mapped = mapProductDetailToPageModel(detail, media)
     setProduct(mapped)
@@ -197,7 +202,7 @@ export function useProductDetail({ productId }: UseProductDetailOptions): UsePro
     }
   }, [fetchDetail])
 
-  return { product, loading, error, notFound, refetch: fetchDetail }
+  return { product, loading, error, mediaError, notFound, refetch: fetchDetail }
 }
 
 /**

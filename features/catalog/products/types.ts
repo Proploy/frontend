@@ -53,9 +53,11 @@ export interface PricingPlanItem {
   is_free: boolean
   is_trial: boolean
   is_contact_sales: boolean
-  features: Record<string, unknown> | null
-  limits: Record<string, unknown> | null
+  features: Record<string, unknown> | string[] | null
+  limits: Record<string, unknown> | string[] | null
   pricing_model: string | null
+  statement?: string | null
+  confidence?: number | null
 }
 
 export interface RatingItem {
@@ -84,6 +86,8 @@ export interface ProductDetail {
   what_is: string | null
   best_for: string | null
   not_for: string | null
+  pros?: string[]
+  cons?: string[]
   core_features: string[]
   integration_labels: string[]
   compliance_labels: string[]
@@ -114,6 +118,7 @@ export interface ProductMediaAssetItem {
   height: number | null
   alt_text: string | null
   display_order: number
+  media_role?: string | null
 }
 
 // View models for UI
@@ -140,6 +145,8 @@ export interface ProductPageModel {
   what_is: string | null
   best_for: string | null
   not_for: string | null
+  pros: string[]
+  cons: string[]
   free_trial: boolean
   free_plan: boolean
   pricing_bucket: string | null
@@ -175,6 +182,8 @@ export interface PricingTier {
   features: Record<string, string>[]
   limits: Record<string, string>[]
   pricing_model: string | null
+  statement: string | null
+  confidence: number | null
 }
 
 export interface ReviewSource {

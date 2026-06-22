@@ -7,6 +7,7 @@ const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
 interface SearchHeroProps {
+  kind?: 'products' | 'experts'
   onMoreFilters?: () => void
   onSearch?: (query: string) => void
   initialQuery?: string
@@ -17,6 +18,7 @@ interface SearchHeroProps {
 }
 
 export default function SearchHero({
+  kind = 'products',
   onMoreFilters,
   onSearch,
   initialQuery = '',
@@ -25,6 +27,18 @@ export default function SearchHero({
   announcementHref = '#',
   announcement = { tag: "What's new?", text: 'Fruition Joined!' },
 }: SearchHeroProps) {
+  const quickFilters = kind === 'products'
+    ? [
+        { icon: <ListFilter size={20} className="text-[#717680]" />, label: 'Any category', width: 200 },
+        { icon: <DollarSign size={20} className="text-[#717680]" />, label: 'Any pricing', width: 200 },
+        { icon: <FilterIcon size={20} className="text-[#717680]" />, label: 'Plans & trials', width: 168 },
+      ]
+    : [
+        { icon: <ListFilter size={20} className="text-[#717680]" />, label: 'Any expert type', width: 200 },
+        { icon: <MapPin size={20} className="text-[#717680]" />, label: 'Any location', width: 200 },
+        { icon: <FilterIcon size={20} className="text-[#717680]" />, label: 'Any experience', width: 168 },
+      ]
+
   return (
     <div className="flex flex-col gap-[48px] items-center w-full font-[family-name:var(--font-dm-sans)]">
       <div className="flex flex-col gap-[24px] items-center max-w-[1024px] w-full">
@@ -88,9 +102,15 @@ export default function SearchHero({
         {/* Filter dropdowns */}
         <div className="flex flex-wrap items-start justify-between gap-y-[12px] w-full">
           <div className="flex gap-[12px] items-start">
-            <FilterSelect icon={<ListFilter size={20} className="text-[#717680]" />} label="Any Type" width={200} />
-            <FilterSelect icon={<MapPin size={20} className="text-[#717680]" />} label="Any Location" width={200} />
-            <FilterSelect icon={<DollarSign size={20} className="text-[#717680]" />} label="Any price" width={168} />
+            {quickFilters.map((filter) => (
+              <FilterSelect
+                key={filter.label}
+                icon={filter.icon}
+                label={filter.label}
+                width={filter.width}
+                onClick={onMoreFilters}
+              />
+            ))}
           </div>
           <button
             type="button"
@@ -136,12 +156,14 @@ interface FilterSelectProps {
   icon: React.ReactNode
   label: string
   width: number
+  onClick?: () => void
 }
 
-function FilterSelect({ icon, label, width }: FilterSelectProps) {
+function FilterSelect({ icon, label, width, onClick }: FilterSelectProps) {
   return (
     <button
       type="button"
+      onClick={onClick}
       style={{ width }}
       className="flex items-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]"
     >

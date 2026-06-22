@@ -33,6 +33,11 @@ interface UseCatalogSearchResult {
   refetch: () => void
 }
 
+interface UseCatalogProductMatchesResult {
+  products: CardProduct[]
+  loading: boolean
+}
+
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
 /**
@@ -179,4 +184,72 @@ export function useCatalogSearch(options: UseCatalogSearchOptions = {}): UseCata
   }, [fetch_])
 
   return { products, pagination, loading, error, refetch: fetch_ }
+}
+
+/**
+ * Resolves a small set of human-entered platform names to canonical catalog products.
+ * Useful for expert profiles, where platform expertise is stored as labels rather than product IDs.
+ */
+export function useCatalogProductMatches(queries: string[]): UseCatalogProductMatchesResult {
+  const [products, setProducts] = useState<CardProduct[]>([])
+  const [loading, setLoading] = useState(false)
+  const requestGuardRef = useRef(createLatestRequestGuard())
+  const queryKey = JSON.stringify(
+    Array.from(new Set(queries.map((query) => query.trim()).filter(Boolean))).sort(),
+  )
+
+  const fetch_ = useCallback(async () => {
+    const requestId = requestGuardRef.current.begin()
+    const normalizedQueries = JSON.parse(queryKey) as string[]
+
+    if (normalizedQueries.length === 0) {
+      setProducts([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    const results = await Promise.all(
+      normalizedQueries.map(async (query) => ({
+        query,
+        result: await clientCatalogApi.search.keyword(query, 5),
+      })),
+    )
+
+    if (!requestGuardRef.current.isLatest(requestId)) return
+
+    const matches = results.flatMap(({ query, result }) => {
+      if (!result.ok) return []
+      const match = result.data.results.find((candidate) => namesMatch(candidate.product_name, query))
+        ?? result.data.results[0]
+      return match ? [mapKeywordSearchResponseToResults({ results: [match], count: 1 }, 1, 0).products[0]] : []
+    })
+
+    setProducts(Array.from(new Map(matches.map((product) => [product.product_id, product])).values()))
+    setLoading(false)
+  }, [queryKey])
+
+  useEffect(() => {
+    const requestGuard = requestGuardRef.current
+    let active = true
+    void Promise.resolve().then(() => {
+      if (active) fetch_()
+    })
+    return () => {
+      active = false
+      requestGuard.invalidate()
+    }
+  }, [fetch_])
+
+  return { products, loading }
+}
+
+function namesMatch(left: string, right: string) {
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '')
+  const a = normalize(left)
+  const b = normalize(right)
+  if (!a || !b) return false
+  if (a === b) return true
+  if (Math.min(a.length, b.length) < 4) return false
+  return a.startsWith(b) || b.startsWith(a)
 }

@@ -94,6 +94,8 @@ export function mapPricingPlanItemToTier(plan: PricingPlanItem): PricingTier {
     features,
     limits,
     pricing_model: plan.pricing_model,
+    statement: plan.statement ?? null,
+    confidence: plan.confidence ?? null,
   }
 }
 
@@ -130,6 +132,8 @@ export function mapProductDetailToPageModel(
     what_is: detail.what_is,
     best_for: detail.best_for,
     not_for: detail.not_for,
+    pros: detail.pros ?? [],
+    cons: detail.cons ?? [],
     free_trial: detail.free_trial,
     free_plan: detail.free_plan,
     pricing_bucket: detail.pricing_bucket,
@@ -147,7 +151,9 @@ export function mapProductDetailToPageModel(
     target_segments: detail.target_segments,
     pricing_plans: detail.pricing_plans.map(mapPricingPlanItemToTier),
     ratings: detail.ratings.map(mapRatingItemToReviewSource),
-    media,
-    product_logo: detail.logo_url,
+    media: [...media].sort((a, b) => a.display_order - b.display_order),
+    product_logo: detail.logo_url
+      ?? media.find((asset) => asset.asset_kind.toLowerCase() === 'logo')?.public_url
+      ?? null,
   }
 }

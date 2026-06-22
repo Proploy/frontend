@@ -9,6 +9,15 @@ import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type { ExpertListItem, ExpertListResponse } from '@/features/experts/types'
 
+interface UseApprovedExpertsOptions {
+  platform?: string
+  industry?: string
+  projectType?: string
+  country?: string
+  timezone?: string
+  limit?: number
+}
+
 interface UseApprovedExpertsResult {
   experts: ExpertListItem[]
   loading: boolean
@@ -18,7 +27,9 @@ interface UseApprovedExpertsResult {
 
 const client = new ServiceApisBrowserClient()
 
-export function useApprovedExperts(): UseApprovedExpertsResult {
+export function useApprovedExperts(
+  { platform, industry, projectType, country, timezone, limit }: UseApprovedExpertsOptions = {},
+): UseApprovedExpertsResult {
   const [experts, setExperts] = useState<ExpertListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<NormalizedError | null>(null)
@@ -30,7 +41,16 @@ export function useApprovedExperts(): UseApprovedExpertsResult {
     setLoading(true)
     setError(null)
 
-    const result = await client.get<ExpertListResponse>('/api/v1/experts', {
+    const params = new URLSearchParams()
+    if (platform) params.set('platform', platform)
+    if (industry) params.set('industry', industry)
+    if (projectType) params.set('project_type', projectType)
+    if (country) params.set('country', country)
+    if (timezone) params.set('timezone', timezone)
+    if (limit) params.set('limit', String(limit))
+    const query = params.toString()
+
+    const result = await client.get<ExpertListResponse>(`/api/v1/experts${query ? `?${query}` : ''}`, {
       requireAuth: false,
     })
 
@@ -44,7 +64,7 @@ export function useApprovedExperts(): UseApprovedExpertsResult {
 
     setExperts(result.data.experts)
     setLoading(false)
-  }, [])
+  }, [country, industry, limit, platform, projectType, timezone])
 
   useEffect(() => {
     mountedRef.current = true
