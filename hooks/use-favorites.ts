@@ -1,6 +1,25 @@
 // use-favorites.ts
 // Browser hook for /api/v1/favorites via Next proxy under /api/favorites.
 
+/**
+ * @deprecated
+ *
+ * The underlying proxy shim (`/api/favorites`) has been removed because it
+ * forwards to `/api/v1/favorites`, a path the deployed service-apis does NOT
+ * expose (returns 404). The correct path on the deployed service is
+ * `/api/v1/users/favorites*`.
+ *
+ * Per project policy, the only Supabase use allowed is the auth session;
+ * direct reads/writes to the Supabase `favorite` table are not a valid
+ * workaround — service-apis is the source of truth for user data.
+ *
+ * Replacement: a new hook under `features/users/` that calls
+ * `/api/v1/users/favorites` and `/api/v1/users/favorites/by-product/{id}`
+ * (and the `by-id` variant) directly via `ServiceApisBrowserClient`. Until
+ * that hook exists, favorites functionality on the frontend is offline.
+ *
+ * Do NOT reintroduce direct Supabase reads as a workaround.
+ */
 import { useCallback, useEffect, useState } from 'react'
 
 export type FavoriteTargetType = 'expert' | 'product' | 'software'
