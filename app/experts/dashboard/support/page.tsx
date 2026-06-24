@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   BookOpen,
   Calendar,
+  CheckCircle2,
   ChevronDown,
   ExternalLink,
   Mail,
@@ -13,12 +14,14 @@ import {
   Search,
   Send,
   Users,
+  X,
 } from 'lucide-react'
 import {
   BUTTON_SKEUO,
   CARD_SHADOW,
   DashboardShell,
 } from '@/components/experts/dashboard/ExpertDashboardFrame'
+import { FileDropzone } from '@/components/experts/dashboard/FileDropzone'
 
 /* ============================== Types ============================== */
 
@@ -41,7 +44,10 @@ type Ticket = {
   priority: TicketPriority
   status: TicketStatus
   updated: string // ISO YYYY-MM-DD
+  attachment?: string // chosen filename, if any
 }
+
+const TICKETS_STORAGE_KEY = 'proploy.support.tickets.v1'
 
 /* ============================== Seed data ============================== */
 
@@ -121,10 +127,14 @@ const PRIORITY_COLOR: Record<TicketPriority, string> = {
   High: '#d92d20',
 }
 
-const RESOURCES = [
-  { label: 'Documentation', desc: 'Guides and how-tos', icon: BookOpen, href: '#' },
-  { label: 'Community', desc: 'Ask other experts', icon: Users, href: '#' },
-  { label: 'System status', desc: 'Live uptime & incidents', icon: ExternalLink, href: '#' },
+type Resource =
+  | { label: string; desc: string; icon: typeof BookOpen; kind: 'link'; href: string }
+  | { label: string; desc: string; icon: typeof BookOpen; kind: 'soon' }
+
+const RESOURCES: Resource[] = [
+  { label: 'Documentation', desc: 'Guides and how-tos', icon: BookOpen, kind: 'link', href: '/help' },
+  { label: 'Community', desc: 'Ask other experts', icon: Users, kind: 'link', href: '/guides' },
+  { label: 'System status', desc: 'Live uptime & incidents', icon: ExternalLink, kind: 'soon' },
 ]
 
 /* ============================== Page ============================== */
@@ -132,7 +142,35 @@ const RESOURCES = [
 export default function SupportPage() {
   const [query, setQuery] = useState('')
   const [openFaq, setOpenFaq] = useState<string | null>(FAQS[0]?.id ?? null)
+
+  // Tickets persist to localStorage. Start from the seed for a stable SSR
+  // render, then hydrate the stored list after mount to avoid a hydration
+  // mismatch. Writes are skipped until hydration completes so we never clobber
+  // saved tickets with the seed.
   const [tickets, setTickets] = useState<Ticket[]>(TICKETS_SEED)
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(TICKETS_STORAGE_KEY)
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw)
+        if (Array.isArray(parsed)) setTickets(parsed as Ticket[])
+      }
+    } catch {
+      // ignore malformed storage — fall back to the seed
+    }
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      window.localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets))
+    } catch {
+      // storage may be unavailable (private mode / quota) — non-fatal
+    }
+  }, [tickets, hydrated])
 
   const [form, setForm] = useState<{ subject: string; category: FaqCategory; priority: TicketPriority; description: string }>({
     subject: '',
@@ -140,7 +178,23 @@ export default function SupportPage() {
     priority: 'Medium',
     description: '',
   })
+  const [attachment, setAttachment] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
+  const [soonResource, setSoonResource] = useState<string | null>(null)
+  const soonTimer = useRef<number | null>(null)
+
+  const noteComingSoon = useCallback((label: string) => {
+    setSoonResource(label)
+    if (soonTimer.current !== null) window.clearTimeout(soonTimer.current)
+    soonTimer.current = window.setTimeout(() => setSoonResource(null), 3000)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (soonTimer.current !== null) window.clearTimeout(soonTimer.current)
+    }
+  }, [])
 
   const filteredFaqs = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -155,17 +209,22 @@ export default function SupportPage() {
   function submitTicket(e: React.FormEvent) {
     e.preventDefault()
     if (!form.subject.trim()) return
-    const seq = 1043 + (tickets.length - TICKETS_SEED.length)
+    const highest = tickets.reduce((max, t) => {
+      const n = Number(t.id.replace(/\D/g, ''))
+      return Number.isFinite(n) && n > max ? n : max
+    }, 1042)
     const ticket: Ticket = {
-      id: `PRO-${seq}`,
+      id: `PRO-${highest + 1}`,
       subject: form.subject.trim(),
       category: form.category,
       priority: form.priority,
       status: 'Open',
-      updated: '2026-06-04',
+      updated: new Date().toISOString().slice(0, 10),
+      ...(attachment ? { attachment } : {}),
     }
     setTickets((t) => [ticket, ...t])
     setForm({ subject: '', category: 'Getting started', priority: 'Medium', description: '' })
+    setAttachment(null)
     setSubmitted(true)
     window.setTimeout(() => setSubmitted(false), 3500)
   }
@@ -221,7 +280,7 @@ export default function SupportPage() {
               title="Book a call"
               desc="Talk to a specialist"
               action="Schedule"
-              href="#"
+              onClick={() => setShowSchedule(true)}
             />
           </section>
 
@@ -308,12 +367,18 @@ export default function SupportPage() {
                     className={`${inputCls} resize-y`}
                   />
                 </Field>
-                <button
-                  type="button"
-                  className="flex items-center gap-[8px] text-[13px] font-medium text-[#414651] hover:text-[#155eef]"
-                >
-                  <Paperclip size={16} className="text-[#717680]" /> Attach file
-                </button>
+                <div className="flex flex-col gap-[6px]">
+                  <span className="flex items-center gap-[6px] text-[13px] font-medium text-[#414651]">
+                    <Paperclip size={16} className="text-[#717680]" /> Attachment
+                    <span className="font-normal text-[#717680]">(optional)</span>
+                  </span>
+                  <FileDropzone
+                    hint="Screenshots or logs — PNG, JPG, PDF up to 10MB"
+                    fileName={attachment}
+                    onFiles={(files) => setAttachment(files[0]?.name ?? null)}
+                    onClear={() => setAttachment(null)}
+                  />
+                </div>
                 <div className="flex items-center justify-between gap-[12px] pt-[4px]">
                   {submitted ? (
                     <span className="text-[13px] font-medium text-[#067647]">Ticket submitted — we’ll be in touch.</span>
@@ -353,7 +418,17 @@ export default function SupportPage() {
                   {tickets.map((t) => (
                     <tr key={t.id} className="border-b border-[#e9eaeb] last:border-b-0 hover:bg-[#fafafa]">
                       <Td className="pl-[24px]"><span className="font-semibold text-[13px] text-[#155eef]">{t.id}</span></Td>
-                      <Td><span className="text-[13px] text-[#252b37]">{t.subject}</span></Td>
+                      <Td>
+                        <span className="flex flex-wrap items-center gap-[8px]">
+                          <span className="text-[13px] text-[#252b37]">{t.subject}</span>
+                          {t.attachment && (
+                            <span className="inline-flex max-w-[180px] items-center gap-[4px] rounded-full border border-[#e9eaeb] bg-[#fafafa] px-[8px] py-[1px] text-[12px] font-medium text-[#414651]">
+                              <Paperclip size={11} className="shrink-0 text-[#717680]" />
+                              <span className="truncate">{t.attachment}</span>
+                            </span>
+                          )}
+                        </span>
+                      </Td>
                       <Td><span className="text-[13px] text-[#414651]">{t.category}</span></Td>
                       <Td>
                         <span className="inline-flex items-center gap-[6px] text-[13px] font-medium text-[#414651]">
@@ -379,26 +454,43 @@ export default function SupportPage() {
           </section>
 
           {/* Resources */}
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
-            {RESOURCES.map((r) => (
-              <Link
-                key={r.label}
-                href={r.href}
-                className={`group flex items-center gap-[14px] bg-white border border-[#e9eaeb] rounded-[12px] px-[20px] py-[16px] hover:border-[#155eef]/40 ${CARD_SHADOW}`}
-              >
-                <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
-                  <r.icon size={20} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[14px] text-[#181d27]">{r.label}</p>
-                  <p className="text-[13px] text-[#535862] truncate">{r.desc}</p>
-                </div>
-                <ExternalLink size={16} className="text-[#a4a7ae] group-hover:text-[#155eef]" />
-              </Link>
-            ))}
+          <section className="flex flex-col gap-[8px]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
+              {RESOURCES.map((r) => {
+                const inner = (
+                  <>
+                    <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
+                      <r.icon size={20} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[14px] text-[#181d27]">{r.label}</p>
+                      <p className="text-[13px] text-[#535862] truncate">{r.desc}</p>
+                    </div>
+                    <ExternalLink size={16} className="text-[#a4a7ae] group-hover:text-[#155eef]" />
+                  </>
+                )
+                const cls = `group flex items-center gap-[14px] bg-white border border-[#e9eaeb] rounded-[12px] px-[20px] py-[16px] text-left hover:border-[#155eef]/40 ${CARD_SHADOW}`
+                return r.kind === 'link' ? (
+                  <Link key={r.label} href={r.href} className={cls}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <button key={r.label} type="button" onClick={() => noteComingSoon(r.label)} className={cls}>
+                    {inner}
+                  </button>
+                )
+              })}
+            </div>
+            {soonResource && (
+              <p className="text-[13px] font-medium text-[#155eef]" role="status">
+                {soonResource} is coming soon — we’ll let you know when it’s live.
+              </p>
+            )}
           </section>
         </div>
       </div>
+
+      {showSchedule && <ScheduleModal onClose={() => setShowSchedule(false)} />}
     </DashboardShell>
   )
 }
@@ -408,24 +500,17 @@ export default function SupportPage() {
 const inputCls =
   'w-full bg-white border border-[#d5d7da] rounded-[8px] px-[12px] py-[9px] text-[14px] text-[#252b37] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]'
 
-function ContactCard({
-  icon: Icon,
-  title,
-  desc,
-  action,
-  href,
-}: {
+type ContactCardProps = {
   icon: typeof Mail
   title: string
   desc: string
   action: string
-  href: string
-}) {
-  return (
-    <Link
-      href={href}
-      className={`group flex flex-col gap-[12px] bg-white border border-[#e9eaeb] rounded-[12px] px-[20px] py-[18px] hover:border-[#155eef]/40 ${CARD_SHADOW}`}
-    >
+} & ({ href: string; onClick?: never } | { onClick: () => void; href?: never })
+
+function ContactCard({ icon: Icon, title, desc, action, ...rest }: ContactCardProps) {
+  const cls = `group flex flex-col gap-[12px] bg-white border border-[#e9eaeb] rounded-[12px] px-[20px] py-[18px] text-left hover:border-[#155eef]/40 ${CARD_SHADOW}`
+  const inner = (
+    <>
       <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
         <Icon size={20} />
       </span>
@@ -434,7 +519,97 @@ function ContactCard({
         <p className="text-[13px] text-[#535862]">{desc}</p>
       </div>
       <span className="text-[13px] font-semibold text-[#155eef] group-hover:underline">{action} →</span>
-    </Link>
+    </>
+  )
+  if ('href' in rest && rest.href) {
+    return (
+      <Link href={rest.href} className={cls}>
+        {inner}
+      </Link>
+    )
+  }
+  return (
+    <button type="button" onClick={rest.onClick} className={cls}>
+      {inner}
+    </button>
+  )
+}
+
+function ScheduleModal({ onClose }: { onClose: () => void }) {
+  const [requested, setRequested] = useState(false)
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0d12]/40 p-[24px] backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div
+        className={`w-full max-w-[440px] rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Book a call"
+      >
+        <div className="flex items-center justify-between border-b border-[#e9eaeb] px-[24px] py-[18px]">
+          <h2 className="flex items-center gap-[8px] text-[18px] font-semibold leading-[28px] text-[#181d27]">
+            <Calendar size={18} className="text-[#155eef]" /> Book a call
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-[32px] items-center justify-center rounded-[6px] text-[#717680] transition-colors hover:bg-[#fafafa] hover:text-[#181d27]"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="px-[24px] py-[20px]">
+          {requested ? (
+            <div className="flex flex-col items-center gap-[10px] py-[12px] text-center">
+              <span className="flex size-[44px] items-center justify-center rounded-full bg-[#ecfdf3] text-[#067647]">
+                <CheckCircle2 size={24} />
+              </span>
+              <p className="text-[15px] font-semibold text-[#181d27]">Call requested</p>
+              <p className="text-[14px] leading-[20px] text-[#535862]">
+                A Proploy specialist will email you at the address on your account to confirm a time.
+              </p>
+            </div>
+          ) : (
+            <p className="text-[14px] leading-[20px] text-[#535862]">
+              Request a 30-minute call with a Proploy specialist. We’ll reach out to confirm a time that
+              works for you — no calendar required.
+            </p>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-[10px] border-t border-[#e9eaeb] px-[24px] py-[16px]">
+          {requested ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className={`rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#004eeb] ${BUTTON_SKEUO}`}
+            >
+              Done
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className={`rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setRequested(true)}
+                className={`rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#004eeb] ${BUTTON_SKEUO}`}
+              >
+                Request a call
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

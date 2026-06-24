@@ -1,14 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowDownRight,
   ArrowUpRight,
+  ArrowUpRight as ExternalArrow,
   Calendar,
+  Check,
   DownloadCloud,
   MoreVertical,
   Plus,
   SlidersHorizontal,
+  X,
 } from 'lucide-react'
 import {
   BUTTON_SKEUO,
@@ -63,10 +67,82 @@ const LINE_B = [18, 20, 19, 24, 22, 28, 30, 27, 34, 33, 38, 40]
 // Stacked bar values (solid + faint cap), as percentages of column height.
 const BARS = [62, 70, 48, 82, 40, 88, 64, 72, 60, 84, 90, 66]
 
+const VIEWS_STORAGE_KEY = 'proploy.sales.views.v1'
+const DEFAULT_VIEWS = ['Default', 'Saved view', 'SDR view']
+
+// Wrap a CSV cell so commas, quotes and newlines survive.
+function csvCell(value: string | number): string {
+  const s = String(value)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+// Build a CSV from the in-file metric + activity arrays and trigger a download.
+function exportSalesReport(): void {
+  const rows: (string | number)[][] = [
+    ['Section', 'Label', 'Value', 'Change', 'Trend'],
+    ...METRICS.map((m) => ['Metric', m.label, m.value, m.delta, m.trend]),
+    [],
+    ['Section', 'Customer', 'Product', 'Status'],
+    ...ACTIVITY.map((a) => ['Activity', a.name, a.product, a.online ? 'Online' : 'Offline']),
+  ]
+  const csv = rows.map((r) => r.map(csvCell).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `sales-overview-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export default function ExpertsSalesOverviewPage() {
+  const [views, setViews] = useState<string[]>(DEFAULT_VIEWS)
   const [activeTab, setActiveTab] = useState('Saved view')
   const [lineRange, setLineRange] = useState('12 months')
   const [barRange, setBarRange] = useState('12 months')
+  const [addingView, setAddingView] = useState(false)
+  const [newViewName, setNewViewName] = useState('')
+  const [showInvite, setShowInvite] = useState(false)
+  const addViewInputRef = useRef<HTMLInputElement>(null)
+
+  // Hydrate saved views after mount to avoid SSR mismatch.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(VIEWS_STORAGE_KEY)
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.every((v) => typeof v === 'string')) {
+          setViews(parsed as string[])
+        }
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, [])
+
+  useEffect(() => {
+    if (addingView) addViewInputRef.current?.focus()
+  }, [addingView])
+
+  const commitNewView = () => {
+    const name = newViewName.trim()
+    if (!name) {
+      setAddingView(false)
+      return
+    }
+    const next = views.includes(name) ? views : [...views, name]
+    setViews(next)
+    try {
+      localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(next))
+    } catch {
+      // ignore storage write failure
+    }
+    setActiveTab(name)
+    setNewViewName('')
+    setAddingView(false)
+  }
 
   return (
     <DashboardShell>
@@ -83,6 +159,7 @@ export default function ExpertsSalesOverviewPage() {
             <div className="flex items-center gap-[12px]">
               <button
                 type="button"
+                onClick={exportSalesReport}
                 className={`flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
               >
                 <DownloadCloud size={18} className="text-[#717680]" />
@@ -90,7 +167,8 @@ export default function ExpertsSalesOverviewPage() {
               </button>
               <button
                 type="button"
-                className={`flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white ${BUTTON_SKEUO}`}
+                onClick={() => setShowInvite(true)}
+                className={`flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white transition-colors hover:bg-[#004eeb] ${BUTTON_SKEUO}`}
               >
                 <Plus size={18} />
                 Invite
@@ -101,7 +179,7 @@ export default function ExpertsSalesOverviewPage() {
           {/* Toolbar: saved views + date range/filters */}
           <div className="flex flex-wrap items-center justify-between gap-[16px]">
             <div className={`inline-flex items-center bg-white border border-[#d5d7da] rounded-[8px] p-[4px] ${BUTTON_SKEUO}`}>
-              {['Default', 'Saved view', 'SDR view'].map((tab) => (
+              {views.map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -114,13 +192,43 @@ export default function ExpertsSalesOverviewPage() {
                   {tab}
                 </button>
               ))}
-              <button
-                type="button"
-                aria-label="Add view"
-                className="flex items-center justify-center size-[32px] rounded-[6px] text-[#717680] hover:bg-[#fafafa]"
-              >
-                <Plus size={18} />
-              </button>
+              {addingView ? (
+                <span className="flex items-center gap-[4px] pl-[6px]">
+                  <input
+                    ref={addViewInputRef}
+                    value={newViewName}
+                    onChange={(e) => setNewViewName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitNewView()
+                      if (e.key === 'Escape') {
+                        setNewViewName('')
+                        setAddingView(false)
+                      }
+                    }}
+                    onBlur={commitNewView}
+                    placeholder="View name"
+                    className="w-[120px] rounded-[6px] border border-[#d5d7da] bg-white px-[8px] py-[5px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Save view"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={commitNewView}
+                    className="flex items-center justify-center size-[32px] rounded-[6px] text-[#155eef] hover:bg-[#fafafa]"
+                  >
+                    <Check size={18} />
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  aria-label="Add view"
+                  onClick={() => setAddingView(true)}
+                  className="flex items-center justify-center size-[32px] rounded-[6px] text-[#717680] hover:bg-[#fafafa]"
+                >
+                  <Plus size={18} />
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-[12px]">
@@ -170,13 +278,13 @@ export default function ExpertsSalesOverviewPage() {
               </ReportCard>
 
               <div className="flex justify-center">
-                <button
-                  type="button"
-                  className={`flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+                <Link
+                  href="/experts/dashboard/earnings"
+                  className={`flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] transition-colors hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
                 >
                   <Plus size={18} className="text-[#717680]" />
-                  Add
-                </button>
+                  Add report
+                </Link>
               </div>
             </div>
 
@@ -184,20 +292,156 @@ export default function ExpertsSalesOverviewPage() {
           </div>
         </div>
       </div>
+
+      {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
     </DashboardShell>
+  )
+}
+
+function InviteModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('')
+  const [sentTo, setSentTo] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const send = () => {
+    const value = email.trim()
+    if (!value) return
+    setSentTo(value)
+    setEmail('')
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#0a0d12]/40 p-[24px] backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div
+        className="my-[24px] w-full max-w-[440px] rounded-[16px] border border-[#e9eaeb] bg-white shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-[#e9eaeb] px-[24px] py-[18px]">
+          <h2 className="text-[18px] font-semibold leading-[28px] text-[#181d27]">Invite a teammate</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex size-[32px] items-center justify-center rounded-[6px] text-[#717680] transition-colors hover:bg-[#fafafa] hover:text-[#181d27]"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-[16px] p-[24px]">
+          <p className="text-[14px] leading-[20px] text-[#535862]">
+            They&apos;ll get access to this sales workspace.
+          </p>
+          <div className="flex flex-col gap-[6px]">
+            <label htmlFor="invite-email" className="text-[14px] font-medium leading-[20px] text-[#414651]">
+              Email address
+            </label>
+            <input
+              ref={inputRef}
+              id="invite-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') send()
+              }}
+              placeholder="name@company.com"
+              className={`w-full rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
+            />
+          </div>
+          {sentTo && (
+            <p className="flex items-center gap-[8px] rounded-[8px] bg-[#ecfdf3] px-[12px] py-[10px] text-[14px] font-medium leading-[20px] text-[#067647]">
+              <Check size={16} /> Invitation sent to {sentTo}
+            </p>
+          )}
+          <div className="flex items-center justify-end gap-[10px] border-t border-[#e9eaeb] pt-[16px]">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={send}
+              disabled={!email.trim()}
+              className={`rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#004eeb] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+            >
+              Send invite
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
 function MetricCard({ metric }: { metric: Metric }) {
   const TrendIcon = metric.trend === 'up' ? ArrowUpRight : ArrowDownRight
   const trendColor = metric.trend === 'up' ? 'text-[#17b26a]' : 'text-[#f04438]'
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [menuOpen])
+
   return (
     <div className={`bg-white border border-[#e9eaeb] rounded-[12px] p-[20px] flex flex-col gap-[8px] ${CARD_SHADOW}`}>
       <div className="flex items-start justify-between gap-[8px]">
         <p className="font-medium text-[16px] leading-[24px] text-[#414651]">{metric.label}</p>
-        <button type="button" aria-label="Options" className="text-[#a4a7ae] hover:text-[#717680]">
-          <MoreVertical size={20} />
-        </button>
+        <div ref={menuRef} className="relative">
+          <button
+            type="button"
+            aria-label="Options"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+            className="text-[#a4a7ae] hover:text-[#717680]"
+          >
+            <MoreVertical size={20} />
+          </button>
+          {menuOpen && (
+            <div
+              role="menu"
+              className={`absolute right-0 top-[28px] z-20 w-[176px] overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white py-[4px] ${CARD_SHADOW}`}
+            >
+              <Link
+                href="/experts/dashboard/earnings"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-[8px] px-[12px] py-[8px] text-[14px] leading-[20px] text-[#414651] transition-colors hover:bg-[#fafafa]"
+              >
+                <ExternalArrow size={16} className="text-[#717680]" />
+                View in earnings
+              </Link>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  exportSalesReport()
+                  setMenuOpen(false)
+                }}
+                className="flex w-full items-center gap-[8px] px-[12px] py-[8px] text-left text-[14px] leading-[20px] text-[#414651] transition-colors hover:bg-[#fafafa]"
+              >
+                <DownloadCloud size={16} className="text-[#717680]" />
+                Export CSV
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex items-end justify-between gap-[12px]">
         <p className="font-semibold text-[36px] leading-[44px] tracking-[-0.72px] text-[#181d27]">{metric.value}</p>
@@ -225,12 +469,13 @@ function ReportCard({
     <section className={`bg-white border border-[#e9eaeb] rounded-[12px] p-[24px] flex flex-col gap-[20px] ${CARD_SHADOW}`}>
       <div className="flex flex-wrap items-center justify-between gap-[16px]">
         <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{title}</p>
-        <button
-          type="button"
-          className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+        <Link
+          href="/experts/dashboard/earnings"
+          className={`inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] transition-colors hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
         >
           View report
-        </button>
+          <ExternalArrow size={16} className="text-[#717680]" />
+        </Link>
       </div>
 
       <div className={`inline-flex w-fit items-center bg-white border border-[#d5d7da] rounded-[8px] p-[4px] ${BUTTON_SKEUO}`}>
@@ -326,9 +571,12 @@ function ActivityRail() {
     <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-[20px]">
       <div className="flex items-center justify-between">
         <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Activity</p>
-        <button type="button" className="font-semibold text-[14px] leading-[20px] text-[#155eef] hover:text-[#004eeb]">
+        <Link
+          href="/experts/dashboard/clients"
+          className="font-semibold text-[14px] leading-[20px] text-[#155eef] hover:text-[#004eeb]"
+        >
           View all
-        </button>
+        </Link>
       </div>
       <ul className="flex flex-col gap-[16px]">
         {ACTIVITY.map((item, index) => (

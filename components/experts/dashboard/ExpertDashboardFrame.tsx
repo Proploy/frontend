@@ -1,41 +1,53 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { ComponentType, ReactNode } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import type { ReactNode } from 'react'
 import {
   AlertCircle,
   Clock3,
+  FileSignature,
   FolderClosed,
+  Handshake,
   Home,
   Inbox,
   LifeBuoy,
   Loader2,
   MessageSquare,
-  Search,
+  Receipt,
   Settings,
   TrendingUp,
   Users,
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
-import { useExpertDashboard } from '@/features/experts/use-expert-dashboard'
+import { useExpertDashboard } from '@/features/experts'
 import { MOCK_ENABLED, MOCK_AUTH_USER, MOCK_DASHBOARD } from '@/lib/service-apis/dashboard-mock'
 import type { ExpertDashboardResponse, ExpertMe } from '@/features/experts/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
+import {
+  BUTTON_SKEUO,
+  CARD_SHADOW,
+  DashboardChrome,
+  DashboardEmptyState,
+  DashboardSidebar,
+  type DashNavItem,
+  type DashboardUser,
+} from '@/components/dashboard/DashboardChrome'
+import { EXPERT_NOTIFICATIONS } from '@/lib/service-apis/notifications-mock'
+import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
+import { useDemo } from '@/lib/demo/demo-store'
 
-export const BUTTON_SKEUO =
-  'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
-export const CARD_SHADOW = 'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]'
-
-type NavItem = {
-  label: string
-  icon: ComponentType<{ size?: number; className?: string }>
-  href?: string
-  badge?: string
-  disabled?: boolean
+function useExpertNotifications(): NotificationItem[] {
+  const { notifications } = useDemo()
+  const extra: NotificationItem[] = notifications
+    .filter((n) => n.role === 'expert')
+    .map((n) => ({ id: n.id, kind: n.kind, title: n.title, body: n.body, when: 'now', unread: true, href: n.href }))
+  return [...extra, ...EXPERT_NOTIFICATIONS]
 }
+
+// Re-exported so the many expert sub-pages keep their existing import paths.
+export { BUTTON_SKEUO, CARD_SHADOW }
+export const EmptyState = DashboardEmptyState
 
 export type DashboardLoadState = {
   user: ReturnType<typeof useAuth>['user']
@@ -44,20 +56,36 @@ export type DashboardLoadState = {
   isPending: boolean
 }
 
-const NAV_PRIMARY: NavItem[] = [
+const NAV_PRIMARY: DashNavItem[] = [
   { label: 'Home', icon: Home, href: '/experts/dashboard' },
   { label: 'Sales', icon: TrendingUp, href: '/experts/dashboard/sales' },
-  { label: 'Projects', icon: FolderClosed, href: '/experts/dashboard/projects' },
-  { label: 'Messages', icon: MessageSquare, href: '/experts/chat' },
   { label: 'Leads', icon: Inbox, href: '/experts/dashboard/leads' },
+  { label: 'Proposals', icon: Handshake, href: '/experts/dashboard/proposals' },
+  { label: 'Projects', icon: FolderClosed, href: '/experts/dashboard/projects' },
+  { label: 'Contracts', icon: FileSignature, href: '/experts/dashboard/contracts' },
+  { label: 'Invoices', icon: Receipt, href: '/experts/dashboard/invoices' },
   { label: 'Earnings', icon: Wallet, href: '/experts/dashboard/earnings' },
+  { label: 'Messages', icon: MessageSquare, href: '/experts/chat' },
   { label: 'Clients', icon: Users, href: '/experts/dashboard/clients' },
 ]
 
-const NAV_SECONDARY: NavItem[] = [
+const NAV_SECONDARY: DashNavItem[] = [
   { label: 'Settings', icon: Settings, href: '/experts/account' },
   { label: 'Support', icon: LifeBuoy, href: '/experts/dashboard/support' },
 ]
+
+const EXPERT_BRAND = { mark: 'p', word: 'proploy', href: '/experts/dashboard', markBg: '#155eef' }
+
+function useExpertChromeUser(expert?: ExpertMe): DashboardUser | undefined {
+  const { user } = useAuth()
+  const effectiveUser = user ?? (MOCK_ENABLED ? MOCK_AUTH_USER : null)
+  if (!effectiveUser && !expert) return undefined
+  return {
+    name: expert?.displayName ?? effectiveUser?.name ?? 'Expert',
+    email: effectiveUser?.email ?? '',
+    avatarClassName: 'bg-gradient-to-br from-[#fde68a] to-[#c084fc]',
+  }
+}
 
 export function getDashboardErrorMessage(error: NormalizedError): string {
   switch (error.status) {
@@ -130,13 +158,18 @@ export function useExpertDashboardData(): DashboardLoadState {
   }
 }
 
-export function DashboardLoading() {
+/** Standalone sidebar — used directly by /experts/chat and /experts/account. */
+export function Sidebar({ expert }: { expert?: ExpertMe }) {
+  const user = useExpertChromeUser(expert)
+  const notifications = useExpertNotifications()
   return (
-    <DashboardShell>
-      <div className="flex min-h-screen flex-1 items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-[#155eef]" />
-      </div>
-    </DashboardShell>
+    <DashboardSidebar
+      nav={NAV_PRIMARY}
+      secondaryNav={NAV_SECONDARY}
+      user={user}
+      brand={EXPERT_BRAND}
+      notifications={notifications}
+    />
   )
 }
 
@@ -147,139 +180,28 @@ export function DashboardShell({
   children: ReactNode
   expert?: ExpertMe
 }) {
+  const user = useExpertChromeUser(expert)
+  const notifications = useExpertNotifications()
   return (
-    <div className="min-h-screen bg-[#fafafa] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
-      <div className="flex">
-        <Sidebar expert={expert} />
-        {children}
-      </div>
-    </div>
+    <DashboardChrome
+      nav={NAV_PRIMARY}
+      secondaryNav={NAV_SECONDARY}
+      user={user}
+      brand={EXPERT_BRAND}
+      notifications={notifications}
+    >
+      {children}
+    </DashboardChrome>
   )
 }
 
-export function Sidebar({ expert }: { expert?: ExpertMe }) {
+export function DashboardLoading() {
   return (
-    <aside className="hidden lg:flex flex-col w-[296px] shrink-0 h-screen sticky top-0 bg-white border-r border-[#e9eaeb] px-[16px] py-[24px] gap-[24px]">
-      <div className="px-[8px] flex items-center gap-[10px]">
-        <div className="size-[32px] rounded-[8px] bg-[#155eef] flex items-center justify-center text-white font-bold text-[14px]">
-          p
-        </div>
-        <span className="font-semibold text-[18px] leading-[28px] text-[#181d27]">proploy</span>
+    <DashboardShell>
+      <div className="flex min-h-screen flex-1 items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-[#155eef]" />
       </div>
-
-      <div className="relative">
-        <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#717680]" />
-        <input
-          type="text"
-          placeholder="Search"
-          className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[36px] pr-[36px] py-[8px] text-[14px] leading-[20px] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
-        />
-        <span className="absolute right-[10px] top-1/2 -translate-y-1/2 px-[6px] py-[2px] text-[12px] leading-[18px] text-[#717680] border border-[#e9eaeb] rounded-[4px] bg-white">
-          ⌘K
-        </span>
-      </div>
-
-      <nav className="flex flex-col gap-[2px]">
-        {NAV_PRIMARY.map((item) => (
-          <NavLink key={item.label} item={item} />
-        ))}
-      </nav>
-
-      <div className="flex-1" />
-
-      <nav className="flex flex-col gap-[2px]">
-        {NAV_SECONDARY.map((item) => (
-          <NavLink key={item.label} item={item} />
-        ))}
-      </nav>
-
-      <UserCard expert={expert} />
-    </aside>
-  )
-}
-
-function UserCard({ expert }: { expert?: ExpertMe }) {
-  const { user } = useAuth()
-  const name = expert?.displayName ?? user?.name ?? 'Expert'
-  const email = user?.email ?? ''
-  const initial = name.charAt(0).toUpperCase()
-
-  return (
-    <div className="flex items-center gap-[12px] p-[8px] rounded-[8px] hover:bg-[#fafafa] transition-colors">
-      <div className="size-[40px] rounded-full bg-gradient-to-br from-[#fde68a] to-[#c084fc] flex items-center justify-center text-white font-semibold text-[14px] shrink-0">
-        {initial}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">{name}</p>
-        <p className="font-normal text-[14px] leading-[20px] text-[#535862] truncate">{email}</p>
-      </div>
-    </div>
-  )
-}
-
-function NavLink({ item }: { item: NavItem }) {
-  const pathname = usePathname()
-  const Icon = item.icon
-  const isActive = item.href === pathname
-  const className = `flex w-full items-center gap-[12px] px-[12px] py-[8px] rounded-[6px] text-left font-semibold text-[14px] leading-[20px] transition-colors ${
-    isActive ? 'bg-[#fafafa] text-[#252b37]' : 'text-[#414651]'
-  } ${item.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#fafafa]'}`
-  const content = (
-    <>
-      <Icon size={20} className="text-[#717680] shrink-0" />
-      <span className="flex-1 truncate">{item.label}</span>
-      {item.badge && (
-        <span className="px-[8px] py-[2px] rounded-full border border-[#e9eaeb] bg-white text-[12px] leading-[18px] font-medium text-[#414651]">
-          {item.badge}
-        </span>
-      )}
-    </>
-  )
-
-  if (item.href && !item.disabled) {
-    return (
-      <Link href={item.href} className={className} aria-current={isActive ? 'page' : undefined}>
-        {content}
-      </Link>
-    )
-  }
-
-  return (
-    <button type="button" disabled={item.disabled} className={className}>
-      {content}
-    </button>
-  )
-}
-
-export function EmptyState({
-  icon,
-  title,
-  body,
-  actionHref,
-  actionLabel,
-}: {
-  icon: ReactNode
-  title: string
-  body: string
-  actionHref: string
-  actionLabel: string
-}) {
-  return (
-    <main className="flex min-h-screen flex-1 items-center justify-center px-[32px]">
-      <div className="max-w-[440px] rounded-[16px] border border-[#e9eaeb] bg-white p-[32px] text-center">
-        <div className="mx-auto mb-[16px] flex size-[56px] items-center justify-center rounded-full bg-[#f5f5f5] text-[#717680]">
-          {icon}
-        </div>
-        <h1 className="font-semibold text-[24px] leading-[32px] text-[#181d27]">{title}</h1>
-        <p className="mt-[8px] text-[15px] leading-[22px] text-[#535862]">{body}</p>
-        <Link
-          href={actionHref}
-          className={`mt-[24px] inline-flex rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
-        >
-          {actionLabel}
-        </Link>
-      </div>
-    </main>
+    </DashboardShell>
   )
 }
 
