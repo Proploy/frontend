@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar'
 import ProployAgentShell from '@/components/agent/ProployAgentShell'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { MotionProvider } from '@/components/providers/motion-provider'
+import { CompareSelectionProvider } from '@/features/compare/selection-store'
+import CompareTray from '@/components/compare/CompareTray'
 
 import './globals.css'
 
@@ -36,10 +38,13 @@ export default function RootLayout({
       <body className="antialiased font-inter flex flex-col min-h-screen">
         <MotionProvider>
           <AuthProvider>
-            <ProployAgentShell>
-              <Navbar />
-              <main className="flex-1 w-full">{children}</main>
-            </ProployAgentShell>
+            <CompareSelectionProvider>
+              <ProployAgentShell>
+                <Navbar />
+                <main className="flex-1 w-full">{children}</main>
+                <CompareTray />
+              </ProployAgentShell>
+            </CompareSelectionProvider>
           </AuthProvider>
         </MotionProvider>
       </body>

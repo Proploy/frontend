@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import CompareToggle from '@/components/compare/CompareToggle'
 import ListingExplorer from '@/components/ListingExplorer'
 import Footer from '@/components/Footer'
 import {
@@ -426,7 +427,7 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
           {product.product_description || 'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.'}
         </p>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-[12px]">
         <div className="flex -space-x-[8px]">
           {[0, 1, 2].map((i) => (
             <span
@@ -435,13 +436,22 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
             />
           ))}
         </div>
-        <Link
-          href={getProductDetailHref(product.product_id)}
-          className="inline-flex items-center gap-[4px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
-        >
-          Learn More
-          <ArrowRight size={16} />
-        </Link>
+        <div className="flex items-center gap-[10px]">
+          <CompareToggle
+            product={{
+              product_id: product.product_id,
+              product_name: product.product_name,
+              product_logo: product.product_logo,
+            }}
+          />
+          <Link
+            href={getProductDetailHref(product.product_id)}
+            className="inline-flex items-center gap-[4px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
+          >
+            Learn More
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
     </article>
   )

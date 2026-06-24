@@ -7,7 +7,7 @@ import React from 'react'
 import { Icon, LogoTile, Pill, Btn } from './CompareUI'
 import {
   CATALOG, FILTER_OPTIONS, TYPE_META,
-  type Entity, type EntityType, type Filters,
+  type CatalogEntry, type Entity, type EntityType, type Filters,
 } from '@/lib/compare/data'
 
 export const MAX_COLS = 4
@@ -54,12 +54,13 @@ function TypeSwitch({
 
 // ---- search dropdown to pick / swap an entity -----------------------------
 function SelectorSearch({
-  filterType, onPick, onClose, current,
+  filterType, onPick, onClose, current, catalog,
 }: {
   filterType: EntityType
   onPick: (id: string) => void
   onClose: () => void
   current?: string
+  catalog: CatalogEntry[]
 }) {
   const [q, setQ] = React.useState('')
   const ref = React.useRef<HTMLDivElement>(null)
@@ -68,7 +69,7 @@ function SelectorSearch({
     document.addEventListener('mousedown', f)
     return () => document.removeEventListener('mousedown', f)
   }, [onClose])
-  const results = CATALOG.filter(
+  const results = catalog.filter(
     (e) =>
       e._searchType === filterType &&
       (q === '' || e.name.toLowerCase().includes(q.toLowerCase()) || e.category.toLowerCase().includes(q.toLowerCase())),
@@ -119,7 +120,7 @@ function SelectorSearch({
 
 // ---- one selector column in the builder -----------------------------------
 function SelectorColumn({
-  entity, type, onType, onSwap, onRemove, canRemove,
+  entity, type, onType, onSwap, onRemove, canRemove, catalog,
 }: {
   entity?: Entity | null
   type: EntityType
@@ -127,6 +128,7 @@ function SelectorColumn({
   onSwap: (id: string) => void
   onRemove: () => void
   canRemove: boolean
+  catalog: CatalogEntry[]
 }) {
   const [open, setOpen] = React.useState(false)
   if (!entity) {
@@ -144,7 +146,7 @@ function SelectorColumn({
           <Icon name="search" size={16} color="#717680" />
           Search {TYPE_META[type].label.toLowerCase()}s…
         </button>
-        {open && <SelectorSearch filterType={type} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
+        {open && <SelectorSearch filterType={type} catalog={catalog} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
       </div>
     )
   }
@@ -187,7 +189,7 @@ function SelectorColumn({
       >
         <Icon name="swap" size={14} color="#414651" /> Swap
       </button>
-      {open && <SelectorSearch filterType={entity.type} current={entity.id} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
+      {open && <SelectorSearch filterType={entity.type} current={entity.id} catalog={catalog} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
     </div>
   )
 }
@@ -244,6 +246,7 @@ function FilterSelect({
 
 export function Builder({
   columns, types, filters, setFilters, onType, onSwap, onRemove, onAdd, onCompare, onMatched, mixedTypes,
+  catalog = CATALOG,
 }: {
   columns: Column[]
   types: EntityType[]
@@ -256,6 +259,7 @@ export function Builder({
   onCompare: () => void
   onMatched: () => void
   mixedTypes: boolean
+  catalog?: CatalogEntry[]
 }) {
   const tooMany = columns.length >= MAX_COLS
   const filterDefs: [string, keyof Filters, readonly string[]][] = [
@@ -300,6 +304,7 @@ export function Builder({
               onSwap={(id) => onSwap(i, id)}
               onRemove={() => onRemove(i)}
               canRemove={columns.length > 1}
+              catalog={catalog}
             />
           ))}
           {!tooMany && (

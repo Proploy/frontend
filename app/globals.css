@@ -497,6 +497,16 @@ body {
     from { opacity: 0; transform: translate(-50%, 12px); }
     to   { opacity: 1; transform: translate(-50%, 0); }
 }
+@keyframes compareTrayUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Floating compare tray (CompareTray) — slides up on entrance */
+.compare-tray { animation: compareTrayUp 320ms cubic-bezier(.22, 1, .36, 1); }
+@media (prefers-reduced-motion: reduce) {
+    .compare-tray { animation: none; }
+}
 
 .compare-shimmer {
     background: linear-gradient(90deg, #eef1f5 25%, #f6f8fb 50%, #eef1f5 75%);

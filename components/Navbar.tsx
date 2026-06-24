@@ -141,10 +141,10 @@ export default function Navbar() {
           }}
         >
           <Image
-            src="/PROPLOY.svg"
+            src="/proploy-logo.png"
             alt="Proploy"
-            width={192}
-            height={54}
+            width={456}
+            height={128}
             className="h-[32px] md:h-[40px] w-auto object-contain"
             priority
           />
