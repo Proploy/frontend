@@ -2,6 +2,8 @@
 
 import React, { useCallback, useState } from 'react';
 import { Loader2, Plus, Upload } from 'lucide-react';
+import Select from '@/components/ui/Select';
+import { useProductList } from '@/features/catalog';
 import type { GetUploadUrlResult } from '@/features/experts/use-expert-application';
 import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
@@ -61,6 +63,16 @@ function createClientProjectId() {
   return `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+const industryOptions = [
+  'Technology',
+  'Finance & Banking',
+  'Healthcare',
+  'Education',
+  'Retail & E-commerce',
+  'Manufacturing',
+  'Consulting',
+];
+
 export default function ProjectsStep({
   formData,
   updateFormData,
@@ -69,6 +81,8 @@ export default function ProjectsStep({
 }: ProjectsStepProps) {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const { products, loading } = useProductList({ limit: 100, sort: 'name' });
+  const platformOptions = products.map((product) => product.product_name);
   const projects: ProjectsFormData = {
     totalProjects: formData.totalProjects ?? '',
     featuredProjects: formData.featuredProjects ?? [],
@@ -207,12 +221,12 @@ export default function ProjectsStep({
           {/* Client industry */}
           <div className="flex flex-col gap-[6px]">
             <label className={labelClasses}>Client industry</label>
-            <input
-              type="text"
+            <Select
+              options={industryOptions.map((industry) => ({ value: industry, label: industry }))}
               value={project.clientIndustry}
-              onChange={(e) => updateProject(idx, { clientIndustry: e.target.value })}
-              placeholder="e.g., SaaS"
-              className={inputClasses}
+              onChange={(value) => updateProject(idx, { clientIndustry: value })}
+              placeholder="Select industry..."
+              disabled={loading}
             />
           </div>
 
@@ -221,12 +235,12 @@ export default function ProjectsStep({
             <label className={labelClasses}>
               Platform used <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
+            <Select
+              options={platformOptions.map((platform) => ({ value: platform, label: platform }))}
               value={project.platform}
-              onChange={(e) => updateProject(idx, { platform: e.target.value })}
-              placeholder="e.g., HubSpot"
-              className={inputClasses}
+              onChange={(value) => updateProject(idx, { platform: value })}
+              placeholder={loading ? 'Loading catalog...' : 'Select platform...'}
+              disabled={loading}
             />
           </div>
 
@@ -287,9 +301,15 @@ export default function ProjectsStep({
                 />
               </label>
               {project.fileName && (
-                <p className="text-[12px] leading-[18px] text-[#535862]">
-                  Uploaded: {project.fileName}
-                </p>
+                <div className="mt-[4px] rounded-[8px] border border-[#e9eaeb] bg-[#fafafa] px-[12px] py-[10px]">
+                  <p className="text-[12px] font-medium leading-[18px] text-[#181d27]">
+                    Uploaded document
+                  </p>
+                  <p className="text-[12px] leading-[18px] text-[#535862]">
+                    {project.fileName}
+                    {project.fileSizeBytes ? ` · ${Math.round(project.fileSizeBytes / 1024)} KB` : ''}
+                  </p>
+                </div>
               )}
             </div>
           )}

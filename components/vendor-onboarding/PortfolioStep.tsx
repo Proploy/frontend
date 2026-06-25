@@ -39,6 +39,7 @@ export default function PortfolioStep({ formData, setFormData }: PortfolioStepPr
   const [linkInput, setLinkInput] = useState('');
 
   const links: AddedLink[] = formData?.portfolioLinks ?? [];
+  const introVideoLink = formData?.introVideoLink ?? '';
 
   const handleAddLink = () => {
     const trimmed = linkInput.trim();
@@ -78,7 +79,31 @@ export default function PortfolioStep({ formData, setFormData }: PortfolioStepPr
         <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862] mb-[10px]">
           Suggested length: 30 to 90 seconds.
         </p>
-        <FileUploadArea helperText="Max 200 MB" />
+        <div className="flex flex-col gap-[12px]">
+          <FileUploadArea helperText="Max 200 MB" />
+          <input
+            type="url"
+            value={introVideoLink}
+            onChange={(e) => setFormData({ ...formData, introVideoLink: e.target.value })}
+            placeholder="Paste a public video link"
+            className="flex-1 h-[44px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] shadow-xs font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors"
+          />
+          {introVideoLink && (
+            <div className="rounded-[8px] border border-[#e9eaeb] bg-[#fafafa] px-[12px] py-[10px]">
+              <p className="font-[family-name:var(--font-dm-sans)] font-medium text-[12px] leading-[18px] text-[#181d27]">
+                Video link saved
+              </p>
+              <a
+                href={introVideoLink}
+                target="_blank"
+                rel="noreferrer"
+                className="font-[family-name:var(--font-dm-sans)] text-[12px] leading-[18px] text-[#155eef] break-all"
+              >
+                {introVideoLink}
+              </a>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Section 2: Portfolio and certificates */}
