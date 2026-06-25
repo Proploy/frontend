@@ -3,6 +3,14 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const publicRoutes = ['/', '/sign-in', '/sign-up', '/auth/callback', '/become-expert']
 
+function isProtectedExpertRoute(pathname: string) {
+  if (pathname.startsWith('/experts/dashboard') || pathname.startsWith('/experts/account') || pathname.startsWith('/experts/chat')) {
+    return true
+  }
+
+  return pathname.startsWith('/experts/')
+}
+
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({
     request: {
@@ -34,7 +42,9 @@ export async function proxy(request: NextRequest) {
 
   const isProtectedRoute = pathname.startsWith('/become-expert') || 
                           pathname.startsWith('/expert-dashboard') ||
+                          isProtectedExpertRoute(pathname) ||
                           pathname.startsWith('/dashboard') ||
+                          pathname.startsWith('/workspace') ||
                           pathname.startsWith('/favorites') ||
                           pathname.startsWith('/profile')
   
@@ -42,7 +52,7 @@ export async function proxy(request: NextRequest) {
 
   if (isProtectedRoute && !user) {
     const loginUrl = new URL('/sign-in', request.url)
-    loginUrl.searchParams.set('redirect', pathname)
+    loginUrl.searchParams.set('redirectTo', `${pathname}${request.nextUrl.search}`)
     return NextResponse.redirect(loginUrl)
   }
 
