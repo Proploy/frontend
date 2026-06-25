@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
-import { InlineVideo } from '@/components/media/InlineVideo'
+import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
 
 interface ProductInformationTabProps {
   description: string
@@ -189,7 +189,15 @@ export default function ProductInformationTab({
                 className="aspect-[286/184] rounded-[12px] overflow-hidden bg-[#e9eaeb] flex items-center justify-center"
               >
                 {item.type === 'video' ? (
-                  <InlineVideo url={item.url} title={item.alt || 'Product video'} mode="direct" />
+                  <ProductMediaVideo
+                    src={item.url}
+                    title={item.alt || 'Product video'}
+                    className="object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    controls={false}
+                  />
                 ) : (
                   <CatalogImage
                     src={item.url}

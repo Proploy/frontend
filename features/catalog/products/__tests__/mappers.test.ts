@@ -54,6 +54,7 @@ const mockPricingPlan: PricingPlanItem = {
     'Storage': '100 GB',
   },
   pricing_model: 'per_user',
+  source_url: 'https://salesforce.com/pricing',
 }
 
 const mockRating: RatingItem = {
@@ -218,6 +219,12 @@ describe('mapPricingPlanItemToTier', () => {
       { label: 'Users', value: 'unlimited' },
       { label: 'Storage', value: '100 GB' },
     ])
+  })
+
+  it('preserves pricing source URL', () => {
+    const result = mapPricingPlanItemToTier(mockPricingPlan)
+
+    expect(result.source_url).toBe('https://salesforce.com/pricing')
   })
 
   it('handles array features', () => {

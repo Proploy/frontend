@@ -94,6 +94,7 @@ export function mapPricingPlanItemToTier(plan: PricingPlanItem): PricingTier {
     features,
     limits,
     pricing_model: plan.pricing_model,
+    source_url: plan.source_url,
     statement: plan.statement ?? null,
     confidence: plan.confidence ?? null,
   }
