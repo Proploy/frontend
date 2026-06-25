@@ -17,7 +17,7 @@ interface TagProps {
   checkbox?: boolean
   checked?: boolean
   onCheckedChange?: (checked: boolean) => void
-  onClose?: () => void
+  onClose?: (event: React.MouseEvent<HTMLButtonElement>) => void
   avatarSrc?: string
   countrySrc?: string
   dotColor?: string
@@ -164,7 +164,7 @@ export default function Tag({
 
       {action === 'x-close' && (
         <button
-          onClick={onClose}
+          onClick={(event) => onClose?.(event)}
           className="flex items-center justify-center text-[#98a2b3] hover:text-[#667085] transition-colors cursor-pointer shrink-0"
         >
           <X size={s.closeSize} strokeWidth={2} />

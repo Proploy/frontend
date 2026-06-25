@@ -1,7 +1,10 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Search, ChevronDown, MapPin, DollarSign, ListFilter, FilterIcon, X } from 'lucide-react'
+import { ArrowRight, Search, MapPin, DollarSign, ListFilter, FilterIcon, X } from 'lucide-react'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { getProductDetailHref, useKeywordSearch } from '@/features/catalog'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -27,6 +30,34 @@ export default function SearchHero({
   announcementHref = '#',
   announcement = { tag: "What's new?", text: 'Fruition Joined!' },
 }: SearchHeroProps) {
+  const [query, setQuery] = useState(initialQuery)
+  const [resultsOpen, setResultsOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const { products, loading, error, search, clear } = useKeywordSearch()
+
+  useEffect(() => {
+    setQuery(initialQuery)
+  }, [initialQuery])
+
+  useEffect(() => {
+    if (kind !== 'products') return
+    if (query.trim().length > 1) {
+      void search(query, 6)
+    } else {
+      clear()
+    }
+  }, [clear, kind, query, search])
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setResultsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [])
+
   const quickFilters = kind === 'products'
     ? [
         { icon: <ListFilter size={20} className="text-[#717680]" />, label: 'Any category', width: 200 },
@@ -76,19 +107,73 @@ export default function SearchHero({
           className="flex gap-[16px] items-start w-full"
           onSubmit={(e) => {
             e.preventDefault()
-            const formData = new FormData(e.currentTarget)
-            onSearch?.(String(formData.get('query') ?? ''))
+            onSearch?.(query)
           }}
         >
-          <div className="flex-1 flex items-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[12px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
+          <div ref={searchRef} className="relative flex-1">
+            <div className="flex items-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[12px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
             <input
               type="text"
-              key={initialQuery}
               name="query"
-              defaultValue={initialQuery}
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setResultsOpen(true)
+              }}
+              onFocus={() => {
+                if (query.trim().length > 1) setResultsOpen(true)
+              }}
               placeholder="Search products, industries, and experts"
               className="flex-1 font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none"
             />
+            </div>
+            {kind === 'products' && resultsOpen && query.trim().length > 1 && (
+              <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-40 overflow-hidden rounded-[14px] border border-[#e9eaeb] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.18)]">
+                {loading ? (
+                  <p className="px-[16px] py-[14px] text-center text-[13px] text-[#717680]">Searching products...</p>
+                ) : error ? (
+                  <p className="px-[16px] py-[14px] text-center text-[13px] text-[#b42318]">Unable to search products.</p>
+                ) : products.length > 0 ? (
+                  <div className="py-[6px]">
+                    {products.map((product) => (
+                      <Link
+                        key={product.product_id}
+                        href={getProductDetailHref(product.product_id)}
+                        onClick={() => setResultsOpen(false)}
+                        className="flex items-center gap-[12px] px-[14px] py-[10px] text-left transition-colors hover:bg-[#f5f8ff]"
+                      >
+                        <div className="flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white">
+                          {product.product_logo ? (
+                            <CatalogImage
+                              src={product.product_logo}
+                              alt=""
+                              className="size-full object-contain p-[4px]"
+                              fallback={<span className="text-[14px] font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
+                            />
+                          ) : (
+                            <span className="text-[14px] font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{product.product_name}</p>
+                          <p className="truncate text-[12px] leading-[18px] text-[#717680]">
+                            {product.primary_category ?? 'Software product'}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                    <button
+                      type="submit"
+                      className="w-full border-t border-[#e9eaeb] px-[14px] py-[11px] text-center text-[13px] font-semibold text-[#004eeb] hover:bg-[#f5f8ff]"
+                    >
+                      View all results for &quot;{query}&quot;
+                    </button>
+                  </div>
+                ) : (
+                  <p className="px-[16px] py-[14px] text-center text-[13px] text-[#717680]">No products found.</p>
+                )}
+              </div>
+            )}
           </div>
           <button
             type="submit"
@@ -173,7 +258,6 @@ function FilterSelect({ icon, label, width, onClick }: FilterSelectProps) {
           {label}
         </span>
       </div>
-      <ChevronDown size={20} className="text-[#717680]" />
     </button>
   )
 }

@@ -20,6 +20,7 @@ export interface ProductMediaPreview {
   type: 'image' | 'video' | 'gif'
   alt: string
   assetKind: string
+  mimeType: string | null
 }
 
 const PRODUCT_DETAIL_TABS: ProductDetailTab[] = [
@@ -62,6 +63,7 @@ export function mapMediaAssetsToPreview(
       type,
       alt: asset.alt_text ?? '',
       assetKind,
+      mimeType: asset.mime_type,
     }]
   })
 }

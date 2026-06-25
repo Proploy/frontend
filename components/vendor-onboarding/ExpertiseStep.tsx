@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import InputField from '@/components/ui/InputField';
-import TagInput from '@/components/onboarding/TagInput';
+import Select from '@/components/ui/Select';
+import Tag from '@/components/ui/Tag';
 import { useProductList } from '@/features/catalog';
 import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
@@ -34,10 +35,128 @@ const industryOptions = [
   'Consulting',
 ];
 
+function MultiSelectDropdown({
+  label,
+  required,
+  helperText,
+  options,
+  selectedValues,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  required?: boolean;
+  helperText?: string;
+  options: string[];
+  selectedValues: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleValue = (value: string) => {
+    if (selectedValues.includes(value)) {
+      onChange(selectedValues.filter((item) => item !== value));
+      return;
+    }
+    onChange([...selectedValues, value]);
+  };
+
+  return (
+    <div className="flex flex-col gap-[6px]" ref={containerRef}>
+      <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
+        {label} {required && <span className="text-[#dc2626]">*</span>}
+      </label>
+      {helperText && (
+        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#535862]">
+          {helperText}
+        </p>
+      )}
+
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setIsOpen((current) => !current)
+          }
+        }}
+        className="flex min-h-[48px] w-full items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[8px] text-left shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] transition-colors focus-within:border-[#155eef]"
+      >
+        <div className="flex flex-1 flex-wrap gap-[6px]">
+          {selectedValues.length > 0 ? (
+            selectedValues.map((value) => (
+              <Tag
+                key={value}
+                size="md"
+                action="x-close"
+                onClose={(event) => {
+                  event.stopPropagation()
+                  toggleValue(value)
+                }}
+                className="bg-[#eff4ff] border-[#b2ccff] text-[#004eeb]"
+              >
+                {value}
+              </Tag>
+            ))
+          ) : (
+            <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#717680]">
+              {placeholder}
+            </span>
+          )}
+        </div>
+
+        <span className="shrink-0 text-[#717680]">
+          ▾
+        </span>
+      </div>
+
+      {isOpen && (
+        <div className="relative">
+          <div className="absolute left-0 right-0 top-[4px] z-20 max-h-[280px] overflow-auto rounded-[8px] border border-[#d5d7da] bg-white p-[4px] shadow-[0px_12px_16px_-4px_rgba(10,13,18,0.08),0px_4px_6px_-2px_rgba(10,13,18,0.03),0px_2px_2px_-1px_rgba(10,13,18,0.04)]">
+            {options.map((option) => {
+              const selected = selectedValues.includes(option)
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => toggleValue(option)}
+                  className={`flex w-full items-center justify-between rounded-[6px] px-[10px] py-[10px] text-left transition-colors ${
+                    selected ? 'bg-[#f0f7ff] text-[#155eef]' : 'text-[#414651] hover:bg-[#fafafa]'
+                  }`}
+                >
+                  <span className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px]">
+                    {option}
+                  </span>
+                  {selected && <span className="text-[12px] font-semibold">Selected</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ExpertiseStep({ formData, setFormData }: ExpertiseStepProps) {
   const selectedType = formData?.accountType ?? '';
   const { products, loading } = useProductList({ limit: 100, sort: 'name' });
-  const platformOptions = React.useMemo(
+  const platformOptions = useMemo(
     () => products.map((product) => product.product_name),
     [products],
   );
@@ -98,60 +217,41 @@ export default function ExpertiseStep({ formData, setFormData }: ExpertiseStepPr
       />
 
       {/* Platforms field */}
-      <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
-          Which platforms do you work with? <span className="text-[#dc2626]">*</span>
-        </label>
-        <TagInput
-          values={formData.categories}
-          label="platforms"
-          suggestions={platformOptions}
-          loading={loading}
-          allowCustom={false}
-          onChange={(categories) => setFormData({
-            ...formData,
-            categories,
-            platform: categories[0] ?? '',
-          })}
-        />
-        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#535862]">
-          Select products from the live Proploy catalog.
-        </p>
-      </div>
+      <MultiSelectDropdown
+        label="Which platforms do you work with?"
+        required
+        helperText="Select products from the live Proploy catalog."
+        options={platformOptions}
+        selectedValues={formData.categories}
+        onChange={(categories) => setFormData({
+          ...formData,
+          categories,
+          platform: categories[0] ?? '',
+        })}
+        placeholder={loading ? 'Loading products...' : 'Select platforms...'}
+      />
 
-      <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
-          Secondary platforms
-        </label>
-        <TagInput
-          values={formData.specializations}
-          label="secondary platforms"
-          suggestions={platformOptions.filter((platform) => !formData.categories.includes(platform))}
-          loading={loading}
-          allowCustom={false}
-          onChange={(specializations) => setFormData({ ...formData, specializations })}
-        />
-      </div>
+      <MultiSelectDropdown
+        label="Secondary platforms"
+        options={platformOptions.filter((platform) => !formData.categories.includes(platform))}
+        selectedValues={formData.specializations}
+        onChange={(specializations) => setFormData({ ...formData, specializations })}
+        placeholder={loading ? 'Loading products...' : 'Select secondary platforms...'}
+      />
 
-      <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
-          Which industries have you worked in?
-        </label>
-        <TagInput
-          values={formData.industries}
-          label="industries"
-          suggestions={industryOptions}
-          allowCustom={false}
-          onChange={(industries) => setFormData({
-            ...formData,
-            industries,
-            industry: industries[0] ?? '',
-          })}
-        />
-        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#535862]">
-          Pick up to 5 to improve matching.
-        </p>
-      </div>
+      <Select
+        label="Which industries have you worked in?"
+        required
+        options={industryOptions.map((industry) => ({ value: industry, label: industry }))}
+        value={formData.industry}
+        onChange={(industry) => setFormData({
+          ...formData,
+          industry,
+          industries: industry ? [industry] : [],
+        })}
+        placeholder="Select an industry..."
+        hintText="Choose a canonical industry value. The selected label is stored as-is."
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowRight, ChevronDown } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import CompareToggle from '@/components/compare/CompareToggle'
 import ListingExplorer from '@/components/ListingExplorer'
@@ -30,11 +30,15 @@ const BASE_BUTTON_CLASS = 'h-[44px] px-[16px] rounded-[8px] font-semibold text-[
 function CategoryNavigation({
   categories,
   activeCategory,
+  activeRoot,
   onChange,
+  onRootChange,
 }: {
   categories: CategoryNode[]
   activeCategory: string | null
+  activeRoot: string | null
   onChange: (category: CategoryNode | null) => void
+  onRootChange: (root: CategoryNode) => void
 }) {
   const [openRootId, setOpenRootId] = useState<string | null>(null)
 
@@ -61,55 +65,29 @@ function CategoryNavigation({
           <button
             type="button"
             aria-expanded={openRootId === root.term_id}
-            aria-haspopup="menu"
-            onClick={() => setOpenRootId(root.term_id)}
+            aria-haspopup="dialog"
+            onClick={() => onRootChange(root)}
             className={`${BASE_BUTTON_CLASS} inline-flex items-center gap-[6px] ${
-              root.children.some((child) => child.term_id === activeCategory)
+              root.term_id === activeRoot
                 ? ACTIVE_BUTTON_CLASS
                 : INACTIVE_BUTTON_CLASS
             }`}
           >
             {root.label}
-            <ChevronDown
-              size={16}
-              className={`transition-transform ${openRootId === root.term_id ? 'rotate-180' : ''}`}
-            />
           </button>
 
           {openRootId === root.term_id && (
             <div
-              role="menu"
-              className="absolute left-1/2 top-full z-40 mt-[8px] w-[320px] -translate-x-1/2 rounded-[12px] border border-[#e9eaeb] bg-white p-[8px] shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08),0px_8px_8px_-4px_rgba(10,13,18,0.03)]"
+              role="dialog"
+              aria-label={`${root.label} category metadata`}
+              className="absolute left-1/2 top-full z-40 mt-[8px] w-[300px] -translate-x-1/2 rounded-[12px] border border-[#e9eaeb] bg-white p-[16px] text-left shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08),0px_8px_8px_-4px_rgba(10,13,18,0.03)]"
             >
-              <div className="px-[10px] pb-[8px] pt-[6px]">
-                <p className="text-[14px] font-semibold leading-[20px] text-[#181d27]">{root.label}</p>
-                {root.description && (
-                  <p className="mt-[2px] text-[12px] leading-[18px] text-[#717680]">{root.description}</p>
-                )}
-              </div>
-              <div className="max-h-[360px] overflow-y-auto">
-                {root.children.map((child) => (
-                  <button
-                    key={child.term_id}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      onChange(child)
-                      setOpenRootId(null)
-                    }}
-                    className={`flex w-full items-center justify-between gap-[12px] rounded-[8px] px-[10px] py-[9px] text-left hover:bg-[#fafafa] ${
-                      child.term_id === activeCategory ? 'bg-[#eff4ff]' : ''
-                    }`}
-                  >
-                    <span className="text-[14px] font-medium leading-[20px] text-[#414651]">
-                      {child.label}
-                    </span>
-                    <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">
-                      {child.product_count}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <p className="text-[14px] font-semibold leading-[20px] text-[#181d27]">{root.label}</p>
+              {root.description ? (
+                <p className="mt-[6px] text-[13px] leading-[19px] text-[#717680]">{root.description}</p>
+              ) : (
+                <p className="mt-[6px] text-[13px] leading-[19px] text-[#717680]">Products grouped under this category.</p>
+              )}
             </div>
           )}
         </div>
@@ -139,13 +117,22 @@ function ProductsPageContent() {
     () => roots.flatMap((root) => root.children).find((child) => child.term_id === categoryParam) ?? null,
     [categoryParam, roots],
   )
+  const selectedRootFromUrl = useMemo(
+    () => roots.find((root) => root.children.some((child) => child.term_id === categoryParam)) ?? roots[0] ?? null,
+    [categoryParam, roots],
+  )
   const [activeCategory, setActiveCategory] = useState<CategoryNode | null>(selectedFromUrl)
+  const [activeRoot, setActiveRoot] = useState<CategoryNode | null>(selectedRootFromUrl)
   const [limit, setLimit] = useState(15)
   const [filters, setFilters] = useState<ProductFilterValues>(DEFAULT_PRODUCT_FILTERS)
 
   useEffect(() => {
     setActiveCategory(selectedFromUrl)
   }, [selectedFromUrl])
+
+  useEffect(() => {
+    setActiveRoot(selectedRootFromUrl)
+  }, [selectedRootFromUrl])
 
   const { products, loading, error, pagination, refetch } = useProductList({
     limit,
@@ -200,11 +187,40 @@ function ProductsPageContent() {
             <CategoryNavigation
               categories={roots}
               activeCategory={activeCategory?.term_id ?? null}
+              activeRoot={activeRoot?.term_id ?? null}
               onChange={(category) => {
                 setActiveCategory(category)
                 setLimit(15)
               }}
+              onRootChange={(root) => {
+                setActiveRoot(root)
+                const firstChild = root.children[0] ?? null
+                setActiveCategory(firstChild)
+                setLimit(15)
+              }}
             />
+          )}
+
+          {activeRoot && activeRoot.children.length > 0 && (
+            <div className="mx-auto flex max-w-[1040px] flex-wrap justify-center gap-[8px]">
+              {activeRoot.children.map((child) => (
+                <button
+                  key={child.term_id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(child)
+                    setLimit(15)
+                  }}
+                  className={`rounded-[8px] border px-[14px] py-[10px] text-[14px] font-semibold transition-colors ${
+                    activeCategory?.term_id === child.term_id
+                      ? 'border-[#155eef] bg-[#eff4ff] text-[#004eeb]'
+                      : 'border-[#d5d7da] bg-white text-[#414651] hover:border-[#b2ccff] hover:bg-[#f9fbff]'
+                  }`}
+                >
+                  {child.label}
+                </button>
+              ))}
+            </div>
           )}
 
           {activeCategory && (
@@ -446,6 +462,7 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
           />
           <Link
             href={getProductDetailHref(product.product_id)}
+            onClick={(event) => event.stopPropagation()}
             className="inline-flex items-center gap-[4px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
           >
             Learn More

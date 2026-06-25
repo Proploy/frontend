@@ -83,7 +83,7 @@ export function InlineVideo({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-[12px] border-t border-white/15 px-[12px] py-[8px] text-[12px] text-white/80">
+      <div className="flex items-center justify-between gap-[12px] px-[12px] py-[8px] text-[12px] text-white/80">
         <span>{captionUrl ? 'Captions available' : 'Captions were not provided'}</span>
         <a
           href={url}

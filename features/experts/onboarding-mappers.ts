@@ -49,6 +49,7 @@ export function mapVendorOnboardingToExpertDraft(
       form.regions.length ? `Regions: ${form.regions.join(', ')}` : '',
     ].filter(Boolean).join('\n'),
     whyPlatform: form.whyPlatforms,
+    introVideoLink: form.introVideoLink?.trim() || undefined,
     primaryPlatforms: form.categories,
     secondaryPlatforms: form.specializations,
     industryExpertise: form.industries,
@@ -101,6 +102,7 @@ export function hydrateVendorOnboardingFromExpert(
     weeklyAvailability: mapHoursToRange(expert.availabilityHoursPerWeek),
     preferredProjectTypes: expert.preferredProjectTypes ?? [],
     whyPlatforms: expert.whyPlatform ?? '',
+    introVideoLink: expert.introVideoLink ?? '',
     portfolioLinks: (expert.links ?? [])
       .filter((link) => link.linkType === 'portfolio')
       .map((link) => ({ url: link.url, visible: true })),

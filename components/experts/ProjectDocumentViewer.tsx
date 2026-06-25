@@ -63,13 +63,14 @@ export function ProjectDocumentViewer({
 
     const result = await getDownloadUrl(project.id)
     if (!result.ok) {
-      setFileError(
-        result.status >= 500
-          ? 'Project evidence is temporarily unavailable because the storage signing service is not configured correctly.'
-          : result.status === 0
-            ? 'Project evidence is unavailable because storage could not create a signed URL. Check the service-role credential and stored object path.'
-            : result.error.message,
-      )
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[expert-project-file] Unable to resolve project document URL', {
+          projectId: project.id,
+          status: result.status,
+          error: result.error,
+        })
+      }
+      setFileError('This project file is temporarily unavailable.')
       return null
     }
     return result.data.downloadUrl

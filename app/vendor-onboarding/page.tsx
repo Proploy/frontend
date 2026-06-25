@@ -78,6 +78,7 @@ const INITIAL_FORM_DATA: VendorOnboardingData = {
   featuredProjects: [],
   portfolioFiles: [],
   portfolioLinks: [],
+  introVideoLink: '',
   visibilitySettings: {},
   timezone: '',
   regions: [],

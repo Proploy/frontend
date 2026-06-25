@@ -1,25 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight,
   ArrowUpRight,
   Check,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   CircleDollarSign,
   MapPin,
   ShieldCheck,
   Sparkles,
+  X,
   XCircle,
 } from 'lucide-react'
+import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
-import { InlineVideo } from '@/components/media/InlineVideo'
+import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
 import {
   getProductDetailTabs,
   getProductGalleryMedia,
-  getProductHeroMedia,
+  type ProductMediaPreview,
   type ProductPageModel,
   type ProductTabKey,
 } from '@/features/catalog'
@@ -53,17 +56,46 @@ export default function ProductDetailExperience({
   onRetryMedia,
 }: ProductDetailExperienceProps) {
   const [activeTab, setActiveTab] = useState<ProductTabKey>('product-information')
+  const [selectedMedia, setSelectedMedia] = useState<ProductMediaPreview | null>(null)
+  const [heroIndex, setHeroIndex] = useState(0)
   const tabs = getProductDetailTabs(product)
-  const heroMedia = getProductHeroMedia(product.media)
   const gallery = getProductGalleryMedia(product.media)
+  const heroMedia = useMemo(() => {
+    if (gallery.length === 0) return null
+    return gallery[heroIndex % gallery.length]
+  }, [gallery, heroIndex])
   const { experts, loading: expertsLoading } = useApprovedExperts({
     platform: product.product_name,
     limit: 8,
   })
 
+  useEffect(() => {
+    if (gallery.length <= 1) return
+
+    const timer = window.setInterval(() => {
+      setHeroIndex((current) => (current + 1) % gallery.length)
+    }, 15000)
+
+    return () => window.clearInterval(timer)
+  }, [gallery.length])
+
+  useEffect(() => {
+    if (heroIndex >= gallery.length) {
+      setHeroIndex(0)
+    }
+  }, [gallery.length, heroIndex])
+
   const selectTab = (tab: ProductTabKey) => {
     setActiveTab(tab)
     scrollToSection(tab)
+  }
+
+  const selectedMediaIndex = selectedMedia
+    ? gallery.findIndex((item) => item.id === selectedMedia.id)
+    : -1
+  const openMediaAt = (index: number) => {
+    const nextItem = gallery[index]
+    if (nextItem) setSelectedMedia(nextItem)
   }
 
   return (
@@ -71,24 +103,39 @@ export default function ProductDetailExperience({
       <section className="relative overflow-hidden border-b border-[#e9eaeb] bg-[#0b1f4f]">
         <div className="absolute inset-0">
           {heroMedia ? (
-            heroMedia.type === 'video' ? (
-              <InlineVideo
-                url={heroMedia.url}
-                title={heroMedia.alt || `${product.product_name} product preview`}
-                mode="direct"
-              />
-            ) : (
-              <CatalogImage
-                src={heroMedia.url}
-                alt={heroMedia.alt || `${product.product_name} product preview`}
-                className="size-full object-cover"
-                fallback={<div className="size-full bg-gradient-to-br from-[#0b1f4f] via-[#155eef] to-[#7f56d9]" />}
-              />
-            )
+            <button
+              type="button"
+              onClick={() => setSelectedMedia(heroMedia)}
+              className="block size-full cursor-zoom-in text-left"
+              aria-label={`Open ${product.product_name} hero media`}
+            >
+              <div className="relative size-full">
+                {heroMedia.type === 'video' ? (
+                  <ProductMediaVideo
+                    key={heroMedia.id}
+                    src={heroMedia.url}
+                    title={heroMedia.alt || `${product.product_name} product preview`}
+                    className="object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    controls={false}
+                  />
+                ) : (
+                  <CatalogImage
+                    key={heroMedia.id}
+                    src={heroMedia.url}
+                    alt={heroMedia.alt || `${product.product_name} product preview`}
+                    className="size-full object-cover"
+                    fallback={<div className="size-full bg-gradient-to-br from-[#0b1f4f] via-[#155eef] to-[#7f56d9]" />}
+                  />
+                )}
+              </div>
+            </button>
           ) : (
             <div className="size-full bg-gradient-to-br from-[#0b1f4f] via-[#155eef] to-[#7f56d9]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071638]/95 via-[#071638]/70 to-[#071638]/20" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#071638]/70 via-[#071638]/38 to-[#071638]/0" />
         </div>
 
         <div className="relative mx-auto flex min-h-[440px] max-w-[1280px] items-end px-[24px] pb-[56px] pt-[148px] sm:px-[32px]">
@@ -309,6 +356,8 @@ export default function ProductDetailExperience({
             ) : (
               <EmptyState message="Detailed pricing plans have not been published yet." />
             )}
+
+            <PricingSourceDisclosure sourceUrl={getPricingSourceUrl(product.pricing_plans)} />
           </DetailSection>
 
           <DetailSection id="features" title={`${product.product_name} features`}>
@@ -342,47 +391,6 @@ export default function ProductDetailExperience({
                   ))}
                 </div>
               </div>
-            )}
-          </DetailSection>
-
-          <DetailSection id="media" title={`${product.product_name} media`}>
-            {mediaError ? (
-              <div className="rounded-[12px] border border-[#fda29b] bg-[#fef3f2] p-[24px] text-center">
-                <p className="text-[14px] font-medium text-[#b42318]">Product media could not be loaded.</p>
-                <button
-                  type="button"
-                  onClick={onRetryMedia}
-                  className="mt-[12px] rounded-[8px] bg-[#155eef] px-[14px] py-[9px] text-[14px] font-semibold text-white"
-                >
-                  Retry media
-                </button>
-              </div>
-            ) : gallery.length > 0 ? (
-              <div className="grid gap-[16px] sm:grid-cols-2">
-                {gallery.map((item) => (
-                  <div
-                    key={item.id}
-                    className="aspect-video overflow-hidden rounded-[14px] border border-[#e9eaeb] bg-[#f2f4f7]"
-                  >
-                    {item.type === 'video' ? (
-                      <InlineVideo
-                        url={item.url}
-                        title={item.alt || `${product.product_name} video`}
-                        mode="direct"
-                      />
-                    ) : (
-                      <CatalogImage
-                        src={item.url}
-                        alt={item.alt || `${product.product_name} media`}
-                        className="size-full object-cover"
-                        fallback={<div className="size-full bg-[#f2f4f7]" />}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState message="No approved product media is available." />
             )}
           </DetailSection>
 
@@ -427,13 +435,13 @@ export default function ProductDetailExperience({
                       </p>
                     )}
 
-                    <Link
+                    <AuthRequiredLink
                       href={`/experts/${expert.id}`}
                       className="mt-[18px] inline-flex items-center gap-[5px] text-[14px] font-semibold text-[#004eeb]"
                     >
                       View profile
                       <ArrowRight size={16} />
-                    </Link>
+                    </AuthRequiredLink>
                   </article>
                 ))}
               </div>
@@ -445,6 +453,14 @@ export default function ProductDetailExperience({
 
         <aside className="hidden lg:block">
           <div className="sticky top-[142px] flex flex-col gap-[16px]">
+            <MediaSidebarCard
+              productName={product.product_name}
+              gallery={gallery}
+              mediaError={mediaError}
+              onRetryMedia={onRetryMedia}
+              onOpenMedia={setSelectedMedia}
+            />
+
             <div className="rounded-[16px] border border-[#e9eaeb] bg-white p-[20px] shadow-[0_8px_20px_rgba(10,13,18,0.04)]">
               <div className="flex items-center gap-[8px]">
                 <CircleDollarSign size={20} className="text-[#155eef]" />
@@ -452,11 +468,6 @@ export default function ProductDetailExperience({
               </div>
               <p className="mt-[14px] text-[28px] font-semibold leading-[36px] tracking-[-0.56px]">
                 {product.pricing_plans[0]?.price_text || formatLabel(product.pricing_bucket || 'Contact vendor')}
-              </p>
-              <p className="mt-[4px] text-[13px] leading-[19px] text-[#717680]">
-                {product.pricing_plans.length > 0
-                  ? `${product.pricing_plans.length} published plan${product.pricing_plans.length === 1 ? '' : 's'}`
-                  : 'Detailed plans are not published yet'}
               </p>
               <button
                 type="button"
@@ -466,6 +477,9 @@ export default function ProductDetailExperience({
                 See all pricing
                 <ChevronRight size={16} />
               </button>
+              <div className="mt-[10px]">
+                <PricingSourceDisclosure sourceUrl={getPricingSourceUrl(product.pricing_plans)} />
+              </div>
             </div>
 
             <div className="rounded-[16px] border border-[#e9eaeb] bg-white p-[20px]">
@@ -485,6 +499,16 @@ export default function ProductDetailExperience({
           </div>
         </aside>
       </main>
+
+      {selectedMedia && (
+        <MediaDialog
+          item={selectedMedia}
+          items={gallery}
+          currentIndex={selectedMediaIndex}
+          onClose={() => setSelectedMedia(null)}
+          onOpenIndex={openMediaAt}
+        />
+      )}
     </div>
   )
 }
@@ -506,6 +530,176 @@ function DetailSection({
       <h2 className="mb-[20px] text-[20px] font-semibold leading-[30px]">{title}</h2>
       <div className="flex flex-col gap-[20px]">{children}</div>
     </section>
+  )
+}
+
+function MediaSidebarCard({
+  productName,
+  gallery,
+  mediaError,
+  onRetryMedia,
+  onOpenMedia,
+}: {
+  productName: string
+  gallery: ProductMediaPreview[]
+  mediaError: boolean
+  onRetryMedia: () => void
+  onOpenMedia: (item: ProductMediaPreview) => void
+}) {
+  return (
+    <section
+      id="media"
+      className="scroll-mt-[144px] rounded-[16px] bg-white p-[20px]"
+    >
+      <h2 className="text-[16px] font-semibold">{productName} media</h2>
+
+      {mediaError ? (
+        <div className="mt-[12px] rounded-[12px] border border-dashed border-[#d5d7da] bg-[#fafafa] p-[14px]">
+          <p className="text-[13px] leading-[19px] text-[#717680]">Media could not be loaded.</p>
+          <button
+            type="button"
+            onClick={onRetryMedia}
+            className="mt-[10px] text-[13px] font-semibold text-[#004eeb]"
+          >
+            Retry
+          </button>
+        </div>
+      ) : gallery.length > 0 ? (
+        <div className="mt-[14px] flex gap-[8px] overflow-x-auto pb-[2px]">
+          {gallery.slice(0, 8).map((item, index) => (
+            <button
+              key={`${item.url}-${index}`}
+              type="button"
+              onClick={() => onOpenMedia(item)}
+              className="group relative size-[76px] shrink-0 overflow-hidden rounded-[10px] bg-[#f5f8ff] transition-colors"
+              aria-label={`Open ${item.alt || `${productName} media ${index + 1}`}`}
+            >
+              {item.type === 'video' ? (
+                <ProductMediaVideo
+                  src={item.url}
+                  title={item.alt || `${productName} media ${index + 1}`}
+                  className="object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  controls={false}
+                />
+              ) : (
+                <CatalogImage
+                  src={item.url}
+                  alt={item.alt || `${productName} media ${index + 1}`}
+                  className="size-full object-cover"
+                  fallback={<div className="size-full bg-[#eff4ff]" />}
+                />
+              )}
+              <span className="absolute inset-0 bg-[#155eef]/0 transition-colors group-hover:bg-[#155eef]/10" />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-[12px] rounded-[12px] border border-dashed border-[#d5d7da] bg-[#fafafa] px-[14px] py-[16px] text-[13px] leading-[19px] text-[#717680]">
+          No approved product media has been published yet.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function MediaDialog({
+  item,
+  items,
+  currentIndex,
+  onClose,
+  onOpenIndex,
+}: {
+  item: ProductMediaPreview
+  items: ProductMediaPreview[]
+  currentIndex: number
+  onClose: () => void
+  onOpenIndex: (index: number) => void
+}) {
+  const touchStartX = useRef<number | null>(null)
+  const hasMultipleItems = items.length > 1 && currentIndex >= 0
+  const openPrevious = () => {
+    if (!hasMultipleItems) return
+    onOpenIndex((currentIndex - 1 + items.length) % items.length)
+  }
+  const openNext = () => {
+    if (!hasMultipleItems) return
+    onOpenIndex((currentIndex + 1) % items.length)
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-[#0a0d12]/70 px-[16px] py-[24px] backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex max-h-[calc(100vh-48px)] w-[min(960px,100%)] flex-col overflow-hidden rounded-[18px] bg-[#101828] shadow-[0_24px_64px_rgba(10,13,18,0.35)]"
+        onClick={(event) => event.stopPropagation()}
+        onTouchStart={(event) => {
+          touchStartX.current = event.touches[0]?.clientX ?? null
+        }}
+        onTouchEnd={(event) => {
+          if (touchStartX.current === null) return
+          const delta = event.changedTouches[0]?.clientX - touchStartX.current
+          touchStartX.current = null
+          if (Math.abs(delta) < 48) return
+          if (delta > 0) {
+            openPrevious()
+          } else {
+            openNext()
+          }
+        }}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close media preview"
+          className="absolute right-[16px] top-[16px] z-10 flex size-[36px] items-center justify-center rounded-full bg-white/95 text-[#414651] shadow-[0_8px_20px_rgba(10,13,18,0.16)] hover:bg-[#f5f5f5]"
+        >
+          <X size={18} />
+        </button>
+
+        {hasMultipleItems && (
+          <>
+            <button
+              type="button"
+              onClick={openPrevious}
+              aria-label="Previous media"
+              className="absolute left-[16px] top-1/2 z-10 flex size-[40px] -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#414651] shadow-[0_8px_20px_rgba(10,13,18,0.16)] hover:bg-[#f5f5f5]"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={openNext}
+              aria-label="Next media"
+              className="absolute right-[16px] top-1/2 z-10 flex size-[40px] -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#414651] shadow-[0_8px_20px_rgba(10,13,18,0.16)] hover:bg-[#f5f5f5]"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
+
+        <div className="flex max-h-[calc(100vh-128px)] min-h-[260px] items-center justify-center overflow-hidden">
+          {item.type === 'video' ? (
+            <ProductMediaVideo
+              src={item.url}
+              title={item.alt || 'Product media'}
+              className="object-contain"
+            />
+          ) : (
+            <CatalogImage
+              src={item.url}
+              alt={item.alt || 'Product media'}
+              className="max-h-[calc(100vh-128px)] w-full object-contain"
+              fallback={<div className="h-[420px] w-full bg-[#eff4ff]" />}
+            />
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -562,6 +756,31 @@ function PricingSummary({ label, value }: { label: string; value: string }) {
   )
 }
 
+function PricingSourceDisclosure({ sourceUrl }: { sourceUrl: string | null }) {
+  if (!sourceUrl) return null
+
+  return (
+    <div className="group/source relative w-fit">
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-[5px] text-[13px] font-semibold leading-[19px] text-[#004eeb] hover:underline focus:outline-none focus:ring-2 focus:ring-[#84adff] focus:ring-offset-2"
+        aria-describedby="pricing-source-note"
+      >
+        View source?
+        <ArrowUpRight size={13} />
+      </a>
+      <div
+        id="pricing-source-note"
+        className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-20 w-[280px] rounded-[10px] border border-[#e9eaeb] bg-white px-[12px] py-[10px] text-[12px] font-medium leading-[18px] text-[#535862] opacity-0 shadow-[0_12px_24px_rgba(10,13,18,0.12)] transition-opacity group-hover/source:opacity-100 group-focus-within/source:opacity-100"
+      >
+        Pricing changes often, so we keep the original vendor source available for verification.
+      </div>
+    </div>
+  )
+}
+
 function PlanMeta({ value }: { value: string }) {
   return <span className="rounded-full bg-[#f2f4f7] px-[9px] py-[4px] font-medium">{value}</span>
 }
@@ -578,4 +797,8 @@ function formatLabel(value: string) {
   return value
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function getPricingSourceUrl(plans: { source_url: string | null }[]): string | null {
+  return plans.find((plan) => plan.source_url)?.source_url ?? null
 }

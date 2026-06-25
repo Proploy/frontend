@@ -28,6 +28,7 @@ export interface VendorOnboardingData {
   // Step 4 - Portfolio
   portfolioFiles: File[]
   portfolioLinks: AddedLink[]
+  introVideoLink?: string
   visibilitySettings: Record<string, boolean>
 
   // Step 5 - Preferences

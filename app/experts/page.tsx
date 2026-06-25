@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import Footer from '@/components/Footer'
@@ -25,7 +25,18 @@ export default function ExpertsPage() {
 function ExpertsPageContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')?.trim().toLowerCase() ?? ''
-  const [filters, setFilters] = useState<ExpertFilterValues>(DEFAULT_EXPERT_FILTERS)
+  const filtersFromUrl = useMemo<ExpertFilterValues>(() => ({
+    ...DEFAULT_EXPERT_FILTERS,
+    platform: searchParams.get('platform') ?? '',
+    industry: searchParams.get('industry') ?? '',
+    projectType: searchParams.get('projectType') ?? '',
+    location: searchParams.get('location') ?? '',
+  }), [searchParams])
+  const [filters, setFilters] = useState<ExpertFilterValues>(filtersFromUrl)
+
+  useEffect(() => {
+    setFilters(filtersFromUrl)
+  }, [filtersFromUrl])
   const { experts, loading } = useApprovedExperts({
     platform: filters.platform || undefined,
     industry: filters.industry || undefined,

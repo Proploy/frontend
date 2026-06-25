@@ -69,6 +69,7 @@ describe('mapMediaAssetsToPreview', () => {
         type: 'video',
         alt: 'Demo',
         assetKind: 'video',
+        mimeType: 'video/mp4',
       },
     ])
   })

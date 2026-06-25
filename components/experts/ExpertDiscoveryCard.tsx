@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import {
   ArrowRight,
   BadgeCheck,
@@ -11,6 +10,7 @@ import {
   Sparkles,
   Wrench,
 } from 'lucide-react'
+import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import type { CardProduct } from '@/features/catalog'
 import type { ExpertListItem } from '@/features/experts/types'
@@ -59,9 +59,9 @@ export function ExpertDiscoveryCard({
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-[7px]">
-              <Link href={`/experts/${expert.id}`} className="truncate text-[18px] font-semibold text-[#181d27] hover:text-[#004eeb]">
+              <AuthRequiredLink href={`/experts/${expert.id}`} className="truncate text-[18px] font-semibold text-[#181d27] hover:text-[#004eeb]">
                 {expert.displayName}
-              </Link>
+              </AuthRequiredLink>
               <BadgeCheck size={17} className="shrink-0 text-[#155eef]" aria-label="Approved expert" />
               {expert.entityType && (
                 <span className="rounded-full bg-[#f2f4f7] px-[8px] py-[3px] text-[11px] font-semibold text-[#535862]">
@@ -117,13 +117,13 @@ export function ExpertDiscoveryCard({
           </div>
         )}
 
-        <Link
+        <AuthRequiredLink
           href={`/experts/${expert.id}`}
           className="inline-flex h-[42px] shrink-0 items-center justify-center gap-[6px] rounded-[10px] bg-[#181d27] px-[16px] text-[14px] font-semibold text-white hover:bg-[#344054]"
         >
           View profile
           <ArrowRight size={16} />
-        </Link>
+        </AuthRequiredLink>
       </div>
 
       <div className="grid border-y border-[#e9eaeb] bg-[#fafbfc] md:grid-cols-3">

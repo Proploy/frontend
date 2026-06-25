@@ -56,6 +56,7 @@ export interface PricingPlanItem {
   features: Record<string, unknown> | string[] | null
   limits: Record<string, unknown> | string[] | null
   pricing_model: string | null
+  source_url: string | null
   statement?: string | null
   confidence?: number | null
 }
@@ -182,6 +183,7 @@ export interface PricingTier {
   features: Record<string, string>[]
   limits: Record<string, string>[]
   pricing_model: string | null
+  source_url: string | null
   statement: string | null
   confidence: number | null
 }

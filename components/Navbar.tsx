@@ -4,19 +4,26 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Menu, X, LogOut, User, Settings } from 'lucide-react'
+import { Menu, X, LogOut, User, Settings, LayoutGrid } from 'lucide-react'
 import CatalogMegaMenu from '@/components/catalog/CatalogMegaMenu'
+import ExpertMegaMenu from '@/components/experts/ExpertMegaMenu'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useExpertApplication } from '@/features/experts/use-expert-application'
 import type { ExpertMe } from '@/features/experts/types'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
 
-const WORKSPACE_PREFIXES = ['/experts/dashboard', '/experts/account', '/experts/chat']
+// Routes that own their own sidebar/shell and therefore should suppress the
+// global Navbar to avoid a double chrome.
+const WORKSPACE_PREFIXES = [
+  '/experts/dashboard',
+  '/experts/account',
+  '/experts/chat',
+  '/workspace',
+]
 
-const NAV_LINKS = [
-  { href: '/experts', label: 'Explore Experts' },
-  { href: '/for-businesses', label: 'For Businesses' },
-  { href: '/for-experts', label: 'For Experts' },
+const ABOUT_LINKS = [
+  { href: '/for-businesses', label: 'For Business', description: 'See how buyers use Proploy to choose and deploy software.' },
+  { href: '/for-experts', label: 'For Expert', description: 'Learn how implementation experts join and work on Proploy.' },
 ]
 
 const BUTTON_SHADOW =
@@ -31,8 +38,14 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isCatalogOpen, setIsCatalogOpen] = useState(false)
+  const [isExpertsOpen, setIsExpertsOpen] = useState(false)
+  const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [isMobileCatalogOpen, setIsMobileCatalogOpen] = useState(false)
+  const [isMobileExpertsOpen, setIsMobileExpertsOpen] = useState(false)
+  const [isMobileAboutOpen, setIsMobileAboutOpen] = useState(false)
   const catalogCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expertsCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
   const userId = user?.id
 
@@ -64,6 +77,8 @@ export default function Navbar() {
 
   useEffect(() => () => {
     if (catalogCloseTimerRef.current) clearTimeout(catalogCloseTimerRef.current)
+    if (expertsCloseTimerRef.current) clearTimeout(expertsCloseTimerRef.current)
+    if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current)
   }, [])
 
   if (hideOnWorkspace) return null
@@ -114,6 +129,8 @@ export default function Navbar() {
       clearTimeout(catalogCloseTimerRef.current)
       catalogCloseTimerRef.current = null
     }
+    setIsExpertsOpen(false)
+    setIsAboutOpen(false)
     setIsCatalogOpen(true)
   }
 
@@ -123,6 +140,49 @@ export default function Navbar() {
       setIsCatalogOpen(false)
       catalogCloseTimerRef.current = null
     }, 220)
+  }
+
+  const keepExpertsOpen = () => {
+    if (expertsCloseTimerRef.current) {
+      clearTimeout(expertsCloseTimerRef.current)
+      expertsCloseTimerRef.current = null
+    }
+    setIsCatalogOpen(false)
+    setIsAboutOpen(false)
+    setIsExpertsOpen(true)
+  }
+
+  const scheduleExpertsClose = () => {
+    if (expertsCloseTimerRef.current) clearTimeout(expertsCloseTimerRef.current)
+    expertsCloseTimerRef.current = setTimeout(() => {
+      setIsExpertsOpen(false)
+      expertsCloseTimerRef.current = null
+    }, 220)
+  }
+
+  const keepAboutOpen = () => {
+    if (aboutCloseTimerRef.current) {
+      clearTimeout(aboutCloseTimerRef.current)
+      aboutCloseTimerRef.current = null
+    }
+    setIsCatalogOpen(false)
+    setIsExpertsOpen(false)
+    setIsAboutOpen(true)
+  }
+
+  const scheduleAboutClose = () => {
+    if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current)
+    aboutCloseTimerRef.current = setTimeout(() => {
+      setIsAboutOpen(false)
+      aboutCloseTimerRef.current = null
+    }, 220)
+  }
+
+  const closeNavMenus = () => {
+    setIsCatalogOpen(false)
+    setIsExpertsOpen(false)
+    setIsAboutOpen(false)
+    setIsMenuOpen(false)
   }
 
   return (
@@ -136,15 +196,14 @@ export default function Navbar() {
           href="/"
           className="flex items-center shrink-0"
           onClick={() => {
-            setIsCatalogOpen(false)
-            setIsMenuOpen(false)
+            closeNavMenus()
           }}
         >
           <Image
-            src="/proploy-logo.png"
+            src="/PROPLOY.svg"
             alt="Proploy"
-            width={456}
-            height={128}
+            width={192}
+            height={54}
             className="h-[32px] md:h-[40px] w-auto object-contain"
             priority
           />
@@ -156,49 +215,106 @@ export default function Navbar() {
             onMouseEnter={keepCatalogOpen}
             onMouseLeave={scheduleCatalogClose}
           >
-            <button
-              type="button"
+            <Link
+              href="/products"
               aria-expanded={isCatalogOpen}
               aria-haspopup="menu"
-              onClick={() => setIsCatalogOpen(true)}
+              onClick={() => setIsCatalogOpen(false)}
               onFocus={() => setIsCatalogOpen(true)}
-              className="flex items-center gap-[6px] rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
+              className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
             >
               Explore Products
-              <ChevronDown size={16} className={`transition-transform ${isCatalogOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </Link>
 
             {isCatalogOpen && (
               <div
                 role="menu"
                 onMouseEnter={keepCatalogOpen}
                 onMouseLeave={scheduleCatalogClose}
-                className="fixed left-1/2 top-[64px] w-[min(960px,calc(100vw-48px))] -translate-x-1/2 pt-[16px]"
+                className="fixed left-1/2 top-[64px] w-[min(960px,calc(100vw-48px))] -translate-x-1/2 pt-[16px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150"
               >
                 <CatalogMegaMenu onNavigate={() => setIsCatalogOpen(false)} />
               </div>
             )}
           </div>
 
-          {NAV_LINKS.map((link) => (
+          <div
+            className="relative"
+            onMouseEnter={keepExpertsOpen}
+            onMouseLeave={scheduleExpertsClose}
+          >
             <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setIsCatalogOpen(false)}
-              className="font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-[#414651] hover:text-[#0466e7] transition-colors px-[6px] py-[4px] rounded-[8px]"
+              href="/experts"
+              aria-expanded={isExpertsOpen}
+              aria-haspopup="menu"
+              onClick={() => setIsExpertsOpen(false)}
+              onFocus={() => setIsExpertsOpen(true)}
+              className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
             >
-              {link.label}
+              Explore Experts
             </Link>
-          ))}
+
+            {isExpertsOpen && (
+              <div
+                role="menu"
+                onMouseEnter={keepExpertsOpen}
+                onMouseLeave={scheduleExpertsClose}
+                className="fixed left-1/2 top-[64px] w-[min(960px,calc(100vw-48px))] -translate-x-1/2 pt-[16px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150"
+              >
+                <ExpertMegaMenu onNavigate={() => setIsExpertsOpen(false)} />
+              </div>
+            )}
+          </div>
+
+          <div
+            className="relative"
+            onMouseEnter={keepAboutOpen}
+            onMouseLeave={scheduleAboutClose}
+          >
+            <button
+              type="button"
+              aria-expanded={isAboutOpen}
+              aria-haspopup="menu"
+              onClick={() => setIsAboutOpen((open) => !open)}
+              onFocus={() => setIsAboutOpen(true)}
+              className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
+            >
+              About Us
+            </button>
+
+            {isAboutOpen && (
+              <div
+                role="menu"
+                onMouseEnter={keepAboutOpen}
+                onMouseLeave={scheduleAboutClose}
+                className="absolute left-1/2 top-full w-[360px] -translate-x-1/2 pt-[16px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150"
+              >
+                <div className="overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white p-[8px] shadow-[0_24px_48px_-12px_rgba(10,13,18,0.2)]">
+                  {ABOUT_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsAboutOpen(false)}
+                      className="block rounded-[10px] px-[12px] py-[11px] text-left transition-colors hover:bg-[#f5f8ff]"
+                    >
+                      <span className="block text-[14px] font-semibold text-[#181d27]">{link.label}</span>
+                      <span className="mt-[3px] block text-[12px] leading-[18px] text-[#717680]">{link.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-[12px]">
           {user ? (
-            <div className="hidden md:block relative">
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2"
-              >
+            <>
+              <div className="hidden md:block relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center gap-2"
+                >
                 {user.image ? (
                   <Image
                     src={user.image}
@@ -215,7 +331,7 @@ export default function Navbar() {
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">{user.name || 'User'}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
@@ -227,6 +343,14 @@ export default function Navbar() {
                   >
                     <User size={16} />
                     Dashboard
+                  </Link>
+                  <Link
+                    href="/workspace"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <LayoutGrid size={16} />
+                    Workspace
                   </Link>
                   {showCompleteApplication && (
                     <Link
@@ -260,6 +384,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            </>
           ) : (
             <Link
               href="/sign-in"
@@ -294,28 +419,57 @@ export default function Navbar() {
               type="button"
               aria-expanded={isMobileCatalogOpen}
               onClick={() => setIsMobileCatalogOpen((open) => !open)}
-              className="flex w-full items-center justify-between text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
+              className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
             >
               Explore Products
-              <ChevronDown size={20} className={`transition-transform ${isMobileCatalogOpen ? 'rotate-180' : ''}`} />
             </button>
             {isMobileCatalogOpen && (
-              <div className="mt-[14px]">
+              <div className="mt-[14px] animate-in fade-in-0 slide-in-from-top-1 duration-150">
                 <CatalogMegaMenu mobile onNavigate={() => setIsMenuOpen(false)} />
               </div>
             )}
           </div>
 
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
-              onClick={() => setIsMenuOpen(false)}
+          <div>
+            <button
+              type="button"
+              aria-expanded={isMobileExpertsOpen}
+              onClick={() => setIsMobileExpertsOpen((open) => !open)}
+              className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
             >
-              {link.label}
-            </Link>
-          ))}
+              Explore Experts
+            </button>
+            {isMobileExpertsOpen && (
+              <div className="mt-[14px] animate-in fade-in-0 slide-in-from-top-1 duration-150">
+                <ExpertMegaMenu mobile onNavigate={() => setIsMenuOpen(false)} />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              aria-expanded={isMobileAboutOpen}
+              onClick={() => setIsMobileAboutOpen((open) => !open)}
+              className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
+            >
+              About Us
+            </button>
+            {isMobileAboutOpen && (
+              <div className="mt-[14px] flex flex-col gap-[8px] rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] p-[8px] animate-in fade-in-0 slide-in-from-top-1 duration-150">
+                {ABOUT_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-[8px] bg-white px-[12px] py-[10px] text-[15px] font-semibold text-[#181d27]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
             {user ? (
@@ -354,6 +508,13 @@ export default function Navbar() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
+                </Link>
+                <Link
+                  href="/workspace"
+                  className="text-left text-lg font-semibold text-[#181d27]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Workspace
                 </Link>
                 <Link
                   href={settingsHref}
