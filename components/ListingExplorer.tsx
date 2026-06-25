@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import SearchHero from './SearchHero'
 import {
@@ -38,7 +38,15 @@ function ListingExplorerInner({
   const router = useRouter()
   const searchParams = useSearchParams()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [activeLabels, setActiveLabels] = useState<string[]>([])
+  const activeFilterChips = useMemo(() => {
+    if (kind === 'products' && productFilters) {
+      return productFilterChips(productFilters, onProductFiltersChange)
+    }
+    if (kind === 'experts' && expertFilters) {
+      return expertFilterChips(expertFilters, onExpertFiltersChange)
+    }
+    return []
+  }, [expertFilters, kind, onExpertFiltersChange, onProductFiltersChange, productFilters])
 
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '')
@@ -56,8 +64,10 @@ function ListingExplorerInner({
             onMoreFilters={() => setDrawerOpen(true)}
             onSearch={handleSearch}
             initialQuery={searchParams.get('search') ?? ''}
-            activeLabels={activeLabels}
-            onRemoveLabel={(label) => setActiveLabels((l) => l.filter((x) => x !== label))}
+            activeLabels={activeFilterChips.map((chip) => chip.label)}
+            onRemoveLabel={(label) => {
+              activeFilterChips.find((chip) => chip.label === label)?.clear()
+            }}
           />
         </div>
       </section>
@@ -68,11 +78,6 @@ function ListingExplorerInner({
           values={productFilters}
           onClose={() => setDrawerOpen(false)}
           onApply={(values) => {
-            setActiveLabels([
-              values.pricingBucket,
-              values.freePlan ? 'Free plan' : '',
-              values.freeTrial ? 'Free trial' : '',
-            ].filter(Boolean))
             onProductFiltersChange?.(values)
           }}
         />
@@ -84,18 +89,105 @@ function ListingExplorerInner({
           values={expertFilters}
           onClose={() => setDrawerOpen(false)}
           onApply={(values) => {
-            setActiveLabels([
-              values.location,
-              values.entityType,
-              values.platform,
-              values.industry,
-              values.projectType,
-              values.minimumYears ? `${values.minimumYears}+ years` : '',
-            ].filter(Boolean))
             onExpertFiltersChange?.(values)
           }}
         />
       ) : null}
     </>
   )
+}
+
+type ActiveFilterChip = {
+  label: string
+  clear: () => void
+}
+
+function productFilterChips(
+  values: ProductFilterValues,
+  onChange?: (values: ProductFilterValues) => void,
+): ActiveFilterChip[] {
+  const chips: ActiveFilterChip[] = []
+  const setValues = (next: ProductFilterValues) => onChange?.(next)
+  if (values.pricingBucket) {
+    const labelMap: Record<string, string> = {
+      free: 'Free pricing',
+      low: 'Low pricing',
+      mid: 'Mid-market',
+      enterprise: 'Enterprise',
+    }
+    chips.push({
+      label: labelMap[values.pricingBucket] ?? values.pricingBucket,
+      clear: () => setValues({ ...values, pricingBucket: '' }),
+    })
+  }
+  if (values.freePlan) {
+    chips.push({
+      label: 'Free plan available',
+      clear: () => setValues({ ...values, freePlan: false }),
+    })
+  }
+  if (values.freeTrial) {
+    chips.push({
+      label: 'Free trial available',
+      clear: () => setValues({ ...values, freeTrial: false }),
+    })
+  }
+  return chips
+}
+
+function expertFilterChips(
+  values: ExpertFilterValues,
+  onChange?: (values: ExpertFilterValues) => void,
+): ActiveFilterChip[] {
+  const chips: ActiveFilterChip[] = []
+  const setValues = (next: ExpertFilterValues) => onChange?.(next)
+  if (values.sort && values.sort !== 'relevance') {
+    const labelMap: Record<ExpertFilterValues['sort'], string> = {
+      relevance: 'Relevance',
+      experience: 'Most experienced',
+      projects: 'Most projects',
+      name: 'Name',
+    }
+    chips.push({
+      label: labelMap[values.sort],
+      clear: () => setValues({ ...values, sort: 'relevance' }),
+    })
+  }
+  if (values.entityType) {
+    chips.push({
+      label: values.entityType,
+      clear: () => setValues({ ...values, entityType: '' }),
+    })
+  }
+  if (values.platform) {
+    chips.push({
+      label: values.platform,
+      clear: () => setValues({ ...values, platform: '' }),
+    })
+  }
+  if (values.industry) {
+    chips.push({
+      label: values.industry,
+      clear: () => setValues({ ...values, industry: '' }),
+    })
+  }
+  if (values.projectType) {
+    chips.push({
+      label: values.projectType,
+      clear: () => setValues({ ...values, projectType: '' }),
+    })
+  }
+  if (values.location) {
+    chips.push({
+      label: values.location,
+      clear: () => setValues({ ...values, location: '' }),
+    })
+  }
+  if (values.minimumYears > 0) {
+    chips.push({
+      label: `${values.minimumYears}+ years`,
+      clear: () => setValues({ ...values, minimumYears: 0 }),
+    })
+  }
+  return chips
 }
