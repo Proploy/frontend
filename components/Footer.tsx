@@ -38,9 +38,6 @@ export default function Footer() {
         <div className="flex flex-wrap gap-x-[64px] gap-y-[48px] items-start">
           {/* Logo and tagline */}
           <div className="flex flex-col gap-[24px] max-w-[320px] min-w-[320px] flex-1">
-            <Link href="/">
-              <img src="/proploy-logo.png" alt="Proploy" className="h-[32px] w-auto" />
-            </Link>
             <p
               className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#535862]"
               style={{ fontVariationSettings: "'opsz' 14" }}

@@ -4,9 +4,9 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CatalogImage } from '@/components/catalog/CatalogImage';
 import InputField from '@/components/ui/InputField';
 import Button from '@/components/ui/Button';
+import { CatalogImage } from '@/components/catalog/CatalogImage';
 import { getProductDetailHref, useKeywordSearch } from '@/features/catalog';
 
 const imgBitbucket = "/figma-assets/037e84947c2a4908a5313764d597a0d5a6a0f084.svg";
@@ -119,7 +119,7 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
 function Logo({ className }: { className?: string }) {
   return (
     <div className={className || "flex items-center gap-2"} data-name="Logo">
-      <img src="/proploy-logo.png" alt="Proploy Logo" className="h-auto w-full" />
+      <img src="/PROPLOY.svg" alt="Proploy Logo" className="h-auto w-full" />
     </div>
   );
 }
@@ -436,93 +436,106 @@ function CompanyLogo({ className, company = "3Portals", darkMode = false, logote
 
 function HeroSearch() {
   const router = useRouter();
-  const { products, loading, error, search, clear } = useKeywordSearch();
   const [query, setQuery] = React.useState('');
-  const [open, setOpen] = React.useState(false);
+  const [resultsOpen, setResultsOpen] = React.useState(false);
+  const searchRef = React.useRef<HTMLDivElement>(null);
+  const { products, loading, error, search, clear } = useKeywordSearch();
 
   React.useEffect(() => {
-    const value = query.trim();
-    if (value.length < 2) {
+    if (query.trim().length > 1) {
+      void search(query, 6);
+    } else {
       clear();
-      return;
     }
-
-    void search(value, 8);
   }, [clear, query, search]);
+
+  React.useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setResultsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
 
   const handleSubmit = () => {
     const value = query.trim();
     if (!value) return;
-    setOpen(false);
     router.push(`/products?search=${encodeURIComponent(value)}`);
   };
 
   return (
-    <div className="relative flex gap-[16px]">
+    <div ref={searchRef} className="relative flex gap-[16px]">
       <div className="relative w-[480px] shrink-0">
         <InputField
           className="w-[480px] shrink-0"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setOpen(true);
+            setResultsOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (query.trim().length > 1) setResultsOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSubmit();
+            }
+          }}
           placeholder="Search products..."
         />
-
-        {open && query.trim().length >= 2 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-[8px] overflow-hidden rounded-[12px] border border-[#e9eaeb] bg-white text-left shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08),0px_8px_8px_-4px_rgba(10,13,18,0.03)]">
+        {resultsOpen && query.trim().length > 1 && (
+          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-[14px] border border-[#e9eaeb] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.18)]">
             {loading ? (
-              <p className="px-[16px] py-[20px] text-[14px] text-[#717680]">Searching products…</p>
+              <p className="px-[16px] py-[14px] text-center font-[family-name:var(--font-dm-sans)] text-[13px] text-[#717680]">
+                Searching products...
+              </p>
             ) : error ? (
-              <p className="px-[16px] py-[20px] text-[14px] text-[#b42318]">
-                Product search is temporarily unavailable.
+              <p className="px-[16px] py-[14px] text-center font-[family-name:var(--font-dm-sans)] text-[13px] text-[#b42318]">
+                Unable to search products.
               </p>
             ) : products.length > 0 ? (
-              <>
-                <div className="max-h-[360px] overflow-y-auto p-[6px]">
-                  {products.map((product) => (
-                    <Link
-                      key={product.product_id}
-                      href={getProductDetailHref(product.product_id)}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-[12px] rounded-[8px] px-[10px] py-[10px] hover:bg-[#fafafa]"
-                    >
-                      <div className="flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white text-[14px] font-bold text-[#155eef]">
-                        {product.product_logo ? (
-                          <CatalogImage
-                            src={product.product_logo}
-                            alt=""
-                            className="size-full object-contain p-[4px]"
-                            fallback={product.product_name.charAt(0)}
-                          />
-                        ) : (
-                          product.product_name.charAt(0)
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
-                          {product.product_name}
-                        </p>
-                        <p className="truncate text-[12px] leading-[18px] text-[#717680]">
-                          {[product.vendor_name, product.primary_category].filter(Boolean).join(' · ') || 'Product'}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+              <div className="py-[6px]">
+                {products.map((product) => (
+                  <Link
+                    key={product.product_id}
+                    href={getProductDetailHref(product.product_id)}
+                    onClick={() => setResultsOpen(false)}
+                    className="flex items-center gap-[12px] px-[14px] py-[10px] text-left transition-colors hover:bg-[#f5f8ff]"
+                  >
+                    <div className="flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white">
+                      {product.product_logo ? (
+                        <CatalogImage
+                          src={product.product_logo}
+                          alt=""
+                          className="size-full object-contain p-[4px]"
+                          fallback={<span className="text-[14px] font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
+                        />
+                      ) : (
+                        <span className="text-[14px] font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 font-[family-name:var(--font-dm-sans)]">
+                      <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{product.product_name}</p>
+                      <p className="truncate text-[12px] leading-[18px] text-[#717680]">
+                        {product.primary_category ?? 'Software product'}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="w-full border-t border-[#e9eaeb] bg-[#fafafa] px-[16px] py-[12px] text-left text-[14px] font-semibold text-[#004eeb] hover:bg-[#f5f8ff]"
+                  className="w-full border-t border-[#e9eaeb] px-[14px] py-[11px] text-center font-[family-name:var(--font-dm-sans)] text-[13px] font-semibold text-[#004eeb] hover:bg-[#f5f8ff]"
                 >
-                  View all results for “{query.trim()}”
+                  View all results for &quot;{query}&quot;
                 </button>
-              </>
+              </div>
             ) : (
-              <p className="px-[16px] py-[20px] text-[14px] text-[#717680]">
-                No matching products found.
+              <p className="px-[16px] py-[14px] text-center font-[family-name:var(--font-dm-sans)] text-[13px] text-[#717680]">
+                No products found.
               </p>
             )}
           </div>
@@ -567,11 +580,6 @@ export default function Landing() {
           <div className="content-stretch flex flex-col gap-[48px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="2047:5198">
             <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[768px] relative shrink-0 text-center w-full" data-name="Heading and supporting text" data-node-id="2047:5199">
               <div className="content-stretch flex flex-col font-semibold gap-[12px] items-center relative shrink-0 w-full" data-name="Heading and subheading" data-node-id="2047:5200">
-                <FadeIn delay={0}>
-                  <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-md,24px)] relative shrink-0 text-[color:var(--colors\/text\/text-brand-secondary-\(700\),#004eeb)] text-[length:var(--font-size\/text-md,16px)] w-full" data-node-id="2047:5201">
-                    Backed by Fruition | monday.com Platinum Partners
-                  </p>
-                </FadeIn>
                 <FadeUp delay={0.1}>
                   <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/display-2xl,90px)] relative shrink-0 text-[color:var(--colors\/text\/text-primary-\(900\),#181d27)] text-[length:var(--font-size\/display-2xl,72px)] tracking-[-1.44px] w-full whitespace-pre-wrap" data-node-id="2047:5202">
                     {`Discover, Decide, `}
