@@ -183,8 +183,19 @@ export default function ExpertProfilePage() {
           <StatCard label="Portfolio projects" value={profile.projects.length} />
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-[32px]">
+        <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-[32px]">
           <div className="flex flex-col gap-[32px]">
+            {profile.introVideoLink ? (
+              <ProfileSection title="Intro Video">
+                <div className="aspect-video overflow-hidden rounded-[12px] bg-[#101828]">
+                  <InlineVideo
+                    url={profile.introVideoLink}
+                    title={`${profile.displayName} intro video`}
+                  />
+                </div>
+              </ProfileSection>
+            ) : null}
+
             <ProfileSection title="About">
               <AboutGrid profile={profile} />
             </ProfileSection>
@@ -206,21 +217,12 @@ export default function ExpertProfilePage() {
                 <EmptyText>No expertise tags returned by service-apis.</EmptyText>
               )}
             </ProfileSection>
+          </div>
 
-            {profile.introVideoLink ? (
-              <ProfileSection title="Intro Video">
-                <div className="aspect-video overflow-hidden rounded-[12px]">
-                  <InlineVideo
-                    url={profile.introVideoLink}
-                    title={`${profile.displayName} intro video`}
-                  />
-                </div>
-              </ProfileSection>
-            ) : null}
-
+          <aside className="flex flex-col gap-[24px]">
             <ProfileSection title="Projects">
               {profile.projects.length > 0 ? (
-                <div className="grid grid-cols-1 gap-[16px]">
+                <div className="grid grid-cols-1 gap-[14px]">
                   {profile.projects.map((project) => (
                     <ProjectCard key={project.id} expertId={profile.id} project={project} />
                   ))}
@@ -229,9 +231,7 @@ export default function ExpertProfilePage() {
                 <EmptyText>No projects returned by service-apis.</EmptyText>
               )}
             </ProfileSection>
-          </div>
 
-          <aside className="flex flex-col gap-[24px]">
             <ProfileSection title="Contact">
               <div className="flex flex-col gap-[14px]">
                 {profile.email ? (
