@@ -1,8 +1,8 @@
-// lib/compare/data.ts — Proploy comparison sample data (ported from the design prototype)
-// Entities: products, experts, businesses/vendors. Mixed comparison supported.
-// Illustrative sample data — structured so it can later be wired to live catalog/expert APIs.
+// lib/compare/data.ts — Proploy comparison sample data (ported from the design prototype).
+// Products only — the previous 'expert' and 'business' entity types have been removed.
+// Illustrative sample data — structured so it can later be wired to live catalog APIs.
 
-export type EntityType = 'product' | 'expert' | 'business'
+export type EntityType = 'product'
 export type LogoTone = 'brand' | 'pink' | 'success' | 'blue' | 'indigo'
 export type Complexity = 'Low' | 'Medium' | 'High'
 export type RecommendedPath =
@@ -31,10 +31,12 @@ export interface EntityReviews {
 }
 
 export interface AlternativeEntity {
+  id?: string
   name: string
   initial: string
   category: string
   rating: number
+  logoUrl?: string | null
 }
 
 export interface Entity {
@@ -64,12 +66,16 @@ export interface Entity {
   onboardingEffort: string
   adminSkill: string
   migrationRisk: Complexity
-  expertCount: number | null
   fitScore: number
   recommendedPath: RecommendedPath
   fit: EntityFit
   reviews: EntityReviews
   alternatives: AlternativeEntity[]
+  // Optional fields populated by compareEntryToEntity from CompareProductEntry.
+  // Undefined when built from the legacy ProductDetail path or from mock data.
+  vendorName?: string | null
+  logoUrl?: string | null
+  officialWebsite?: string | null
 }
 
 export interface Filters {
@@ -115,7 +121,7 @@ const monday: Entity = {
   pricingModel: 'Per seat, billed annually', freeTrial: true, freePlan: true,
   contactSales: false, keyLimits: 'Free plan capped at 2 seats; automations gated to paid tiers',
   implComplexity: 'Medium', rolloutTimeline: '3–6 weeks', onboardingEffort: 'Moderate',
-  adminSkill: 'Low–Medium', migrationRisk: 'Low', expertCount: 24,
+  adminSkill: 'Low–Medium', migrationRisk: 'Low',
   fitScore: 91, recommendedPath: 'Guided setup',
   fit: {
     teamSize: 'Built for 10–500 seats', industryFit: 'Strong: marketing, ops, agencies',
@@ -148,7 +154,7 @@ const asana: Entity = {
   pricingModel: 'Per seat, billed annually', freeTrial: true, freePlan: true,
   contactSales: false, keyLimits: 'Free plan up to 10 seats; timeline & portfolios are paid',
   implComplexity: 'Low', rolloutTimeline: '2–4 weeks', onboardingEffort: 'Light',
-  adminSkill: 'Low', migrationRisk: 'Low', expertCount: 18,
+  adminSkill: 'Low', migrationRisk: 'Low',
   fitScore: 86, recommendedPath: 'Guided setup',
   fit: {
     teamSize: 'Built for 5–300 seats', industryFit: 'Strong: marketing, creative, ops',
@@ -181,7 +187,7 @@ const hubspot: Entity = {
   pricingModel: 'Tiered hubs + per seat', freeTrial: true, freePlan: true,
   contactSales: true, keyLimits: 'Marketing contacts metered; onboarding fee on Pro+',
   implComplexity: 'Medium', rolloutTimeline: '4–8 weeks', onboardingEffort: 'Moderate',
-  adminSkill: 'Medium', migrationRisk: 'Medium', expertCount: 31,
+  adminSkill: 'Medium', migrationRisk: 'Medium',
   fitScore: 72, recommendedPath: 'Expert-led implementation',
   fit: {
     teamSize: 'Built for 10–1,000 seats', industryFit: 'Strong: sales, marketing, SaaS',
@@ -214,7 +220,7 @@ const salesforce: Entity = {
   pricingModel: 'Per seat + add-ons, annual', freeTrial: true, freePlan: false,
   contactSales: true, keyLimits: 'Most value gated behind higher tiers + add-ons',
   implComplexity: 'High', rolloutTimeline: '8–16 weeks', onboardingEffort: 'Heavy',
-  adminSkill: 'High', migrationRisk: 'High', expertCount: 47,
+  adminSkill: 'High', migrationRisk: 'High',
   fitScore: 54, recommendedPath: 'White-glove project',
   fit: {
     teamSize: 'Built for 50–10,000 seats', industryFit: 'Strong: enterprise sales, finance',
@@ -236,101 +242,25 @@ const salesforce: Entity = {
   ],
 }
 
-// ---- EXPERTS --------------------------------------------------------------
-const expertMaya: Entity = {
-  id: 'maya', type: 'expert', name: 'Maya Chen', initial: 'MC', logoTone: 'indigo',
-  category: 'PM & Ops rollout', tagline: 'monday.com & Asana implementation lead',
-  rating: 4.9, reviewCount: 38, reviewSource: 'Proploy verified outcomes',
-  bestFor: 'Ops teams cutting over from spreadsheets to a Work OS in under 6 weeks',
-  notFor: 'Pure CRM or finance-system migrations',
-  segment: 'SMB → Mid-market',
-  pricingBucket: '$$', entryPrice: '$140', priceUnit: '/hr',
-  pricingModel: 'Hourly or fixed-scope project', freeTrial: false, freePlan: false,
-  contactSales: true, keyLimits: 'Project minimum ~$4k; pricing varies by scope',
-  implComplexity: 'Low', rolloutTimeline: '3–5 weeks', onboardingEffort: 'Light',
-  adminSkill: 'Handled for you', migrationRisk: 'Low', expertCount: null,
-  fitScore: 89, recommendedPath: 'Expert-led implementation',
-  fit: {
-    teamSize: 'Best for 20–200 seat rollouts', industryFit: 'Marketing, agencies, ops',
-    workflows: ['Migration', 'Workflow design', 'Team training', 'Dashboards'],
-    integrations: ['monday.com', 'Asana', 'Slack', 'Zapier'],
-    compliance: ['NDA standard', 'GDPR aware'], deployment: 'Remote + onsite (NA)',
-    verdict: 'Strong match: specialises in exactly the 51–200 PM rollout you described.',
-  },
-  reviews: {
-    pros: ['Hit the go-live date', 'Clear comms', 'Trained the whole team'],
-    cons: ['Booked out 3–4 weeks ahead'],
-    sentiment: ['On time', 'Low drama'],
-    reviewerSegment: '70% Mid-market', reviewerIndustry: 'Marketing, Ops',
-    outcomes: ['12 rollouts shipped on time', 'Avg 4.9 / 5 buyer rating', '94% on-budget'],
-  },
-  alternatives: [
-    { name: 'Devlin Partners', initial: 'DP', category: 'PM rollout', rating: 4.8 },
-    { name: 'Ravi Anand', initial: 'RA', category: 'CRM migration', rating: 4.7 },
-  ],
-}
-
-// ---- BUSINESS / VENDOR ----------------------------------------------------
-const bizBrightpath: Entity = {
-  id: 'brightpath', type: 'business', name: 'BrightPath Consulting', initial: 'BP', logoTone: 'success',
-  category: 'Implementation partner', tagline: 'Multi-product rollout agency',
-  rating: 4.6, reviewCount: 112, reviewSource: 'Proploy verified outcomes',
-  bestFor: 'Companies rolling out 2–3 tools at once and wanting one accountable partner',
-  notFor: 'Single-tool, self-serve setups on a tight budget',
-  segment: 'Mid-market',
-  pricingBucket: '$$$', entryPrice: '$8k', priceUnit: '/project',
-  pricingModel: 'Fixed-scope projects + retainer', freeTrial: false, freePlan: false,
-  contactSales: true, keyLimits: 'Project minimum ~$8k; pricing varies by scope',
-  implComplexity: 'Medium', rolloutTimeline: '5–9 weeks', onboardingEffort: 'Moderate',
-  adminSkill: 'Handled for you', migrationRisk: 'Low', expertCount: 9,
-  fitScore: 78, recommendedPath: 'White-glove project',
-  fit: {
-    teamSize: 'Best for 50–500 seat orgs', industryFit: 'Ops, finance, professional services',
-    workflows: ['Multi-tool rollout', 'Change management', 'Integrations', 'Training'],
-    integrations: ['monday.com', 'HubSpot', 'Salesforce', 'NetSuite'],
-    compliance: ['SOC 2 partner', 'GDPR', 'MSA standard'], deployment: 'Remote + onsite (NA, EMEA)',
-    verdict: 'Solid if you are deploying more than one tool; heavier than you need for a single PM rollout.',
-  },
-  reviews: {
-    pros: ['One accountable team', 'Strong change management', 'Senior consultants'],
-    cons: ['Higher minimum spend', 'Booked ahead'],
-    sentiment: ['Dependable', 'Senior team'],
-    reviewerSegment: '80% Mid-market', reviewerIndustry: 'Prof. services, Finance',
-    outcomes: ['40+ multi-tool rollouts', '91% renewed for phase 2'],
-  },
-  alternatives: [
-    { name: 'Maya Chen', initial: 'MC', category: 'PM rollout', rating: 4.9 },
-    { name: 'NorthStar Ops', initial: 'NS', category: 'Ops consulting', rating: 4.5 },
-  ],
-}
+// ---- EXPERTS / BUSINESS (removed) ---------------------------------------
+// The 'expert' and 'business' entity types were trimmed in Chunk C. The
+// selector, switch, and mock data have been removed. The /compare page is
+// products only.
 
 export const ENTITIES: Record<string, Entity> = {
-  monday, asana, hubspot, salesforce, maya: expertMaya, brightpath: bizBrightpath,
+  monday, asana, hubspot, salesforce,
 }
 
-// Catalog for the selector search dropdown
-export interface CatalogEntry extends Entity {
-  _searchType: EntityType
-}
+// Catalog for the selector search dropdown. Products only — _searchType
+// was redundant once EntityType narrowed to 'product', so it has been
+// removed entirely; consumers can rely on `type` directly.
+export const CATALOG: Entity[] = [monday, asana, hubspot, salesforce]
 
-export const CATALOG: CatalogEntry[] = (
-  [
-    { id: 'monday', type: 'product' },
-    { id: 'asana', type: 'product' },
-    { id: 'hubspot', type: 'product' },
-    { id: 'salesforce', type: 'product' },
-    { id: 'maya', type: 'expert' },
-    { id: 'brightpath', type: 'business' },
-  ] as const
-).map((x) => ({ ...ENTITIES[x.id], _searchType: x.type }))
-
-export const TABS = ['At a glance', 'Pricing', 'Fit', 'Implementation', 'Reviews', 'Alternatives', 'Experts'] as const
+export const TABS = ['At a glance', 'Pricing', 'Fit', 'Implementation', 'Reviews', 'Alternatives'] as const
 export type Tab = (typeof TABS)[number]
 
 export const TYPE_META: Record<EntityType, { label: string; color: string; bg: string; border: string }> = {
   product: { label: 'Product', color: '#155eef', bg: '#eff4ff', border: '#b2ccff' },
-  expert: { label: 'Expert', color: '#3538cd', bg: '#eef4ff', border: '#c7d7fe' },
-  business: { label: 'Business', color: '#067647', bg: '#ecfdf3', border: '#abefc6' },
 }
 
 export const PATH_META: Record<RecommendedPath, { blurb: string; tier: number }> = {
@@ -348,8 +278,8 @@ export interface Discussion {
 }
 
 export const DISCUSSIONS: Discussion[] = [
-  { q: 'Can this be implemented in under 30 days?', tag: 'Implementation', answers: 7, top: 'monday.com and Asana both ship in under 6 weeks with a Proploy expert; Salesforce rarely does.' },
-  { q: 'Which expert is best for a CRM migration?', tag: 'Experts', answers: 5, top: 'For CRM specifically, look at Ravi Anand or BrightPath; Maya Chen focuses on PM/ops.' },
+  { q: 'Can this be implemented in under 30 days?', tag: 'Implementation', answers: 7, top: 'monday.com and Asana both ship in under 6 weeks; Salesforce rarely does.' },
+  { q: 'Which tool is best for a CRM migration?', tag: 'Fit', answers: 5, top: 'For CRM specifically, Salesforce is the deepest; HubSpot covers the SMB-mid range.' },
   { q: 'Is this suitable for a 25-person operations team?', tag: 'Fit', answers: 9, top: 'Yes — monday.com and Asana both fit 25-person ops teams well on a mid-tier budget.' },
-  { q: 'What does expert-led implementation actually cost?', tag: 'Pricing', answers: 4, top: 'Most PM rollouts land $4k–9k depending on seats, migration, and training scope.' },
+  { q: 'What does an expert-led implementation actually cost?', tag: 'Pricing', answers: 4, top: 'Most PM rollouts land $4k–9k depending on seats, migration, and training scope.' },
 ]
