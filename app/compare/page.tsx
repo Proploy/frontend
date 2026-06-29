@@ -1,11 +1,15 @@
 'use client'
 
-// app/compare/page.tsx — public software/expert/vendor comparison page.
+// app/compare/page.tsx — public product comparison page.
 // Two entry modes:
 //   • ?products=id1,id2,…  → fetches the live catalog products and compares them
 //                            (this is what the floating CompareTray links to).
 //   • no query             → the original mock demo (monday / asana) is shown.
 // The global Navbar (app/layout.tsx) sits above this page.
+//
+// Chunk C trim: products only. The previous 'expert' and 'business' entity
+// types have been removed, so the column type is always 'product' and the
+// onType / mixedTypes props are gone.
 
 import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -19,7 +23,7 @@ import {
 import { useCompareEntities } from '@/features/compare/use-compare-entities'
 import {
   CATALOG, ENTITIES, TABS, BUYER_CONTEXT,
-  type CatalogEntry, type Entity, type EntityType, type Filters,
+  type Entity, type Filters,
 } from '@/lib/compare/data'
 
 function useMediaQuery(q: string) {
@@ -47,7 +51,7 @@ const DEFAULT_COLUMNS: Column[] = [
 
 function seedColumns(productIds: string[]): Column[] {
   if (productIds.length === 0) return DEFAULT_COLUMNS
-  return productIds.map((id) => ({ type: 'product' as EntityType, id }))
+  return productIds.map((id) => ({ type: 'product', id }))
 }
 
 function ComparePageInner() {
@@ -86,25 +90,21 @@ function ComparePageInner() {
   )
 
   // The builder's selector can pick live products (when present) plus the demo catalog.
-  const catalog = React.useMemo<CatalogEntry[]>(() => {
-    const real = Object.values(realById).map((e) => ({ ...e, _searchType: e.type }))
+  const catalog = React.useMemo<Entity[]>(() => {
+    const real = Object.values(realById)
     return real.length ? [...real, ...CATALOG] : CATALOG
   }, [realById])
 
   const filled = columns.map((c) => (c.id ? resolveEntity(c.id) : null)).filter((e): e is Entity => !!e)
   const builderColumns: Column[] = columns.map((c) => ({ ...c, entity: c.id ? resolveEntity(c.id) ?? null : null }))
-  const types: EntityType[] = columns.map((c) => (c.id ? resolveEntity(c.id)?.type ?? c.type : c.type))
-  const distinctTypes = new Set(filled.map((e) => e.type))
-  const mixedTypes = distinctTypes.size > 1
 
   // Selected products are still being fetched and nothing has resolved yet.
   const fetchPending = productIds.length > 0 && realLoading && filled.length === 0
 
   // --- builder editing (always returns to a live comparison) ---
   const edit = (next: Column[]) => { setColumns(next); setView('normal') }
-  const onType = (i: number, tp: EntityType) => edit(columns.map((c, idx) => (idx === i ? { type: tp, id: null } : c)))
   const onSwap = (i: number, id: string) =>
-    edit(columns.map((c, idx) => (idx === i ? { type: resolveEntity(id)?.type ?? 'product', id } : c)))
+    edit(columns.map((c, idx) => (idx === i ? { type: 'product', id } : c)))
   const onRemove = (i: number) => edit(columns.filter((_, idx) => idx !== i))
   const onAdd = () => { if (columns.length < MAX_COLS) edit([...columns, { type: 'product', id: null }]) }
 
@@ -144,16 +144,13 @@ function ComparePageInner() {
     >
       <Builder
         columns={builderColumns}
-        types={types}
         filters={filters}
         setFilters={setFilters}
-        onType={onType}
         onSwap={onSwap}
         onRemove={onRemove}
         onAdd={onAdd}
         onCompare={onCompare}
         onMatched={() => setToast('saved')}
-        mixedTypes={mixedTypes && view !== 'loading'}
         catalog={catalog}
       />
 

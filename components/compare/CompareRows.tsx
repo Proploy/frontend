@@ -147,22 +147,6 @@ export function AltCard({ alt }: { alt: AlternativeEntity }) {
   )
 }
 
-// expert availability cell
-export function ExpertAvail({ entity }: { entity: Entity }) {
-  if (entity.type === 'expert') return <NoData />
-  return (
-    <div className="flex flex-col gap-[6px] items-start">
-      <span className="inline-flex items-center gap-[7px]">
-        <span className="font-[family-name:var(--font-dm-sans)] font-bold" style={{ fontSize: 18, color: '#181d27' }}>{entity.expertCount}</span>
-        <span style={{ fontSize: 13, color: '#717680' }}>vetted experts</span>
-      </span>
-      <a href="#" className="inline-flex items-center gap-[4px] whitespace-nowrap font-semibold" style={{ fontSize: 13, color: '#004eeb' }}>
-        View experts <Icon name="arrowRight" size={13} color="#004eeb" />
-      </a>
-    </div>
-  )
-}
-
 // ---- ROW DEFINITIONS PER TAB ---------------------------------------------
 export function buildRows(tab: Tab | string): Row[] {
   const order: Record<Complexity, number> = { Low: 1, Medium: 2, High: 3 }
@@ -178,7 +162,6 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Free trial / free plan', cell: (e) => <div className="flex flex-col gap-[6px]"><YesNo value={e.freeTrial} yes="Free trial" no="No trial" /><YesNo value={e.freePlan} yes="Free plan" no="No free plan" /></div> },
       { label: 'Implementation complexity', cell: (e) => <Pill tone={complexityTone(e.implComplexity)} dot>{e.implComplexity}</Pill>, best: lowestComplexity },
       { label: 'Typical rollout timeline', cell: (e) => <span className="inline-flex items-center gap-[6px] whitespace-nowrap font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 14, color: '#181d27' }}><Icon name="clock" size={14} color="#717680" />{e.rolloutTimeline}</span>, best: (es) => [...es].sort((a, b) => minWeeks(a) - minWeeks(b))[0]?.id },
-      { label: 'Vetted expert availability', cell: (e) => <ExpertAvail entity={e} /> },
       { label: 'Proploy fit score', sub: 'Scored against your filters', cell: (e) => <ScoreRing value={e.fitScore} />, best: (es) => [...es].sort((a, b) => b.fitScore - a.fitScore)[0]?.id },
     ],
     Pricing: [
@@ -205,7 +188,6 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Onboarding effort', cell: (e) => txt(e.onboardingEffort) },
       { label: 'Admin skill required', cell: (e) => txt(e.adminSkill) },
       { label: 'Migration risk', cell: (e) => <Pill tone={riskTone(e.migrationRisk)} dot>{e.migrationRisk}</Pill>, best: (es) => [...es].sort((a, b) => order[a.migrationRisk] - order[b.migrationRisk])[0]?.id },
-      { label: 'Vetted experts available', cell: (e) => <ExpertAvail entity={e} /> },
       { label: 'Recommended expert path', cell: (e) => <PathCard entity={e} /> },
       { label: 'Take action', cell: () => <ImplCtas /> },
     ],
@@ -218,7 +200,7 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Sentiment', cell: (e) => <ChipList items={e.reviews.sentiment} tone="brand" /> },
       { label: 'Pros', cell: (e) => <ChipList items={e.reviews.pros} tone="success" /> },
       { label: 'Cons', cell: (e) => <ChipList items={e.reviews.cons} tone="warning" /> },
-      { label: 'Verified expert outcomes', cell: (e) => e.reviews.outcomes ? <div className="flex flex-col gap-[6px]">{e.reviews.outcomes.map((o, i) => <span key={i} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}><Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}</span>)}</div> : <NoData /> },
+      { label: 'Verified outcomes', cell: (e) => e.reviews.outcomes ? <div className="flex flex-col gap-[6px]">{e.reviews.outcomes.map((o, i) => <span key={i} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}><Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}</span>)}</div> : <NoData /> },
     ],
   }
   return map[tab] || []

@@ -2,65 +2,36 @@
 
 // components/compare/CompareBuilder.tsx — comparison builder header
 // Ported from the design prototype (builder.jsx): title, selector columns, filters, CTAs.
+//
+// Chunk C trim: the TypeSwitch segmented control (product | expert | business)
+// has been removed. Compare is products only.
 
 import React from 'react'
 import { Icon, LogoTile, Pill, Btn } from './CompareUI'
 import {
-  CATALOG, FILTER_OPTIONS, TYPE_META,
-  type CatalogEntry, type Entity, type EntityType, type Filters,
+  CATALOG, FILTER_OPTIONS,
+  type Entity, type Filters,
 } from '@/lib/compare/data'
 
 export const MAX_COLS = 4
 
 export interface Column {
-  type: EntityType
+  // Chunk C trim: EntityType narrowed to the single literal 'product'. The
+  // type tag is kept (rather than deleted outright) to minimise ripple through
+  // downstream selectors that still switch on `column.type`.
+  type: 'product'
   id: string | null
   entity?: Entity | null
 }
 
-// ---- a single entity-type segmented switch --------------------------------
-function TypeSwitch({
-  value, onChange, compact,
-}: {
-  value: EntityType
-  onChange: (tp: EntityType) => void
-  compact?: boolean
-}) {
-  const types: EntityType[] = ['product', 'expert', 'business']
-  return (
-    <div className="inline-flex gap-[2px]" style={{ background: '#f5f5f5', borderRadius: 8, padding: 3 }}>
-      {types.map((tp) => {
-        const on = value === tp
-        const m = TYPE_META[tp]
-        return (
-          <button
-            key={tp}
-            onClick={() => onChange(tp)}
-            className="font-[family-name:var(--font-dm-sans)] font-semibold cursor-pointer"
-            style={{
-              border: 'none', padding: compact ? '4px 8px' : '5px 11px', borderRadius: 6,
-              fontSize: 12.5, lineHeight: '16px', background: on ? '#fff' : 'transparent',
-              color: on ? m.color : '#717680', boxShadow: on ? '0px 1px 2px rgba(10,13,18,0.10)' : 'none',
-              transition: 'all 120ms ease',
-            }}
-          >
-            {m.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 // ---- search dropdown to pick / swap an entity -----------------------------
 function SelectorSearch({
-  filterType, onPick, onClose, current, catalog,
+  onPick, onClose, current, catalog,
 }: {
-  filterType: EntityType
   onPick: (id: string) => void
   onClose: () => void
   current?: string
-  catalog: CatalogEntry[]
+  catalog: Entity[]
 }) {
   const [q, setQ] = React.useState('')
   const ref = React.useRef<HTMLDivElement>(null)
@@ -71,8 +42,7 @@ function SelectorSearch({
   }, [onClose])
   const results = catalog.filter(
     (e) =>
-      e._searchType === filterType &&
-      (q === '' || e.name.toLowerCase().includes(q.toLowerCase()) || e.category.toLowerCase().includes(q.toLowerCase())),
+      q === '' || e.name.toLowerCase().includes(q.toLowerCase()) || e.category.toLowerCase().includes(q.toLowerCase()),
   )
   return (
     <div
@@ -86,7 +56,7 @@ function SelectorSearch({
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder={`Search ${TYPE_META[filterType].label.toLowerCase()}s, category, or need`}
+          placeholder="Search products, category, or need"
           className="flex-1 outline-none border-none bg-transparent"
           style={{ fontSize: 14, color: '#181d27' }}
         />
@@ -120,15 +90,13 @@ function SelectorSearch({
 
 // ---- one selector column in the builder -----------------------------------
 function SelectorColumn({
-  entity, type, onType, onSwap, onRemove, canRemove, catalog,
+  entity, onSwap, onRemove, canRemove, catalog,
 }: {
   entity?: Entity | null
-  type: EntityType
-  onType: (tp: EntityType) => void
   onSwap: (id: string) => void
   onRemove: () => void
   canRemove: boolean
-  catalog: CatalogEntry[]
+  catalog: Entity[]
 }) {
   const [open, setOpen] = React.useState(false)
   if (!entity) {
@@ -137,16 +105,15 @@ function SelectorColumn({
         className="relative flex flex-col gap-[12px]"
         style={{ border: '1.5px dashed #d5d7da', borderRadius: 12, padding: 16, background: '#fff', minHeight: 132 }}
       >
-        <TypeSwitch value={type} onChange={onType} />
         <button
           onClick={() => setOpen(true)}
           className="flex items-center gap-[9px] w-full cursor-pointer"
           style={{ padding: '10px 12px', border: '1px solid #d5d7da', borderRadius: 8, background: '#fff', boxShadow: 'var(--shadow-xs)', fontSize: 14, color: '#717680' }}
         >
           <Icon name="search" size={16} color="#717680" />
-          Search {TYPE_META[type].label.toLowerCase()}s…
+          Search products…
         </button>
-        {open && <SelectorSearch filterType={type} catalog={catalog} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
+        {open && <SelectorSearch catalog={catalog} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
       </div>
     )
   }
@@ -156,7 +123,7 @@ function SelectorColumn({
       style={{ border: '1px solid #e9eaeb', borderRadius: 12, padding: 16, background: '#fff', minHeight: 132, boxShadow: 'var(--shadow-xs)' }}
     >
       <div className="flex items-start justify-between gap-[8px]">
-        <TypeSwitch value={entity.type} onChange={onType} compact />
+        <div />
         {canRemove && (
           <button
             onClick={onRemove}
@@ -189,7 +156,7 @@ function SelectorColumn({
       >
         <Icon name="swap" size={14} color="#414651" /> Swap
       </button>
-      {open && <SelectorSearch filterType={entity.type} current={entity.id} catalog={catalog} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
+      {open && <SelectorSearch current={entity.id} catalog={catalog} onPick={(id) => { onSwap(id); setOpen(false) }} onClose={() => setOpen(false)} />}
     </div>
   )
 }
@@ -245,21 +212,18 @@ function FilterSelect({
 }
 
 export function Builder({
-  columns, types, filters, setFilters, onType, onSwap, onRemove, onAdd, onCompare, onMatched, mixedTypes,
+  columns, filters, setFilters, onSwap, onRemove, onAdd, onCompare, onMatched,
   catalog = CATALOG,
 }: {
   columns: Column[]
-  types: EntityType[]
   filters: Filters
   setFilters: (fn: (f: Filters) => Filters) => void
-  onType: (i: number, tp: EntityType) => void
   onSwap: (i: number, id: string) => void
   onRemove: (i: number) => void
   onAdd: () => void
   onCompare: () => void
   onMatched: () => void
-  mixedTypes: boolean
-  catalog?: CatalogEntry[]
+  catalog?: Entity[]
 }) {
   const tooMany = columns.length >= MAX_COLS
   const filterDefs: [string, keyof Filters, readonly string[]][] = [
@@ -278,7 +242,7 @@ export function Builder({
               <Pill tone="brand" icon="sparkle">Buyer-first comparison</Pill>
             </div>
             <h1 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 36, lineHeight: '44px', letterSpacing: '-0.72px', color: '#181d27' }}>
-              Compare software, experts, and vendors
+              Compare software
             </h1>
             <p style={{ margin: '10px 0 0', fontSize: 17, lineHeight: '26px', color: '#535862', maxWidth: 560 }}>
               See not just which tool scores best, but which one your team can actually deploy — with the right people to roll it out.
@@ -299,8 +263,6 @@ export function Builder({
             <SelectorColumn
               key={i}
               entity={c.entity}
-              type={types[i]}
-              onType={(tp) => onType(i, tp)}
               onSwap={(id) => onSwap(i, id)}
               onRemove={() => onRemove(i)}
               canRemove={columns.length > 1}
@@ -338,13 +300,6 @@ export function Builder({
             <FilterSelect key={key} label={label} value={filters[key]} options={opts} onChange={(v) => setFilters((f) => ({ ...f, [key]: v }))} />
           ))}
         </div>
-
-        {mixedTypes && (
-          <div className="flex items-center gap-[9px]" style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: '#eef4ff', border: '1px solid #c7d7fe', color: '#3538cd', fontSize: 13.5 }}>
-            <Icon name="info" size={16} color="#444ce7" />
-            <span><strong className="font-semibold">Mixed comparison.</strong> You&apos;re comparing different entity types. Rows that don&apos;t apply to an option show as “Not applicable”, and pricing is shown per its own model.</span>
-          </div>
-        )}
       </div>
     </section>
   )

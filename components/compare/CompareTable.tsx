@@ -2,59 +2,15 @@
 
 // components/compare/CompareTable.tsx — comparison table shell
 // Ported from the design prototype (table.jsx): toolbar, tabs, desktop matrix, mobile cards.
+//
+// Chunk C trim: the 'Experts' tab and the entity-type chip in ColumnHeader
+// have been removed. Compare is products only.
 
 import React from 'react'
 import { Icon, LogoTile, Pill, ScoreRing, Btn } from './CompareUI'
 import { buildRows, PathCard, ImplCtas, AltCard, type Row } from './CompareRows'
 import { NoData } from './CompareUI'
-import { TYPE_META, type Entity, type Tab } from '@/lib/compare/data'
-
-const VETTED_EXPERTS = {
-  default: [
-    { initial: 'MC', name: 'Maya Chen', meta: 'PM rollout · 4.9 · NA', tone: 'indigo' as const },
-    { initial: 'DP', name: 'Devlin Partners', meta: 'Platinum partner · 4.8', tone: 'success' as const },
-  ],
-}
-
-// rows for Experts tab (richer than data rows)
-function expertsRows(): Row[] {
-  return [
-    { label: 'Recommended expert path', cell: (e) => <PathCard entity={e} /> },
-    {
-      label: 'Vetted experts',
-      cell: (e) =>
-        e.type === 'expert' ? (
-          e.reviews.outcomes ? (
-            <div className="flex flex-col gap-[6px]">
-              {e.reviews.outcomes.map((o, i) => (
-                <span key={i} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}>
-                  <Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <NoData />
-          )
-        ) : (
-          <div className="flex flex-col gap-[7px]">
-            <span style={{ fontSize: 13, color: '#717680' }}>
-              <strong className="font-[family-name:var(--font-dm-sans)]" style={{ color: '#181d27' }}>{e.expertCount}</strong> available for {e.name}
-            </span>
-            {VETTED_EXPERTS.default.map((x, i) => (
-              <div key={i} className="flex items-center gap-[9px]" style={{ padding: '7px 9px', borderRadius: 10, border: '1px solid #e9eaeb' }}>
-                <LogoTile initial={x.initial} tone={x.tone} size={30} type="expert" />
-                <div className="min-w-0">
-                  <div className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 13, color: '#181d27' }}>{x.name}</div>
-                  <div style={{ fontSize: 11.5, color: '#717680' }}>{x.meta}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ),
-    },
-    { label: 'Take action', cell: () => <ImplCtas /> },
-  ]
-}
+import type { Entity, Tab } from '@/lib/compare/data'
 
 function alternativesRows(): Row[] {
   return [
@@ -67,7 +23,6 @@ function alternativesRows(): Row[] {
 }
 
 export function getRows(tab: Tab | string): Row[] {
-  if (tab === 'Experts') return expertsRows()
   if (tab === 'Alternatives') return alternativesRows()
   return buildRows(tab)
 }
@@ -135,7 +90,6 @@ export function ColumnHeader({
   canRemove: boolean
   density: 'compact' | 'regular'
 }) {
-  const m = TYPE_META[entity.type]
   return (
     <div className="relative flex flex-col gap-[9px]" style={{ padding: density === 'compact' ? '12px 12px' : '16px 14px' }}>
       {canRemove && (
@@ -154,9 +108,10 @@ export function ColumnHeader({
         <LogoTile initial={entity.initial} tone={entity.logoTone} size={40} type={entity.type} />
         <div className="min-w-0" style={{ paddingRight: 18 }}>
           <div className="font-[family-name:var(--font-dm-sans)] font-bold whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 16, color: '#181d27', letterSpacing: '-0.01em' }}>{entity.name}</div>
-          <span className="inline-flex items-center gap-[5px]" style={{ marginTop: 2 }}>
-            <span className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 11, color: m.color, background: m.bg, border: `1px solid ${m.border}`, borderRadius: 9999, padding: '0 7px', lineHeight: '16px' }}>{m.label}</span>
-          </span>
+          {entity.vendorName && (
+            <div className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 12, color: '#717680' }}>{entity.vendorName}</div>
+          )}
+          <div className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 12, color: '#717680' }}>{entity.category}</div>
         </div>
       </div>
       <div className="flex items-center gap-[9px]">

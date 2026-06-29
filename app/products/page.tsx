@@ -443,15 +443,7 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
           {product.product_description || 'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.'}
         </p>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-[12px]">
-        <div className="flex -space-x-[8px]">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="size-[32px] rounded-full border-[1.5px] border-white bg-gradient-to-br from-[#cfcbdc] to-[#d7e3e8]"
-            />
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-[10px]">
         <div className="flex items-center gap-[10px]">
           <CompareToggle
             product={{
