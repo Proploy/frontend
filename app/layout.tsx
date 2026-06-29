@@ -5,6 +5,7 @@ import ProployAgentShell from '@/components/agent/ProployAgentShell'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { MotionProvider } from '@/components/providers/motion-provider'
 import { CompareSelectionProvider } from '@/features/compare/selection-store'
+import { InterestCaptureProvider } from '@/features/interests/InterestCaptureProvider'
 import CompareTray from '@/components/compare/CompareTray'
 
 import './globals.css'
@@ -39,11 +40,13 @@ export default function RootLayout({
         <MotionProvider>
           <AuthProvider>
             <CompareSelectionProvider>
-              <ProployAgentShell>
-                <Navbar />
-                <main className="flex-1 w-full">{children}</main>
-                <CompareTray />
-              </ProployAgentShell>
+              <InterestCaptureProvider>
+                <ProployAgentShell>
+                  <Navbar />
+                  <main className="flex-1 w-full">{children}</main>
+                  <CompareTray />
+                </ProployAgentShell>
+              </InterestCaptureProvider>
             </CompareSelectionProvider>
           </AuthProvider>
         </MotionProvider>
