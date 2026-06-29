@@ -295,7 +295,19 @@ export default function ProductDetailExperience({
                       <div>
                         <h3 className="text-[18px] font-semibold leading-[28px]">{plan.plan_name}</h3>
                         <p className="mt-[4px] text-[24px] font-semibold leading-[32px] tracking-[-0.48px] text-[#155eef]">
-                          {plan.price_text || (plan.is_contact_sales ? 'Contact sales' : 'Pricing unavailable')}
+                          {plan.is_contact_sales && plan.source_url ? (
+                            <a
+                              href={plan.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-[6px] hover:underline focus:outline-none focus:ring-2 focus:ring-[#84adff] focus:ring-offset-2"
+                            >
+                              Contact sales
+                              <ArrowUpRight size={20} />
+                            </a>
+                          ) : (
+                            plan.price_text || (plan.is_contact_sales ? 'Contact sales' : 'Pricing unavailable')
+                          )}
                         </p>
                       </div>
                       {plan.is_free && (
@@ -306,8 +318,8 @@ export default function ProductDetailExperience({
                     </div>
 
                     <div className="mt-[16px] flex flex-wrap gap-[8px] text-[12px] text-[#535862]">
-                      {plan.billing_period && <PlanMeta value={formatLabel(plan.billing_period)} />}
-                      {plan.pricing_model && plan.pricing_model !== 'unknown' && (
+                      {isPublishedMetaValue(plan.billing_period) && <PlanMeta value={formatLabel(plan.billing_period)} />}
+                      {isPublishedMetaValue(plan.pricing_model) && (
                         <PlanMeta value={formatLabel(plan.pricing_model)} />
                       )}
                       {plan.is_trial && <PlanMeta value="Trial" />}
@@ -797,6 +809,10 @@ function formatLabel(value: string) {
   return value
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function isPublishedMetaValue(value: string | null | undefined): value is string {
+  return Boolean(value && value.toLowerCase() !== 'unknown')
 }
 
 function getPricingSourceUrl(plans: { source_url: string | null }[]): string | null {
