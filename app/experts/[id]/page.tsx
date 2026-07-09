@@ -14,7 +14,6 @@ import {
   Mail,
   MapPin,
 } from 'lucide-react'
-import Footer from '@/components/Footer'
 import { ProjectDocumentViewer } from '@/components/experts/ProjectDocumentViewer'
 import { InlineVideo } from '@/components/media/InlineVideo'
 import { useExpertProfile } from '@/features/experts/use-expert-profile'
@@ -113,7 +112,6 @@ export default function ExpertProfilePage() {
             Back to experts
           </Link>
         </main>
-        <Footer />
       </div>
     )
   }
@@ -277,7 +275,6 @@ export default function ExpertProfilePage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

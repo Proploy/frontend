@@ -4,22 +4,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { Menu, X, LogOut, User, Settings, LayoutGrid } from 'lucide-react'
+import { Menu, X, LogOut, User, Settings } from 'lucide-react'
 import CatalogMegaMenu from '@/components/catalog/CatalogMegaMenu'
 import ExpertMegaMenu from '@/components/experts/ExpertMegaMenu'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useExpertApplication } from '@/features/experts/use-expert-application'
 import type { ExpertMe } from '@/features/experts/types'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
-
-// Routes that own their own sidebar/shell and therefore should suppress the
-// global Navbar to avoid a double chrome.
-const WORKSPACE_PREFIXES = [
-  '/experts/dashboard',
-  '/experts/account',
-  '/experts/chat',
-  '/workspace',
-]
+import { PORTAL_PREFIXES } from '@/lib/site-chrome'
 
 const ABOUT_LINKS = [
   { href: '/for-businesses', label: 'For Business', description: 'See how buyers use Proploy to choose and deploy software.' },
@@ -46,7 +38,7 @@ export default function Navbar() {
   const catalogCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expertsCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  const hideOnWorkspace = PORTAL_PREFIXES.some((p) => pathname?.startsWith(p))
   const userId = user?.id
 
   // Must be called before any early returns - rules-of-hooks
@@ -344,14 +336,6 @@ export default function Navbar() {
                     <User size={16} />
                     Dashboard
                   </Link>
-                  <Link
-                    href="/workspace"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <LayoutGrid size={16} />
-                    Workspace
-                  </Link>
                   {showCompleteApplication && (
                     <Link
                       href="/become-expert"
@@ -508,13 +492,6 @@ export default function Navbar() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
-                </Link>
-                <Link
-                  href="/workspace"
-                  className="text-left text-lg font-semibold text-[#181d27]"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Workspace
                 </Link>
                 <Link
                   href={settingsHref}

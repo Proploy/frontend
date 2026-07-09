@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   AlertCircle,
+  Calendar,
   Clock3,
   FileSignature,
   FolderClosed,
@@ -66,6 +67,7 @@ const NAV_PRIMARY: DashNavItem[] = [
   { label: 'Invoices', icon: Receipt, href: '/experts/dashboard/invoices' },
   { label: 'Earnings', icon: Wallet, href: '/experts/dashboard/earnings' },
   { label: 'Messages', icon: MessageSquare, href: '/experts/chat' },
+  { label: 'Calendar', icon: Calendar, href: '/experts/dashboard/calendar' },
   { label: 'Clients', icon: Users, href: '/experts/dashboard/clients' },
 ]
 

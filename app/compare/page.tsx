@@ -9,7 +9,6 @@
 
 import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Footer from '@/components/Footer'
 import { Builder, MAX_COLS, type Column } from '@/components/compare/CompareBuilder'
 import { BuyerBrief } from '@/components/compare/BuyerBrief'
 import { DesktopTable, MobileCards, ResultsToolbar } from '@/components/compare/CompareTable'
@@ -162,7 +161,6 @@ function ComparePageInner() {
       {count >= 1 && view !== 'loading' && <Discussion />}
 
       <div style={{ marginTop: 64 }}>
-        <Footer />
       </div>
 
       <SavedToast show={!!toast} kind={toast || 'saved'} onClose={() => setToast(null)} />

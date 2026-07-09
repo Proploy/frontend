@@ -192,9 +192,30 @@ export interface WorkspaceMeeting {
   endsAt?: string
   status: MeetingStatus | string
   title?: string | null
-  provider?: 'cal_diy' | 'google' | 'zoom' | null
+  provider?: 'cal_diy' | 'cal_com' | 'calendly' | 'google' | 'google_cal' | 'zoom' | null
   meetingUrl?: string | null
   locationUrl?: string | null
+}
+
+/** GET /api/v1/workspace/meetings — the calendar feed. */
+export interface WorkspaceMeetingsResponse {
+  meetings: WorkspaceMeeting[]
+}
+
+/**
+ * POST /api/v1/workspace/meetings — book a call between the two engagement
+ * parties. `provider: 'cal_diy'` routes through Proploy's own scheduler
+ * (the Cal.com integration seam); the backend owns slot validation and
+ * meeting-link creation.
+ */
+export interface ScheduleMeetingRequest {
+  engagementId?: string | null
+  title: string
+  startsAt: string
+  endsAt: string
+  provider?: WorkspaceMeeting['provider']
+  attendeeName?: string | null
+  notes?: string | null
 }
 
 // ─── Notification (outbox state) ─────────────────────────────────────────

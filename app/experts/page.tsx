@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-import Footer from '@/components/Footer'
 import ListingExplorer from '@/components/ListingExplorer'
 import { ExpertDiscoveryCard } from '@/components/experts/ExpertDiscoveryCard'
 import { useCatalogProductMatches } from '@/features/catalog'
@@ -112,7 +111,6 @@ function ExpertsPageContent() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

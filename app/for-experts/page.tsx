@@ -13,7 +13,6 @@ import {
   Minus,
   MapPin,
 } from 'lucide-react'
-import Footer from '@/components/Footer'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -369,7 +368,6 @@ export default function ForExpertsPage() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

@@ -7,7 +7,6 @@ import { ArrowRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import CompareToggle from '@/components/compare/CompareToggle'
 import ListingExplorer from '@/components/ListingExplorer'
-import Footer from '@/components/Footer'
 import {
   getProductDetailHref,
   useCategoryTree,
@@ -388,7 +387,6 @@ function ProductsPageContent() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

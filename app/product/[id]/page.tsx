@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import Footer from '@/components/Footer'
 import ProductDetailExperience from '@/components/product/ProductDetailExperience'
 import { useProductDetail } from '@/features/catalog'
 
@@ -71,7 +70,6 @@ export default function ProductDetailPage() {
         mediaError={Boolean(mediaError)}
         onRetryMedia={refetch}
       />
-      <Footer />
     </div>
   )
 }

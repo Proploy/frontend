@@ -7,3 +7,4 @@
 export * from '@/features/workspace/types'
 export { useDashboard } from '@/features/workspace/use-dashboard'
 export { useCurrentUserRole } from '@/features/workspace/use-current-user-role'
+export { useMeetings } from '@/features/workspace/use-meetings'

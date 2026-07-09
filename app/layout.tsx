@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { DM_Sans, Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
+import SiteFooter from '@/components/SiteFooter'
 import ProployAgentShell from '@/components/agent/ProployAgentShell'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { MotionProvider } from '@/components/providers/motion-provider'
@@ -42,6 +43,7 @@ export default function RootLayout({
               <ProployAgentShell>
                 <Navbar />
                 <main className="flex-1 w-full">{children}</main>
+                <SiteFooter />
                 <CompareTray />
               </ProployAgentShell>
             </CompareSelectionProvider>

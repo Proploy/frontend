@@ -36,6 +36,14 @@ import {
 
 import { Sidebar as ExpertSidebar } from '@/components/experts/dashboard/ExpertDashboardFrame'
 import { FileDropzone } from '@/components/experts/dashboard/FileDropzone'
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
+import { ConnectIntegrationModal } from '@/components/integrations/ConnectIntegrationModal'
+import { useIntegrations } from '@/lib/integrations/integrations-store'
+import {
+  INTEGRATION_CATALOG,
+  groupByCategory,
+  type IntegrationDef,
+} from '@/lib/integrations/integrations-catalog'
 
 // ── localStorage persistence ─────────────────────────────────────────────────
 // This route lives outside the dashboard layout, so there are no context
@@ -295,47 +303,9 @@ const NOTIFICATION_ROWS: NotifRow[] = [
   },
 ]
 
-// ── Integrations tab data ──────────────────────────────────────────────────
-type Integration = { key: string; name: string; desc: string; on: boolean }
-
-const INTEGRATIONS: Integration[] = [
-  {
-    key: 'slack',
-    name: 'Slack',
-    desc: 'Get lead alerts and client messages in your channels.',
-    on: true,
-  },
-  {
-    key: 'docusign',
-    name: 'DocuSign',
-    desc: 'Send and track contracts and SOWs for e-signature.',
-    on: true,
-  },
-  {
-    key: 'quickbooks',
-    name: 'QuickBooks',
-    desc: 'Sync invoices and reconcile your Proploy payouts.',
-    on: true,
-  },
-  {
-    key: 'gdrive',
-    name: 'Google Drive',
-    desc: 'Attach proposals and deliverables straight from Drive.',
-    on: true,
-  },
-  {
-    key: 'hubspot',
-    name: 'HubSpot',
-    desc: 'Push client leads and engagements into your CRM.',
-    on: true,
-  },
-  {
-    key: 'zapier',
-    name: 'Zapier',
-    desc: 'Automate your sourcing workflow across 6,000+ apps.',
-    on: false,
-  },
-]
+// ── Integrations tab ────────────────────────────────────────────────────────
+// The catalog + connection state now live in lib/integrations/* (shared with
+// the Calendar page). See IntegrationsPanel below.
 
 export default function ExpertsAccountPage() {
   const [activeTab, setActiveTab] = useState<Tab>('My details')
@@ -1371,31 +1341,19 @@ function ToggleRow({
 
 // ── Integrations panel ───────────────────────────────────────────────────────
 function IntegrationsPanel() {
-  const [state, setState] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(INTEGRATIONS.map((a) => [a.key, a.on])),
-  )
-  const [hydrated, setHydrated] = useState(false)
+  const { isConnected, accountFor, disconnect } = useIntegrations()
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [query, setQuery] = useState('')
+  const [connectDef, setConnectDef] = useState<IntegrationDef | null>(null)
 
-  // Hydrate after mount to avoid SSR mismatch.
-  useEffect(() => {
-    const saved = loadJSON<Record<string, boolean>>(STORAGE_KEYS.integrations)
-    if (saved) {
-      setState((prev) => {
-        const next = { ...prev }
-        for (const a of INTEGRATIONS) {
-          if (typeof saved[a.key] === 'boolean') next[a.key] = saved[a.key]
-        }
-        return next
-      })
-    }
-    setHydrated(true)
-  }, [])
-
-  // Persist after hydration so defaults don't overwrite saved values.
-  useEffect(() => {
-    if (hydrated) saveJSON(STORAGE_KEYS.integrations, state)
-  }, [state, hydrated])
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? INTEGRATION_CATALOG.filter((d) =>
+        [d.name, d.blurb, d.category, d.powers].some((s) => s.toLowerCase().includes(q)),
+      )
+    : INTEGRATION_CATALOG
+  const groups = groupByCategory(filtered)
+  const connectedCount = INTEGRATION_CATALOG.filter((d) => isConnected(d.key)).length
 
   return (
     <>
@@ -1442,7 +1400,8 @@ function IntegrationsPanel() {
             Connected apps
           </h2>
           <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-            Supercharge your workflow and connect the tool you use every day.
+            {connectedCount} of {INTEGRATION_CATALOG.length} connected — supercharge your workflow with
+            the tools you use every day.
           </p>
         </div>
         <div className="relative w-full sm:w-[320px]">
@@ -1452,46 +1411,107 @@ function IntegrationsPanel() {
           />
           <input
             type="text"
-            placeholder="Search"
-            className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[40px] pr-[40px] py-[10px] text-[14px] leading-[20px] placeholder:text-[#717680] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 ${INPUT_SHADOW}`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search integrations"
+            className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[40px] pr-[12px] py-[10px] text-[14px] leading-[20px] placeholder:text-[#717680] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 ${INPUT_SHADOW}`}
           />
-          <span className="absolute right-[10px] top-1/2 -translate-y-1/2 px-[6px] py-[2px] text-[12px] leading-[18px] text-[#717680] border border-[#e9eaeb] rounded-[4px] bg-white">
-            ⌘K
-          </span>
         </div>
       </div>
 
-      {/* App list */}
-      <div className="flex flex-col">
-        {INTEGRATIONS.map((app, i) => (
-          <div key={app.key}>
-            {i > 0 && <Divider />}
-            <div className="flex items-center gap-[16px] py-[16px]">
-              <BrandLogo name={app.key} />
-              <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
-                <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">
-                  {app.name}
-                </p>
-                <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-                  {app.desc}
-                </p>
+      {/* Grouped app list */}
+      <div className="flex flex-col gap-[28px] pt-[8px]">
+        {groups.map((group) => (
+          <div key={group.category} className="flex flex-col">
+            <p className="pb-[8px] text-[12px] font-semibold uppercase leading-[18px] tracking-[0.04em] text-[#717680]">
+              {group.category}
+            </p>
+            {group.items.map((app, i) => (
+              <div key={app.key}>
+                {i > 0 && <Divider />}
+                <IntegrationRow
+                  def={app}
+                  connected={isConnected(app.key)}
+                  account={accountFor(app.key)}
+                  onConnect={() => setConnectDef(app)}
+                  onDisconnect={() => disconnect(app.key)}
+                />
               </div>
-              <button
-                type="button"
-                className="font-semibold text-[14px] leading-[20px] text-[#535862] hover:text-[#181d27] whitespace-nowrap"
-              >
-                Learn more
-              </button>
-              <Toggle
-                on={state[app.key]}
-                onChange={(v) => setState((p) => ({ ...p, [app.key]: v }))}
-                ariaLabel={`Toggle ${app.name}`}
-              />
-            </div>
+            ))}
           </div>
         ))}
+        {groups.length === 0 && (
+          <p className="py-[48px] text-center text-[14px] text-[#717680]">
+            No integrations match “{query}”.
+          </p>
+        )}
       </div>
+
+      {connectDef && (
+        <ConnectIntegrationModal def={connectDef} onClose={() => setConnectDef(null)} />
+      )}
     </>
+  )
+}
+
+function IntegrationRow({
+  def,
+  connected,
+  account,
+  onConnect,
+  onDisconnect,
+}: {
+  def: IntegrationDef
+  connected: boolean
+  account?: string
+  onConnect: () => void
+  onDisconnect: () => void
+}) {
+  return (
+    <div className="flex items-center gap-[16px] py-[16px]">
+      <IntegrationLogo name={def.key} />
+      <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
+        <div className="flex flex-wrap items-center gap-[8px]">
+          <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{def.name}</p>
+          <span className="rounded-full bg-[#eff4ff] px-[8px] py-[1px] text-[12px] font-medium leading-[18px] text-[#155eef]">
+            Powers {def.powers}
+          </span>
+          {def.needsAuth && (
+            <span className="rounded-full border border-[#e9eaeb] bg-[#fafafa] px-[8px] py-[1px] text-[11px] font-medium leading-[18px] text-[#717680]">
+              OAuth
+            </span>
+          )}
+        </div>
+        <p className="font-normal text-[14px] leading-[20px] text-[#535862]">{def.blurb}</p>
+        {connected && account && (
+          <p className="text-[13px] leading-[18px] text-[#717680]">
+            Connected as <span className="font-medium text-[#414651]">{account}</span>
+          </p>
+        )}
+      </div>
+      {connected ? (
+        <div className="flex items-center gap-[12px] shrink-0">
+          <span className="inline-flex items-center gap-[5px] rounded-full border border-[#abefc6] bg-[#ecfdf3] px-[10px] py-[3px] text-[13px] font-medium leading-[18px] text-[#067647]">
+            <CheckCircle2 size={14} /> Connected
+          </span>
+          <button
+            type="button"
+            onClick={onDisconnect}
+            className="font-semibold text-[14px] leading-[20px] text-[#535862] hover:text-[#b42318] whitespace-nowrap"
+          >
+            Disconnect
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onConnect}
+          className={`shrink-0 inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
+        >
+          <Plus size={16} /> Connect
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -1635,99 +1655,6 @@ function VisaLogo() {
       </span>
     </div>
   )
-}
-
-function BrandLogo({ name }: { name: string }) {
-  const wrap = (children: React.ReactNode, bg = 'bg-white') => (
-    <div
-      className={`size-[40px] rounded-[10px] border border-[#e9eaeb] flex items-center justify-center shrink-0 ${bg}`}
-    >
-      {children}
-    </div>
-  )
-
-  switch (name) {
-    case 'docusign':
-      return wrap(
-        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-          <rect width="24" height="24" rx="5" fill="#ffcc00" />
-          <path
-            d="M6 12.5 10 16.5 18 7.5"
-            stroke="#1a1a1a"
-            strokeWidth="2.4"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>,
-      )
-    case 'quickbooks':
-      return wrap(
-        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="11" fill="#2ca01c" />
-          <text
-            x="12"
-            y="16.5"
-            textAnchor="middle"
-            fontSize="11"
-            fontWeight="700"
-            fill="#fff"
-            fontFamily="sans-serif"
-          >
-            qb
-          </text>
-        </svg>,
-      )
-    case 'gdrive':
-      return wrap(
-        <svg width="22" height="20" viewBox="0 0 87 78" aria-hidden="true">
-          <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
-          <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47" />
-          <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
-          <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
-          <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
-          <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
-        </svg>,
-      )
-    case 'hubspot':
-      return wrap(
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a59" aria-hidden="true">
-          <path d="M17 8.2V5.6a2 2 0 1 0-2 0v2.6a6 6 0 0 0-2.4 1l-6-4.7a2.3 2.3 0 1 0-1.2 1.6l5.9 4.6a6 6 0 1 0 8.9-.9 6 6 0 0 0-1.2-.6Zm-2.5 9.6a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
-        </svg>,
-      )
-    case 'zapier':
-      return wrap(
-        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M14.5 12a8.6 8.6 0 0 1-.3 2.2 8.6 8.6 0 0 1-2.2.3 8.6 8.6 0 0 1-2.2-.3A8.6 8.6 0 0 1 9.5 12a8.6 8.6 0 0 1 .3-2.2A8.6 8.6 0 0 1 12 9.5a8.6 8.6 0 0 1 2.2.3 8.6 8.6 0 0 1 .3 2.2ZM24 10.6h-6.8l4.8-4.8-1.7-1.7-4.8 4.8V2.1h-2.4v6.8L8.3 4.1 6.6 5.8l4.8 4.8H4.6v2.4h6.8l-4.8 4.8 1.7 1.7 4.8-4.8v6.8h2.4v-6.8l4.8 4.8 1.7-1.7-4.8-4.8H24Z"
-            fill="#ff4f00"
-          />
-        </svg>,
-      )
-    case 'slack':
-      return wrap(
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M5.04 15.1a2.1 2.1 0 1 1-2.1-2.1h2.1v2.1Zm1.06 0a2.1 2.1 0 0 1 4.2 0v5.26a2.1 2.1 0 1 1-4.2 0V15.1Z"
-            fill="#e01e5a"
-          />
-          <path
-            d="M8.2 5.04a2.1 2.1 0 1 1 2.1-2.1v2.1H8.2Zm0 1.06a2.1 2.1 0 0 1 0 4.2H2.94a2.1 2.1 0 1 1 0-4.2H8.2Z"
-            fill="#36c5f0"
-          />
-          <path
-            d="M18.96 8.2a2.1 2.1 0 1 1 2.1 2.1h-2.1V8.2Zm-1.06 0a2.1 2.1 0 0 1-4.2 0V2.94a2.1 2.1 0 1 1 4.2 0V8.2Z"
-            fill="#2eb67d"
-          />
-          <path
-            d="M15.8 18.96a2.1 2.1 0 1 1-2.1 2.1v-2.1h2.1Zm0-1.06a2.1 2.1 0 0 1 0-4.2h5.26a2.1 2.1 0 1 1 0 4.2H15.8Z"
-            fill="#ecb22e"
-          />
-        </svg>,
-      )
-    default:
-      return wrap(<span className="font-bold text-[#414651]">{name.charAt(0).toUpperCase()}</span>)
-  }
 }
 
 

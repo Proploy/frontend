@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import {
+  Calendar,
   ClipboardCheck,
   CreditCard,
   FileText,
@@ -43,6 +44,7 @@ const NAV_PRIMARY: DashNavItem[] = [
   { label: 'Tax & compliance', icon: ShieldCheck, href: '/business/dashboard/compliance' },
   { label: 'Documents', icon: FileText, href: '/business/dashboard/documents' },
   { label: 'Team', icon: Users, href: '/business/dashboard/team' },
+  { label: 'Calendar', icon: Calendar, href: '/business/dashboard/calendar' },
   { label: 'Messages', icon: MessageSquare, href: '/business/dashboard/messages' },
 ]
 
