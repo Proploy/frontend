@@ -12,7 +12,9 @@ import {
 } from 'lucide-react'
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import type { CardProduct } from '@/features/catalog'
+import { resolveExpertPublicResourceUrl } from '@/features/experts/public-resource'
 import type { ExpertListItem } from '@/features/experts/types'
 
 export function ExpertDiscoveryCard({
@@ -44,9 +46,9 @@ export function ExpertDiscoveryCard({
       <div className="flex flex-col gap-[18px] p-[20px] sm:p-[24px] lg:flex-row lg:items-start">
         <div className="flex min-w-0 flex-1 items-start gap-[14px]">
           <div className="relative flex size-[54px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#155eef] to-[#7f56d9] text-[20px] font-semibold text-white">
-            {expert.profilePictureUrl ? (
+            {resolveExpertPublicResourceUrl(expert.profilePictureUrl) ? (
               <CatalogImage
-                src={expert.profilePictureUrl}
+                src={resolveExpertPublicResourceUrl(expert.profilePictureUrl) ?? ''}
                 alt={expert.displayName}
                 className="size-full object-cover"
                 fallback={expert.displayName.charAt(0).toUpperCase()}
@@ -117,13 +119,16 @@ export function ExpertDiscoveryCard({
           </div>
         )}
 
-        <AuthRequiredLink
-          href={`/experts/${expert.id}`}
-          className="inline-flex h-[42px] shrink-0 items-center justify-center gap-[6px] rounded-[10px] bg-[#181d27] px-[16px] text-[14px] font-semibold text-white hover:bg-[#344054]"
-        >
-          View profile
-          <ArrowRight size={16} />
-        </AuthRequiredLink>
+        <div className="flex shrink-0 items-center gap-[8px]">
+          <FavoriteToggle targetId={expert.id} targetType="expert" label={expert.displayName} />
+          <AuthRequiredLink
+            href={`/experts/${expert.id}`}
+            className="inline-flex h-[42px] items-center justify-center gap-[6px] rounded-[10px] bg-[#181d27] px-[16px] text-[14px] font-semibold text-white hover:bg-[#344054]"
+          >
+            View profile
+            <ArrowRight size={16} />
+          </AuthRequiredLink>
+        </div>
       </div>
 
       <div className="grid border-y border-[#e9eaeb] bg-[#fafbfc] md:grid-cols-3">

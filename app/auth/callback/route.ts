@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getAuthIntentFromCookie, AUTH_INTENT_COOKIE } from '@/lib/utils/auth-intent'
-import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
+import { serviceApisFetch } from '@/lib/service-apis/server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -17,8 +17,12 @@ export async function GET(request: Request) {
 
       // Sync user to service-apis DB — MUST complete before redirect
       // so getCurrentUser() in subsequent requests finds the user
-      const synced = await syncUserToServiceApis(accessToken)
-      if (!synced) {
+      const syncResponse = await serviceApisFetch('/api/v1/auth/sync', {
+        method: 'POST',
+        requireAuth: true,
+        accessToken,
+      })
+      if (!syncResponse.ok) {
         return NextResponse.redirect(`${origin}/sign-in?error=sync_failed`)
       }
 

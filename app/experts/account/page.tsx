@@ -1412,7 +1412,7 @@ function IntegrationsPanel() {
                 Proploy just got an upgrade!
               </p>
               <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
-                Your new expert dashboard surfaces hotter leads and faster payouts.
+                Your new workspace surfaces requests, proposals, projects, and conversations.
               </p>
             </div>
             <div className="flex items-center gap-[12px]">
@@ -1424,10 +1424,10 @@ function IntegrationsPanel() {
                 Dismiss
               </button>
               <a
-                href="/experts/dashboard"
+                href="/workspace"
                 className={`inline-flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
               >
-                View dashboard
+                View workspace
                 <ArrowUpRight size={16} />
               </a>
             </div>

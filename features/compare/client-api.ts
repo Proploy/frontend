@@ -2,14 +2,9 @@
 
 // features/compare/client-api.ts — dedicated compare endpoint client.
 //
-// Calls POST /api/v1/catalog/products/compare once for up to 4 product ids
-// and returns a comparison-ready payload. Mirrors the contract defined in
-// docs/compare-endpoint.md.
+// Calls the canonical service-apis compare endpoints once for up to 4 product
+// ids and returns comparison-ready catalog data plus live filter metadata.
 //
-// This module is feature-flagged behind NEXT_PUBLIC_COMPARE_ENDPOINT_V2.
-// Until the backend ships, useCompareEntities falls back to N parallel
-// clientCatalogApi.products.getDetail calls (the legacy path).
-
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 
 import type {
@@ -22,7 +17,15 @@ import type { ApiResult, CatalogRequestOptions } from '@/features/catalog/shared
 // ---- Request --------------------------------------------------------------
 
 export interface CompareRequest {
-  product_ids: string[]                 // 1..4
+  product_ids: string[]
+  fit_filters?: CompareFitFilters
+}
+
+export interface CompareFitFilters {
+  category_id?: string | null
+  company_size?: string | null
+  pricing_bucket?: string | null
+  region?: string | null
 }
 
 // ---- Response -------------------------------------------------------------
@@ -98,24 +101,72 @@ export interface AlternativeItem {
   logo_url: string | null
 }
 
+export interface CompareFilterOption {
+  value: string
+  label: string
+}
+
+export interface CompareFiltersResponse {
+  categories: CompareFilterOption[]
+  company_sizes: CompareFilterOption[]
+  pricing_buckets: CompareFilterOption[]
+  regions: CompareFilterOption[]
+  timelines: CompareFilterOption[]
+}
+
+export interface CompareMatchedExpertsRequest {
+  product_ids: string[]
+  limit?: number
+}
+
+export interface CompareMatchedExpert {
+  id: string
+  displayName: string
+  headline?: string | null
+  regionCountry?: string | null
+  regionCity?: string | null
+  yearsExperience?: number | null
+  primaryPlatforms: string[]
+  secondaryPlatforms: string[]
+  industryExpertise: string[]
+  matchScore: number
+  matchedProducts: string[]
+  profilePictureUrl?: string | null
+  schedulingLink?: string | null
+}
+
+export interface CompareMatchedExpertsResponse {
+  count: number
+  experts: CompareMatchedExpert[]
+}
+
 // ---- Client ---------------------------------------------------------------
 
 const client = new ServiceApisBrowserClient()
 
 export const compareApi = {
-  /**
-   * Compare up to 4 products in a single round-trip.
-   *
-   * Server clamps `product_ids.length` to 4 and reports unknown ids in
-   * `missing_ids`. Partial success (some ids found, some missing) returns
-   * 200 — never a 4xx.
-   */
+  /** Compare the selected products using the buyer's current fit context. */
   compareProducts(
     request: CompareRequest,
     options?: CatalogRequestOptions,
   ): Promise<ApiResult<CompareResponse>> {
     return client.post<CompareResponse>(
-      '/api/v1/catalog/products/compare',
+      '/api/v1/catalog/compare',
+      request,
+      options,
+    )
+  },
+
+  getFilters(options?: CatalogRequestOptions): Promise<ApiResult<CompareFiltersResponse>> {
+    return client.get<CompareFiltersResponse>('/api/v1/catalog/compare/filters', options)
+  },
+
+  getMatchedExperts(
+    request: CompareMatchedExpertsRequest,
+    options?: CatalogRequestOptions,
+  ): Promise<ApiResult<CompareMatchedExpertsResponse>> {
+    return client.post<CompareMatchedExpertsResponse>(
+      '/api/v1/catalog/compare/matched-experts',
       request,
       options,
     )
@@ -125,8 +176,8 @@ export const compareApi = {
 // ---- Feature flag ---------------------------------------------------------
 
 /**
- * True when the new compare endpoint is enabled in the deployment.
- * Frontend ships both paths; default OFF until backend lands.
+ * Retained for callers that still expose the old rollout flag. The canonical
+ * endpoint is now always used; this flag no longer changes request routing.
  */
 export function isCompareV2Enabled(): boolean {
   return process.env.NEXT_PUBLIC_COMPARE_ENDPOINT_V2 === 'true'

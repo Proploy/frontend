@@ -73,7 +73,7 @@ export default function BriefBuilderPage() {
       kind: 'project',
       title: 'New brief matched to you',
       body: `${briefTitle} · ${scope.label} · est. ${formatUsd(est.costLow)}–${formatUsd(est.costHigh)}`,
-      href: '/experts/dashboard',
+      href: '/workspace/requests',
     })
     setSubmitted(true)
   }

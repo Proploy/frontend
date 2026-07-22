@@ -3,9 +3,17 @@
 // Unit-tests for compareEntryToEntity — the mapper that turns the new compare
 // endpoint payload into the Entity shape the /compare table consumes.
 
-import { compareEntryToEntity } from '../from-catalog'
+import { compareEntryToEntity, productAlternativeToCompareAlternative } from '../from-catalog'
 import type { CompareProductEntry, AlternativeItem } from '@/features/compare/client-api'
 import type { PricingPlanItem, RatingItem } from '@/features/catalog/products/types'
+
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_SERVICE_APIS_URL', 'http://localhost:8020')
+})
+
+afterAll(() => {
+  vi.unstubAllEnvs()
+})
 
 // ---- Test fixture --------------------------------------------------------
 
@@ -206,7 +214,7 @@ describe('compareEntryToEntity — new optional fields', () => {
   it('threads vendorName, logoUrl, officialWebsite from CompareProductEntry', () => {
     const entity = compareEntryToEntity(makeEntry())
     expect(entity.vendorName).toBe('Vendor Co')
-    expect(entity.logoUrl).toBe('https://cdn.example/abc.png')
+    expect(entity.logoUrl).toBe('http://localhost:8020/api/v1/catalog/products/prod_abc/logo')
     expect(entity.officialWebsite).toBe('https://example.com')
   })
 
@@ -256,13 +264,34 @@ describe('compareEntryToEntity — alternatives', () => {
       initial: 'A',
       category: 'Project Management',
       rating: 4.2,
-      logoUrl: 'https://cdn.example/alt.png',
+      logoUrl: 'http://localhost:8020/api/v1/catalog/products/prod_alt/logo',
     })
   })
 
   it('returns [] when alternatives is missing', () => {
     const entity = compareEntryToEntity(makeEntry({ alternatives: [] }))
     expect(entity.alternatives).toEqual([])
+  })
+})
+
+describe('productAlternativeToCompareAlternative', () => {
+  it('maps live catalog alternatives into the comparison alternative card shape', () => {
+    const alternative = productAlternativeToCompareAlternative({
+      product_id: 'prod_live',
+      product_name: 'Live Alternative',
+      short_description: 'A live service-api alternative',
+      pricing_bucket: '$$',
+      logo_url: '/api/v1/catalog/products/prod_live/logo',
+    })
+
+    expect(alternative).toEqual({
+      id: 'prod_live',
+      name: 'Live Alternative',
+      initial: 'L',
+      category: 'A live service-api alternative',
+      rating: null,
+      logoUrl: 'http://localhost:8020/api/v1/catalog/products/prod_live/logo',
+    })
   })
 })
 

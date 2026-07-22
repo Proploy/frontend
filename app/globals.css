@@ -475,6 +475,15 @@ body {
         100% { transform: translateX(-50%); }
     }
 
+    .marquee-track {
+        animation: marquee 35s linear infinite;
+        animation-play-state: running;
+    }
+
+    .marquee-track:hover {
+        animation-play-state: paused;
+    }
+
     /* Gradient Text Utility */
     .text-gradient-blue {
         background: linear-gradient(90deg, #197CFF 0%, #011127 100%);
@@ -513,7 +522,8 @@ body {
     background-size: 200% 100%;
     animation: compareShimmer 1.3s linear infinite;
 }
-.compare-toast { animation: compareToast 240ms cubic-bezier(.4, 0, .2, 1); }
+.compare-toast,
+.app-action-toast { animation: compareToast 240ms cubic-bezier(.4, 0, .2, 1); }
 
 /* Hide scrollbars on the tab strip and mobile swipe rail */
 .tabbar-scroll::-webkit-scrollbar,

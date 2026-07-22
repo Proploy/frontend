@@ -1,24 +1,22 @@
 'use client'
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Upload, Trash2, Plus } from 'lucide-react';
 import Select from '@/components/ui/Select';
-
-interface UploadedFile {
-  name: string;
-  size: number;
-}
+import type { UploadApplicationDocumentResult } from '@/features/experts/use-expert-application';
+import type { UploadedApplicationFile, VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface CredentialsFormData {
-  certificationFiles: UploadedFile[];
+  certificationFiles: UploadedApplicationFile[];
   manualCertifications: string[];
   yearsExperience: string;
   openToAssessment: boolean;
 }
 
 interface CredentialsStepProps {
-  formData: any;
-  updateFormData: (data: any) => void;
+  formData: VendorOnboardingData;
+  updateFormData: (data: Partial<VendorOnboardingData>) => void;
+  uploadDocument: (documentType: 'certification', file: File) => Promise<UploadApplicationDocumentResult>;
 }
 
 const experienceOptions = [
@@ -35,8 +33,10 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function CredentialsStep({ formData, updateFormData }: CredentialsStepProps) {
+export default function CredentialsStep({ formData, updateFormData, uploadDocument }: CredentialsStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const credentials: CredentialsFormData = {
     certificationFiles: formData.certificationFiles ?? [],
@@ -52,19 +52,32 @@ export default function CredentialsStep({ formData, updateFormData }: Credential
     [updateFormData],
   );
 
-  const handleFiles = useCallback(
-    (files: FileList | null) => {
-      if (!files) return;
-      const newFiles: UploadedFile[] = Array.from(files).map((f) => ({
-        name: f.name,
-        size: f.size,
-      }));
-      update({
-        certificationFiles: [...credentials.certificationFiles, ...newFiles],
+  const handleFiles = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0 || isUploading) return;
+    setIsUploading(true);
+    setUploadError(null);
+    const uploaded: UploadedApplicationFile[] = [];
+
+    for (const file of Array.from(files)) {
+      const result = await uploadDocument('certification', file);
+      if (!result.ok) {
+        setUploadError(result.error.message);
+        continue;
+      }
+      uploaded.push({
+        name: result.data.fileName,
+        size: result.data.fileSizeBytes,
+        fileContentType: result.data.fileContentType,
+        storageKey: result.data.storageKey,
+        visible: true,
       });
-    },
-    [credentials.certificationFiles, update],
-  );
+    }
+
+    if (uploaded.length > 0) {
+      update({ certificationFiles: [...credentials.certificationFiles, ...uploaded] });
+    }
+    setIsUploading(false);
+  }, [credentials.certificationFiles, isUploading, update, uploadDocument]);
 
   const removeFile = useCallback(
     (index: number) => {
@@ -73,14 +86,6 @@ export default function CredentialsStep({ formData, updateFormData }: Credential
       update({ certificationFiles: next });
     },
     [credentials.certificationFiles, update],
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      handleFiles(e.dataTransfer.files);
-    },
-    [handleFiles],
   );
 
   const addManualCertification = useCallback(() => {
@@ -102,7 +107,10 @@ export default function CredentialsStep({ formData, updateFormData }: Credential
           role="button"
           tabIndex={0}
           onClick={() => fileInputRef.current?.click()}
-          onDrop={handleDrop}
+          onDrop={(event) => {
+            event.preventDefault();
+            void handleFiles(event.dataTransfer.files);
+          }}
           onDragOver={(e) => e.preventDefault()}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
@@ -113,7 +121,7 @@ export default function CredentialsStep({ formData, updateFormData }: Credential
             <Upload size={20} className="text-[#535862]" />
           </div>
           <p className="font-[family-name:var(--font-inter)] font-normal text-[16px] leading-[24px] text-[#414651]">
-            Drag and drop files here, or <span className="text-[#155eef] font-medium">browse</span>
+            {isUploading ? 'Uploading…' : <>Drag and drop files here, or <span className="text-[#155eef] font-medium">browse</span></>}
           </p>
           <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
             PDF, PNG, or JPG. Max 25 MB each.
@@ -124,9 +132,15 @@ export default function CredentialsStep({ formData, updateFormData }: Credential
             multiple
             accept=".pdf,.png,.jpg,.jpeg"
             className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
+            onChange={(e) => void handleFiles(e.target.files)}
           />
         </div>
+
+        {uploadError ? (
+          <p className="rounded-[8px] border border-[#fda29b] bg-[#fef3f2] px-[12px] py-[10px] text-[14px] text-[#b42318]">
+            {uploadError}
+          </p>
+        ) : null}
 
         {/* Uploaded file rows */}
         {credentials.certificationFiles.map((file, idx) => (
@@ -150,6 +164,19 @@ export default function CredentialsStep({ formData, updateFormData }: Credential
             >
               <Trash2 size={18} className="text-[#717680]" />
             </button>
+            <label className="flex items-center gap-[6px] text-[12px] text-[#535862]">
+              <input
+                type="checkbox"
+                checked={file.visible}
+                onChange={() => {
+                  const next = [...credentials.certificationFiles];
+                  next[idx] = { ...next[idx], visible: !next[idx].visible };
+                  update({ certificationFiles: next });
+                }}
+                className="size-[16px] accent-[#155eef]"
+              />
+              Visible
+            </label>
           </div>
         ))}
 

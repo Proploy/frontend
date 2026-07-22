@@ -4,6 +4,8 @@ import { ExternalLink } from 'lucide-react'
 
 type InlineVideoMode = 'auto' | 'direct'
 
+const MANAGED_EXPERT_FILE_PATH = /^\/api\/v1\/experts\/[^/]+\/links\/[^/]+\/file$/
+
 interface InlineVideoProps {
   url: string
   title: string
@@ -19,12 +21,21 @@ function getEmbedUrl(url: string): string | null {
 
     if (hostname === 'youtu.be') {
       const videoId = parsed.pathname.split('/').filter(Boolean)[0]
-      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null
+      return videoId && /^[A-Za-z0-9_-]+$/.test(videoId)
+        ? `https://www.youtube-nocookie.com/embed/${videoId}`
+        : null
     }
 
-    if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
-      const videoId = parsed.searchParams.get('v') ?? parsed.pathname.match(/^\/shorts\/([^/]+)/)?.[1]
-      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null
+    if (
+      hostname === 'youtube.com'
+      || hostname === 'm.youtube.com'
+      || hostname === 'youtube-nocookie.com'
+    ) {
+      const videoId = parsed.searchParams.get('v')
+        ?? parsed.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1]
+      return videoId && /^[A-Za-z0-9_-]+$/.test(videoId)
+        ? `https://www.youtube-nocookie.com/embed/${videoId}`
+        : null
     }
 
     if (hostname === 'vimeo.com' || hostname === 'player.vimeo.com') {
@@ -47,6 +58,14 @@ function isDirectVideoUrl(url: string) {
   return /\.(mp4|m4v|mov|webm|ogv|ogg)(?:[?#]|$)/i.test(url)
 }
 
+function isManagedExpertFileUrl(url: string) {
+  try {
+    return MANAGED_EXPERT_FILE_PATH.test(new URL(url, 'http://service-apis.local').pathname)
+  } catch {
+    return false
+  }
+}
+
 export function InlineVideo({
   url,
   title,
@@ -55,7 +74,7 @@ export function InlineVideo({
   className = '',
 }: InlineVideoProps) {
   const embedUrl = mode === 'auto' ? getEmbedUrl(url) : null
-  const canPlayDirectly = mode === 'direct' || isDirectVideoUrl(url)
+  const canPlayDirectly = mode === 'direct' || isDirectVideoUrl(url) || isManagedExpertFileUrl(url)
 
   return (
     <div className={`flex size-full flex-col bg-[#181d27] ${className}`}>

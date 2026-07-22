@@ -39,12 +39,12 @@ export function ExpertFiltersDrawer({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0d12]/35 p-[16px]" onClick={onClose}>
-      <aside className="flex max-h-[min(760px,calc(100vh-32px))] w-[680px] max-w-full flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.25)]" onClick={(event) => event.stopPropagation()}>
+      <aside className="flex max-h-[min(800px,calc(100vh-32px))] w-[min(920px,100%)] max-w-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.25)]" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="px-[24px] pt-[22px] text-[20px] font-semibold text-[#181d27]">Expert filters</h2>
-          <button type="button" onClick={onClose} aria-label="Close filters" className="mr-[20px] mt-[18px] rounded-[8px] p-[8px] text-[#535862] hover:bg-[#f2f4f7]"><X size={20} /></button>
+          <h2 className="px-[32px] pt-[28px] text-[22px] font-semibold text-[#181d27]">Expert filters</h2>
+          <button type="button" onClick={onClose} aria-label="Close filters" className="mr-[24px] mt-[24px] rounded-[8px] p-[8px] text-[#535862] hover:bg-[#f2f4f7]"><X size={22} /></button>
         </div>
-        <div className="grid min-h-0 flex-1 gap-[20px] overflow-y-auto px-[24px] py-[22px] sm:grid-cols-2">
+        <div className="grid min-h-0 flex-1 gap-x-[28px] gap-y-[24px] overflow-y-auto px-[32px] py-[28px] sm:grid-cols-2">
           <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">
             Sort by
             <select value={draft.sort} onChange={(event) => setDraft({ ...draft, sort: event.target.value as ExpertFilterValues['sort'] })} className={controlClasses}>
@@ -71,7 +71,7 @@ export function ExpertFiltersDrawer({
             <input className="accent-[#155eef]" type="range" min={0} max={20} value={draft.minimumYears} onChange={(event) => setDraft({ ...draft, minimumYears: Number(event.target.value) })} />
           </label>
         </div>
-        <div className="flex justify-between border-t border-[#e9eaeb] px-[24px] py-[18px]">
+        <div className="flex justify-between border-t border-[#e9eaeb] px-[32px] py-[22px]">
           <button type="button" onClick={() => setDraft(DEFAULT_EXPERT_FILTERS)} className="font-semibold text-[#414651]">Clear all filters</button>
           <button type="button" onClick={() => { onApply(draft); onClose() }} className="rounded-[10px] bg-[#181d27] px-[20px] py-[11px] font-semibold text-white">Save filters</button>
         </div>
@@ -80,7 +80,7 @@ export function ExpertFiltersDrawer({
   )
 }
 
-const controlClasses = 'h-[44px] rounded-[9px] border border-[#d5d7da] bg-white px-[12px] text-[14px] text-[#181d27] outline-none focus:border-[#155eef]'
+const controlClasses = 'h-[50px] rounded-[10px] border border-[#d5d7da] bg-white px-[14px] text-[15px] text-[#181d27] outline-none focus:border-[#155eef]'
 
 function Input({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
   return <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">{label}<input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={controlClasses} /></label>

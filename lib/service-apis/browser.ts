@@ -5,11 +5,16 @@
  *   import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
  *
  * This module is SAFE to import in browser code.
- * Uses NEXT_PUBLIC_SERVICE_APIS_URL (browser-exposed env var).
+ * Calls the configured `NEXT_PUBLIC_SERVICE_APIS_URL` directly. Authenticated
+ * requests attach the current Supabase browser access token.
  *
  * For Server Components, use:
  *   import { serviceApisFetch } from '@/lib/service-apis/server'
  */
 
-export { ServiceApisBrowserClient } from './browser-client'
+export {
+  ServiceApisBrowserClient,
+  getServiceApisBrowserBaseUrl,
+  serviceApisBrowserFetch,
+} from './browser-client'
 export { normalizeServiceApiError, normalizeCircuitOpen, isCircuitOpen, type NormalizedError } from './error-utils'

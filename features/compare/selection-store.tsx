@@ -16,12 +16,30 @@ export interface SelectedProduct {
   product_logo: string | null
 }
 
+export function mergeSelectedProducts(
+  existing: SelectedProduct[],
+  additions: SelectedProduct[],
+): SelectedProduct[] {
+  const merged: SelectedProduct[] = []
+  const seen = new Set<string>()
+
+  for (const product of [...existing, ...additions]) {
+    if (seen.has(product.product_id)) continue
+    seen.add(product.product_id)
+    merged.push(product)
+    if (merged.length >= MAX_COMPARE) break
+  }
+
+  return merged
+}
+
 interface CompareSelectionValue {
   items: SelectedProduct[]
   count: number
   isFull: boolean
   isSelected: (productId: string) => boolean
   toggle: (product: SelectedProduct) => void
+  addMany: (products: SelectedProduct[]) => void
   remove: (productId: string) => void
   clear: () => void
 }
@@ -79,6 +97,7 @@ export function CompareSelectionProvider({ children }: { children: React.ReactNo
           if (prev.length >= MAX_COMPARE) return prev
           return [...prev, product]
         }),
+      addMany: (products) => setItems((prev) => mergeSelectedProducts(prev, products)),
       remove: (productId) => setItems((prev) => prev.filter((p) => p.product_id !== productId)),
       clear: () => setItems([]),
     }

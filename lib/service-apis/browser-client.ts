@@ -1,21 +1,67 @@
-import { createClient } from '@/lib/supabase/client'
 import { normalizeServiceApiError, type NormalizedError } from './error-utils'
-
-const BASE_URL = (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || '').replace(/\/$/, '')
+import { createClient } from '@/lib/supabase/client'
 
 interface RequestOptions {
-  /**
-   * Attach browser Supabase session token.
-   * - false (default): no token attached
-   * - true: resolve from browser Supabase session
-   */
   requireAuth?: boolean
-  /**
-   * Override token resolved from browser Supabase.
-   * Use for SSR hydration prop — pass server-resolved token here.
-   * When set, token is attached regardless of requireAuth value.
-   */
+  /** Optional current Supabase token, used by auth sync and token-aware callers. */
   accessToken?: string | null
+}
+
+export interface ServiceApisBrowserFetchOptions extends RequestInit {
+  requireAuth?: boolean
+  accessToken?: string | null
+}
+
+function getBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || '').replace(/\/$/, '')
+}
+
+async function resolveAccessToken(accessToken?: string | null): Promise<string | null> {
+  if (accessToken !== undefined) return accessToken
+
+  try {
+    const supabase = createClient()
+    const { data } = await supabase.auth.getSession()
+    return data.session?.access_token ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Browser transport for the FastAPI gateway; feature traffic bypasses Next.js. */
+export async function serviceApisBrowserFetch(
+  path: string,
+  options: ServiceApisBrowserFetchOptions = {},
+): Promise<Response> {
+  const { requireAuth = false, accessToken, headers, ...init } = options
+  const baseUrl = getBaseUrl()
+
+  if (!baseUrl) {
+    return new Response(
+      JSON.stringify({
+        code: 'SERVICE_APIS_NOT_CONFIGURED',
+        detail: 'Service APIs are not configured',
+      }),
+      {
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+      },
+    )
+  }
+
+  const requestHeaders = new Headers(headers)
+  if (!requestHeaders.has('accept')) requestHeaders.set('accept', 'application/json')
+
+  if (requireAuth) {
+    const token = await resolveAccessToken(accessToken)
+    if (token) requestHeaders.set('Authorization', `Bearer ${token}`)
+  }
+
+  return fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
+    ...init,
+    headers: requestHeaders,
+    cache: init.cache ?? 'no-store',
+  })
 }
 
 /**
@@ -24,94 +70,41 @@ interface RequestOptions {
  * IMPORTANT: This module is for Client Components and browser code only.
  * Server Components must use lib/service-apis/server (serviceApisFetch).
  *
- * Token resolution:
- * - accessToken: string → always attach that token (SSR hydration override)
- * - requireAuth: true + no accessToken → resolve from browser Supabase session
- * - requireAuth: false + no accessToken → no token attached
- *
- * SECURITY: Token is never stored in React state. Resolved per-request only.
+ * Authenticated requests read the current Supabase browser session and send
+ * its access token directly to service-apis. Next.js is not in this path.
  */
 export class ServiceApisBrowserClient {
-  private baseUrl: string
-
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl ?? BASE_URL
-    if (!this.baseUrl) {
-      console.warn(
-        '[ServiceApisBrowserClient] NEXT_PUBLIC_SERVICE_APIS_URL is not set. '
-        + 'Browser client will not make requests. Set it in .env.local for local dev.',
-      )
-    }
-  }
-
-  private async resolveToken(): Promise<string | null> {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.auth.getSession()
-      return data.session?.access_token ?? null
-    } catch {
-      return null
-    }
-  }
-
   private async fetch<T>(
     method: string,
     path: string,
     body: unknown | undefined,
     options: RequestOptions,
   ): Promise<NormalizedError | { ok: true; data: T }> {
-    if (!this.baseUrl) {
-      return {
-        ok: false,
-        status: 503,
-        error: {
-          code: 'NOT_CONFIGURED',
-          message: 'NEXT_PUBLIC_SERVICE_APIS_URL is not configured',
-        },
-      }
-    }
-
     const { requireAuth = false, accessToken } = options
-
-    // Resolve token once — either explicit override or from browser Supabase
-    let token: string | null = accessToken ?? null
-    if (requireAuth && token === null) {
-      token = await this.resolveToken()
-    }
-
-    // Auth required but no token available → return normalized 401
-    if (requireAuth && !token) {
-      return {
-        ok: false,
-        status: 401,
-        error: {
-          code: 'AUTHENTICATION_ERROR',
-          message: 'Sign-in required',
-        },
-      }
-    }
 
     const headers: Record<string, string> = {
       accept: 'application/json',
     }
 
-    if (body !== undefined) {
+    const isBinaryBody = typeof Blob !== 'undefined' && body instanceof Blob
+    if (isBinaryBody) {
+      if (body.type) headers['content-type'] = body.type
+    } else if (body !== undefined) {
       headers['content-type'] = 'application/json'
     }
 
-    if (token) {
-      headers['authorization'] = `Bearer ${token}`
-    }
-
-    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`
-
     let response: Response
     try {
-      response = await fetch(url, {
+      response = await serviceApisBrowserFetch(path, {
         method,
         headers,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-        cache: 'no-store',
+        body: body === undefined
+          ? undefined
+          : isBinaryBody
+            ? body
+            : JSON.stringify(body),
+        requireAuth,
+        accessToken,
       })
     } catch {
       // Network/CORS failure — service-apis unreachable
@@ -148,6 +141,36 @@ export class ServiceApisBrowserClient {
     return this.fetch<T>('POST', path, body, options)
   }
 
+  /** Auth-required POST for raw file bytes; no storage URL is returned to the browser. */
+  async postBinary<T = unknown>(path: string, body: Blob, options: RequestOptions = {}): Promise<NormalizedError | { ok: true; data: T }> {
+    return this.fetch<T>('POST', path, body, options)
+  }
+
+  /** Auth-required binary GET; the response remains a service-API blob. */
+  async getBinary(path: string, options: RequestOptions = {}): Promise<NormalizedError | { ok: true; data: Blob }> {
+    const { requireAuth = false, accessToken } = options
+    let response: Response
+    try {
+      response = await serviceApisBrowserFetch(path, {
+        method: 'GET',
+        requireAuth,
+        accessToken,
+      })
+    } catch {
+      return {
+        ok: false,
+        status: 0,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: 'Unable to reach service APIs',
+        },
+      }
+    }
+
+    if (!response.ok) return await normalizeServiceApiError(response)
+    return { ok: true, data: await response.blob() }
+  }
+
   /** Auth-required PATCH */
   async patch<T = unknown>(path: string, body: unknown, options: RequestOptions = {}): Promise<NormalizedError | { ok: true; data: T }> {
     return this.fetch<T>('PATCH', path, body, options)
@@ -162,4 +185,8 @@ export class ServiceApisBrowserClient {
   async delete<T = unknown>(path: string, options: RequestOptions = {}): Promise<NormalizedError | { ok: true; data: T }> {
     return this.fetch<T>('DELETE', path, undefined, options)
   }
+}
+
+export function getServiceApisBrowserBaseUrl(): string {
+  return getBaseUrl()
 }

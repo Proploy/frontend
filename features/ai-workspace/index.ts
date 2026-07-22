@@ -1,0 +1,5 @@
+export * from '@/features/ai-workspace/client'
+export * from '@/features/ai-workspace/context'
+export * from '@/features/ai-workspace/stream'
+export * from '@/features/ai-workspace/types'
+export { useAiWorkspace } from '@/features/ai-workspace/use-ai-workspace'

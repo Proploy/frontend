@@ -7,6 +7,14 @@ import {
 } from '../mappers'
 import type { ProductCard, ProductCardResponse, ProductDetail, PricingPlanItem, RatingItem, ProductMediaAssetItem } from '../types'
 
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_SERVICE_APIS_URL', 'http://localhost:8020')
+})
+
+afterAll(() => {
+  vi.unstubAllEnvs()
+})
+
 // ── Test Fixtures ────────────────────────────────────────────────────────────
 
 const mockProductCard: ProductCard = {
@@ -130,7 +138,7 @@ describe('mapProductCardToCardProduct', () => {
       product_id: 'prod-123',
       product_name: 'Salesforce CRM',
       product_description: 'The world\'s #1 CRM platform.',
-      product_logo: 'https://example.com/logo.png',
+      product_logo: 'http://localhost:8020/api/v1/catalog/products/prod-123/logo',
       rating: 4.5,
       reviews: 1243,
       primary_category: 'CRM',
@@ -313,5 +321,50 @@ describe('mapProductDetailToPageModel', () => {
 
     expect(result.pricing_plans).toEqual([])
     expect(result.ratings).toEqual([])
+  })
+
+  it('does not expose fields whose value is the unpublished status', () => {
+    const detailWithUnpublishedValues: ProductDetail = {
+      ...mockProductDetail,
+      vendor_name: 'Not published',
+      short_description: 'Not published',
+      what_is: 'Not published',
+      best_for: 'Not published',
+      not_for: 'Not published',
+      implementation_complexity: 'Not published',
+      typical_timeline: 'Not published',
+      primary_category: 'Not published',
+      deployment_models: ['Cloud', 'Not published'],
+      target_segments: ['Not published'],
+      core_features: ['Not published'],
+      integration_labels: ['Not published'],
+      compliance_labels: ['SOC 2', 'Not published'],
+      all_categories: [{
+        term_id: 'unpublished',
+        label: 'Not published',
+        taxonomy_type: 'category',
+        relationship_type: 'category',
+        confidence_score: null,
+      }],
+      pricing_plans: [{ ...mockPricingPlan, plan_name: 'Not published', price_text: 'Not published' }],
+    }
+
+    const result = mapProductDetailToPageModel(detailWithUnpublishedValues, [])
+
+    expect(result.vendor_name).toBeNull()
+    expect(result.short_description).toBeNull()
+    expect(result.what_is).toBeNull()
+    expect(result.best_for).toBeNull()
+    expect(result.not_for).toBeNull()
+    expect(result.implementation_complexity).toBeNull()
+    expect(result.typical_timeline).toBeNull()
+    expect(result.primary_category).toBeNull()
+    expect(result.deployment_models).toEqual(['Cloud'])
+    expect(result.target_segments).toEqual([])
+    expect(result.core_features).toEqual([])
+    expect(result.integration_labels).toEqual([])
+    expect(result.compliance_labels).toEqual(['SOC 2'])
+    expect(result.all_categories).toEqual([])
+    expect(result.pricing_plans).toEqual([])
   })
 })

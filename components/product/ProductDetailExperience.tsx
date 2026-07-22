@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -18,15 +17,27 @@ import {
 } from 'lucide-react'
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
 import {
   getProductDetailTabs,
   getProductGalleryMedia,
+  isUnpublishedValue,
+  useProductAlternatives,
+  type ProductAlternative,
   type ProductMediaPreview,
   type ProductPageModel,
   type ProductTabKey,
 } from '@/features/catalog'
+import {
+  MAX_COMPARE,
+  useCompareSelection,
+  type SelectedProduct,
+} from '@/features/compare/selection-store'
 import { useApprovedExperts } from '@/features/experts'
+import { resolveExpertPublicResourceUrl } from '@/features/experts/public-resource'
+import { useRecentlyViewed } from '@/features/users'
+import { buildComparisonAdditions } from './product-detail-comparison'
 
 interface ProductDetailExperienceProps {
   product: ProductPageModel
@@ -68,6 +79,19 @@ export default function ProductDetailExperience({
     platform: product.product_name,
     limit: 8,
   })
+  const { alternatives, loading: alternativesLoading, error: alternativesError, refetch: refetchAlternatives } =
+    useProductAlternatives({ productId: product.product_id, limit: 6 })
+  const { addMany, count: comparisonCount, isSelected } = useCompareSelection()
+  const { track: trackRecentlyViewed } = useRecentlyViewed()
+  const currentComparisonProduct = useMemo<SelectedProduct>(() => ({
+    product_id: product.product_id,
+    product_name: product.product_name,
+    product_logo: product.product_logo,
+  }), [product.product_id, product.product_logo, product.product_name])
+
+  useEffect(() => {
+    void trackRecentlyViewed(product.product_id, 'product')
+  }, [product.product_id, trackRecentlyViewed])
 
   useEffect(() => {
     if (gallery.length <= 1) return
@@ -81,8 +105,10 @@ export default function ProductDetailExperience({
 
   useEffect(() => {
     if (heroIndex >= gallery.length) {
-      setHeroIndex(0)
+      const timer = window.setTimeout(() => setHeroIndex(0), 0)
+      return () => window.clearTimeout(timer)
     }
+    return undefined
   }, [gallery.length, heroIndex])
 
   const selectTab = (tab: ProductTabKey) => {
@@ -171,6 +197,11 @@ export default function ProductDetailExperience({
               {product.free_plan && <StatusPill label="Free plan" />}
               {product.free_trial && <StatusPill label="Free trial" />}
               {product.pricing_bucket && <StatusPill label={formatLabel(product.pricing_bucket)} />}
+              <FavoriteToggle
+                targetId={product.product_id}
+                label={product.product_name}
+                className="border-white/70 bg-white/95 text-[#0b1f4f] hover:bg-white"
+              />
               {product.official_website && (
                 <a
                   href={product.official_website}
@@ -419,9 +450,9 @@ export default function ProductDetailExperience({
                   <article key={expert.id} className="flex flex-col rounded-[14px] border border-[#e9eaeb] p-[18px]">
                     <div className="flex items-start gap-[12px]">
                       <div className="flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#155eef] text-[18px] font-semibold text-white">
-                        {expert.profilePictureUrl ? (
+                        {resolveExpertPublicResourceUrl(expert.profilePictureUrl) ? (
                           <CatalogImage
-                            src={expert.profilePictureUrl}
+                            src={resolveExpertPublicResourceUrl(expert.profilePictureUrl) ?? ''}
                             alt={expert.displayName}
                             className="size-full object-cover"
                             fallback={expert.displayName.charAt(0).toUpperCase()}
@@ -508,6 +539,23 @@ export default function ProductDetailExperience({
                 )}
               </div>
             </div>
+
+            <AlternativesSidebarCard
+              alternatives={alternatives}
+              loading={alternativesLoading}
+              error={Boolean(alternativesError)}
+              comparisonCount={comparisonCount}
+              currentProduct={currentComparisonProduct}
+              isSelected={isSelected}
+              onRetry={refetchAlternatives}
+              onCompare={(alternative) => {
+                addMany(buildComparisonAdditions(currentComparisonProduct, {
+                  product_id: alternative.product_id,
+                  product_name: alternative.product_name,
+                  product_logo: alternative.logo_url,
+                }))
+              }}
+            />
           </div>
         </aside>
       </main>
@@ -611,6 +659,113 @@ function MediaSidebarCard({
       ) : (
         <p className="mt-[12px] rounded-[12px] border border-dashed border-[#d5d7da] bg-[#fafafa] px-[14px] py-[16px] text-[13px] leading-[19px] text-[#717680]">
           No approved product media has been published yet.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function AlternativesSidebarCard({
+  alternatives,
+  loading,
+  error,
+  comparisonCount,
+  currentProduct,
+  isSelected,
+  onRetry,
+  onCompare,
+}: {
+  alternatives: ProductAlternative[]
+  loading: boolean
+  error: boolean
+  comparisonCount: number
+  currentProduct: SelectedProduct
+  isSelected: (productId: string) => boolean
+  onRetry: () => void
+  onCompare: (alternative: ProductAlternative) => void
+}) {
+  return (
+    <section className="rounded-[16px] border border-[#e9eaeb] bg-white p-[20px]">
+      <div className="flex items-center justify-between gap-[12px]">
+        <div>
+          <h2 className="text-[15px] font-semibold">Recommended products</h2>
+          <p className="mt-[4px] text-[12px] leading-[18px] text-[#717680]">
+            Compare similar products with {currentProduct.product_name}.
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-[#eff4ff] px-[8px] py-[4px] text-[11px] font-semibold text-[#155eef]">
+          {comparisonCount}/{MAX_COMPARE}
+        </span>
+      </div>
+
+      {loading && alternatives.length === 0 ? (
+        <div className="mt-[14px] space-y-[10px]" aria-label="Loading recommendations">
+          {[0, 1].map((item) => (
+            <div key={item} className="h-[116px] animate-pulse rounded-[12px] bg-[#f2f4f7]" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="mt-[14px] rounded-[12px] border border-dashed border-[#d5d7da] bg-[#fafafa] p-[14px]">
+          <p className="text-[13px] leading-[19px] text-[#717680]">Recommendations could not be loaded.</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-[10px] text-[13px] font-semibold text-[#004eeb]"
+          >
+            Retry
+          </button>
+        </div>
+      ) : alternatives.length > 0 ? (
+        <div className="mt-[14px] max-h-[280px] space-y-[10px] overflow-y-auto pr-[4px]">
+          {alternatives.map((alternative) => {
+            const selected = isSelected(alternative.product_id)
+            const unseenProducts =
+              (isSelected(currentProduct.product_id) ? 0 : 1) + (selected ? 0 : 1)
+            const blocked = comparisonCount + unseenProducts > MAX_COMPARE
+
+            return (
+              <article
+                key={alternative.product_id}
+                className="rounded-[12px] border border-[#e9eaeb] p-[12px]"
+              >
+                <div className="flex items-start gap-[10px]">
+                  <div className="flex size-[36px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white p-[5px]">
+                    <CatalogImage
+                      src={alternative.logo_url ?? ''}
+                      alt={`${alternative.product_name} logo`}
+                      className="size-full object-contain"
+                      fallback={<LogoFallback name={alternative.product_name} />}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-[14px] font-semibold">{alternative.product_name}</h3>
+                    <p className="mt-[3px] line-clamp-2 text-[12px] leading-[17px] text-[#717680]">
+                      {alternative.short_description || 'Explore this similar product.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={selected || blocked}
+                  title={blocked ? `Compare up to ${MAX_COMPARE} products — remove one first` : undefined}
+                  onClick={() => onCompare(alternative)}
+                  className={`mt-[10px] w-full rounded-[8px] border px-[10px] py-[7px] text-[13px] font-semibold transition-colors disabled:cursor-not-allowed ${
+                    selected
+                      ? 'border-[#b2ddff] bg-[#eff8ff] text-[#004eeb]'
+                      : blocked
+                        ? 'border-[#e9eaeb] bg-white text-[#a4a7ae]'
+                        : 'border-[#d5d7da] bg-white text-[#414651] hover:bg-[#f5f5f5] hover:text-[#004eeb]'
+                  }`}
+                >
+                  {selected ? 'Added' : blocked ? 'Tray full' : 'Compare'}
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="mt-[14px] rounded-[12px] border border-dashed border-[#d5d7da] bg-[#fafafa] px-[14px] py-[16px] text-[13px] leading-[19px] text-[#717680]">
+          No similar products are available yet.
         </p>
       )}
     </section>
@@ -751,10 +906,12 @@ function InsightCard({
 }
 
 function MetadataCard({ label, value }: { label: string; value: string | null }) {
+  if (!value) return null
+
   return (
     <div className="rounded-[12px] border border-[#e9eaeb] bg-[#fafafa] p-[14px]">
       <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#717680]">{label}</p>
-      <p className="mt-[6px] text-[14px] font-medium leading-[20px] text-[#414651]">{value || 'Not published'}</p>
+      <p className="mt-[6px] text-[14px] font-medium leading-[20px] text-[#414651]">{value}</p>
     </div>
   )
 }
@@ -812,7 +969,7 @@ function formatLabel(value: string) {
 }
 
 function isPublishedMetaValue(value: string | null | undefined): value is string {
-  return Boolean(value && value.toLowerCase() !== 'unknown')
+  return Boolean(value && value.toLowerCase() !== 'unknown' && !isUnpublishedValue(value))
 }
 
 function getPricingSourceUrl(plans: { source_url: string | null }[]): string | null {

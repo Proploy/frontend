@@ -7,6 +7,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { ArrowRight, X } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { buildCompareUrl } from '@/features/compare/compare-url'
 import { useCompareSelection, MAX_COMPARE } from '@/features/compare/selection-store'
 
 export default function CompareTray() {
@@ -19,8 +20,8 @@ export default function CompareTray() {
   const canCompare = count >= 2
   const goCompare = () => {
     if (!canCompare) return
-    const ids = items.map((p) => p.product_id).join(',')
-    router.push(`/compare?products=${encodeURIComponent(ids)}`)
+    clear()
+    router.push(buildCompareUrl(items.map((p) => p.product_id)))
   }
 
   return (

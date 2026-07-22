@@ -2,13 +2,14 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
+import { syncUserToServiceApis, type AuthSyncProfile } from '@/lib/service-apis/auth-sync'
 
 type AuthUser = {
   id: string
   email?: string
   name?: string
   image?: string
+  role?: string | null
 }
 
 type AuthContextType = {
@@ -27,11 +28,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const supabase = useMemo(() => createClient(), [])
   const syncedTokenRef = useRef<string | null>(null)
+  const syncedProfileRef = useRef<AuthSyncProfile | null>(null)
 
-  const syncSessionOnce = async (accessToken?: string | null) => {
-    if (!accessToken || syncedTokenRef.current === accessToken) return
+  const syncSessionOnce = async (accessToken?: string | null): Promise<AuthSyncProfile | null> => {
+    if (!accessToken) return null
+    if (syncedTokenRef.current === accessToken) return syncedProfileRef.current
+
     const synced = await syncUserToServiceApis(accessToken)
-    if (synced) syncedTokenRef.current = accessToken
+    if (synced) {
+      syncedTokenRef.current = accessToken
+      syncedProfileRef.current = synced
+    } else {
+      syncedTokenRef.current = null
+      syncedProfileRef.current = null
+    }
+    return synced
   }
 
   useEffect(() => {
@@ -47,13 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const { data: { session } } = await supabase.auth.getSession()
-      await syncSessionOnce(session?.access_token)
+      const syncedProfile = await syncSessionOnce(session?.access_token)
 
       const u = {
         id: user.id,
         email: user.email,
         name: user.user_metadata?.full_name as string || user.user_metadata?.name as string,
         image: user.user_metadata?.avatar_url as string,
+        // Service-apis returns the DB-backed role. Supabase app_metadata is
+        // not an authorization source and may be stale after expert approval.
+        role: syncedProfile?.role ?? null,
       }
       setUser(u)
       setIsLoading(false)
@@ -63,12 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        await syncSessionOnce(session.access_token)
+        const syncedProfile = await syncSessionOnce(session.access_token)
         const u = {
           id: session.user.id,
           email: session.user.email,
           name: session.user.user_metadata?.full_name as string || session.user.user_metadata?.name as string,
           image: session.user.user_metadata?.avatar_url as string,
+          role: syncedProfile?.role ?? null,
         }
         setUser(u)
       } else {
@@ -104,6 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    syncedTokenRef.current = null
+    syncedProfileRef.current = null
     setUser(null)
   }
 

@@ -37,7 +37,7 @@ function ExpertsPageContent() {
   useEffect(() => {
     setFilters(filtersFromUrl)
   }, [filtersFromUrl])
-  const { experts, loading } = useApprovedExperts({
+  const { experts, loading, error, refetch } = useApprovedExperts({
     platform: filters.platform || undefined,
     industry: filters.industry || undefined,
     projectType: filters.projectType || undefined,
@@ -92,6 +92,23 @@ function ExpertsPageContent() {
           {loading ? (
             <div className="flex items-center justify-center py-[96px]">
               <Loader2 size={40} className="animate-spin text-[#155eef]" />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center gap-[16px] py-[96px]">
+              <p
+                className="font-[family-name:var(--font-dm-sans)] text-[18px] font-normal leading-[28px] text-[#535862]"
+                style={{ fontVariationSettings: "'opsz' 14" }}
+              >
+                We couldn&apos;t load approved experts right now.
+              </p>
+              <p className="text-[14px] text-[#717680]">{error.error.message}</p>
+              <button
+                type="button"
+                onClick={refetch}
+                className="rounded-[10px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold text-white hover:bg-[#004eeb]"
+              >
+                Try again
+              </button>
             </div>
           ) : typedExperts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-[96px] gap-[16px]">

@@ -6,7 +6,6 @@
  */
 import { useMemo } from 'react'
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
-import { createClient } from '@/lib/supabase/client'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type {
   ExpertDashboardResponse,
@@ -17,7 +16,6 @@ import type {
 } from '@/features/experts/types'
 
 const client = new ServiceApisBrowserClient()
-const PROFILE_PICTURE_BUCKET = 'expert-pictures'
 let inFlightDashboardRequest: Promise<GetDashboardResult> | null = null
 
 export type GetDashboardResult = { ok: true; data: ExpertDashboardResponse } | NormalizedError
@@ -75,22 +73,6 @@ async function getProfilePictureUploadUrl(
   return { ok: true, data: result.data }
 }
 
-async function uploadProfilePictureToSignedUrl(uploadUrl: string, file: File): Promise<void> {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: { 'content-type': file.type || 'application/octet-stream' },
-  })
-  if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
-  }
-}
-
-function getProfilePicturePublicUrl(storageKey: string) {
-  const supabase = createClient()
-  return supabase.storage.from(PROFILE_PICTURE_BUCKET).getPublicUrl(storageKey).data.publicUrl
-}
-
 /**
  * PATCH /api/v1/experts/me/profile-picture
  */
@@ -108,7 +90,5 @@ export const useExpertDashboard = () => useMemo(() => ({
   getDashboard,
   getProjectFileDownloadUrl,
   getProfilePictureUploadUrl,
-  getProfilePicturePublicUrl,
   saveProfilePicture,
-  uploadProfilePictureToSignedUrl,
 }), [])

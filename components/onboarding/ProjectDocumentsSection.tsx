@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FileText, Download, Loader2 } from 'lucide-react'
 import { useExpertDashboard } from '@/features/experts/use-expert-dashboard'
+import { resolveExpertPublicResourceUrl } from '@/features/experts/public-resource'
 import type { ExpertProjectResponse } from '@/features/experts/types'
 
 interface ProjectDocumentsSectionProps {
@@ -37,7 +38,8 @@ export default function ProjectDocumentsSection({
     try {
       const result = await getProjectFileDownloadUrl(projectId)
       if (result.ok) {
-        window.open(result.data.downloadUrl, '_blank')
+        const fileUrl = resolveExpertPublicResourceUrl(result.data.downloadUrl)
+        if (fileUrl) window.open(fileUrl, '_blank', 'noopener,noreferrer')
       }
     } finally {
       setDownloadingId(null)
@@ -55,7 +57,7 @@ export default function ProjectDocumentsSection({
   return (
     <div className="space-y-3">
       {projects.map((project) => {
-        const hasFile = !!project.fileStorageKey
+        const hasFile = Boolean(project.fileStorageKey || resolveExpertPublicResourceUrl(project.fileUrl))
         const isDownloading = downloadingId === project.id
 
         return (

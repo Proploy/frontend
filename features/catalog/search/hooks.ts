@@ -12,6 +12,7 @@ import {
   mapKeywordSearchResponseToResults,
   mapCatalogSearchResponseToResults,
 } from '../search/mappers'
+import { isUnpublishedValue } from '../products/published-values'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -220,8 +221,11 @@ export function useCatalogProductMatches(queries: string[]): UseCatalogProductMa
 
     const matches = results.flatMap(({ query, result }) => {
       if (!result.ok) return []
-      const match = result.data.results.find((candidate) => namesMatch(candidate.product_name, query))
-        ?? result.data.results[0]
+      const visibleCandidates = result.data.results.filter(
+        (candidate) => !isUnpublishedValue(candidate.product_name),
+      )
+      const match = visibleCandidates.find((candidate) => namesMatch(candidate.product_name, query))
+        ?? visibleCandidates[0]
       return match ? [mapKeywordSearchResponseToResults({ results: [match], count: 1 }, 1, 0).products[0]] : []
     })
 

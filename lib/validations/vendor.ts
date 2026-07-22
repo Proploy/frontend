@@ -18,13 +18,26 @@ const projectsStepSchema = z.object({
   totalProjects: z.string().min(1, 'Total projects completed is required'),
 })
 
-// Step 4 - Portfolio (PortfolioStep uses AddedLink[] not string[])
+const uploadedApplicationFileSchema = z.object({
+  name: z.string().min(1),
+  size: z.number().nonnegative(),
+  publicUrl: z.string().url().nullable().optional(),
+  storageKey: z.string().nullable().optional(),
+  fileContentType: z.string().nullable().optional(),
+  visible: z.boolean(),
+})
+
+// Step 4 - Portfolio (links and uploaded portfolio files are valid evidence)
 const portfolioStepSchema = z.object({
   portfolioLinks: z.array(z.object({
     url: z.string().min(1, 'URL is required'),
     visible: z.boolean(),
-  })).min(1, 'At least one portfolio link is required'),
-})
+  })),
+  portfolioFiles: z.array(uploadedApplicationFileSchema),
+}).refine(
+  (value) => value.portfolioLinks.length > 0 || value.portfolioFiles.length > 0,
+  { message: 'Add at least one portfolio link or upload a portfolio file', path: ['portfolioLinks'] },
+)
 
 // Step 5 - Preferences (PreferencesStep uses timezone, regions[], weeklyAvailability, preferredProjectTypes[], whyPlatforms)
 const preferencesStepSchema = z.object({
@@ -45,7 +58,7 @@ export const vendorSubmitSchema = z.object({
   platform: z.string(),
   industry: z.string(),
   industries: z.array(z.string()),
-  certificationFiles: z.array(z.object({ name: z.string(), size: z.number() })),
+  certificationFiles: z.array(uploadedApplicationFileSchema),
   manualCertifications: z.array(z.string()),
   yearsExperience: z.string().min(1),
   openToAssessment: z.boolean(),
@@ -59,7 +72,7 @@ export const vendorSubmitSchema = z.object({
     link: z.string(),
     ndaSafe: z.boolean(),
   })),
-  portfolioFiles: z.instanceof(File).array(),
+  portfolioFiles: z.array(uploadedApplicationFileSchema),
   portfolioLinks: z.array(z.object({ url: z.string(), visible: z.boolean() })),
   visibilitySettings: z.record(z.string(), z.boolean()),
   timezone: z.string().min(1),

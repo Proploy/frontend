@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Search, X } from 'lucide-react'
+import { Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
 import { NotificationsBell } from '@/components/dashboard/NotificationsBell'
 import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
 
@@ -44,6 +45,11 @@ export type DashboardBrand = {
   word: string
   /** Where the logo links to (home of this workspace). */
   href: string
+  /** Optional full brand image shown instead of the tile + wordmark. */
+  logoSrc?: string
+  logoAlt?: string
+  logoWidth?: number
+  logoHeight?: number
   /** Logo tile background color. */
   markBg?: string
 }
@@ -55,18 +61,76 @@ const DEFAULT_BRAND: DashboardBrand = {
   markBg: '#155eef',
 }
 
-function NavLink({ item, onNavigate }: { item: DashNavItem; onNavigate?: () => void }) {
+function BrandLink({
+  brand,
+  onNavigate,
+  compact = false,
+  collapsed = false,
+}: {
+  brand: DashboardBrand
+  onNavigate?: () => void
+  compact?: boolean
+  collapsed?: boolean
+}) {
+  if (collapsed) {
+    return (
+      <Link
+        href={brand.href}
+        onClick={onNavigate}
+        aria-label={brand.word}
+        title={brand.word}
+        className="inline-flex items-center justify-center rounded-[8px]"
+      >
+        <div
+          className="flex size-[32px] items-center justify-center rounded-[8px] text-[14px] font-bold text-white"
+          style={{ background: brand.markBg ?? '#155eef' }}
+        >
+          {brand.mark}
+        </div>
+      </Link>
+    )
+  }
+
+  if (brand.logoSrc) {
+    return (
+      <Link href={brand.href} className="px-[8px] flex items-center" onClick={onNavigate}>
+        <Image
+          src={brand.logoSrc}
+          alt={brand.logoAlt ?? brand.word}
+          width={brand.logoWidth ?? 152}
+          height={brand.logoHeight ?? 42}
+          className={`${compact ? 'h-[32px]' : 'h-[34px]'} w-auto object-contain`}
+          priority
+        />
+      </Link>
+    )
+  }
+
+  return (
+    <Link href={brand.href} className="px-[8px] flex items-center gap-[10px]" onClick={onNavigate}>
+      <div
+        className="size-[32px] rounded-[8px] flex items-center justify-center text-white font-bold text-[14px]"
+        style={{ background: brand.markBg ?? '#155eef' }}
+      >
+        {brand.mark}
+      </div>
+      <span className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{brand.word}</span>
+    </Link>
+  )
+}
+
+function NavLink({ item, onNavigate, collapsed = false }: { item: DashNavItem; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname()
   const Icon = item.icon
   const isActive = item.href === pathname
-  const className = `flex w-full items-center gap-[12px] px-[12px] py-[8px] rounded-[6px] text-left font-semibold text-[14px] leading-[20px] transition-colors ${
-    isActive ? 'bg-[#fafafa] text-[#252b37]' : 'text-[#414651]'
-  } ${item.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#fafafa]'}`
+  const className = `flex w-full items-center ${collapsed ? 'justify-center gap-0 px-[8px]' : 'gap-[12px] px-[12px]'} py-[8px] rounded-[6px] text-left font-semibold text-[14px] leading-[20px] transition-colors ${
+    isActive ? 'bg-[#eff4ff] text-[#155eef]' : 'text-[#414651]'
+  } ${item.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f8ff]'}`
   const content = (
     <>
       <Icon size={20} className={`shrink-0 ${isActive ? 'text-[#155eef]' : 'text-[#717680]'}`} />
-      <span className="flex-1 truncate">{item.label}</span>
-      {item.badge && (
+      {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+      {!collapsed && item.badge && (
         <span className="px-[8px] py-[2px] rounded-full border border-[#e9eaeb] bg-white text-[12px] leading-[18px] font-semibold text-[#414651]">
           {item.badge}
         </span>
@@ -80,6 +144,7 @@ function NavLink({ item, onNavigate }: { item: DashNavItem; onNavigate?: () => v
         href={item.href}
         onClick={onNavigate}
         className={className}
+        title={collapsed ? item.label : undefined}
         aria-current={isActive ? 'page' : undefined}
       >
         {content}
@@ -88,18 +153,17 @@ function NavLink({ item, onNavigate }: { item: DashNavItem; onNavigate?: () => v
   }
 
   return (
-    <button type="button" disabled={item.disabled} className={className}>
+    <button type="button" disabled={item.disabled} title={collapsed ? item.label : undefined} className={className}>
       {content}
     </button>
   )
 }
 
-function UserCard({ user }: { user?: DashboardUser }) {
+function UserCard({ user, collapsed = false }: { user?: DashboardUser; collapsed?: boolean }) {
   const name = user?.name ?? 'Account'
-  const email = user?.email ?? ''
   const initial = name.charAt(0).toUpperCase()
   return (
-    <div className="flex items-center gap-[12px] p-[8px] rounded-[8px] hover:bg-[#fafafa] transition-colors">
+    <div className={`flex items-center gap-[12px] rounded-[8px] p-[8px] transition-colors hover:bg-[#f5f8ff] ${collapsed ? 'justify-center' : ''}`} title={collapsed ? name : undefined}>
       <div
         className={`size-[40px] rounded-full flex items-center justify-center text-white font-semibold text-[14px] shrink-0 ${
           user?.avatarClassName ?? 'bg-gradient-to-br from-[#84adff] to-[#155eef]'
@@ -107,10 +171,11 @@ function UserCard({ user }: { user?: DashboardUser }) {
       >
         {initial}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">{name}</p>
-        <p className="font-normal text-[14px] leading-[20px] text-[#535862] truncate">{email}</p>
-      </div>
+      {!collapsed && (
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{name}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -123,6 +188,8 @@ function SidebarBody({
   brand,
   notifications,
   onNavigate,
+  collapsed = false,
+  onToggle,
 }: {
   nav: DashNavItem[]
   secondaryNav?: DashNavItem[]
@@ -130,6 +197,8 @@ function SidebarBody({
   brand: DashboardBrand
   notifications?: NotificationItem[]
   onNavigate?: () => void
+  collapsed?: boolean
+  onToggle?: () => void
 }) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -154,49 +223,56 @@ function SidebarBody({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-[8px]">
-        <Link href={brand.href} className="px-[8px] flex items-center gap-[10px]" onClick={onNavigate}>
-          <div
-            className="size-[32px] rounded-[8px] flex items-center justify-center text-white font-bold text-[14px]"
-            style={{ background: brand.markBg ?? '#155eef' }}
-          >
-            {brand.mark}
-          </div>
-          <span className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{brand.word}</span>
-        </Link>
-        {notifications && <NotificationsBell items={notifications} align="left" />}
+      <div className={`flex items-center gap-[8px] ${collapsed ? 'flex-col' : 'justify-between'}`}>
+        <BrandLink brand={brand} onNavigate={onNavigate} collapsed={collapsed} />
+        <div className={`flex items-center gap-[4px] ${collapsed ? 'flex-col' : ''}`}>
+          {notifications && <NotificationsBell items={notifications} align="left" />}
+          {onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#f5f8ff] hover:text-[#155eef]"
+            >
+              {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="relative">
-        <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#717680]" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search workspace"
-          aria-label="Filter navigation"
-          className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[36px] pr-[36px] py-[8px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
-        />
-        {query ? (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            aria-label="Clear search"
-            className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#717680] hover:text-[#414651]"
-          >
-            <X size={14} />
-          </button>
-        ) : (
-          <span className="absolute right-[10px] top-1/2 -translate-y-1/2 px-[6px] py-[2px] text-[12px] leading-[18px] text-[#717680] border border-[#e9eaeb] rounded-[4px] bg-white">
-            ⌘K
-          </span>
-        )}
-      </div>
+      {!collapsed && (
+        <div className="relative">
+          <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#717680]" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search workspace"
+            aria-label="Filter navigation"
+            className={`w-full rounded-[8px] border border-[#d5d7da] bg-white py-[8px] pl-[36px] pr-[36px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#717680] hover:text-[#414651]"
+            >
+              <X size={14} />
+            </button>
+          ) : (
+            <span className="absolute right-[10px] top-1/2 -translate-y-1/2 rounded-[4px] border border-[#e9eaeb] bg-white px-[6px] py-[2px] text-[12px] leading-[18px] text-[#717680]">
+              ⌘K
+            </span>
+          )}
+        </div>
+      )}
 
       <nav className="flex flex-col gap-[2px]">
         {filteredPrimary.map((item) => (
-          <NavLink key={item.label} item={item} onNavigate={onNavigate} />
+          <NavLink key={item.label} item={item} onNavigate={onNavigate} collapsed={collapsed} />
         ))}
       </nav>
 
@@ -209,12 +285,12 @@ function SidebarBody({
       {filteredSecondary.length > 0 && (
         <nav className="flex flex-col gap-[2px]">
           {filteredSecondary.map((item) => (
-            <NavLink key={item.label} item={item} onNavigate={onNavigate} />
+            <NavLink key={item.label} item={item} onNavigate={onNavigate} collapsed={collapsed} />
           ))}
         </nav>
       )}
 
-      <UserCard user={user} />
+      <UserCard user={user} collapsed={collapsed} />
     </>
   )
 }
@@ -226,16 +302,20 @@ export function DashboardSidebar({
   user,
   brand = DEFAULT_BRAND,
   notifications,
+  collapsed = false,
+  onToggle,
 }: {
   nav: DashNavItem[]
   secondaryNav?: DashNavItem[]
   user?: DashboardUser
   brand?: DashboardBrand
   notifications?: NotificationItem[]
+  collapsed?: boolean
+  onToggle?: () => void
 }) {
   return (
-    <aside className="hidden lg:flex flex-col w-[296px] shrink-0 h-screen sticky top-0 bg-white border-r border-[#e9eaeb] px-[16px] py-[24px] gap-[24px]">
-      <SidebarBody nav={nav} secondaryNav={secondaryNav} user={user} brand={brand} notifications={notifications} />
+    <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col gap-[24px] overflow-hidden border-r border-[#e9eaeb] bg-white px-[16px] py-[24px] transition-[width] duration-200 lg:flex ${collapsed ? 'w-[80px]' : 'w-[296px]'}`}>
+      <SidebarBody nav={nav} secondaryNav={secondaryNav} user={user} brand={brand} notifications={notifications} collapsed={collapsed} onToggle={onToggle} />
     </aside>
   )
 }
@@ -257,6 +337,7 @@ export function DashboardChrome({
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Lock body scroll while the drawer is open.
   useEffect(() => {
@@ -269,22 +350,22 @@ export function DashboardChrome({
   }, [open])
 
   return (
-    <div className="min-h-screen bg-[#fafafa] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+    <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] text-[#181d27]">
       <div className="flex">
-        <DashboardSidebar nav={nav} secondaryNav={secondaryNav} user={user} brand={brand} notifications={notifications} />
+        <DashboardSidebar
+          nav={nav}
+          secondaryNav={secondaryNav}
+          user={user}
+          brand={brand}
+          notifications={notifications}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed((current) => !current)}
+        />
 
         <div className="flex-1 min-w-0">
           {/* Mobile top bar */}
           <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] bg-white px-[16px] py-[12px]">
-            <Link href={brand.href} className="flex items-center gap-[10px]">
-              <div
-                className="size-[28px] rounded-[7px] flex items-center justify-center text-white font-bold text-[13px]"
-                style={{ background: brand.markBg ?? '#155eef' }}
-              >
-                {brand.mark}
-              </div>
-              <span className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{brand.word}</span>
-            </Link>
+            <BrandLink brand={brand} compact />
             <div className="flex items-center gap-[4px]">
               {notifications && <NotificationsBell items={notifications} align="right" />}
               <button

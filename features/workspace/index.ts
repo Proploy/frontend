@@ -5,5 +5,64 @@
 // public /experts/[id] profile.
 
 export * from '@/features/workspace/types'
-export { useDashboard } from '@/features/workspace/use-dashboard'
-export { useCurrentUserRole } from '@/features/workspace/use-current-user-role'
+export * from '@/features/workspace/request-rows'
+export {
+  useCurrentUserRole,
+  useStandaloneCurrentUserRole,
+  WorkspaceRoleProvider,
+} from '@/features/workspace/use-current-user-role'
+export { useWorkspace } from '@/features/workspace/use-workspace'
+export {
+  useWorkspaceProjectDetail,
+  listMilestones,
+  addMilestone,
+  decideMilestone,
+  completeMilestone,
+} from '@/features/workspace/use-workspace-project-detail'
+export type {
+  Milestone,
+  MilestoneAcceptance,
+  MilestoneCreateInput,
+  MilestoneDecisionInput,
+  ProjectSubItem,
+  SubItemCreateInput,
+  SubItemReorderInput,
+  SubItemUpdateInput,
+  SubItemStatus,
+  TimeEntry,
+  TimeSummary,
+} from '@/features/workspace/use-workspace-project-detail'
+export { useWorkspaceHome } from '@/features/workspace/use-workspace-home'
+export type {
+  WorkspaceContract,
+  WorkspaceContractDocumentUploadResponse,
+  WorkspaceContractListResponse,
+  ContractStatus,
+  WorkspaceHomeActivity,
+  WorkspaceHomeError,
+  WorkspaceHomeKpis,
+  WorkspaceHomeSnapshot,
+  WorkspaceInvoice,
+  WorkspaceInvoiceListResponse,
+  InvoiceStatus,
+  WorkspaceProposal,
+  WorkspaceProposalCreateRequest,
+  WorkspaceProposalListResponse,
+  ProposalStatus,
+} from '@/features/workspace/home-types'
+export {
+  useWorkspaceSettings,
+  NOTIFICATION_TEMPLATES,
+  NOTIFICATION_TEMPLATE_LABELS,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+} from '@/features/workspace/use-workspace-settings'
+export type {
+  NotificationTemplate,
+  NotificationPreferences,
+  ProfileSettings,
+  ProfileSettingsUpdate,
+  ProfileUpdateResult,
+  NotificationPreferencesResult,
+  SchedulingProfileResult,
+  SettingsHookState,
+} from '@/features/workspace/use-workspace-settings'

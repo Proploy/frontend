@@ -24,7 +24,7 @@ export default function BusinessApprovalsPage() {
         kind: 'payment',
         title: 'Payout released',
         body: `${item.title} approved — funds released from escrow for ${item.project}.`,
-        href: '/experts/dashboard/earnings',
+        href: '/workspace/projects',
       })
       if (item.completesProject) {
         setReview({ expert: item.expert, project: item.project })
@@ -123,7 +123,7 @@ export default function BusinessApprovalsPage() {
               kind: 'review',
               title: `New ${data.rating}★ review`,
               body: `${DEMO_BUSINESS}: “${data.title}”`,
-              href: '/experts/dashboard',
+              href: '/workspace',
             })
             setReview(null)
           }}

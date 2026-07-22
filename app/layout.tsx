@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/providers/auth-provider'
 import { MotionProvider } from '@/components/providers/motion-provider'
 import { CompareSelectionProvider } from '@/features/compare/selection-store'
 import { InterestCaptureProvider } from '@/features/interests/InterestCaptureProvider'
+import { FavoritesProvider } from '@/features/users'
 import CompareTray from '@/components/compare/CompareTray'
 
 import './globals.css'
@@ -39,15 +40,17 @@ export default function RootLayout({
       <body className="antialiased font-inter flex flex-col min-h-screen">
         <MotionProvider>
           <AuthProvider>
-            <CompareSelectionProvider>
-              <InterestCaptureProvider>
-                <ProployAgentShell>
-                  <Navbar />
-                  <main className="flex-1 w-full">{children}</main>
-                  <CompareTray />
-                </ProployAgentShell>
-              </InterestCaptureProvider>
-            </CompareSelectionProvider>
+            <FavoritesProvider>
+              <CompareSelectionProvider>
+                <InterestCaptureProvider>
+                  <ProployAgentShell>
+                    <Navbar />
+                    <main className="flex-1 w-full">{children}</main>
+                    <CompareTray />
+                  </ProployAgentShell>
+                </InterestCaptureProvider>
+              </CompareSelectionProvider>
+            </FavoritesProvider>
           </AuthProvider>
         </MotionProvider>
       </body>

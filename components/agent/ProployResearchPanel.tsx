@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, FormEvent, KeyboardEvent } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   BarChart3,
   Edit3,
@@ -22,6 +23,8 @@ type QuickPrompt = {
   icon: ComponentType<{ className?: string }>
   prompt: string
 }
+
+const TYPING_DOT_DELAY_CLASSES = ['', '[animation-delay:140ms]', '[animation-delay:280ms]']
 
 function getQuickPrompts(pageType: string, productName?: string): QuickPrompt[] {
   if (pageType === 'product' && productName) {
@@ -62,8 +65,7 @@ function TypingDots() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="block h-1 w-1 rounded-full bg-gray-500 animate-bounce"
-          style={{ animationDelay: `${i * 140}ms`, animationDuration: '900ms' }}
+          className={`block h-1 w-1 animate-bounce rounded-full bg-gray-500 [animation-duration:900ms] ${TYPING_DOT_DELAY_CLASSES[i]}`}
         />
       ))}
     </div>
@@ -81,6 +83,7 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 export default function ProployResearchPanel() {
+  const pathname = usePathname()
   const {
     isOpen,
     setIsOpen,
@@ -95,9 +98,13 @@ export default function ProployResearchPanel() {
 
   const [draft, setDraft] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const isDedicatedWorkspace = pathname?.startsWith('/AI_workspace') ?? false
 
   const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
-  const quickPrompts = getQuickPrompts(pageContext.pageType, pageContext.productName)
+  const quickPrompts = getQuickPrompts(
+    pageContext.page_type,
+    typeof pageContext.product_name === 'string' ? pageContext.product_name : undefined,
+  )
 
   useEffect(() => {
     if (!scrollRef.current) return
@@ -125,6 +132,8 @@ export default function ProployResearchPanel() {
   }
 
   const isEmpty = messages.length === 0
+
+  if (isDedicatedWorkspace) return null
 
   return (
     <>

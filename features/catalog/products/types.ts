@@ -40,6 +40,21 @@ export interface ProductCardResponse {
   total: number
 }
 
+export interface ProductAlternative {
+  product_id: string
+  product_name: string
+  short_description: string | null
+  pricing_bucket: string | null
+  logo_url: string | null
+}
+
+export interface ProductAlternativesResponse {
+  source_product_id: string
+  source_product_name: string
+  count: number
+  alternatives: ProductAlternative[]
+}
+
 // Product Detail (inline sub-resources)
 export interface PricingPlanItem {
   plan_id: string

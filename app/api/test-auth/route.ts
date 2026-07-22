@@ -16,20 +16,13 @@
  */
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
+import { serviceApisFetch } from '@/lib/service-apis/server'
 
 async function testEndpoint(path: string, method = 'GET', body?: object) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) return { path, error: 'No session' }
-
-  const res = await fetch(`${SERVICE_APIS_URL}${path}`, {
+  const res = await serviceApisFetch(path, {
     method,
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
+    requireAuth: true,
+    headers: { 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify(body) } : {}),
   })
   const text = await res.text()
@@ -40,8 +33,8 @@ async function testEndpoint(path: string, method = 'GET', body?: object) {
 
 export async function GET() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
     return NextResponse.json({ error: 'No session' }, { status: 401 })
   }
 
@@ -52,5 +45,5 @@ export async function GET() {
     testEndpoint('/api/v1/favorites'),
   ])
 
-  return NextResponse.json({ hasSession: true, results })
+  return NextResponse.json({ results })
 }

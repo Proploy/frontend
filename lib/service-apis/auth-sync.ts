@@ -1,30 +1,30 @@
-const SERVICE_APIS_URL = process.env.NEXT_PUBLIC_SERVICE_APIS_URL
+import { serviceApisBrowserFetch } from './browser'
 
-export async function syncUserToServiceApis(accessToken: string): Promise<boolean> {
-  if (!SERVICE_APIS_URL) {
-    console.warn('[auth-sync] NEXT_PUBLIC_SERVICE_APIS_URL is not configured')
-    return false
-  }
+export type AuthSyncProfile = {
+  role: string | null
+}
 
+export async function syncUserToServiceApis(_accessToken: string): Promise<AuthSyncProfile | null> {
   try {
-    const res = await fetch(`${SERVICE_APIS_URL}/api/v1/auth/sync`, {
+    const res = await serviceApisBrowserFetch('/api/v1/auth/sync', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      requireAuth: true,
+      accessToken: _accessToken,
     })
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => '')
-      console.warn('[auth-sync] sync failed (non-blocking):', res.status, errorText)
-      return false
+      console.warn('[auth-sync] sync failed (non-blocking):', res.status)
+      return null
     }
 
-    return true
-  } catch (err) {
-    console.warn('[auth-sync] sync network error (non-blocking):', err)
-    return false
+    const payload: unknown = await res.json().catch(() => null)
+    if (!payload || typeof payload !== 'object') return null
+
+    const role = (payload as { role?: unknown }).role
+    return { role: typeof role === 'string' ? role : null }
+  } catch {
+    console.warn('[auth-sync] sync network error (non-blocking)')
+    return null
   }
 }
