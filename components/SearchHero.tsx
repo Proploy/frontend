@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Search, MapPin, DollarSign, ListFilter, FilterIcon, X } from 'lucide-react'
+import { Search, MapPin, DollarSign, ListFilter, FilterIcon, X } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import { getProductDetailHref, useKeywordSearch } from '@/features/catalog'
 
@@ -16,8 +16,6 @@ interface SearchHeroProps {
   initialQuery?: string
   activeLabels?: string[]
   onRemoveLabel?: (label: string) => void
-  announcementHref?: string
-  announcement?: { tag: string; text: string }
 }
 
 export default function SearchHero({
@@ -27,8 +25,6 @@ export default function SearchHero({
   initialQuery = '',
   activeLabels = ['Label'],
   onRemoveLabel,
-  announcementHref = '#',
-  announcement = { tag: "What's new?", text: 'Fruition Joined!' },
 }: SearchHeroProps) {
   const [query, setQuery] = useState(initialQuery)
   const [resultsOpen, setResultsOpen] = useState(false)
@@ -73,25 +69,7 @@ export default function SearchHero({
   return (
     <div className="flex flex-col gap-[48px] items-center w-full font-[family-name:var(--font-dm-sans)]">
       <div className="flex flex-col gap-[24px] items-center max-w-[1024px] w-full">
-        <div className="flex flex-col gap-[16px] items-center w-full">
-          <Link
-            href={announcementHref}
-            className="inline-flex items-center gap-[8px] bg-white border border-[#d5d7da] rounded-[10px] pl-[4px] pr-[8px] py-[4px] shadow-[0px_1px_1px_0px_rgba(10,13,18,0.05)]"
-          >
-            <span className="inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[6px] px-[8px] py-[2px]">
-              <span className="size-[6px] rounded-full bg-[#0466e7]" />
-              <span className="font-medium text-[14px] leading-[20px] text-[#414651]">
-                {announcement.tag}
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-[4px]">
-              <span className="font-medium text-[14px] leading-[20px] text-[#414651]">
-                {announcement.text}
-              </span>
-              <ArrowRight size={16} className="text-[#414651]" />
-            </span>
-          </Link>
-
+        <div className="flex flex-col items-center w-full">
           <h1 className="font-semibold text-[60px] leading-[72px] text-[#181d27] text-center tracking-[-1.2px]">
             Find the right product and expert to help streamline your business.
           </h1>

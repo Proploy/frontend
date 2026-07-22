@@ -9,6 +9,7 @@ export interface NormalizedError {
     code: string
     message: string
     retryAfter?: number
+    retryable?: boolean
     fields?: Record<string, string>
   }
 }
@@ -82,6 +83,22 @@ export async function normalizeServiceApiError(response: Response): Promise<Norm
         message,
         retryAfter: detail.retryAfter as number | undefined,
         fields: extractFieldErrors(detail),
+      },
+    }
+  }
+
+  // ── top-level { error: { code, message, retryable } } ──
+  if (typeof body.error === 'object' && body.error !== null) {
+    const error = body.error as Record<string, unknown>
+    return {
+      ok: false,
+      status,
+      error: {
+        code: (error.code as string) || mapStatusToCode(status),
+        message: (error.message as string) || extractMessage(error, status),
+        retryAfter: error.retryAfter as number | undefined,
+        retryable: error.retryable as boolean | undefined,
+        fields: extractFieldErrors(error),
       },
     }
   }

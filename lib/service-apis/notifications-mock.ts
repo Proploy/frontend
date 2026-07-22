@@ -14,10 +14,10 @@ export interface NotificationItem {
 }
 
 export const EXPERT_NOTIFICATIONS: NotificationItem[] = [
-  { id: 'n1', kind: 'payment', title: 'Payout released', body: '$6,800 released from escrow for Lumen Health milestone.', when: '20m', unread: true, href: '/experts/dashboard/earnings' },
-  { id: 'n2', kind: 'review', title: 'New 5★ review', body: 'Atlas Logistics left a review on your go-live work.', when: '2h', unread: true, href: '/experts/dashboard' },
-  { id: 'n3', kind: 'message', title: 'New message', body: 'Priya Nair: “Can we move the UAT session to Friday?”', when: '3h', unread: true, href: '/experts/chat' },
-  { id: 'n4', kind: 'project', title: 'Milestone due soon', body: 'UAT sign-off for Northwind Capital is due Sat 27 Jun.', when: '1d', unread: false, href: '/experts/dashboard/projects' },
+  { id: 'n1', kind: 'payment', title: 'Payout released', body: '$6,800 released from escrow for Lumen Health milestone.', when: '20m', unread: true, href: '/workspace/projects' },
+  { id: 'n2', kind: 'review', title: 'New 5★ review', body: 'Atlas Logistics left a review on your go-live work.', when: '2h', unread: true, href: '/workspace' },
+  { id: 'n3', kind: 'message', title: 'New message', body: 'Priya Nair: “Can we move the UAT session to Friday?”', when: '3h', unread: true, href: '/workspace/conversations' },
+  { id: 'n4', kind: 'project', title: 'Milestone due soon', body: 'UAT sign-off for Northwind Capital is due Sat 27 Jun.', when: '1d', unread: false, href: '/workspace/projects' },
 ]
 
 export const BUSINESS_NOTIFICATIONS: NotificationItem[] = [

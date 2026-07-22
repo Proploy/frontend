@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import InputField from '@/components/ui/InputField';
 import Button from '@/components/ui/Button';
 import { CatalogImage } from '@/components/catalog/CatalogImage';
-import { getProductDetailHref, useKeywordSearch } from '@/features/catalog';
+import { getProductDetailHref, useKeywordSearch, useProductList } from '@/features/catalog';
+import type { CardProduct } from '@/features/catalog';
 
 const imgBitbucket = "/figma-assets/037e84947c2a4908a5313764d597a0d5a6a0f084.svg";
 const imgBorder = "/figma-assets/29599994635cb0e4374299477bfaf89fac007270.svg";
@@ -43,19 +44,6 @@ const imgBg5 = "/figma-assets/080d123fdd49f2bef0a3ff77860937bc5900aedf.svg";
 const imgVector10 = "/figma-assets/3ec23df593ee267959aa1a91a218a89fcb54638f.svg";
 const imgIcon = "/figma-assets/1f431b26fd8545b154f5eb1825f63cc6f23d4ca1.svg";
 const imgIcon1 = "/figma-assets/378702e9aa0644e08926750ac1a2f04f0533511f.svg";
-const imgLogomark = "/figma-assets/365c0026ee52c229d468fd248392cd61c03d0607.svg";
-const imgLogotext = "/figma-assets/7b7234c342e4b735d68012865722bd32f80d6897.svg";
-const imgLogomark1 = "/figma-assets/b6c354815b43e85127159477fe1dbd9a5881362b.svg";
-const imgLogotext1 = "/figma-assets/4ca1f57a2690be8a1fac2ed858983c098868bb13.svg";
-const imgLogomark2 = "/figma-assets/fd610476ba2694dbb487c6452d0ba7c3fef5a0f6.svg";
-const imgLogotext2 = "/figma-assets/f1cda22636288c178b381c04f7449f049a492cd3.svg";
-const imgLogotext3 = "/figma-assets/8c9ea815f06d68387ebd1c0c3007b89d83379ff8.svg";
-const imgLogomark3 = "/figma-assets/0103f524aa389d55e0e680e11cba31d914e70a2d.svg";
-const imgLogotext4 = "/figma-assets/dc07fd31e77a4d8bd6fc374dedc394bdec57797c.svg";
-const imgLogomark4 = "/figma-assets/63bc7bdc098c5fab7b862f7bd209400e5bf77b85.svg";
-const imgLogotext5 = "/figma-assets/7b8d2ac301c3d7b680b9d2d7d1ddd8cfbc5d3bb8.svg";
-const imgLogomark5 = "/figma-assets/9d8fe315c2402a57e6bc312386315b7ceb322396.svg";
-const imgLogotext6 = "/figma-assets/0b86d664b20641db30cf39a2caf5afd592096c16.svg";
 const imgContainer1 = "/figma-assets/1e8eaf2f1b4e1fa32894f487ba287284460d1299.png";
 const imgGeminiGeneratedImageIoc2Daioc2Daioc21 = "/figma-assets/0b9315789c848f7a8ac53ba5871048ea90029d75.png";
 const imgTabImage2 = "/figma-assets/352239e5f449a217089e940f7fdf36ec97286405.png";
@@ -355,83 +343,65 @@ function CheckIcon({ className, color = "Primary", size = "xs", type = "Default"
     </div>
   );
 }
-type CompanyLogoProps = {
-  className?: string;
-  company?: "3Portals" | "45 Degrees" | "Acme Corp" | "AlphaWave" | "Alt+Shift" | "Biosynthesis" | "Boltshift" | "BuildingBlocks" | "Capsule" | "Catalog" | "Chromatools" | "Clandestine" | "Calescence" | "CloudWatch" | "Codecraft_" | "Command+R" | "Constellation" | "ContrastAI" | "Convergence" | "Cooperative" | "CoreOS" | "Cubekit" | "EasyTax" | "Eclipseful" | "Eightball" | "Elasticware" | "ennLabs" | "Ephemeral" | "Epicurious" | "Euphoria" | "Europa" | "FeatherDev" | "Flora&Fauna" | "FocalPoint" | "Foresight" | "Fourpoints" | "Frequencii" | "Galileo" | "GlobalBank" | "Goodwell" | "Hexahedron" | "Hexsmith" | "Hourglass" | "Ikigai Labs" | "ImgCompress" | "Interlock" | "Kintsugi" | "LaunchSimple" | "Layers" | "Leapyear" | "Lightbox" | "Lightspeed" | "Luckycharm" | "Luminary" | "Luminescence" | "Luminous" | "Magnolia" | "Mastermail" | "Nietzsche" | "Norse Star" | "OdeaoLabs" | "Ollio" | "Pagemanage" | "Peregrin" | "PictelAI" | "Pollinate" | "Polymath" | "Powersurge" | "Prometheus" | "Quantum2" | "QuartzAI" | "Quixotic" | "Quotient" | "Radius" | "Railspeed" | "Refractional" | "Renaissance" | "Screentime" | "Segment" | "Shutterframe" | "Sisyphus" | "Solaris Energy" | "Sonorous" | "Spherule" | "Stack3d Lab" | "Visionwork" | "Voxel Labs" | "Warpspeed" | "Watchtower" | "Wildcrafted";
-  darkMode?: boolean;
-  logotext?: boolean;
-  style?: "Default" | "Badge";
-};
-
-function CompanyLogo({ className, company = "3Portals", darkMode = false, logotext = true, style = "Default" }: CompanyLogoProps) {
-  const isKintsugiAndDefaultAndFalse = company === "Kintsugi" && style === "Default" && !darkMode;
-  const isMagnoliaAndDefaultAndFalse = company === "Magnolia" && style === "Default" && !darkMode;
-  const isOdeaoLabsAndDefaultAndFalse = company === "OdeaoLabs" && style === "Default" && !darkMode;
-  const isSisyphusAndDefaultAndFalse = company === "Sisyphus" && style === "Default" && !darkMode;
-  const isStack3DLabAndDefaultAndFalse = company === "Stack3d Lab" && style === "Default" && !darkMode;
-  const isWarpspeedAndDefaultAndFalse = company === "Warpspeed" && style === "Default" && !darkMode;
+function CatalogCompanyLogo({ product }: { product: CardProduct }) {
   return (
-    <div className={className || `content-stretch flex relative ${isSisyphusAndDefaultAndFalse ? "gap-[10px] items-center" : style === "Default" && !darkMode && ["Kintsugi", "Magnolia"].includes(company) ? "gap-[8px] items-start" : "gap-[10px] items-start"}`} id={isWarpspeedAndDefaultAndFalse ? "node-2047_15451" : isStack3DLabAndDefaultAndFalse ? "node-2047_15379" : isSisyphusAndDefaultAndFalse ? "node-2047_15317" : isOdeaoLabsAndDefaultAndFalse ? "node-2047_14993" : isMagnoliaAndDefaultAndFalse ? "node-2047_14953" : isKintsugiAndDefaultAndFalse ? "node-2047_14843" : "node-2047_14261"}>
-      <div className={`relative shrink-0 ${isStack3DLabAndDefaultAndFalse ? "h-[48px] w-[39px]" : isSisyphusAndDefaultAndFalse ? "h-[48px] w-[32px]" : style === "Default" && !darkMode && ["Magnolia", "Warpspeed"].includes(company) ? "size-[48px]" : "h-[48px] w-[40px]"}`} data-name="Logomark" id={isWarpspeedAndDefaultAndFalse ? "node-2047_15452" : isStack3DLabAndDefaultAndFalse ? "node-2047_15380" : isSisyphusAndDefaultAndFalse ? "node-2047_15318" : isOdeaoLabsAndDefaultAndFalse ? "node-2047_14994" : isMagnoliaAndDefaultAndFalse ? "node-2047_14954" : isKintsugiAndDefaultAndFalse ? "node-2047_14844" : "node-2047_14262"}>
-        {style === "Default" && !darkMode && ["3Portals", "Kintsugi", "Magnolia", "Sisyphus", "Stack3d Lab", "Warpspeed"].includes(company) && <img alt="" className="absolute block max-w-none size-full" src={isWarpspeedAndDefaultAndFalse ? imgLogomark5 : isStack3DLabAndDefaultAndFalse ? imgLogomark4 : isSisyphusAndDefaultAndFalse ? imgLogomark3 : isMagnoliaAndDefaultAndFalse ? imgLogomark2 : isKintsugiAndDefaultAndFalse ? imgLogomark1 : imgLogomark} />}
-        {isOdeaoLabsAndDefaultAndFalse && (
-          <>
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[70.83%] left-0 right-3/4 top-[8.33%]" data-name="Vector" data-node-id="2047:14995" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[70.83%] left-1/4 opacity-0 right-1/2 top-[8.33%]" data-name="Vector" data-node-id="2047:14996" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[70.83%] left-1/2 opacity-60 right-1/4 top-[8.33%]" data-name="Vector" data-node-id="2047:14997" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[70.83%] left-3/4 opacity-0 right-0 top-[8.33%]" data-name="Vector" data-node-id="2047:14998" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-1/2 left-0 opacity-0 right-3/4 top-[29.17%]" data-name="Vector" data-node-id="2047:14999" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-1/2 left-1/4 opacity-60 right-1/2 top-[29.17%]" data-name="Vector" data-node-id="2047:15000" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-1/2 left-1/2 opacity-45 right-1/4 top-[29.17%]" data-name="Vector" data-node-id="2047:15001" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-1/2 left-3/4 opacity-30 right-0 top-[29.17%]" data-name="Vector" data-node-id="2047:15002" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[29.17%] left-0 opacity-60 right-3/4 top-1/2" data-name="Vector" data-node-id="2047:15003" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[29.17%] left-1/4 opacity-45 right-1/2 top-1/2" data-name="Vector" data-node-id="2047:15004" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[29.17%] left-1/2 opacity-30 right-1/4 top-1/2" data-name="Vector" data-node-id="2047:15005" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[29.17%] left-3/4 opacity-15 right-0 top-1/2" data-name="Vector" data-node-id="2047:15006" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[8.33%] left-0 opacity-0 right-3/4 top-[70.83%]" data-name="Vector" data-node-id="2047:15007" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[8.33%] left-1/4 opacity-30 right-1/2 top-[70.83%]" data-name="Vector" data-node-id="2047:15008" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[8.33%] left-1/2 opacity-15 right-1/4 top-[70.83%]" data-name="Vector" data-node-id="2047:15009" />
-            <div className="absolute bg-[var(--colors\/blue-dark\/600,#155eef)] bottom-[8.33%] left-3/4 opacity-0 right-0 top-[70.83%]" data-name="Vector" data-node-id="2047:15010" />
-          </>
-        )}
+    <Link
+      href={getProductDetailHref(product.product_id)}
+      aria-label={`View ${product.product_name}`}
+      className="flex h-[48px] shrink-0 cursor-pointer items-center gap-[10px] rounded-[8px] outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#155eef]"
+      title={product.product_name}
+    >
+      <div className="flex size-[48px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white">
+        <CatalogImage
+          src={product.product_logo as string}
+          alt={`${product.product_name} logo`}
+          className="size-full object-contain p-[4px]"
+          fallback={<span className="text-[14px] font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
+        />
       </div>
-      {company === "3Portals" && style === "Default" && !darkMode && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[102px]" data-name="Logotext" data-node-id="2047:14266">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext} />
-        </div>
-      )}
-      {isKintsugiAndDefaultAndFalse && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[99px]" data-name="Logotext" data-node-id="2047:14846">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext1} />
-        </div>
-      )}
-      {isMagnoliaAndDefaultAndFalse && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[125px]" data-name="Logotext" data-node-id="2047:14956">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext2} />
-        </div>
-      )}
-      {isOdeaoLabsAndDefaultAndFalse && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[140px]" data-name="Logotext" data-node-id="2047:15011">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext3} />
-        </div>
-      )}
-      {isSisyphusAndDefaultAndFalse && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[115px]" data-name="Logotext" data-node-id="2047:15325">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext4} />
-        </div>
-      )}
-      {isStack3DLabAndDefaultAndFalse && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[149px]" data-name="Logotext" data-node-id="2047:15383">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext5} />
-        </div>
-      )}
-      {isWarpspeedAndDefaultAndFalse && logotext && (
-        <div className="h-[48px] relative shrink-0 w-[143px]" data-name="Logotext" data-node-id="2047:15454">
-          <img alt="" className="absolute block max-w-none size-full" src={imgLogotext6} />
-        </div>
-      )}
-    </div>
+      <span className="max-w-[160px] truncate font-[family-name:var(--font-dm-sans)] text-[20px] font-semibold leading-[28px] text-[#181d27]">
+        {product.product_name}
+      </span>
+    </Link>
   );
+}
+
+function CatalogServiceLogo({ product, index }: { product: CardProduct; index: number }) {
+  if (!product.product_logo) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      whileHover={{ filter: 'brightness(0.95)', borderColor: '#155eef' }}
+      transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.6) }}
+      viewport={{ once: true, margin: '-80px' }}
+      className="bg-[var(--colors\/base\/white,white)] border border-[var(--colors\/border\/border-primary,#d5d7da)] border-solid content-stretch flex gap-0 items-start justify-center p-[4px] relative rounded-[12px] shadow-[0px_1px_2px_0px_var(--colors\/effects\/shadows\/shadow-xs,rgba(10,13,18,0.05))] shrink-0"
+    >
+      <Link
+        href={getProductDetailHref(product.product_id)}
+        aria-label={`View ${product.product_name}`}
+        title={product.product_name}
+        className="flex size-[80px] cursor-pointer items-center justify-center overflow-hidden rounded-[8px] outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#155eef]"
+      >
+        <CatalogImage
+          src={product.product_logo}
+          alt={`${product.product_name} logo`}
+          className="size-full object-contain p-[8px]"
+          fallback={<span className="text-[20px] font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
+        />
+      </Link>
+    </motion.div>
+  );
+}
+
+function shuffleProducts(products: CardProduct[]): CardProduct[] {
+  const shuffled = [...products];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }
 
 function HeroSearch() {
@@ -563,6 +533,14 @@ function HeroSearch() {
 
 export default function Landing() {
   const [activeTab, setActiveTab] = React.useState<0 | 1 | 2>(0);
+  const {
+    products: catalogLogoProducts,
+    loading: catalogLogosLoading,
+  } = useProductList({ limit: 100, sort: 'market_presence' });
+  const socialProofProducts = React.useMemo(
+    () => shuffleProducts(catalogLogoProducts.filter((product) => Boolean(product.product_logo))),
+    [catalogLogoProducts],
+  );
 
   const tabGraphics = [
     imgGeminiGeneratedImageIoc2Daioc2Daioc21,
@@ -621,22 +599,15 @@ export default function Landing() {
             </p>
           </FadeUp>
           <div className="overflow-hidden relative shrink-0 w-full" data-name="Logos" data-node-id="I2047:22802;1294:160699">
-            <div className="flex gap-[24px] items-center animate-[marquee_20s_linear_infinite]" style={{ width: 'max-content' }}>
-              {/* Original logos */}
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-start relative shrink-0" company="OdeaoLabs" />
-              <CompanyLogo className="content-stretch flex gap-[8px] h-[48px] items-start relative shrink-0" company="Kintsugi" />
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-start relative shrink-0" company="Stack3d Lab" />
-              <CompanyLogo className="content-stretch flex gap-[8px] h-[48px] items-start relative shrink-0" company="Magnolia" />
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-start relative shrink-0" company="Warpspeed" />
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-center relative shrink-0" company="Sisyphus" />
-              {/* Duplicated logos for seamless loop */}
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-start relative shrink-0" company="OdeaoLabs" />
-              <CompanyLogo className="content-stretch flex gap-[8px] h-[48px] items-start relative shrink-0" company="Kintsugi" />
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-start relative shrink-0" company="Stack3d Lab" />
-              <CompanyLogo className="content-stretch flex gap-[8px] h-[48px] items-start relative shrink-0" company="Magnolia" />
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-start relative shrink-0" company="Warpspeed" />
-              <CompanyLogo className="content-stretch flex gap-[10px] h-[48px] items-center relative shrink-0" company="Sisyphus" />
-            </div>
+            {catalogLogosLoading ? (
+              <div className="h-[48px] w-full" aria-label="Loading company logos" />
+            ) : socialProofProducts.length > 0 ? (
+              <div className="marquee-track flex items-center gap-[24px]" style={{ width: 'max-content' }}>
+                {[...socialProofProducts, ...socialProofProducts].map((product, index) => (
+                  <CatalogCompanyLogo key={`${product.product_id}-${index}`} product={product} />
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -1842,6 +1813,15 @@ export default function Landing() {
         </div>
         <div className="content-stretch flex flex-col gap-0 items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="I2047:26288;1334:2560">
           <div className="content-start flex flex-wrap gap-[32px] items-start justify-center max-w-[1024px] relative shrink-0 w-full" data-name="Content" data-node-id="I2047:26288;1334:2562">
+            {catalogLogosLoading ? (
+              <div className="h-[88px] w-full" aria-label="Loading service logos" />
+            ) : (
+              socialProofProducts.slice(0, 16).map((product, index) => (
+                <CatalogServiceLogo key={product.product_id} product={product} index={index} />
+              ))
+            )}
+            {false && (
+              <>
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -2041,6 +2021,8 @@ export default function Landing() {
             >
               <Bitbucket className="overflow-clip relative shrink-0 size-[80px]" />
             </motion.div>
+              </>
+            )}
           </div>
         </div>
         <div className="content-stretch flex flex-col gap-0 items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="I2047:26288;1342:1596">

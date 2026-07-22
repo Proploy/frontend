@@ -47,10 +47,15 @@ export async function serviceApisFetch(
   }
 
   const { requireAuth, accessToken, headers, ...init } = options
-  const finalHeaders: Record<string, string> = {
-    accept: 'application/json',
-    ...(headers as Record<string, string> | undefined),
-  }
+  const finalHeaders: Record<string, string> = { accept: 'application/json' }
+  const requestHeaders = new Headers(headers)
+  const blockedHeaders = new Set(['authorization', 'cookie', 'proxy-authorization', 'set-cookie'])
+
+  // This helper is server-only. Never let a caller accidentally forward
+  // browser credentials or override the server-resolved Supabase token.
+  requestHeaders.forEach((value, name) => {
+    if (!blockedHeaders.has(name.toLowerCase())) finalHeaders[name.toLowerCase()] = value
+  })
 
   if (init.body && !finalHeaders['content-type']) {
     finalHeaders['content-type'] = 'application/json'

@@ -82,11 +82,16 @@ export function ProductFiltersDrawer({
 
 function Drawer({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end bg-black/20" onClick={onClose}>
-      <aside className="flex h-full w-[420px] max-w-full flex-col gap-[24px] overflow-y-auto bg-white p-[24px]" onClick={(event) => event.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex justify-end bg-[#0a0d12]/35" onClick={onClose}>
+      <aside
+        role="dialog"
+        aria-label={title}
+        className="flex h-full w-[min(520px,calc(100vw-16px))] max-w-full flex-col gap-[28px] overflow-y-auto border-l border-[#e9eaeb] bg-white p-[24px] shadow-[-20px_0_48px_rgba(10,13,18,0.12)] sm:p-[32px]"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-center justify-between">
-          <h2 className="text-[18px] font-semibold text-[#181d27]">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close filters"><X size={20} /></button>
+          <h2 className="text-[22px] font-semibold text-[#181d27]">{title}</h2>
+          <button type="button" onClick={onClose} aria-label="Close filters" className="rounded-[8px] p-[8px] text-[#535862] hover:bg-[#f2f4f7]"><X size={22} /></button>
         </div>
         {children}
       </aside>
