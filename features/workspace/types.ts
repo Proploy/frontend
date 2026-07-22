@@ -34,24 +34,25 @@ export interface WorkspaceEngagementSummary {
 }
 
 export interface WorkspaceEngagement extends WorkspaceEngagementSummary {
+  meetingIntentId?: string | null
+  repUserId?: string | null
   createdAt: string
+  updatedAt: string
   closedAt?: string | null
 }
 
 export interface WorkspaceEngagementParticipant {
-  id: string
   engagementId: string
-  userId?: string | null
-  externalContactId?: string | null
-  role: 'buyer' | 'expert' | 'observer'
-  displayName: string
+  userId: string
+  role: 'buyer_side' | 'expert_side' | 'observer'
+  addedAt: string
 }
 
 export interface WorkspaceEngagementEvent {
   id: string
   engagementId: string
-  type: string
-  payload: Record<string, unknown>
+  eventType: string
+  payload?: Record<string, unknown> | null
   createdAt: string
   actorUserId?: string | null
 }
@@ -86,24 +87,48 @@ export interface WorkspaceMeetingIntent {
   expiresAt: string
 }
 
+export interface WorkspaceSchedulingProfile {
+  id: string
+  expertId: string
+  provider: 'cal_diy' | 'cal_com' | 'calendly' | 'manual'
+  connectionMode: 'pasted_link' | 'connected'
+  providerUserId?: string | null
+  providerEventTypeId?: string | null
+  providerAccountEmail?: string | null
+  status: 'active' | 'disabled' | 'error'
+  errorMessage?: string | null
+  displayLabel: string
+  durationMinutes: number
+  locationType?: 'google_meet' | 'zoom' | 'in_person' | 'phone' | 'unknown' | null
+  locationValue?: string | null
+  externalLinkUrl?: string | null
+  staticMeetingUrl?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Conversation + Message ──────────────────────────────────────────────
 
 export interface WorkspaceConversation {
   id: string
   engagementId: string
-  lastMessageAt: string
-  unreadCount: number
-  participantCount: number
+  kind: 'engagement'
+  subject?: string | null
+  createdAt: string
+  lastMessageAt?: string | null
 }
 
 export interface WorkspaceMessage {
   id: string
   conversationId: string
   senderUserId: string
+  body: string
   content: string
   /** Idempotency key minted by the client (handoff B.7). */
   clientNonce?: string | null
   createdAt: string
+  editedAt?: string | null
+  deletedAt?: string | null
   attachments?: WorkspaceMessageAttachment[]
 }
 
@@ -113,7 +138,18 @@ export interface WorkspaceMessageAttachment {
   fileName: string
   contentType: string
   sizeBytes: number
+  createdAt?: string
   downloadUrl?: string | null
+}
+
+export interface WorkspaceConversationParticipant {
+  conversationId: string
+  participantType: 'user' | 'external_contact'
+  userId?: string | null
+  externalContactId?: string | null
+  role: 'member' | 'read_only'
+  joinedAt: string
+  lastReadAt?: string | null
 }
 
 // ─── Organization + Invitation ───────────────────────────────────────────
@@ -153,32 +189,38 @@ export interface WorkspaceInvitation {
 
 // ─── Project ─────────────────────────────────────────────────────────────
 
-export type ProjectStatus = 'draft' | 'proposed' | 'accepted' | 'declined' | 'withdrawn'
+export type ProjectStatus = 'draft' | 'proposed' | 'accepted' | 'declined' | 'withdrawn' | 'cancelled'
 
 export interface WorkspaceProject {
   id: string
   engagementId: string
   status: ProjectStatus
   title: string
-  scope?: string | null
+  summary: string
+  scope: string
   budgetCents?: number | null
   estimatedDuration?: string | null
   buyerAcceptedAt?: string | null
   expertAcceptedAt?: string | null
+  buyerDeclinedAt?: string | null
+  expertDeclinedAt?: string | null
   createdByUserId: string
   updatedAt: string
   createdAt: string
-  submittedAt?: string | null
-  decidedAt?: string | null
 }
 
 export interface WorkspaceProjectAcceptance {
-  id: string
   projectId: string
   userId: string
-  decision: 'accept' | 'decline'
-  reason?: string | null
+  decision: 'accepted' | 'declined'
+  note?: string | null
   createdAt: string
+}
+
+export interface WorkspaceProjectMilestoneCreateRequest {
+  title: string
+  summary?: string | null
+  dueAt?: string | null
 }
 
 // ─── Meeting ─────────────────────────────────────────────────────────────
@@ -188,13 +230,29 @@ export type MeetingStatus = 'scheduled' | 'cancelled' | 'completed'
 export interface WorkspaceMeeting {
   id: string
   engagementId: string
-  startsAt?: string
-  endsAt?: string
-  status: MeetingStatus | string
-  title?: string | null
-  provider?: 'cal_diy' | 'google' | 'zoom' | null
+  meetingIntentId?: string | null
+  schedulingProfileId?: string | null
+  provider: 'cal_diy' | 'cal_com' | 'calendly' | 'google_calendar' | 'manual' | 'none'
+  providerBookingUid?: string | null
+  providerCalendarId?: string | null
+  providerEventId?: string | null
+  providerETag?: string | null
+  providerUpdatedAt?: string | null
+  correlationToken?: string | null
+  startsAt: string
+  endsAt: string
+  actualStartsAt?: string | null
+  actualEndsAt?: string | null
+  timezone: string
+  status: MeetingStatus | 'no_show' | 'rescheduled'
+  title: string
+  locationType?: 'google_meet' | 'zoom' | 'in_person' | 'phone' | 'unknown' | null
   meetingUrl?: string | null
   locationUrl?: string | null
+  notes?: string | null
+  confirmedByUserId?: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 // ─── Notification (outbox state) ─────────────────────────────────────────
@@ -241,12 +299,54 @@ export interface WorkspaceDashboardMeetingIntentSummary {
   expiresAt: string
 }
 
+export interface WorkspaceDashboardMeetingSummary {
+  id: string
+  engagementId: string
+  title: string
+  startsAt: string
+  endsAt: string
+  status: string
+  locationUrl?: string | null
+}
+
 export type WorkspaceClientSource = 'meeting_intent' | 'engagement'
 
 export interface WorkspaceClientRow {
   source: WorkspaceClientSource
-  meetingIntent?: WorkspaceMeetingIntent | null
-  engagement?: WorkspaceEngagementSummary | null
+  engagementId?: string | null
+  meetingIntentId?: string | null
+  status: MeetingIntentStatus | EngagementStatus
+  buyerUserId?: string | null
+  buyerUserDisplayName?: string | null
+  buyerUserEmail?: string | null
+  buyerOrganizationId?: string | null
+  buyerOrganizationName?: string | null
+  projectScope?: string | null
+  requestedAt?: string | null
+  lastMessageAt?: string | null
+  updatedAt: string
+}
+
+export interface WorkspaceClientListResponse {
+  clients: WorkspaceClientRow[]
+}
+
+export type WorkspaceRequestSource = 'meeting_intent' | 'direct_intent'
+
+export interface WorkspaceRequestRow {
+  id: string
+  source: WorkspaceRequestSource
+  status: MeetingIntentStatus
+  expertId?: string | null
+  requesterUserId?: string | null
+  requesterEmail?: string | null
+  requesterName?: string | null
+  organizationId?: string | null
+  projectScope: string
+  correlationToken?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  expiresAt?: string | null
 }
 
 export interface WorkspaceDashboardResponse {
@@ -254,6 +354,41 @@ export interface WorkspaceDashboardResponse {
   counts: WorkspaceDashboardCounts
   recentEngagements: WorkspaceEngagementSummary[]
   recentIntents: WorkspaceDashboardMeetingIntentSummary[]
-  upcomingMeetings: WorkspaceMeeting[]
+  upcomingMeetings: WorkspaceDashboardMeetingSummary[]
   unreadNotifications?: number
+}
+
+export interface WorkspaceEngagementListResponse {
+  engagements: WorkspaceEngagement[]
+}
+
+export interface WorkspaceMeetingIntentListResponse {
+  meetingIntents: WorkspaceMeetingIntent[]
+}
+
+export interface WorkspaceProjectListResponse {
+  projects: WorkspaceProject[]
+}
+
+export interface WorkspaceConversationListResponse {
+  conversations: WorkspaceConversation[]
+}
+
+export interface WorkspaceMessageListResponse {
+  messages: WorkspaceMessage[]
+  hasMore: boolean
+}
+
+export interface WorkspaceMeetingListResponse {
+  meetings: WorkspaceMeeting[]
+}
+
+export interface WorkspaceProjectCreateRequest {
+  engagementId: string
+  title: string
+  summary: string
+  scope: string
+  budgetCents?: number | null
+  estimatedDuration?: string | null
+  milestones?: WorkspaceProjectMilestoneCreateRequest[]
 }

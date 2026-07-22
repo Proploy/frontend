@@ -1,79 +1,112 @@
-/**
- * Derives the current user's workspace role from a single dashboard fetch.
- *
- * Mirrors the pattern in components/experts/dashboard/ExpertDashboardFrame.tsx
- * useExpertDashboardData: a useEffect that fires the fetch once auth is ready,
- * exposes { user, dashboard, dashboardError, isPending } so pages can render
- * loading/error/empty states without re-implementing the fetch lifecycle.
- *
- * Role source: the `scope` field on the dashboard response. The backend
- * derives role server-side (e.g. from the engagements the user participates
- * in). The frontend never infers role from auth metadata.
- */
-
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createContext, createElement, useContext } from 'react'
+import type { ReactNode } from 'react'
 import { useAuth } from '@/components/providers/auth-provider'
-import { useDashboard } from '@/features/workspace/use-dashboard'
+import { useExpertApplication } from '@/features/experts'
+import type { ExpertMe } from '@/features/experts/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
-import type {
-  WorkspaceDashboardResponse,
-  WorkspaceRole,
-} from '@/features/workspace/types'
+import type { WorkspaceRole } from '@/features/workspace/types'
 
 export type WorkspaceRoleState = {
   user: ReturnType<typeof useAuth>['user']
-  dashboard: WorkspaceDashboardResponse | null
   role: WorkspaceRole | null
-  dashboardError: NormalizedError | null
+  expert: ExpertMe | null
+  expertError: NormalizedError | null
   isPending: boolean
 }
 
-export function useCurrentUserRole(): WorkspaceRoleState {
+const WorkspaceRoleContext = createContext<WorkspaceRoleState | null>(null)
+
+function toWorkspaceRole(role?: string | null): WorkspaceRole | null {
+  if (role === 'expert' || role === 'admin') return role
+  if (role === 'user' || role === 'business') return 'buyer'
+  return null
+}
+
+function useResolvedWorkspaceRole(): WorkspaceRoleState {
   const { user, isLoading: isAuthLoading } = useAuth()
-  const { getDashboard } = useDashboard()
-  const [dashboard, setDashboard] = useState<WorkspaceDashboardResponse | null>(null)
-  const [dashboardError, setDashboardError] = useState<NormalizedError | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const { getApplication } = useExpertApplication()
+  const currentUserId = user?.id ?? null
+  const [expert, setExpert] = useState<ExpertMe | null>(null)
+  const [expertUserId, setExpertUserId] = useState<string | null>(null)
+  const [expertError, setExpertError] = useState<NormalizedError | null>(null)
+  const [isExpertLoading, setIsExpertLoading] = useState(false)
 
   useEffect(() => {
     if (isAuthLoading) return
-    if (!user) return
+    if (!currentUserId) return
 
     let cancelled = false
 
-    async function fetchDashboard() {
-      setIsLoading(true)
-      setDashboardError(null)
-      const result = await getDashboard()
-
+    async function loadExpert() {
+      setIsExpertLoading(true)
+      setExpertError(null)
+      const result = await getApplication()
       if (cancelled) return
 
       if (result.ok) {
-        setDashboard(result.data)
+        setExpert(result.data?.status === 'approved' ? result.data : null)
+        setExpertUserId(currentUserId)
       } else {
-        setDashboard(null)
-        setDashboardError(result)
+        setExpert(null)
+        setExpertUserId(currentUserId)
+        setExpertError(result)
       }
-      setIsLoading(false)
+      setIsExpertLoading(false)
     }
 
-    void fetchDashboard()
+    void loadExpert()
 
     return () => {
       cancelled = true
     }
-  }, [getDashboard, isAuthLoading, user])
+  }, [currentUserId, getApplication, isAuthLoading])
+
+  const expertForUser = currentUserId && expertUserId === currentUserId ? expert : null
+  const expertErrorForUser = currentUserId && expertUserId === currentUserId ? expertError : null
+  const hasResolvedExpertLookup = !currentUserId || expertUserId === currentUserId
+  const fallbackRole = toWorkspaceRole(user?.role)
+  // The authenticated user's server-supplied role is authoritative. An
+  // approved expert profile is useful profile data, but it must not promote a
+  // buyer into the expert workspace while the account role is stale or
+  // malformed; the API enforces the same distinction server-side.
+  const role: WorkspaceRole | null = fallbackRole
 
   return {
     user,
-    dashboard,
-    role: dashboard?.scope ?? null,
-    dashboardError,
-    isPending:
-      isAuthLoading ||
-      isLoading ||
-      Boolean(user && !dashboard && !dashboardError),
+    role,
+    expert: expertForUser,
+    expertError: expertErrorForUser,
+    isPending: isAuthLoading || Boolean(user && (!hasResolvedExpertLookup || isExpertLoading)),
   }
+}
+
+/**
+ * Keep role resolution alive for the entire workspace route tree. Without
+ * this provider, every sidebar navigation remounts the expert lookup and the
+ * loading shell briefly renders the buyer-safe navigation.
+ */
+export function WorkspaceRoleProvider({ children }: { children: ReactNode }) {
+  const state = useResolvedWorkspaceRole()
+  return createElement(
+    WorkspaceRoleContext.Provider,
+    { value: state },
+    children,
+  )
+}
+
+/** Role state shared by pages below WorkspaceRoleProvider. */
+export function useCurrentUserRole(): WorkspaceRoleState {
+  const state = useContext(WorkspaceRoleContext)
+  if (!state) {
+    throw new Error('useCurrentUserRole must be used inside WorkspaceRoleProvider')
+  }
+  return state
+}
+
+/** Role state for public/non-workspace surfaces that do not use the provider. */
+export function useStandaloneCurrentUserRole(): WorkspaceRoleState {
+  return useResolvedWorkspaceRole()
 }
