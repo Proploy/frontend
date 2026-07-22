@@ -8,6 +8,7 @@ import type {
   ProductDetail,
   ProductListRequest,
   ProductMediaAssetItem,
+  ProductAlternativesResponse,
 } from '../products/types'
 import type {
   CatalogSearchRequest,
@@ -51,6 +52,17 @@ export const clientCatalogApi = {
       const suffix = query ? `?${query}` : ''
       return client.get<ProductMediaAssetItem[]>(
         `/api/v1/catalog/products/${encodeURIComponent(productId)}/media${suffix}`,
+        options,
+      )
+    },
+    getAlternatives(
+      productId: string,
+      limit = 6,
+      options?: CatalogRequestOptions,
+    ): Promise<ApiResult<ProductAlternativesResponse>> {
+      const query = buildQueryString({ limit })
+      return client.get<ProductAlternativesResponse>(
+        `/api/v1/catalog/products/${encodeURIComponent(productId)}/alternatives?${query}`,
         options,
       )
     },

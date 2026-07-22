@@ -13,6 +13,8 @@ export * from './products/types'
 export * from './products/mappers'
 export * from './products/hooks'
 export * from './products/product-detail-view'
+export * from './products/logo-url'
+export * from './products/published-values'
 
 // Search
 export * from './search/types'

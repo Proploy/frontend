@@ -5,7 +5,14 @@ import {
   mapCatalogSearchResponseToResults,
 } from '../mappers'
 import type { KeywordSearchResult, KeywordSearchResponse, CatalogSearchResult, CatalogSearchResponse } from '../types'
-import type { CardProduct, ProductListResult } from '../products/types'
+
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_SERVICE_APIS_URL', 'http://localhost:8020')
+})
+
+afterAll(() => {
+  vi.unstubAllEnvs()
+})
 
 // ── Test Fixtures ────────────────────────────────────────────────────────────
 
@@ -56,7 +63,7 @@ describe('mapKeywordSearchResultToCardProduct', () => {
       product_id: 'prod-1',
       product_name: 'Salesforce CRM',
       product_description: null, // Not in keyword search
-      product_logo: 'https://example.com/logo.png',
+      product_logo: 'http://localhost:8020/api/v1/catalog/products/prod-1/logo',
       rating: null, // Not in keyword search
       reviews: null,
       primary_category: 'CRM',
@@ -86,6 +93,15 @@ describe('mapKeywordSearchResponseToResults', () => {
 
     expect(result.products).toHaveLength(1)
     expect(result.products[0].product_id).toBe('prod-1')
+  })
+
+  it('does not expose unpublished products', () => {
+    const result = mapKeywordSearchResponseToResults({
+      ...mockKeywordResponse,
+      results: [mockKeywordResult, { ...mockKeywordResult, product_id: 'hidden', product_name: 'Not published' }],
+    }, 20, 0)
+
+    expect(result.products.map((product) => product.product_id)).toEqual(['prod-1'])
   })
 })
 
@@ -127,5 +143,14 @@ describe('mapCatalogSearchResponseToResults', () => {
 
     expect(result.products).toHaveLength(1)
     expect(result.products[0].product_id).toBe('prod-1')
+  })
+
+  it('does not expose unpublished products', () => {
+    const result = mapCatalogSearchResponseToResults({
+      ...mockCatalogSearchResponse,
+      results: [mockCatalogSearchResult, { ...mockCatalogSearchResult, product_id: 'hidden', product_name: 'unpublished' }],
+    }, 20, 0)
+
+    expect(result.products.map((product) => product.product_id)).toEqual(['prod-1'])
   })
 })

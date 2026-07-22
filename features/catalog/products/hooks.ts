@@ -8,6 +8,7 @@ import { createLatestRequestGuard } from '../shared/latest-request'
 import type { NormalizedError } from '../shared/types'
 import type {
   ProductDetail,
+  ProductAlternative,
   ProductMediaAssetItem,
   ProductListResult,
   ProductPageModel,
@@ -16,7 +17,9 @@ import type {
 import {
   mapProductListResponseToPage,
   mapProductDetailToPageModel,
+  mapProductAlternative,
 } from './mappers'
+import { mergeProductListPage } from './pagination-state'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,6 +32,8 @@ interface UseProductListOptions {
   sort?: ProductSort
   page?: number
   limit?: number
+  offset?: number
+  append?: boolean
 }
 
 interface UseProductListResult {
@@ -59,6 +64,18 @@ interface UseProductMediaResult {
   refetch: () => void
 }
 
+interface UseProductAlternativesOptions {
+  productId: string | null
+  limit?: number
+}
+
+interface UseProductAlternativesResult {
+  alternatives: ProductAlternative[]
+  loading: boolean
+  error: NormalizedError | null
+  refetch: () => void
+}
+
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
 /**
@@ -75,6 +92,8 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
     sort = 'name',
     page = 1,
     limit = 30,
+    offset,
+    append = false,
   } = options
 
   const [products, setProducts] = useState<ProductListResult['products']>([])
@@ -91,7 +110,7 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
     setLoading(true)
     setError(null)
 
-    const offset = (page - 1) * limit
+    const requestOffset = offset ?? (page - 1) * limit
 
     const result = await clientCatalogApi.products.list({
       category,
@@ -101,7 +120,7 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
       search,
       sort,
       limit,
-      offset,
+      offset: requestOffset,
     })
 
     if (!requestGuardRef.current.isLatest(requestId)) return
@@ -112,11 +131,19 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
       return
     }
 
-    const mapped = mapProductListResponseToPage(result.data, limit, offset)
-    setProducts(mapped.products)
+    const mapped = mapProductListResponseToPage(result.data, limit, requestOffset)
+    setProducts((currentProducts) => (
+      append
+        ? mergeProductListPage({
+          currentProducts,
+          incomingProducts: mapped.products,
+          offset: requestOffset,
+        })
+        : mapped.products
+    ))
     setPagination(mapped.pagination)
     setLoading(false)
-  }, [category, pricing_bucket, free_plan, free_trial, search, sort, page, limit])
+  }, [category, pricing_bucket, free_plan, free_trial, search, sort, page, limit, offset, append])
 
   useEffect(() => {
     const requestGuard = requestGuardRef.current
@@ -257,4 +284,62 @@ export function useProductMedia(productId: string | null, kind?: string): UsePro
   }, [fetch_])
 
   return { media, loading, error, refetch: fetch_ }
+}
+
+/**
+ * Fetches products identified by the catalog as alternatives to a product.
+ * Backend: GET /api/v1/catalog/products/{productId}/alternatives
+ */
+export function useProductAlternatives({
+  productId,
+  limit = 6,
+}: UseProductAlternativesOptions): UseProductAlternativesResult {
+  const [alternatives, setAlternatives] = useState<ProductAlternative[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<NormalizedError | null>(null)
+  const requestGuardRef = useRef(createLatestRequestGuard())
+
+  const fetch_ = useCallback(async () => {
+    const requestId = requestGuardRef.current.begin()
+    await Promise.resolve()
+    if (!requestGuardRef.current.isLatest(requestId)) return
+
+    if (!productId) {
+      setAlternatives([])
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    const result = await clientCatalogApi.products.getAlternatives(productId, limit)
+
+    if (!requestGuardRef.current.isLatest(requestId)) return
+
+    if (!result.ok) {
+      setError(result)
+      setAlternatives([])
+      setLoading(false)
+      return
+    }
+
+    setAlternatives(result.data.alternatives.map(mapProductAlternative))
+    setLoading(false)
+  }, [productId, limit])
+
+  useEffect(() => {
+    const requestGuard = requestGuardRef.current
+    let active = true
+    void Promise.resolve().then(() => {
+      if (active) fetch_()
+    })
+    return () => {
+      active = false
+      requestGuard.invalidate()
+    }
+  }, [fetch_])
+
+  return { alternatives, loading, error, refetch: fetch_ }
 }
