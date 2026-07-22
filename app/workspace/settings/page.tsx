@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import {
@@ -83,6 +83,14 @@ const TAB_DEFINITIONS: { id: SettingsTab; label: string; icon: ReactNode }[] = [
 ]
 
 export default function WorkspaceSettingsPage() {
+  return (
+    <Suspense fallback={<WorkspaceLoading />}>
+      <WorkspaceSettingsContent />
+    </Suspense>
+  )
+}
+
+function WorkspaceSettingsContent() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
   const settings = useWorkspaceSettings()
