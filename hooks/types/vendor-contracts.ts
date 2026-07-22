@@ -16,7 +16,7 @@ export interface VendorOnboardingData {
   industries: string[]
 
   // Step 2 - Credentials
-  certificationFiles: { name: string; size: number; file?: File }[]
+  certificationFiles: UploadedApplicationFile[]
   manualCertifications: string[]
   yearsExperience: string
   openToAssessment: boolean
@@ -26,9 +26,10 @@ export interface VendorOnboardingData {
   featuredProjects: FeaturedProject[]
 
   // Step 4 - Portfolio
-  portfolioFiles: File[]
+  portfolioFiles: UploadedApplicationFile[]
   portfolioLinks: AddedLink[]
   introVideoLink?: string
+  introVideoFile?: UploadedApplicationFile | null
   visibilitySettings: Record<string, boolean>
 
   // Step 5 - Preferences
@@ -60,5 +61,18 @@ export interface FeaturedProject {
 
 export interface AddedLink {
   url: string
+  visible: boolean
+  linkType?: 'portfolio' | 'certification'
+}
+
+export interface UploadedApplicationFile {
+  name: string
+  size: number
+  file?: File
+  id?: string
+  // Legacy hydration only. New uploads never receive a public storage URL.
+  publicUrl?: string | null
+  storageKey?: string | null
+  fileContentType?: string | null
   visible: boolean
 }

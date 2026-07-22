@@ -7,5 +7,5 @@ import { getUserRole } from '@/lib/auth'
 export default async function DashboardRedirect() {
   const role = await getUserRole()
   if (role === 'business') redirect('/business/dashboard')
-  redirect('/experts/dashboard')
+  redirect('/workspace')
 }
