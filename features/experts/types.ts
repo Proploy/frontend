@@ -1,7 +1,18 @@
-// Expert project file upload — get a signed URL to PUT the file directly
-export type ExpertProjectUploadUrlResponse = {
-  uploadUrl: string
+export type ExpertProjectFileUploadResponse = {
   storageKey: string
+  fileName: string
+  fileContentType: string
+  fileSizeBytes: number
+}
+
+export type ApplicationDocumentType = 'intro_video' | 'portfolio' | 'certification'
+
+export type ApplicationDocumentUploadResponse = {
+  storageKey: string
+  documentType: ApplicationDocumentType
+  fileName: string
+  fileContentType: string
+  fileSizeBytes: number
 }
 
 // Expert project file download — get a signed URL to retrieve the file
@@ -11,8 +22,9 @@ export type ExpertProjectDownloadUrlResponse = {
 }
 
 export type ExpertProfilePictureUploadUrlResponse = {
-  uploadUrl: string
   storageKey: string
+  fileName: string
+  fileContentType: string
 }
 
 export interface ExpertProfileUpdateRequest {
@@ -92,11 +104,17 @@ export interface ExpertTagInput {
 }
 
 export interface ExpertLinkInput {
+  id?: string
   linkType: string  // portfolio | case_study | certification | testimonial | linkedin | github | x | website
   url: string
+  storageKey?: string | null
+  fileName?: string | null
+  fileContentType?: string | null
+  fileSizeBytes?: number | null
 }
 
 export interface ExpertProjectInput {
+  id?: string
   title: string
   summary: string
   link?: string | null
@@ -155,6 +173,9 @@ export interface ExpertLinkResponse {
   id: string
   linkType: string
   url: string
+  fileName?: string | null
+  fileContentType?: string | null
+  fileSizeBytes?: number | null
 }
 
 export interface ExpertProjectResponse {

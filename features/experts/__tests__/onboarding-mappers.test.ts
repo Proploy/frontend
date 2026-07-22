@@ -51,4 +51,41 @@ describe('mapVendorOnboardingToExpertDraft', () => {
     expect(result.agreeTerms).toBe(true)
     expect(result.consentContact).toBe(true)
   })
+
+  it('does not persist a raw storage URL for uploaded portfolio evidence', () => {
+    const storageUrl = 'https://project.supabase.co/storage/v1/object/public/expert-document/pending/file.pdf'
+    const result = mapVendorOnboardingToExpertDraft({
+      ...form,
+      portfolioFiles: [{
+        name: 'file.pdf',
+        size: 1024,
+        publicUrl: storageUrl,
+        storageKey: 'pending-expert-applications/user-1/documents/portfolio/file.pdf',
+        fileContentType: 'application/pdf',
+        visible: true,
+      }],
+    })
+
+    expect(result.links?.some((link) => link.url === storageUrl)).toBe(false)
+    expect(result.links?.some((link) => link.storageKey?.includes('pending-expert-applications/user-1'))).toBe(true)
+  })
+
+  it('does not expose the raw storage URL for an uploaded intro video', () => {
+    const storageUrl = 'https://project.supabase.co/storage/v1/object/public/expert-document/pending/intro.mp4'
+    const result = mapVendorOnboardingToExpertDraft({
+      ...form,
+      introVideoLink: storageUrl,
+      introVideoFile: {
+        name: 'intro.mp4',
+        size: 1024,
+        publicUrl: storageUrl,
+        storageKey: 'pending-expert-applications/user-1/documents/intro_video/intro.mp4',
+        fileContentType: 'video/mp4',
+        visible: true,
+      },
+    })
+
+    expect(result.introVideoLink).not.toBe(storageUrl)
+    expect(result.links?.some((link) => link.url === storageUrl)).toBe(false)
+  })
 })

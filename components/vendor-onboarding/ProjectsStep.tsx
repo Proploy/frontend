@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { Loader2, Plus, Upload } from 'lucide-react';
 import Select from '@/components/ui/Select';
 import { useProductList } from '@/features/catalog';
-import type { GetUploadUrlResult } from '@/features/experts/use-expert-application';
+import type { UploadProjectFileResult } from '@/features/experts/use-expert-application';
 import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
 interface FeaturedProject {
@@ -30,13 +30,10 @@ interface ProjectsFormData {
 interface ProjectsStepProps {
   formData: VendorOnboardingData;
   updateFormData: (data: Partial<VendorOnboardingData>) => void;
-  getUploadUrl?: (
+  uploadProjectFile?: (
     clientProjectId: string,
-    filename: string,
-    contentType: string,
-    fileSizeBytes: number,
-  ) => Promise<GetUploadUrlResult>;
-  uploadToSignedUrl?: (uploadUrl: string, file: File) => Promise<void>;
+    file: File,
+  ) => Promise<UploadProjectFileResult>;
 }
 
 const emptyProject: FeaturedProject = {
@@ -76,8 +73,7 @@ const industryOptions = [
 export default function ProjectsStep({
   formData,
   updateFormData,
-  getUploadUrl,
-  uploadToSignedUrl,
+  uploadProjectFile: uploadFile,
 }: ProjectsStepProps) {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -124,14 +120,13 @@ export default function ProjectsStep({
   );
 
   const uploadProjectFile = async (index: number, file: File | null) => {
-    if (!file || !getUploadUrl || !uploadToSignedUrl) return;
+    if (!file || !uploadFile) return;
     const project = projects.featuredProjects[index];
     const clientProjectId = project.clientProjectId || createClientProjectId();
-    const contentType = file.type || 'application/octet-stream';
 
     setUploadingIndex(index);
     setUploadError(null);
-    const result = await getUploadUrl(clientProjectId, file.name, contentType, file.size);
+    const result = await uploadFile(clientProjectId, file);
     if (!result.ok) {
       setUploadError(result.error.message);
       setUploadingIndex(null);
@@ -139,13 +134,12 @@ export default function ProjectsStep({
     }
 
     try {
-      await uploadToSignedUrl(result.data.uploadUrl, file);
       updateProject(index, {
         clientProjectId,
         fileStorageKey: result.data.storageKey,
-        fileName: file.name,
-        fileContentType: contentType,
-        fileSizeBytes: file.size,
+        fileName: result.data.fileName,
+        fileContentType: result.data.fileContentType,
+        fileSizeBytes: result.data.fileSizeBytes,
       });
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Project file upload failed');
@@ -282,9 +276,12 @@ export default function ProjectsStep({
             />
           </div>
 
-          {getUploadUrl && uploadToSignedUrl && (
+          {uploadFile && (
             <div className="flex flex-col gap-[8px]">
               <label className={labelClasses}>Project evidence (optional)</label>
+              <p className="text-[12px] leading-[18px] text-[#535862]">
+                PDF, DOC, DOCX, TXT, PNG, or JPG. Max 5 MB per file.
+              </p>
               <label className="flex cursor-pointer items-center justify-center gap-[8px] rounded-[8px] border border-dashed border-[#b2ccff] bg-white px-[14px] py-[12px] text-[14px] font-semibold text-[#004eeb]">
                 {uploadingIndex === idx ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {uploadingIndex === idx

@@ -79,6 +79,7 @@ const INITIAL_FORM_DATA: VendorOnboardingData = {
   portfolioFiles: [],
   portfolioLinks: [],
   introVideoLink: '',
+  introVideoFile: null,
   visibilitySettings: {},
   timezone: '',
   regions: [],
@@ -95,8 +96,8 @@ export default function VendorOnboardingPage() {
     getApplication,
     saveApplicationDraft,
     submitApplication,
-    getProjectFileUploadUrl,
-    uploadProjectFileToSignedUrl,
+    uploadProjectFile,
+    uploadApplicationDocument,
   } = useExpertApplication();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<VendorOnboardingData>(INITIAL_FORM_DATA);
@@ -148,7 +149,7 @@ export default function VendorOnboardingPage() {
 
   const handleContinue = async () => {
     if (currentStep === 7) {
-      window.location.href = "/experts/dashboard";
+      window.location.href = "/workspace";
       return;
     }
 
@@ -220,18 +221,29 @@ export default function VendorOnboardingPage() {
       case 1:
         return <ExpertiseStep formData={formData} setFormData={replaceFormData} />;
       case 2:
-        return <CredentialsStep formData={formData} updateFormData={updateFormData} />;
+        return (
+          <CredentialsStep
+            formData={formData}
+            updateFormData={updateFormData}
+            uploadDocument={(documentType, file) => uploadApplicationDocument(documentType, file)}
+          />
+        );
       case 3:
         return (
           <ProjectsStep
             formData={formData}
             updateFormData={updateFormData}
-            getUploadUrl={getProjectFileUploadUrl}
-            uploadToSignedUrl={uploadProjectFileToSignedUrl}
+            uploadProjectFile={uploadProjectFile}
           />
         );
       case 4:
-        return <PortfolioStep formData={formData} setFormData={replaceFormData} />;
+        return (
+          <PortfolioStep
+            formData={formData}
+            setFormData={replaceFormData}
+            uploadDocument={(documentType, file) => uploadApplicationDocument(documentType, file)}
+          />
+        );
       case 5:
         return <PreferencesStep formData={formData} setFormData={replaceFormData} />;
       case 6:

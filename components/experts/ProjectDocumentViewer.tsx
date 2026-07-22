@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Download, ExternalLink, Eye, FileImage, FileText, Loader2, X } from 'lucide-react'
 import type { ExpertProjectDownloadUrlResponse, ExpertProjectResponse } from '@/features/experts/types'
+import { resolveExpertPublicResourceUrl } from '@/features/experts/public-resource'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
 type ProjectFileResult = { ok: true; data: ExpertProjectDownloadUrlResponse } | NormalizedError
@@ -50,7 +51,7 @@ export function ProjectDocumentViewer({
   const [isOpeningFile, setIsOpeningFile] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
 
-  if (!project.fileStorageKey) return null
+  if (!project.fileStorageKey && !resolveExpertPublicResourceUrl(project.fileUrl)) return null
 
   const previewKind = getPreviewKind(project.fileContentType)
   const canPreview = previewKind !== 'unsupported'
@@ -58,8 +59,10 @@ export function ProjectDocumentViewer({
   const fileMeta = [project.fileContentType, fileSize].filter(Boolean).join(' · ') || 'Project document'
   const Icon = previewKind === 'image' ? FileImage : FileText
 
-  const resolveSignedUrl = async () => {
-    if (project.fileUrl) return project.fileUrl
+  const resolveFileUrl = async () => {
+    // Resolve through service-apis whenever a canonical storage key exists.
+    // Legacy storage URLs are rejected instead of being sent to the browser.
+    if (!project.fileStorageKey) return resolveExpertPublicResourceUrl(project.fileUrl)
 
     const result = await getDownloadUrl(project.id)
     if (!result.ok) {
@@ -73,17 +76,20 @@ export function ProjectDocumentViewer({
       setFileError('This project file is temporarily unavailable.')
       return null
     }
-    return result.data.downloadUrl
+    return resolveExpertPublicResourceUrl(result.data.downloadUrl)
   }
 
   const openPreview = async () => {
     if (!canPreview || isLoadingPreview) return
     setIsLoadingPreview(true)
     setFileError(null)
-    const signedUrl = await resolveSignedUrl()
+    const fileUrl = await resolveFileUrl()
     setIsLoadingPreview(false)
-    if (!signedUrl) return
-    setPreviewUrl(signedUrl)
+    if (!fileUrl) {
+      setFileError('This project file is temporarily unavailable.')
+      return
+    }
+    setPreviewUrl(fileUrl)
     setIsPreviewOpen(true)
   }
 
@@ -91,10 +97,13 @@ export function ProjectDocumentViewer({
     if (isOpeningFile) return
     setIsOpeningFile(true)
     setFileError(null)
-    const signedUrl = previewUrl ?? await resolveSignedUrl()
+    const fileUrl = previewUrl ?? await resolveFileUrl()
     setIsOpeningFile(false)
-    if (!signedUrl) return
-    window.open(signedUrl, '_blank', 'noopener,noreferrer')
+    if (!fileUrl) {
+      setFileError('This project file is temporarily unavailable.')
+      return
+    }
+    window.open(fileUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (

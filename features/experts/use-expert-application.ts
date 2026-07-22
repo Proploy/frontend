@@ -1,6 +1,6 @@
 /**
  * Expert onboarding application hook.
- * Calls service-apis directly from the browser — no Next.js proxy routes.
+ * Calls service-apis directly from the browser.
  *
  * Uses ServiceApisBrowserClient with requireAuth: true for all calls.
  * Discriminated union result style: { ok: true, data: T } | NormalizedError
@@ -9,19 +9,29 @@
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type {
+  ApplicationDocumentType,
+  ApplicationDocumentUploadResponse,
   ExpertDraftRequest,
   ExpertMe,
-  ExpertProjectUploadUrlResponse,
+  ExpertProjectFileUploadResponse,
   ExpertProjectDownloadUrlResponse,
 } from '@/features/experts/types'
 
 const client = new ServiceApisBrowserClient()
 let inFlightApplicationRequest: Promise<GetApplicationResult> | null = null
 
+// Keep project evidence uploads aligned with the onboarding UI and the
+// service-apis validation contract.
+export const MAX_PROJECT_FILE_SIZE_BYTES = 5 * 1024 * 1024
+export const MAX_PORTFOLIO_FILE_SIZE_BYTES = 25 * 1024 * 1024
+export const MAX_CERTIFICATION_FILE_SIZE_BYTES = 25 * 1024 * 1024
+export const MAX_INTRO_VIDEO_SIZE_BYTES = 200 * 1024 * 1024
+
 export type GetApplicationResult = { ok: true; data: ExpertMe | null } | NormalizedError
 export type SaveApplicationDraftResult = { ok: true; data: ExpertMe } | NormalizedError
 export type SubmitApplicationResult = { ok: true; data: ExpertMe } | NormalizedError
-export type GetUploadUrlResult = { ok: true; data: ExpertProjectUploadUrlResponse } | NormalizedError
+export type UploadProjectFileResult = { ok: true; data: ExpertProjectFileUploadResponse } | NormalizedError
+export type UploadApplicationDocumentResult = { ok: true; data: ApplicationDocumentUploadResponse } | NormalizedError
 export type GetDownloadUrlResult = { ok: true; data: ExpertProjectDownloadUrlResponse } | NormalizedError
 
 /**
@@ -85,42 +95,65 @@ async function submitApplication(
   return { ok: true, data: result.data }
 }
 
+function fileTooLarge(message: string): NormalizedError {
+  return {
+    ok: false,
+    status: 413,
+    error: {
+      code: 'FILE_TOO_LARGE',
+      message,
+    },
+  }
+}
+
 /**
- * POST /api/v1/experts/me/application/project-file-upload-url
- * Get a signed URL to upload a project document file directly to S3.
+ * POST /api/v1/experts/me/application/project-file
+ * The service API owns the storage upload; the browser only receives a
+ * non-public storage reference and file metadata.
  */
-async function getProjectFileUploadUrl(
+async function uploadProjectFile(
   clientProjectId: string,
-  filename: string,
-  contentType: string,
-  fileSizeBytes: number,
-): Promise<GetUploadUrlResult> {
-  const result = await client.post<ExpertProjectUploadUrlResponse>(
-    '/api/v1/experts/me/application/project-file-upload-url',
-    { clientProjectId, filename, contentType, fileSizeBytes },
+  file: File,
+): Promise<UploadProjectFileResult> {
+  if (file.size > MAX_PROJECT_FILE_SIZE_BYTES) {
+    return fileTooLarge('Project evidence files must be 5 MB or smaller')
+  }
+
+  const path = `/api/v1/experts/me/application/project-file?clientProjectId=${encodeURIComponent(clientProjectId)}&filename=${encodeURIComponent(file.name)}`
+  const result = await client.postBinary<ExpertProjectFileUploadResponse>(
+    path,
+    file,
     { requireAuth: true },
   )
-
   if (!result.ok) return result
   return { ok: true, data: result.data }
 }
 
 /**
- * Upload a file directly to a pre-signed S3 URL.
- * No auth headers needed — URL contains embedded credentials.
+ * POST /api/v1/experts/me/application/document-upload
+ * Upload intro videos, portfolio files, and certificates to the same
+ * private expert-document bucket used by project evidence.
  */
-async function uploadProjectFileToSignedUrl(
-  uploadUrl: string,
+async function uploadApplicationDocument(
+  documentType: ApplicationDocumentType,
   file: File,
-): Promise<void> {
-  const res = await fetch(uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: { 'content-type': file.type },
-  })
-  if (!res.ok) {
-    throw new Error(`Upload failed: ${res.status} ${res.statusText}`)
-  }
+): Promise<UploadApplicationDocumentResult> {
+  const maxSize = documentType === 'intro_video'
+    ? MAX_INTRO_VIDEO_SIZE_BYTES
+    : documentType === 'portfolio'
+      ? MAX_PORTFOLIO_FILE_SIZE_BYTES
+      : MAX_CERTIFICATION_FILE_SIZE_BYTES
+  const maxLabel = documentType === 'intro_video' ? '200 MB' : '25 MB'
+  if (file.size > maxSize) return fileTooLarge(`${documentType.replace('_', ' ')} files must be ${maxLabel} or smaller`)
+
+  const path = `/api/v1/experts/me/application/document-upload?documentType=${encodeURIComponent(documentType)}&filename=${encodeURIComponent(file.name)}`
+  const result = await client.postBinary<ApplicationDocumentUploadResponse>(
+    path,
+    file,
+    { requireAuth: true },
+  )
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
 }
 
 /**
@@ -144,7 +177,7 @@ export const useExpertApplication = () => ({
   getApplication,
   saveApplicationDraft,
   submitApplication,
-  getProjectFileUploadUrl,
-  uploadProjectFileToSignedUrl,
+  uploadProjectFile,
+  uploadApplicationDocument,
   getProjectFileDownloadUrl,
 })

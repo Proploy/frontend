@@ -1,6 +1,46 @@
 import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts'
 import type { ExpertDraftRequest, ExpertMe } from './types'
 
+export function isBlockedStorageUrl(value: string | null | undefined): boolean {
+  if (!value) return false
+  try {
+    const parsed = new URL(value)
+    const hostname = parsed.hostname.toLowerCase()
+    const configuredHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.toLowerCase()
+      : ''
+    return (
+      ['http:', 'https:'].includes(parsed.protocol)
+      && parsed.pathname.startsWith('/storage/v1/object/')
+      && (
+        hostname === configuredHostname
+        || hostname.endsWith('.supabase.co')
+        || hostname.endsWith('.supabase.in')
+      )
+    )
+  } catch {
+    return false
+  }
+}
+
+function safeExternalUrl(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim()
+  if (!trimmed || isBlockedStorageUrl(trimmed)) return undefined
+  try {
+    const parsed = new URL(trimmed)
+    return ['http:', 'https:'].includes(parsed.protocol) && parsed.hostname
+      ? trimmed
+      : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function isServiceFilePath(value: string | null | undefined): boolean {
+  return typeof value === 'string'
+    && /^\/api\/v1\/experts\/[^/]+\/links\/[^/]+\/file$/.test(value)
+}
+
 const EXPERIENCE_YEARS: Record<string, number> = {
   'Less than 1 year': 0,
   '1–2 years': 1,
@@ -36,6 +76,10 @@ function mapHoursToRange(hours: number | null | undefined): string {
 export function mapVendorOnboardingToExpertDraft(
   form: VendorOnboardingData,
 ): ExpertDraftRequest {
+  const introVideoLink = form.introVideoFile
+    ? undefined
+    : safeExternalUrl(form.introVideoLink)
+
   return {
     entityType: form.accountType === 'business' ? 'Business/Team' : 'Individual',
     displayName: form.displayName.trim(),
@@ -49,12 +93,13 @@ export function mapVendorOnboardingToExpertDraft(
       form.regions.length ? `Regions: ${form.regions.join(', ')}` : '',
     ].filter(Boolean).join('\n'),
     whyPlatform: form.whyPlatforms,
-    introVideoLink: form.introVideoLink?.trim() || undefined,
+    introVideoLink,
     primaryPlatforms: form.categories,
     secondaryPlatforms: form.specializations,
     industryExpertise: form.industries,
     preferredProjectTypes: form.preferredProjectTypes,
     projects: form.featuredProjects.map((project) => ({
+      id: project.clientProjectId || undefined,
       title: project.title,
       summary: [
         project.platform ? `Platform: ${project.platform}` : '',
@@ -69,9 +114,42 @@ export function mapVendorOnboardingToExpertDraft(
       fileContentType: project.fileContentType,
       fileSizeBytes: project.fileSizeBytes,
     })),
-    links: form.portfolioLinks
-      .filter((link) => link.visible && link.url.trim())
-      .map((link) => ({ linkType: 'portfolio', url: link.url.trim() })),
+    links: [
+      ...form.portfolioLinks
+        .filter((link) => link.visible && safeExternalUrl(link.url))
+        .map((link) => ({ linkType: link.linkType ?? 'portfolio', url: safeExternalUrl(link.url) as string })),
+      ...form.portfolioFiles
+        .filter((file) => file.visible && (file.storageKey || file.id))
+        .map((file) => ({
+          id: file.id,
+          linkType: 'portfolio',
+          url: '',
+          storageKey: file.storageKey,
+          fileName: file.name,
+          fileContentType: file.fileContentType,
+          fileSizeBytes: file.size,
+        })),
+      ...form.certificationFiles
+        .filter((file) => file.visible && (file.storageKey || file.id))
+        .map((file) => ({
+          id: file.id,
+          linkType: 'certification',
+          url: '',
+          storageKey: file.storageKey,
+          fileName: file.name,
+          fileContentType: file.fileContentType,
+          fileSizeBytes: file.size,
+        })),
+      ...(form.introVideoFile?.visible && (form.introVideoFile.storageKey || form.introVideoFile.id) ? [{
+        id: form.introVideoFile.id,
+        linkType: 'intro_video',
+        url: '',
+        storageKey: form.introVideoFile.storageKey,
+        fileName: form.introVideoFile.name,
+        fileContentType: form.introVideoFile.fileContentType,
+        fileSizeBytes: form.introVideoFile.size,
+      }] : []),
+    ],
     tags: [
       ...form.categories.map((tagValue) => ({ tagType: 'platform', tagValue })),
       ...form.specializations.map((tagValue) => ({ tagType: 'platform', tagValue })),
@@ -87,6 +165,14 @@ export function hydrateVendorOnboardingFromExpert(
   current: VendorOnboardingData,
   expert: ExpertMe,
 ): VendorOnboardingData {
+  const storedIntroMatch = expert.introVideoLink?.match(/^\/api\/v1\/experts\/[^/]+\/links\/([^/]+)\/file$/)
+  const storedPortfolioLinks = (expert.links ?? []).filter(
+    (link) => link.linkType === 'portfolio' && isServiceFilePath(link.url),
+  )
+  const storedCertificationLinks = (expert.links ?? []).filter(
+    (link) => link.linkType === 'certification' && isServiceFilePath(link.url),
+  )
+
   return {
     ...current,
     accountType: expert.entityType?.toLowerCase().includes('business') ? 'business' : 'individual',
@@ -102,10 +188,35 @@ export function hydrateVendorOnboardingFromExpert(
     weeklyAvailability: mapHoursToRange(expert.availabilityHoursPerWeek),
     preferredProjectTypes: expert.preferredProjectTypes ?? [],
     whyPlatforms: expert.whyPlatform ?? '',
-    introVideoLink: expert.introVideoLink ?? '',
+    introVideoLink: storedIntroMatch || isBlockedStorageUrl(expert.introVideoLink)
+      ? ''
+      : expert.introVideoLink ?? '',
+    introVideoFile: storedIntroMatch
+      ? {
+          id: storedIntroMatch[1],
+          name: 'Intro video',
+          size: 0,
+          visible: true,
+        }
+      : null,
     portfolioLinks: (expert.links ?? [])
-      .filter((link) => link.linkType === 'portfolio')
-      .map((link) => ({ url: link.url, visible: true })),
+      .filter((link) => link.linkType === 'portfolio' && !isServiceFilePath(link.url))
+      .filter((link) => !isBlockedStorageUrl(link.url))
+      .map((link) => ({ url: link.url, visible: true, linkType: 'portfolio' })),
+    portfolioFiles: storedPortfolioLinks.map((link) => ({
+      id: link.id,
+      name: link.fileName ?? 'Portfolio file',
+      size: link.fileSizeBytes ?? 0,
+      fileContentType: link.fileContentType,
+      visible: true,
+    })),
+    certificationFiles: storedCertificationLinks.map((link) => ({
+        id: link.id,
+        name: link.fileName ?? 'Certificate',
+        size: link.fileSizeBytes ?? 0,
+        fileContentType: link.fileContentType,
+        visible: true,
+      })),
     featuredProjects: (expert.projects ?? []).map((project) => ({
       clientProjectId: project.id,
       title: project.title,

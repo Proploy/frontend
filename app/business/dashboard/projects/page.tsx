@@ -200,7 +200,7 @@ export default function BusinessProjectsPage() {
               kind: 'review',
               title: `New ${data.rating}★ review`,
               body: `${DEMO_BUSINESS}: “${data.title}”`,
-              href: '/experts/dashboard',
+              href: '/workspace',
             })
             setReviewed((prev) => new Set(prev).add(review.id))
             setReview(null)
