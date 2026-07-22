@@ -53,13 +53,13 @@
 ### Key Architectural Decisions
 
 **1. Browser / server client split.**  
-`lib/service-apis/browser.ts` (client-only) exports `ServiceApisBrowserClient`, which uses `NEXT_PUBLIC_SERVICE_APIS_URL` and resolves Supabase session tokens from the browser. `lib/service-apis/server.ts` exports `serviceApisFetch`, which uses `SERVICE_APIS_BASE_URL` (server-only) and the server-side Supabase client. Never import the server module from client components.
+`lib/service-apis/browser.ts` (client-only) exports `ServiceApisBrowserClient`, which calls `NEXT_PUBLIC_SERVICE_APIS_URL` directly and attaches the current Supabase browser access token for authenticated requests. `lib/service-apis/server.ts` exports `serviceApisFetch` for Server Components and server-only callbacks using `SERVICE_APIS_BASE_URL`. Never import the server module from client components.
 
 **2. Three-layer catalog types.**  
 Catalog data flows through three layers: **contract types** (`hooks/types/catalog-contracts.ts`) mirror the service-apis schemas exactly; **view model types** (`hooks/types/catalog-view-models.ts`) represent what the UI actually renders; **mappers** (`hooks/mappers/catalog-mappers.ts`) convert between them. Pages never import contract types directly.
 
-**3. BFF API routes as compatibility shims.**  
-`app/api/` routes proxy requests to `service-apis` and reshape responses. New code should call `ServiceApisBrowserClient` or `serviceApisFetch` directly, bypassing the API route layer where possible.
+**3. Feature hooks own service-apis calls.**
+Feature hooks and clients call `service-apis` directly. There is no generic Next.js BFF route for feature traffic; `app/api/` is reserved for server-only callbacks and diagnostics.
 
 **4. Auth via context, not middleware.**  
 `components/providers/auth-provider.tsx` provides `useAuth()` which surfaces `user`, `expert`, `isLoading`, and session methods. Auth state is client-resolved; server components use `createClient()` from `lib/supabase/server.ts` directly.
@@ -155,7 +155,7 @@ frontend/
 ### Public Catalog Flow (no auth)
 
 ```
-ServiceApisBrowserClient.get('/catalog/products?...')
+ServiceApisBrowserClient.get('/api/v1/catalog/products/ui?...')
   → service-apis (port 8020)
   → software-ingestion-pipeline DB
   → catalog-contracts.ts response shape
@@ -167,11 +167,11 @@ ServiceApisBrowserClient.get('/catalog/products?...')
 ### Authenticated User Flow
 
 ```
-serviceApisFetch('/api/v1/users/me/interests', { requireAuth: true })
-  → service-apis (server-side, port 8020)
-  → validates Supabase session cookie → JWT
+ServiceApisBrowserClient.get('/api/v1/users/me/profile', { requireAuth: true })
+  → service-apis (direct browser request, port 8020)
+  → validates Supabase JWT Authorization header
   → responds with user data
-  → server component renders with user-specific data
+  → feature hook renders user-specific data
 ```
 
 ### State Stores
@@ -283,14 +283,14 @@ npm run lint      # ESLint
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 NEXT_PUBLIC_APP_URL
-NEXT_PUBLIC_SERVICE_APIS_URL   # service-apis gateway URL (browser-accessible)
+NEXT_PUBLIC_SERVICE_APIS_URL       # direct browser gateway URL
 ```
 
 **Server-only** (never bundled into browser):
 ```
 SUPABASE_SERVICE_ROLE_KEY      # Server-side privileged Supabase client
 DATABASE_URL                   # Direct DB connection (if needed)
-SERVICE_APIS_BASE_URL          # service-apis gateway (server-side proxy)
+SERVICE_APIS_BASE_URL          # service-apis gateway for server-only calls
 UPSTASH_REDIS_REST_URL
 UPSTASH_REDIS_REST_TOKEN
 REVALIDATE_TIME
