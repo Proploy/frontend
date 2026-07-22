@@ -7,17 +7,45 @@
 // have been removed. Compare is products only.
 
 import React from 'react'
-import { Icon, LogoTile, Pill, ScoreRing, Btn } from './CompareUI'
-import { buildRows, PathCard, ImplCtas, AltCard, type Row } from './CompareRows'
-import { NoData } from './CompareUI'
+import { Icon, LogoTile, Pill, ScoreRing, Btn, NoData } from './CompareUI'
+import { buildRows, AltCard, type Row } from './CompareRows'
+import { useProductAlternatives } from '@/features/catalog'
+import { productAlternativeToCompareAlternative } from '@/lib/compare/from-catalog'
 import type { Entity, Tab } from '@/lib/compare/data'
+
+function LiveAlternativesCell({ entity }: { entity: Entity }) {
+  const { alternatives, loading, error } = useProductAlternatives({ productId: entity.id, limit: 6 })
+  const liveAlternatives = alternatives.map(productAlternativeToCompareAlternative)
+  const shownAlternatives = liveAlternatives.length > 0 ? liveAlternatives : entity.alternatives
+
+  if (loading && shownAlternatives.length === 0) {
+    return (
+      <span className="inline-flex items-center gap-[6px]" style={{ color: '#717680', fontSize: 13 }}>
+        <Icon name="loader" size={13} color="#717680" className="animate-spin" />
+        Loading alternatives
+      </span>
+    )
+  }
+
+  if ((error && shownAlternatives.length === 0) || shownAlternatives.length === 0) {
+    return <NoData />
+  }
+
+  return (
+    <div className="flex flex-col gap-[8px]">
+      {shownAlternatives.map((alternative, index) => (
+        <AltCard key={alternative.id ?? `${alternative.name}-${index}`} alt={alternative} />
+      ))}
+    </div>
+  )
+}
 
 function alternativesRows(): Row[] {
   return [
     {
       label: 'Similar options',
       sub: 'Add any to your comparison',
-      cell: (e) => <div className="flex flex-col gap-[8px]">{e.alternatives.map((a, i) => <AltCard key={i} alt={a} />)}</div>,
+      cell: (e) => <LiveAlternativesCell entity={e} />,
     },
   ]
 }
@@ -32,8 +60,8 @@ export function ResultsToolbar({
   count, onSave, onShare, onAdd, canAdd, saved,
 }: {
   count: number
-  onSave: () => void
-  onShare: () => void
+  onSave: () => void | Promise<void>
+  onShare: () => void | Promise<void>
   onAdd: () => void
   canAdd: boolean
   saved: boolean
@@ -105,7 +133,7 @@ export function ColumnHeader({
         </button>
       )}
       <div className="flex items-center gap-[10px]">
-        <LogoTile initial={entity.initial} tone={entity.logoTone} size={40} type={entity.type} />
+        <LogoTile initial={entity.initial} tone={entity.logoTone} size={40} type={entity.type} logoUrl={entity.logoUrl} />
         <div className="min-w-0" style={{ paddingRight: 18 }}>
           <div className="font-[family-name:var(--font-dm-sans)] font-bold whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 16, color: '#181d27', letterSpacing: '-0.01em' }}>{entity.name}</div>
           {entity.vendorName && (
@@ -140,13 +168,18 @@ interface TableProps {
 export function DesktopTable({ entities, tab, tabs, onTab, onRemove, density, highlight = true, striping = true }: TableProps) {
   const rows = getRows(tab)
   const n = entities.length
-  const cols = `220px repeat(${n}, minmax(0, 1fr))`
+  const isFit = tab === 'Fit'
+  const labelCol = isFit ? 260 : 220
+  const minProductCol = isFit ? 380 : 260
+  const cols = `${labelCol}px repeat(${n}, minmax(${minProductCol}px, 1fr))`
+  const minTableWidth = labelCol + (n * minProductCol)
   const rowPadV = density === 'compact' ? '11px' : '16px'
   return (
-    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
+    <div style={{ maxWidth: isFit ? 1540 : 1440, margin: '0 auto', padding: '0 32px' }}>
       {/* overflow:clip (not hidden) keeps the rounded corners WITHOUT turning the card
           into a scroll container — an overflow:hidden ancestor would break the sticky header. */}
-      <div className="overflow-clip" style={{ border: '1px solid #e9eaeb', borderRadius: 16, background: '#fff', boxShadow: 'var(--shadow-sm)' }}>
+      <div className={isFit ? 'overflow-x-auto overflow-y-visible' : 'overflow-clip'} style={{ border: '1px solid #e9eaeb', borderRadius: 16, background: '#fff', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ minWidth: minTableWidth }}>
         {/* sticky tabs + header */}
         <div style={{ position: 'sticky', top: 80, zIndex: 30 }}>
           <TabBar tabs={tabs} active={tab} onChange={onTab} />
@@ -192,6 +225,7 @@ export function DesktopTable({ entities, tab, tabs, onTab, onRemove, density, hi
               </div>
             )
           })}
+        </div>
         </div>
       </div>
       <p className="flex items-center gap-[7px]" style={{ margin: '12px 2px 0', fontSize: 12.5, color: '#a4a7ae' }}>

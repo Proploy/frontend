@@ -4,7 +4,7 @@
 // Ported from the design prototype (brief.jsx); derives insights from compared entities.
 
 import React from 'react'
-import { Icon, Pill, Btn, SKEUO, type IconName } from './CompareUI'
+import { Icon, Pill, SKEUO, type IconName } from './CompareUI'
 import { PATH_META, type Entity, type Complexity } from '@/lib/compare/data'
 
 const ORDER: Record<Complexity, number> = { Low: 1, Medium: 2, High: 3 }
@@ -13,7 +13,6 @@ export function deriveBrief(entities: Entity[]) {
   if (entities.length === 0) return null
   const byFit = [...entities].sort((a, b) => b.fitScore - a.fitScore)
   const best = byFit[0]
-  const fastest = [...entities].sort((a, b) => parseInt(a.rolloutTimeline) - parseInt(b.rolloutTimeline))[0]
   const complexities = entities.map((e) => e.implComplexity)
   const cheapest = [...entities].sort(
     (a, b) => parseFloat(a.entryPrice.replace(/[^0-9.]/g, '')) - parseFloat(b.entryPrice.replace(/[^0-9.]/g, '')),
@@ -22,14 +21,13 @@ export function deriveBrief(entities: Entity[]) {
   const allSame = complexities.every((c) => c === complexities[0])
   const minComplexity = Math.min(...entities.map((e) => ORDER[e.implComplexity]))
   return {
-    bestFit: { v: best.name, d: `Highest fit for your filters (${best.fitScore}/100).` },
+    bestFit: { v: best.name, d: `Highest fit among the selected products (${best.fitScore}/100).` },
     complexity: {
       v: allSame
         ? `All ${complexities[0].toLowerCase()}`
         : `${minComplexity === 1 ? 'Low' : 'Mixed'} → ${complexities.includes('High') ? 'High' : 'Medium'}`,
-      d: `${fastest.name} is the lightest lift.`,
+      d: `${best.name} has the strongest implementation-fit signal among the selected products.`,
     },
-    ttv: { v: fastest.rolloutTimeline, d: `Fastest realistic go-live (${fastest.name}) with a Proploy expert.` },
     budget: { v: `From ${cheapest.entryPrice}`, d: `${cheapest.name} has the lowest entry price; implementation cost varies by scope.` },
     risk: {
       v: riskiest.migrationRisk === 'Low' ? 'Low overall' : `Highest on ${riskiest.name}`,
@@ -98,16 +96,9 @@ export function BuyerBrief({ entities, loading }: { entities: Entity[]; loading?
               <div className="brief-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', columnGap: 28, marginTop: 6 }}>
                 <BriefRow icon="check" label="Best fit" value={brief.bestFit.v} detail={brief.bestFit.d} />
                 <BriefRow icon="wrench" label="Implementation" value={brief.complexity.v} detail={brief.complexity.d} />
-                <BriefRow icon="clock" label="Time to value" value={brief.ttv.v} detail={brief.ttv.d} />
                 <BriefRow icon="info" label="Budget signal" value={brief.budget.v} detail={brief.budget.d} />
                 <BriefRow icon="shield" label="Support / quality risk" value={brief.risk.v} detail={brief.risk.d} />
                 <BriefRow icon="arrowRight" label="Recommended next step" value={brief.action.v} detail={brief.action.d} />
-              </div>
-              <div className="flex items-center justify-between gap-[14px] flex-wrap" style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #eef0f3' }}>
-                <p className="inline-flex items-center gap-[7px] italic" style={{ margin: 0, fontSize: 12.5, color: '#717680' }}>
-                  <Icon name="shield" size={14} color="#a4a7ae" /> Generated from product data, expert vetting signals, and verified buyer feedback.
-                </p>
-                <Btn variant="primary" size="sm" iconRight="arrowRight">Get matched to an expert</Btn>
               </div>
             </>
           ) : null}

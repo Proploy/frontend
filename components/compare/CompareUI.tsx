@@ -5,6 +5,7 @@
 // Icons come from lucide-react instead of hand-rolled SVG.
 
 import React from 'react'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
 import {
   Search, Plus, X, Check, ChevronDown, ArrowRight, SlidersHorizontal, Star,
   AlertTriangle, Minus, Bookmark, Share2, Sparkles, Clock, Users, Shield,
@@ -60,13 +61,14 @@ const LOGO_TONES: Record<LogoToneKey, { bg: string; fg: string; border: string }
 }
 
 export function LogoTile({
-  initial, tone = 'brand', size = 44, round = false, type,
+  initial, tone = 'brand', size = 44, round = false, type, logoUrl,
 }: {
   initial: string
   tone?: LogoToneKey
   size?: number
   round?: boolean
   type?: string
+  logoUrl?: string | null
 }) {
   const t = LOGO_TONES[tone] || LOGO_TONES.brand
   const isPerson = type === 'expert'
@@ -79,7 +81,14 @@ export function LogoTile({
         fontSize: size * 0.36, boxShadow: isPerson ? 'none' : SKEUO, letterSpacing: '-0.02em',
       }}
     >
-      {initial}
+      {logoUrl ? (
+        <CatalogImage
+          src={logoUrl}
+          alt=""
+          className="size-full object-contain p-[5px]"
+          fallback={<span aria-hidden="true">{initial}</span>}
+        />
+      ) : initial}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import CompareToggle from '@/components/compare/CompareToggle'
+import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import ListingExplorer from '@/components/ListingExplorer'
 import Footer from '@/components/Footer'
 import {
@@ -19,6 +20,13 @@ import {
   DEFAULT_PRODUCT_FILTERS,
   type ProductFilterValues,
 } from '@/components/filters/ProductFiltersDrawer'
+import { buildProductListRequest } from '@/features/catalog/products/filter-request'
+import { getNextProductPageOffset } from '@/features/catalog/products/pagination-state'
+import {
+  PRODUCT_CARD_BODY_CLASS,
+  PRODUCT_CARD_CLASS,
+  PRODUCT_CARD_DESCRIPTION_CLASS,
+} from '@/features/catalog/products/presentation'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -26,6 +34,7 @@ const BUTTON_SKEUO_SHADOW =
 const ACTIVE_BUTTON_CLASS = 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
 const INACTIVE_BUTTON_CLASS = 'text-[#717680] hover:text-[#414651]'
 const BASE_BUTTON_CLASS = 'h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors'
+const PRODUCT_PAGE_SIZE = 15
 
 function CategoryNavigation({
   categories,
@@ -123,26 +132,37 @@ function ProductsPageContent() {
   )
   const [activeCategory, setActiveCategory] = useState<CategoryNode | null>(selectedFromUrl)
   const [activeRoot, setActiveRoot] = useState<CategoryNode | null>(selectedRootFromUrl)
-  const [limit, setLimit] = useState(15)
+  const [offset, setOffset] = useState(0)
   const [filters, setFilters] = useState<ProductFilterValues>(DEFAULT_PRODUCT_FILTERS)
 
   useEffect(() => {
     setActiveCategory(selectedFromUrl)
+    setOffset(0)
   }, [selectedFromUrl])
 
   useEffect(() => {
     setActiveRoot(selectedRootFromUrl)
   }, [selectedRootFromUrl])
 
+  useEffect(() => {
+    setOffset(0)
+  }, [search])
+
   const { products, loading, error, pagination, refetch } = useProductList({
-    limit,
-    category: activeCategory?.term_id,
-    search,
-    pricing_bucket: filters.pricingBucket || undefined,
-    free_plan: filters.freePlan || undefined,
-    free_trial: filters.freeTrial || undefined,
-    sort: filters.sort,
+    ...buildProductListRequest({
+      category: activeCategory?.term_id,
+      search,
+      pricingBucket: filters.pricingBucket,
+      freePlan: filters.freePlan,
+      freeTrial: filters.freeTrial,
+      sort: filters.sort,
+      limit: PRODUCT_PAGE_SIZE,
+      offset,
+    }),
+    append: true,
   })
+  const isLoadingInitialProducts = loading && (offset === 0 || products.length === 0)
+  const isLoadingMoreProducts = loading && offset > 0 && products.length > 0
   const [contact, setContact] = useState({
     firstName: '',
     lastName: '',
@@ -159,7 +179,7 @@ function ProductsPageContent() {
         productFilters={filters}
         onProductFiltersChange={(values) => {
           setFilters(values)
-          setLimit(15)
+          setOffset(0)
         }}
       />
 
@@ -190,13 +210,13 @@ function ProductsPageContent() {
               activeRoot={activeRoot?.term_id ?? null}
               onChange={(category) => {
                 setActiveCategory(category)
-                setLimit(15)
+                setOffset(0)
               }}
               onRootChange={(root) => {
                 setActiveRoot(root)
                 const firstChild = root.children[0] ?? null
                 setActiveCategory(firstChild)
-                setLimit(15)
+                setOffset(0)
               }}
             />
           )}
@@ -209,7 +229,7 @@ function ProductsPageContent() {
                   type="button"
                   onClick={() => {
                     setActiveCategory(child)
-                    setLimit(15)
+                    setOffset(0)
                   }}
                   className={`rounded-[8px] border px-[14px] py-[10px] text-[14px] font-semibold transition-colors ${
                     activeCategory?.term_id === child.term_id
@@ -255,7 +275,7 @@ function ProductsPageContent() {
           )}
 
           {/* Loading state */}
-          {loading ? (
+          {isLoadingInitialProducts ? (
             <div className="flex items-center justify-center py-[96px]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
             </div>
@@ -275,10 +295,12 @@ function ProductsPageContent() {
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => setLimit((current) => current + 15)}
-                className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}
+                onClick={() => setOffset(getNextProductPageOffset(products))}
+                disabled={isLoadingMoreProducts}
+                aria-busy={isLoadingMoreProducts}
+                className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] disabled:cursor-not-allowed disabled:text-[#717680] disabled:opacity-70 ${BUTTON_SKEUO_SHADOW}`}
               >
-                Load more products
+                {isLoadingMoreProducts ? 'Loading more products...' : 'Load more products'}
               </button>
             </div>
           )}
@@ -413,8 +435,8 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
   const highlight = HIGHLIGHT_BADGES[highlightIndex % HIGHLIGHT_BADGES.length]
   const tone = HIGHLIGHT_STYLES[highlight.tone]
   return (
-    <article className="bg-white border border-[#e9eaeb] rounded-[12px] p-[32px] flex flex-col gap-[36px]">
-      <div className="flex flex-col gap-[12px]">
+    <article className={PRODUCT_CARD_CLASS}>
+      <div className={PRODUCT_CARD_BODY_CLASS}>
         <div className="flex items-start justify-between">
           <div className={`size-[48px] rounded-[10px] border border-[#d5d7da] bg-white flex items-center justify-center text-[#155eef] font-bold text-[18px] ${BUTTON_SKEUO_SHADOW}`}>
             {product.product_logo ? (
@@ -439,12 +461,13 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
         >
           {product.product_name}
         </Link>
-        <p className="font-normal text-[16px] leading-[24px] text-[#535862] line-clamp-4">
+        <p className={PRODUCT_CARD_DESCRIPTION_CLASS}>
           {product.product_description || 'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.'}
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-[10px]">
         <div className="flex items-center gap-[10px]">
+          <FavoriteToggle targetId={product.product_id} label={product.product_name} />
           <CompareToggle
             product={{
               product_id: product.product_id,

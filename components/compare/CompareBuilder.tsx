@@ -8,10 +8,8 @@
 
 import React from 'react'
 import { Icon, LogoTile, Pill, Btn } from './CompareUI'
-import {
-  CATALOG, FILTER_OPTIONS,
-  type Entity, type Filters,
-} from '@/lib/compare/data'
+import type { CompareFilterOption } from '@/features/compare/client-api'
+import type { Entity, Filters } from '@/lib/compare/data'
 
 export const MAX_COLS = 4
 
@@ -24,6 +22,12 @@ export interface Column {
   entity?: Entity | null
 }
 
+export type CatalogOption = Pick<Entity, 'id' | 'type' | 'name' | 'initial' | 'logoTone' | 'category' | 'logoUrl'>
+
+export type FilterOption = Omit<CompareFilterOption, 'value'> & { value: string | null }
+
+export type CompareFilterOptions = Record<keyof Filters, FilterOption[]>
+
 // ---- search dropdown to pick / swap an entity -----------------------------
 function SelectorSearch({
   onPick, onClose, current, catalog,
@@ -31,7 +35,7 @@ function SelectorSearch({
   onPick: (id: string) => void
   onClose: () => void
   current?: string
-  catalog: Entity[]
+  catalog: CatalogOption[]
 }) {
   const [q, setQ] = React.useState('')
   const ref = React.useRef<HTMLDivElement>(null)
@@ -75,7 +79,7 @@ function SelectorSearch({
             onMouseEnter={(ev) => { if (current !== e.id) ev.currentTarget.style.background = '#fafafa' }}
             onMouseLeave={(ev) => { ev.currentTarget.style.background = current === e.id ? '#f5f8ff' : 'transparent' }}
           >
-            <LogoTile initial={e.initial} tone={e.logoTone} size={32} type={e.type} />
+            <LogoTile initial={e.initial} tone={e.logoTone} size={32} type={e.type} logoUrl={e.logoUrl} />
             <div className="min-w-0 flex-1">
               <div className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 14, color: '#181d27' }}>{e.name}</div>
               <div style={{ fontSize: 12.5, color: '#717680' }}>{e.category}</div>
@@ -96,14 +100,14 @@ function SelectorColumn({
   onSwap: (id: string) => void
   onRemove: () => void
   canRemove: boolean
-  catalog: Entity[]
+  catalog: CatalogOption[]
 }) {
   const [open, setOpen] = React.useState(false)
   if (!entity) {
     return (
       <div
         className="relative flex flex-col gap-[12px]"
-        style={{ border: '1.5px dashed #d5d7da', borderRadius: 12, padding: 16, background: '#fff', minHeight: 132 }}
+        style={{ border: '1.5px dashed #d5d7da', borderRadius: 14, padding: 14, background: '#fff', minHeight: 150 }}
       >
         <button
           onClick={() => setOpen(true)}
@@ -119,11 +123,11 @@ function SelectorColumn({
   }
   return (
     <div
-      className="relative flex flex-col gap-[12px]"
-      style={{ border: '1px solid #e9eaeb', borderRadius: 12, padding: 16, background: '#fff', minHeight: 132, boxShadow: 'var(--shadow-xs)' }}
+      className="relative flex flex-col gap-[10px]"
+      style={{ border: '1px solid #e9eaeb', borderRadius: 14, padding: 14, background: '#fff', minHeight: 150, boxShadow: 'var(--shadow-xs)' }}
     >
-      <div className="flex items-start justify-between gap-[8px]">
-        <div />
+      <div className="flex items-start justify-between gap-[10px]">
+        <LogoTile initial={entity.initial} tone={entity.logoTone} size={58} type={entity.type} logoUrl={entity.logoUrl} />
         {canRemove && (
           <button
             onClick={onRemove}
@@ -137,17 +141,14 @@ function SelectorColumn({
           </button>
         )}
       </div>
-      <div className="flex items-center gap-[11px]">
-        <LogoTile initial={entity.initial} tone={entity.logoTone} size={42} type={entity.type} />
-        <div className="min-w-0">
-          <div
-            className="font-[family-name:var(--font-dm-sans)] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
-            style={{ fontSize: 16, color: '#181d27', letterSpacing: '-0.01em' }}
-          >
-            {entity.name}
-          </div>
-          <div className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 12.5, color: '#717680' }}>{entity.category}</div>
+      <div className="min-w-0">
+        <div
+          className="font-[family-name:var(--font-dm-sans)] font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+          style={{ fontSize: 21, lineHeight: '27px', color: '#181d27', letterSpacing: '-0.02em' }}
+        >
+          {entity.name}
         </div>
+        <div className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 13.5, color: '#717680' }}>{entity.category}</div>
       </div>
       <button
         onClick={() => setOpen(true)}
@@ -166,9 +167,9 @@ function FilterSelect({
   label, value, options, onChange,
 }: {
   label: string
-  value: string
-  options: readonly string[]
-  onChange: (v: string) => void
+  value: string | null
+  options: FilterOption[]
+  onChange: (v: string | null) => void
 }) {
   const [open, setOpen] = React.useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
@@ -177,7 +178,8 @@ function FilterSelect({
     document.addEventListener('mousedown', f)
     return () => document.removeEventListener('mousedown', f)
   }, [])
-  const isDefault = value === options[0]
+  const selected = options.find((option) => option.value === value) ?? options[0]
+  const isDefault = value === null
   return (
     <div ref={ref} className="relative">
       <button
@@ -185,24 +187,24 @@ function FilterSelect({
         className="inline-flex items-center gap-[8px] cursor-pointer font-[family-name:var(--font-dm-sans)] font-semibold whitespace-nowrap"
         style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${isDefault ? '#d5d7da' : '#b2ccff'}`, background: isDefault ? '#fff' : '#f5f8ff', boxShadow: 'var(--shadow-xs)', fontSize: 13.5, color: isDefault ? '#414651' : '#004eeb' }}
       >
-        <span className="font-medium" style={{ color: '#717680' }}>{label}:</span> {value}
+        <span className="font-medium" style={{ color: '#717680' }}>{label}:</span> {selected?.label ?? 'Any'}
         <Icon name="chevronDown" size={14} color={isDefault ? '#717680' : '#004eeb'} />
       </button>
       {open && (
         <div
-          className="overflow-hidden"
-          style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 40, minWidth: 200, background: '#fff', border: '1px solid #e9eaeb', borderRadius: 10, boxShadow: 'var(--shadow-xl)', padding: 6 }}
+          className="overflow-x-hidden overflow-y-auto"
+          style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 40, minWidth: 200, maxHeight: 'min(360px, calc(100vh - 180px))', overscrollBehavior: 'contain', background: '#fff', border: '1px solid #e9eaeb', borderRadius: 10, boxShadow: 'var(--shadow-xl)', padding: 6 }}
         >
           {options.map((o) => (
             <button
-              key={o}
-              onClick={() => { onChange(o); setOpen(false) }}
+              key={o.value ?? 'any'}
+              onClick={() => { onChange(o.value); setOpen(false) }}
               className="flex items-center justify-between w-full text-left cursor-pointer"
-              style={{ padding: '8px 10px', border: 'none', borderRadius: 6, background: o === value ? '#f5f8ff' : 'transparent', fontSize: 14, color: o === value ? '#004eeb' : '#414651', fontWeight: o === value ? 600 : 400 }}
-              onMouseEnter={(e) => { if (o !== value) e.currentTarget.style.background = '#fafafa' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = o === value ? '#f5f8ff' : 'transparent' }}
+              style={{ padding: '8px 10px', border: 'none', borderRadius: 6, background: o.value === value ? '#f5f8ff' : 'transparent', fontSize: 14, color: o.value === value ? '#004eeb' : '#414651', fontWeight: o.value === value ? 600 : 400 }}
+              onMouseEnter={(e) => { if (o.value !== value) e.currentTarget.style.background = '#fafafa' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = o.value === value ? '#f5f8ff' : 'transparent' }}
             >
-              {o}{o === value && <Icon name="check" size={15} color="#004eeb" />}
+              {o.label}{o.value === value && <Icon name="check" size={15} color="#004eeb" />}
             </button>
           ))}
         </div>
@@ -213,7 +215,7 @@ function FilterSelect({
 
 export function Builder({
   columns, filters, setFilters, onSwap, onRemove, onAdd, onCompare, onMatched,
-  catalog = CATALOG,
+  catalog = [], filterOptions,
 }: {
   columns: Column[]
   filters: Filters
@@ -222,16 +224,16 @@ export function Builder({
   onRemove: (i: number) => void
   onAdd: () => void
   onCompare: () => void
-  onMatched: () => void
-  catalog?: Entity[]
+  onMatched: () => void | Promise<void>
+  catalog?: CatalogOption[]
+  filterOptions: CompareFilterOptions
 }) {
   const tooMany = columns.length >= MAX_COLS
-  const filterDefs: [string, keyof Filters, readonly string[]][] = [
-    ['Category', 'category', FILTER_OPTIONS.category],
-    ['Company size', 'companySize', FILTER_OPTIONS.companySize],
-    ['Budget', 'budget', FILTER_OPTIONS.budget],
-    ['Region', 'region', FILTER_OPTIONS.region],
-    ['Timeline', 'timeline', FILTER_OPTIONS.timeline],
+  const filterDefs: [string, keyof Filters, FilterOption[]][] = [
+    ['Category', 'category', filterOptions.category],
+    ['Company size', 'companySize', filterOptions.companySize],
+    ['Budget', 'budget', filterOptions.budget],
+    ['Region', 'region', filterOptions.region],
   ]
   return (
     <section style={{ background: 'linear-gradient(180deg,#f5f8ff 0%, #ffffff 100%)', borderBottom: '1px solid #e9eaeb', paddingTop: 40, paddingBottom: 28 }}>
@@ -257,7 +259,7 @@ export function Builder({
         {/* selector row */}
         <div
           className="builder-grid items-stretch"
-          style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, minmax(0,1fr))${tooMany ? '' : ' minmax(180px, 0.7fr)'}`, gap: 14 }}
+          style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, minmax(0,1fr))${tooMany ? '' : ' minmax(220px, 0.8fr)'}`, gap: 14 }}
         >
           {columns.map((c, i) => (
             <SelectorColumn
@@ -273,7 +275,7 @@ export function Builder({
             <button
               onClick={onAdd}
               className="flex flex-col items-center justify-center gap-[8px] cursor-pointer"
-              style={{ border: '1.5px dashed #b2ccff', borderRadius: 12, background: '#f5f8ff', minHeight: 132, color: '#004eeb' }}
+              style={{ border: '1.5px dashed #b2ccff', borderRadius: 14, background: '#f5f8ff', minHeight: 158, color: '#004eeb' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#eff4ff')}
               onMouseLeave={(e) => (e.currentTarget.style.background = '#f5f8ff')}
             >

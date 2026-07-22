@@ -5,46 +5,12 @@
 
 import React from 'react'
 import { Icon, Btn } from './CompareUI'
-import { DISCUSSIONS } from '@/lib/compare/data'
-
-// ---- Discussion / questions ----------------------------------------------
-export function Discussion() {
-  return (
-    <section style={{ maxWidth: 1440, margin: '56px auto 0', padding: '0 32px' }}>
-      <div className="flex items-end justify-between gap-[16px] flex-wrap" style={{ marginBottom: 20 }}>
-        <div>
-          <div style={{ marginBottom: 8 }}>
-            <span className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 14, color: '#004eeb' }}>Buyer questions</span>
-          </div>
-          <h2 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 28, letterSpacing: '-0.02em', color: '#181d27' }}>What buyers ask before they commit</h2>
-        </div>
-        <Btn variant="primary" icon="msg">Ask Proploy a question</Btn>
-      </div>
-      <div className="disc-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 16 }}>
-        {DISCUSSIONS.map((d, i) => (
-          <div
-            key={i}
-            className="flex flex-col gap-[10px]"
-            style={{ border: '1px solid #e9eaeb', borderRadius: 14, background: '#fff', padding: 18, transition: 'box-shadow 150ms' }}
-            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
-            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
-          >
-            <div className="flex items-center justify-between gap-[10px]">
-              <span className="inline-flex items-center font-[family-name:var(--font-dm-sans)] font-medium whitespace-nowrap" style={{ padding: '2px 10px', borderRadius: 9999, background: '#fafafa', border: '1px solid #e9eaeb', color: '#414651', fontSize: 13, lineHeight: '20px' }}>{d.tag}</span>
-              <span className="inline-flex items-center gap-[5px]" style={{ fontSize: 12.5, color: '#a4a7ae' }}><Icon name="msg" size={13} color="#a4a7ae" />{d.answers} answers</span>
-            </div>
-            <h3 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 16.5, lineHeight: '24px', color: '#181d27' }}>{d.q}</h3>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: '21px', color: '#535862' }}>{d.top}</p>
-            <a href="#" className="inline-flex items-center gap-[5px] font-semibold" style={{ fontSize: 13.5, color: '#004eeb', marginTop: 2 }}>See discussion <Icon name="arrowRight" size={13} color="#004eeb" /></a>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
+import type { CompareMatchedExpert } from '@/features/compare/client-api'
+export { ActionToast, SavedToast } from '@/components/ui/action-toast'
+export type { ActionToastState } from '@/components/ui/action-toast'
 
 // ---- Empty / one-item screens --------------------------------------------
-export function EmptyState({ onAdd }: { onAdd: () => void }) {
+export function EmptyState({ onAdd, onMatched }: { onAdd: () => void; onMatched?: () => void | Promise<void> }) {
   return (
     <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
       <div
@@ -60,7 +26,7 @@ export function EmptyState({ onAdd }: { onAdd: () => void }) {
         </div>
         <div className="flex gap-[10px] flex-wrap justify-center">
           <Btn variant="primary" icon="plus" onClick={onAdd}>Add your first option</Btn>
-          <Btn variant="secondary" icon="users">Get matched instead</Btn>
+          <Btn variant="secondary" icon="users" onClick={onMatched}>Get matched instead</Btn>
         </div>
       </div>
     </div>
@@ -109,34 +75,205 @@ export function LoadingTable({ count }: { count: number }) {
   )
 }
 
-// ---- Saved confirmation toast --------------------------------------------
-export function SavedToast({ show, onClose, kind = 'saved' }: { show: boolean; onClose: () => void; kind?: 'saved' | 'share' }) {
+export function ShareComparisonModal({
+  open,
+  url,
+  onClose,
+  onCopied,
+}: {
+  open: boolean
+  url: string
+  onClose: () => void
+  onCopied: () => void
+}) {
   React.useEffect(() => {
-    if (show) {
-      const t = setTimeout(onClose, 3600)
-      return () => clearTimeout(t)
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
     }
-  }, [show, onClose])
-  if (!show) return null
-  const isShare = kind === 'share'
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const absoluteUrl = typeof window === 'undefined' || url.startsWith('http')
+    ? url
+    : `${window.location.origin}${url}`
+  const encodedUrl = encodeURIComponent(absoluteUrl)
+  const shareTitle = 'Proploy software comparison'
+  const shareBody = 'Review this Proploy software comparison.'
+  const encodedTitle = encodeURIComponent(shareTitle)
+  const encodedBody = encodeURIComponent(`${shareBody} ${absoluteUrl}`)
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(absoluteUrl)
+      onCopied()
+      onClose()
+    } catch {
+      onCopied()
+    }
+  }
+  const shareNative = async () => {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      try {
+        await navigator.share({ title: shareTitle, text: shareBody, url: absoluteUrl })
+        onClose()
+        return
+      } catch {
+        return
+      }
+    }
+    await copyLink()
+  }
+  const shareOptions = [
+    { label: 'Email', href: `mailto:?subject=${encodedTitle}&body=${encodedBody}` },
+    { label: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
+    { label: 'WhatsApp', href: `https://wa.me/?text=${encodedBody}` },
+  ]
+
   return (
-    <div className="compare-toast" style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 80 }}>
-      <div className="flex items-center gap-[12px]" style={{ background: '#fff', border: '1px solid #e9eaeb', borderRadius: 12, boxShadow: 'var(--shadow-xl)', padding: '12px 14px', minWidth: 320 }}>
-        <div className="shrink-0 flex items-center justify-center" style={{ width: 34, height: 34, borderRadius: 9, background: isShare ? '#eff4ff' : '#ecfdf3', border: `1px solid ${isShare ? '#b2ccff' : '#abefc6'}` }}>
-          <Icon name={isShare ? 'link' : 'check'} size={17} color={isShare ? '#155eef' : '#079455'} strokeWidth={isShare ? 2 : 3} />
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#181d27]/45 px-4" onMouseDown={onClose}>
+      <div className="w-full max-w-[520px] rounded-[16px] border border-[#e9eaeb] bg-white p-5 shadow-[0_24px_48px_-12px_rgba(10,13,18,0.28)]" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 20, color: '#181d27' }}>Share comparison</h3>
+            <p style={{ margin: '6px 0 0', fontSize: 14, color: '#717680' }}>Choose where to share this comparison, or copy a private link.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close share modal" className="flex cursor-pointer" style={{ border: 'none', background: 'transparent', color: '#717680', padding: 4 }}>
+            <Icon name="x" size={18} />
+          </button>
         </div>
-        <div className="flex-1">
-          <div className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 14, color: '#181d27' }}>{isShare ? 'Share link copied' : 'Comparison saved'}</div>
-          <div style={{ fontSize: 13, color: '#717680' }}>{isShare ? 'proploy.com/c/8fa2 — anyone with the link can view' : 'Find it under Saved comparisons in your account'}</div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {shareOptions.map((option) => (
+            <a
+              key={option.label}
+              href={option.href}
+              target={option.label === 'Email' ? undefined : '_blank'}
+              rel={option.label === 'Email' ? undefined : 'noreferrer'}
+              className="inline-flex min-h-12 items-center justify-center rounded-[10px] border border-[#d5d7da] bg-white px-4 text-[14px] font-semibold text-[#414651] shadow-[var(--shadow-xs)]"
+              onClick={onClose}
+            >
+              {option.label}
+            </a>
+          ))}
+          <button
+            type="button"
+            onClick={copyLink}
+            className="inline-flex min-h-12 items-center justify-center rounded-[10px] border border-[#d5d7da] bg-white px-4 text-[14px] font-semibold text-[#414651] shadow-[var(--shadow-xs)]"
+          >
+            Slack
+          </button>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] border border-[#b2ccff] bg-[#eff4ff] px-4 text-[14px] font-semibold text-[#004eeb] shadow-[var(--shadow-xs)]"
+          >
+            <Icon name="link" size={16} color="#155eef" /> Copy Link
+          </button>
+          <button
+            type="button"
+            onClick={shareNative}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] border border-[#d5d7da] bg-[#fafafa] px-4 text-[14px] font-semibold text-[#414651] shadow-[var(--shadow-xs)]"
+          >
+            <Icon name="share" size={16} color="#414651" /> Other platforms
+          </button>
         </div>
-        <button onClick={onClose} aria-label="Dismiss" className="flex cursor-pointer" style={{ border: 'none', background: 'transparent', color: '#a4a7ae', padding: 4 }}><Icon name="x" size={16} /></button>
+        <div className="mt-5 flex justify-end gap-3">
+          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function MatchedExpertsModal({
+  open,
+  loading,
+  error,
+  experts,
+  onClose,
+}: {
+  open: boolean
+  loading: boolean
+  error: string | null
+  experts: CompareMatchedExpert[]
+  onClose: () => void
+}) {
+  React.useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#181d27]/45 px-4" onMouseDown={onClose}>
+      <div className="max-h-[82vh] w-full max-w-[780px] overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.28)]" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="flex items-start justify-between gap-4 border-b border-[#e9eaeb] p-5">
+          <div>
+            <h3 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 20, color: '#181d27' }}>Matched experts</h3>
+            <p style={{ margin: '6px 0 0', fontSize: 14, color: '#717680' }}>Experts associated with the products in this comparison.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close matched experts modal" className="flex cursor-pointer" style={{ border: 'none', background: 'transparent', color: '#717680', padding: 4 }}>
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <div className="max-h-[calc(82vh-92px)] overflow-y-auto p-5">
+          {loading ? (
+            <div className="flex items-center gap-2 text-[14px] text-[#535862]"><Icon name="loader" className="animate-spin" color="#155eef" /> Finding associated experts…</div>
+          ) : error ? (
+            <div className="rounded-[10px] border border-[#fecdca] bg-[#fef3f2] px-4 py-3 text-[14px] text-[#b42318]">{error}</div>
+          ) : experts.length === 0 ? (
+            <div className="rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] px-4 py-8 text-center text-[14px] text-[#717680]">No approved experts are associated with these products yet.</div>
+          ) : (
+            <div className="grid gap-3">
+              {experts.map((expert) => (
+                <article key={expert.id} className="rounded-[12px] border border-[#e9eaeb] bg-[#fafafa] p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eff4ff] text-[17px] font-semibold text-[#155eef]">
+                        {expert.profilePictureUrl ? <img src={expert.profilePictureUrl} alt={expert.displayName} className="size-full object-cover" /> : expert.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="truncate font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 16, color: '#181d27' }}>{expert.displayName}</h4>
+                        {expert.headline ? <p style={{ margin: '3px 0 0', fontSize: 13.5, color: '#535862' }}>{expert.headline}</p> : null}
+                        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#717680' }}>
+                          {[expert.regionCity, expert.regionCountry].filter(Boolean).join(', ') || 'Location not listed'}
+                          {expert.yearsExperience ? ` · ${expert.yearsExperience}+ years` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="rounded-full border border-[#b2ccff] bg-[#eff4ff] px-3 py-1 text-[13px] font-semibold text-[#004eeb]">{expert.matchScore}% match</div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[...expert.matchedProducts, ...expert.primaryPlatforms.slice(0, 3), ...expert.industryExpertise.slice(0, 2)].filter(Boolean).slice(0, 8).map((value) => (
+                      <span key={value} className="rounded-full border border-[#d1e0ff] bg-white px-2.5 py-1 text-[12px] font-medium text-[#155eef]">{value}</span>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    {expert.schedulingLink ? (
+                      <a href={expert.schedulingLink} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white px-3 text-[13px] font-semibold text-[#414651]">Schedule</a>
+                    ) : null}
+                    <a href={`/experts/${encodeURIComponent(expert.id)}`} className="inline-flex h-9 items-center justify-center rounded-[8px] bg-[#155eef] px-3 text-[13px] font-semibold text-white" style={{ boxShadow: 'var(--shadow-xs)' }}>View profile</a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
 // ---- Mobile sticky bottom action bar -------------------------------------
-export function MobileActionBar({ onAdd, onSave, onMatched, saved }: { onAdd: () => void; onSave: () => void; onMatched: () => void; saved: boolean }) {
+export function MobileActionBar({ onAdd, onSave, onMatched, saved }: { onAdd: () => void; onSave: () => void | Promise<void>; onMatched: () => void | Promise<void>; saved: boolean }) {
   return (
     <div
       className="mobile-actionbar gap-[8px]"

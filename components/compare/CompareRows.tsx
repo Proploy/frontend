@@ -58,7 +58,6 @@ export function ChipList({ items, tone = 'neutral', max }: { items: string[]; to
 const complexityTone = (c: Complexity): PillTone => (({ Low: 'success', Medium: 'warning', High: 'error' } as const)[c] || 'neutral')
 const riskTone = (r: Complexity): PillTone => (({ Low: 'success', Medium: 'warning', High: 'error' } as const)[r] || 'neutral')
 const txt = (s: React.ReactNode) => <span style={{ fontSize: 14, lineHeight: '21px', color: '#414651' }}>{s}</span>
-const minWeeks = (e: Entity) => parseInt((e.rolloutTimeline.match(/\d+/) || ['99'])[0])
 const priceNum = (e: Entity) => parseFloat(e.entryPrice.replace(/[^0-9.]/g, '')) || 9999
 
 // pricing model badge
@@ -116,9 +115,11 @@ export function ImplCtas() {
 }
 
 export function AltCard({ alt }: { alt: AlternativeEntity }) {
+  const hasRating = typeof alt.rating === 'number' && alt.rating > 0
+
   return (
     <div className="flex items-center gap-[10px]" style={{ padding: '9px 10px', borderRadius: 10, border: '1px solid #e9eaeb', background: '#fff' }}>
-      <LogoTile initial={alt.initial} tone="brand" size={32} />
+      <LogoTile initial={alt.initial} tone="brand" size={32} logoUrl={alt.logoUrl} />
       <div className="min-w-0 flex-1">
         <div
           className="font-[family-name:var(--font-dm-sans)] font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
@@ -128,10 +129,14 @@ export function AltCard({ alt }: { alt: AlternativeEntity }) {
         </div>
         <div className="flex items-center gap-[6px]" style={{ fontSize: 12, color: '#717680' }}>
           <span className="whitespace-nowrap overflow-hidden text-ellipsis">{alt.category}</span>
-          <span>·</span>
-          <span className="inline-flex items-center gap-[2px] font-semibold" style={{ color: '#414651' }}>
-            <Icon name="star" size={11} color="#fec84b" style={{ fill: '#fec84b' }} />{alt.rating}
-          </span>
+          {hasRating && (
+            <>
+              <span>·</span>
+              <span className="inline-flex items-center gap-[2px] font-semibold" style={{ color: '#414651' }}>
+                <Icon name="star" size={11} color="#fec84b" style={{ fill: '#fec84b' }} />{alt.rating}
+              </span>
+            </>
+          )}
         </div>
       </div>
       <button
@@ -161,7 +166,6 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Pricing', cell: (e) => <div className="flex items-center gap-[8px]"><PriceBucket bucket={e.pricingBucket} /><span style={{ fontSize: 13, color: '#717680' }}>from {e.entryPrice}{e.priceUnit}</span></div> },
       { label: 'Free trial / free plan', cell: (e) => <div className="flex flex-col gap-[6px]"><YesNo value={e.freeTrial} yes="Free trial" no="No trial" /><YesNo value={e.freePlan} yes="Free plan" no="No free plan" /></div> },
       { label: 'Implementation complexity', cell: (e) => <Pill tone={complexityTone(e.implComplexity)} dot>{e.implComplexity}</Pill>, best: lowestComplexity },
-      { label: 'Typical rollout timeline', cell: (e) => <span className="inline-flex items-center gap-[6px] whitespace-nowrap font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 14, color: '#181d27' }}><Icon name="clock" size={14} color="#717680" />{e.rolloutTimeline}</span>, best: (es) => [...es].sort((a, b) => minWeeks(a) - minWeeks(b))[0]?.id },
       { label: 'Proploy fit score', sub: 'Scored against your filters', cell: (e) => <ScoreRing value={e.fitScore} />, best: (es) => [...es].sort((a, b) => b.fitScore - a.fitScore)[0]?.id },
     ],
     Pricing: [
@@ -184,7 +188,6 @@ export function buildRows(tab: Tab | string): Row[] {
     ],
     Implementation: [
       { label: 'Implementation difficulty', cell: (e) => <Pill tone={complexityTone(e.implComplexity)} dot>{e.implComplexity}</Pill>, best: lowestComplexity },
-      { label: 'Estimated timeline', cell: (e) => <span className="inline-flex items-center gap-[6px] whitespace-nowrap font-[family-name:var(--font-dm-sans)] font-bold" style={{ fontSize: 15, color: '#181d27' }}><Icon name="clock" size={15} color="#717680" />{e.rolloutTimeline}</span>, best: (es) => [...es].sort((a, b) => minWeeks(a) - minWeeks(b))[0]?.id },
       { label: 'Onboarding effort', cell: (e) => txt(e.onboardingEffort) },
       { label: 'Admin skill required', cell: (e) => txt(e.adminSkill) },
       { label: 'Migration risk', cell: (e) => <Pill tone={riskTone(e.migrationRisk)} dot>{e.migrationRisk}</Pill>, best: (es) => [...es].sort((a, b) => order[a.migrationRisk] - order[b.migrationRisk])[0]?.id },
@@ -197,7 +200,6 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Review count', cell: (e) => <span className="font-[family-name:var(--font-dm-sans)] font-bold" style={{ fontSize: 16, color: '#181d27' }}>{e.reviewCount.toLocaleString()}</span> },
       { label: 'Reviewer company size', cell: (e) => txt(e.reviews.reviewerSegment) },
       { label: 'Reviewer industry', cell: (e) => txt(e.reviews.reviewerIndustry) },
-      { label: 'Sentiment', cell: (e) => <ChipList items={e.reviews.sentiment} tone="brand" /> },
       { label: 'Pros', cell: (e) => <ChipList items={e.reviews.pros} tone="success" /> },
       { label: 'Cons', cell: (e) => <ChipList items={e.reviews.cons} tone="warning" /> },
       { label: 'Verified outcomes', cell: (e) => e.reviews.outcomes ? <div className="flex flex-col gap-[6px]">{e.reviews.outcomes.map((o, i) => <span key={i} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}><Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}</span>)}</div> : <NoData /> },
