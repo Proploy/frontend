@@ -5,7 +5,6 @@ import type { ReactNode } from 'react'
 import {
   AlertCircle,
   Clock3,
-  FileSignature,
   FolderClosed,
   Handshake,
   Home,
@@ -13,11 +12,8 @@ import {
   LifeBuoy,
   Loader2,
   MessageSquare,
-  Receipt,
   Settings,
-  TrendingUp,
   Users,
-  Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useExpertDashboard } from '@/features/experts'
@@ -57,24 +53,20 @@ export type DashboardLoadState = {
 }
 
 const NAV_PRIMARY: DashNavItem[] = [
-  { label: 'Home', icon: Home, href: '/experts/dashboard' },
-  { label: 'Sales', icon: TrendingUp, href: '/experts/dashboard/sales' },
-  { label: 'Leads', icon: Inbox, href: '/experts/dashboard/leads' },
-  { label: 'Proposals', icon: Handshake, href: '/experts/dashboard/proposals' },
-  { label: 'Projects', icon: FolderClosed, href: '/experts/dashboard/projects' },
-  { label: 'Contracts', icon: FileSignature, href: '/experts/dashboard/contracts' },
-  { label: 'Invoices', icon: Receipt, href: '/experts/dashboard/invoices' },
-  { label: 'Earnings', icon: Wallet, href: '/experts/dashboard/earnings' },
-  { label: 'Messages', icon: MessageSquare, href: '/experts/chat' },
-  { label: 'Clients', icon: Users, href: '/experts/dashboard/clients' },
+  { label: 'Home', icon: Home, href: '/workspace' },
+  { label: 'Requests', icon: Inbox, href: '/workspace/requests' },
+  { label: 'Engagements', icon: Users, href: '/workspace/engagements' },
+  { label: 'Proposals', icon: Handshake, href: '/workspace/proposals' },
+  { label: 'Projects', icon: FolderClosed, href: '/workspace/projects' },
+  { label: 'Conversations', icon: MessageSquare, href: '/workspace/conversations' },
 ]
 
 const NAV_SECONDARY: DashNavItem[] = [
-  { label: 'Settings', icon: Settings, href: '/experts/account' },
-  { label: 'Support', icon: LifeBuoy, href: '/experts/dashboard/support' },
+  { label: 'Settings', icon: Settings, href: '/workspace/settings' },
+  { label: 'Account', icon: LifeBuoy, href: '/experts/account' },
 ]
 
-const EXPERT_BRAND = { mark: 'p', word: 'proploy', href: '/experts/dashboard', markBg: '#155eef' }
+const EXPERT_BRAND = { mark: 'p', word: 'proploy', href: '/workspace', markBg: '#155eef' }
 
 function useExpertChromeUser(expert?: ExpertMe): DashboardUser | undefined {
   const { user } = useAuth()
@@ -213,7 +205,7 @@ export function DashboardFailureState({ state }: { state: DashboardLoadState }) 
           icon={<AlertCircle size={28} />}
           title="Sign in required"
           body="Use your Proploy account to open the expert dashboard."
-          actionHref="/sign-in?redirect=/experts/dashboard"
+          actionHref="/sign-in?redirect=/workspace"
           actionLabel="Sign in"
         />
       </DashboardShell>
