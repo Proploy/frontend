@@ -16,6 +16,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
@@ -441,7 +442,7 @@ export default function ProductDetailExperience({
             {expertsLoading ? (
               <div className="grid gap-[16px] md:grid-cols-2">
                 {[0, 1, 2, 3].map((item) => (
-                  <div key={item} className="h-[170px] animate-pulse rounded-[14px] bg-[#f2f4f7]" />
+                  <Skeleton key={item} className="h-[170px] rounded-[14px]" />
                 ))}
               </div>
             ) : experts.length > 0 ? (
@@ -701,7 +702,7 @@ function AlternativesSidebarCard({
       {loading && alternatives.length === 0 ? (
         <div className="mt-[14px] space-y-[10px]" aria-label="Loading recommendations">
           {[0, 1].map((item) => (
-            <div key={item} className="h-[116px] animate-pulse rounded-[12px] bg-[#f2f4f7]" />
+            <Skeleton key={item} className="h-[116px] rounded-[12px]" />
           ))}
         </div>
       ) : error ? (

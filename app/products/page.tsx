@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { Skeleton } from '@/components/ui/Skeleton'
 import CompareToggle from '@/components/compare/CompareToggle'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import ListingExplorer from '@/components/ListingExplorer'
@@ -107,9 +108,37 @@ function CategoryNavigation({
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ProductsPageSuspenseFallback />}>
       <ProductsPageContent />
     </Suspense>
+  )
+}
+
+function ProductsPageSuspenseFallback() {
+  return (
+    <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] flex flex-col">
+      <div className="pt-[120px] pb-[64px]">
+        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col items-center gap-[24px]">
+          <Skeleton className="h-[64px] w-[824px] max-w-full rounded-full" />
+        </div>
+      </div>
+      <section className="py-[96px]">
+        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-[16px] border border-[#e9eaeb] bg-white p-[24px] flex flex-col gap-[16px]">
+                <div className="flex items-start justify-between">
+                  <Skeleton className="size-[48px] rounded-[10px]" />
+                  <Skeleton className="h-[24px] w-[120px] rounded-full" />
+                </div>
+                <Skeleton className="h-[28px] w-[80%] rounded-[6px]" />
+                <Skeleton.Text lines={2} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }
 
@@ -276,8 +305,17 @@ function ProductsPageContent() {
 
           {/* Loading state */}
           {isLoadingInitialProducts ? (
-            <div className="flex items-center justify-center py-[96px]">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0466e7]" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]" role="status" aria-busy="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-[16px] border border-[#e9eaeb] bg-white p-[24px] flex flex-col gap-[16px]">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="size-[48px] rounded-[10px]" />
+                    <Skeleton className="h-[24px] w-[120px] rounded-full" />
+                  </div>
+                  <Skeleton className="h-[28px] w-[80%] rounded-[6px]" />
+                  <Skeleton.Text lines={2} />
+                </div>
+              ))}
             </div>
           ) : products.length === 0 && !error ? (
             <div className="flex flex-col items-center gap-[16px] py-[96px]">
