@@ -18,6 +18,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import { ActionToast } from '@/components/ui/action-toast'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   CARD_SHADOW,
   WorkspaceLoading,
@@ -723,17 +724,17 @@ function ProfileSkeleton() {
   return (
     <div className="flex flex-col gap-[16px] px-[24px] py-[24px]">
       <div className="flex items-center gap-[12px]">
-        <div className="size-[40px] animate-pulse rounded-[10px] bg-[#eaecf0]" />
+        <Skeleton className="size-[40px] rounded-[10px]" />
         <div className="flex flex-col gap-[6px]">
-          <div className="h-[14px] w-[140px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
-          <div className="h-[12px] w-[200px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
+          <Skeleton className="h-[14px] w-[140px] rounded-[6px]" />
+          <Skeleton className="h-[12px] w-[200px] rounded-[6px]" />
         </div>
       </div>
       <div className="grid grid-cols-1 gap-[12px]">
         {[0, 1, 2].map((row) => (
           <div key={row} className="flex flex-col gap-[6px]">
-            <div className="h-[12px] w-[80px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
-            <div className="h-[36px] animate-pulse rounded-[10px] bg-[#eaecf0]" />
+            <Skeleton className="h-[12px] w-[80px] rounded-[6px]" />
+            <Skeleton className="h-[36px] rounded-[10px]" />
           </div>
         ))}
       </div>
@@ -745,10 +746,10 @@ function NotificationsSkeleton() {
   return (
     <div className="flex flex-col gap-[12px] px-[24px] py-[24px]">
       <div className="flex items-center gap-[12px]">
-        <div className="size-[40px] animate-pulse rounded-[10px] bg-[#eaecf0]" />
+        <Skeleton className="size-[40px] rounded-[10px]" />
         <div className="flex flex-col gap-[6px]">
-          <div className="h-[14px] w-[140px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
-          <div className="h-[12px] w-[200px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
+          <Skeleton className="h-[14px] w-[140px] rounded-[6px]" />
+          <Skeleton className="h-[12px] w-[200px] rounded-[6px]" />
         </div>
       </div>
       {[0, 1, 2, 3].map((row) => (
@@ -757,10 +758,10 @@ function NotificationsSkeleton() {
           className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] px-[16px] py-[14px]"
         >
           <div className="flex flex-col gap-[6px]">
-            <div className="h-[12px] w-[180px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
-            <div className="h-[10px] w-[120px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
+            <Skeleton className="h-[12px] w-[180px] rounded-[6px]" />
+            <Skeleton className="h-[10px] w-[120px] rounded-[6px]" />
           </div>
-          <div className="size-[40px] animate-pulse rounded-full bg-[#eaecf0]" />
+          <Skeleton shape="circle" className="size-[40px]" />
         </div>
       ))}
     </div>
@@ -771,17 +772,17 @@ function SchedulingSkeleton() {
   return (
     <div className="flex flex-col gap-[12px] px-[24px] py-[24px]">
       <div className="flex items-center gap-[12px]">
-        <div className="size-[40px] animate-pulse rounded-[10px] bg-[#eaecf0]" />
+        <Skeleton className="size-[40px] rounded-[10px]" />
         <div className="flex flex-col gap-[6px]">
-          <div className="h-[14px] w-[140px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
-          <div className="h-[12px] w-[200px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
+          <Skeleton className="h-[14px] w-[140px] rounded-[6px]" />
+          <Skeleton className="h-[12px] w-[200px] rounded-[6px]" />
         </div>
       </div>
       <div className="grid grid-cols-1 gap-[12px] rounded-[10px] border border-[#e9eaeb] p-[16px] md:grid-cols-2">
         {[0, 1, 2, 3, 4].map((row) => (
           <div key={row} className="flex flex-col gap-[6px]">
-            <div className="h-[12px] w-[80px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
-            <div className="h-[14px] w-[160px] animate-pulse rounded-[6px] bg-[#eaecf0]" />
+            <Skeleton className="h-[12px] w-[80px] rounded-[6px]" />
+            <Skeleton className="h-[14px] w-[160px] rounded-[6px]" />
           </div>
         ))}
       </div>

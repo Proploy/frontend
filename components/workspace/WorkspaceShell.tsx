@@ -9,10 +9,8 @@ import {
   Handshake,
   Home,
   Inbox,
-  LifeBuoy,
   Loader2,
   MessageSquare,
-  UserRound,
   TrendingUp,
   Users,
 } from 'lucide-react'
@@ -46,11 +44,6 @@ const NAV_PRIMARY: WorkspaceNavItem[] = [
   { label: 'Messages', icon: MessageSquare, href: '/workspace/messages' },
   { label: 'Clients', icon: Users, href: '/workspace/engagements', roles: ['expert', 'admin'] },
   { label: 'Meetings', icon: Calendar, href: '/workspace/meetings' },
-]
-
-const NAV_SECONDARY: WorkspaceNavItem[] = [
-  { label: 'Profile', icon: UserRound, href: '/profile', roles: ['buyer', 'expert'] },
-  { label: 'Support', icon: LifeBuoy, disabled: true },
 ]
 
 const WORKSPACE_BRAND = {
@@ -99,7 +92,6 @@ export function WorkspaceShell({
   return (
     <DashboardChrome
       nav={visibleNavItems(NAV_PRIMARY, role)}
-      secondaryNav={visibleNavItems(NAV_SECONDARY, role)}
       user={user}
       brand={WORKSPACE_BRAND}
     >

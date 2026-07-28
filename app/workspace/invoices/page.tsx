@@ -16,6 +16,7 @@ import {
   WorkspaceShell,
   WorkspaceSignInState,
 } from '@/components/workspace/WorkspaceShell'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   engagementTitle,
   longDate,
@@ -504,7 +505,7 @@ function InvoiceKpiCard({ title, value, note, isLoading }: { title: string; valu
   return (
     <section className={`rounded-[12px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
       <p className="text-[14px] font-medium leading-[20px] text-[#535862]">{title}</p>
-      {isLoading ? <span className="mt-[12px] block h-[32px] w-[120px] animate-pulse rounded-[6px] bg-[#f0f0f1]" aria-label="loading" /> : <p className="mt-[10px] text-[28px] font-semibold leading-[36px] text-[#181d27]">{value}</p>}
+      {isLoading ? <Skeleton className="mt-[12px] block h-[32px] w-[120px] rounded-[6px]" aria-label="loading" /> : <p className="mt-[10px] text-[28px] font-semibold leading-[36px] text-[#181d27]">{value}</p>}
       <p className="mt-[2px] text-[13px] leading-[18px] text-[#717680]">{note}</p>
     </section>
   )
@@ -515,13 +516,13 @@ function InvoicesSkeleton() {
     <ul className="divide-y divide-[#f0f1f1]" aria-label="loading">
       {Array.from({ length: 3 }).map((_, index) => (
         <li key={index} className="flex flex-col gap-[10px] px-[20px] py-[16px]">
-          <span className="h-[16px] w-[200px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
-          <span className="h-[12px] w-[280px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
+          <Skeleton className="h-[16px] w-[200px] rounded-[4px]" />
+          <Skeleton className="h-[12px] w-[280px] rounded-[4px]" />
           <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-4">
-            <span className="h-[36px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
-            <span className="h-[36px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
-            <span className="h-[36px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
-            <span className="h-[36px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
+            <Skeleton className="h-[36px] rounded-[4px]" />
+            <Skeleton className="h-[36px] rounded-[4px]" />
+            <Skeleton className="h-[36px] rounded-[4px]" />
+            <Skeleton className="h-[36px] rounded-[4px]" />
           </div>
         </li>
       ))}

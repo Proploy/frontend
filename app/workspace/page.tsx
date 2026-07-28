@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   BUTTON_SKEUO,
   CARD_SHADOW,
@@ -105,7 +106,14 @@ export default function WorkspaceHomePage() {
 
         {nativeSchedulingAccessForRole(state.role) === 'test_only' && (
           <div className="mt-[24px]">
-            <NativeMeetingEntryCard role={state.role} />
+            <NativeMeetingEntryCard
+              role={state.role}
+              engagement={null}
+              counterpartyLabel="your expert calendar"
+              isCalendarOpen={false}
+              onToggleCalendar={() => {}}
+              onOpenChange={() => {}}
+            />
           </div>
         )}
 
@@ -264,10 +272,10 @@ function KpiCard({
 
 function KpiSkeleton() {
   return (
-    <div
+    <Skeleton
+      className="h-[36px] w-[60px] rounded-[6px]"
       role="status"
       aria-label="loading"
-      className="h-[36px] w-[60px] animate-pulse rounded-[6px] bg-[#f0f0f1]"
     />
   )
 }
@@ -352,8 +360,8 @@ function ActivitySkeleton() {
     <ul className="divide-y divide-[#f0f0f1]" aria-label="loading">
       {Array.from({ length: 4 }).map((_, idx) => (
         <li key={idx} className="flex items-center gap-[12px] px-[20px] py-[14px]">
-          <span className="size-[30px] animate-pulse rounded-[8px] bg-[#f0f0f1]" />
-          <span className="h-[14px] flex-1 animate-pulse rounded-[4px] bg-[#f0f0f1]" />
+          <Skeleton className="size-[30px] rounded-[8px]" />
+          <Skeleton className="h-[14px] flex-1 rounded-[4px]" />
         </li>
       ))}
     </ul>
