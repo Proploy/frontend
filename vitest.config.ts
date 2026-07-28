@@ -11,9 +11,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: [
-      'features/**/*.test.ts',
-      'hooks/**/*.test.ts',
-      'lib/**/*.test.ts',
+      'app/**/*.test.{ts,tsx}',
+      'components/**/*.test.{ts,tsx}',
+      'features/**/*.test.{ts,tsx}',
+      'hooks/**/*.test.{ts,tsx}',
+      'lib/**/*.test.{ts,tsx}',
     ],
   },
 })

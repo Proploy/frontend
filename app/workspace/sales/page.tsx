@@ -9,6 +9,7 @@ import {
   WorkspaceShell,
   WorkspaceSignInState,
 } from '@/components/workspace/WorkspaceShell'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   money,
   statusLabel,
@@ -386,7 +387,7 @@ function SalesKpiCard({
     <section className={`rounded-[12px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
       <p className="text-[14px] font-medium leading-[20px] text-[#535862]">{title}</p>
       {isLoading ? (
-        <span className="mt-[12px] block h-[32px] w-[120px] animate-pulse rounded-[6px] bg-[#f0f0f1]" aria-label="loading" />
+        <Skeleton className="mt-[12px] block h-[32px] w-[120px] rounded-[6px]" aria-label="loading" />
       ) : (
         <p className="mt-[10px] text-[26px] font-semibold leading-[34px] text-[#181d27]">{value}</p>
       )}

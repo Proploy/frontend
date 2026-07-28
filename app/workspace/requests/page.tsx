@@ -248,7 +248,12 @@ export default function WorkspaceRequestsPage() {
           </div>
         )}
 
-        <NativeBookingRequestsPanel role={state.role} />
+        <NativeBookingRequestsPanel
+          role={state.role}
+          selectedEngagementId={null}
+          engagementLabel={(engagementId) => engagementId}
+          onOpenCalendar={() => {}}
+        />
 
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
           <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[420px] xl:shrink-0 xl:border-b-0 xl:border-r">

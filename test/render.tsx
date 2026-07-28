@@ -1,0 +1,22 @@
+import { act, type ReactNode } from 'react'
+import { createRoot } from 'react-dom/client'
+
+;(
+  globalThis as typeof globalThis & {
+    IS_REACT_ACT_ENVIRONMENT: boolean
+  }
+).IS_REACT_ACT_ENVIRONMENT = true
+
+export async function render(node: ReactNode) {
+  const container = document.createElement('div')
+  document.body.append(container)
+  const root = createRoot(container)
+  await act(async () => root.render(node))
+  return {
+    container,
+    unmount: async () => {
+      await act(async () => root.unmount())
+      container.remove()
+    },
+  }
+}

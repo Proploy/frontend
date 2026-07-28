@@ -5,7 +5,17 @@ import type { ComponentType, ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Menu,
+  Search,
+  UserRound,
+  X,
+} from 'lucide-react'
+import { useAuth } from '@/components/providers/auth-provider'
 import { NotificationsBell } from '@/components/dashboard/NotificationsBell'
 import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
 
@@ -65,32 +75,11 @@ function BrandLink({
   brand,
   onNavigate,
   compact = false,
-  collapsed = false,
 }: {
   brand: DashboardBrand
   onNavigate?: () => void
   compact?: boolean
-  collapsed?: boolean
 }) {
-  if (collapsed) {
-    return (
-      <Link
-        href={brand.href}
-        onClick={onNavigate}
-        aria-label={brand.word}
-        title={brand.word}
-        className="inline-flex items-center justify-center rounded-[8px]"
-      >
-        <div
-          className="flex size-[32px] items-center justify-center rounded-[8px] text-[14px] font-bold text-white"
-          style={{ background: brand.markBg ?? '#155eef' }}
-        >
-          {brand.mark}
-        </div>
-      </Link>
-    )
-  }
-
   if (brand.logoSrc) {
     return (
       <Link href={brand.href} className="px-[8px] flex items-center" onClick={onNavigate}>
@@ -159,21 +148,115 @@ function NavLink({ item, onNavigate, collapsed = false }: { item: DashNavItem; o
   )
 }
 
-function UserCard({ user, collapsed = false }: { user?: DashboardUser; collapsed?: boolean }) {
+export function WorkspaceAccountMenu({
+  user,
+  collapsed = false,
+  onNavigate,
+}: {
+  user?: DashboardUser
+  collapsed?: boolean
+  onNavigate?: () => void
+}) {
+  const { signOut } = useAuth()
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const name = user?.name ?? 'Account'
   const initial = name.charAt(0).toUpperCase()
+
+  useEffect(() => {
+    if (!open) return
+
+    function onPointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  const closeAndNavigate = () => {
+    setOpen(false)
+    onNavigate?.()
+  }
+
+  const handleSignOut = async () => {
+    setOpen(false)
+    await signOut()
+    onNavigate?.()
+  }
+
   return (
-    <div className={`flex items-center gap-[12px] rounded-[8px] p-[8px] transition-colors hover:bg-[#f5f8ff] ${collapsed ? 'justify-center' : ''}`} title={collapsed ? name : undefined}>
-      <div
-        className={`size-[40px] rounded-full flex items-center justify-center text-white font-semibold text-[14px] shrink-0 ${
-          user?.avatarClassName ?? 'bg-gradient-to-br from-[#84adff] to-[#155eef]'
-        }`}
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls="workspace-account-menu"
+        className={`flex w-full items-center gap-[12px] rounded-[8px] p-[8px] text-left transition-colors hover:bg-[#f5f8ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#155eef]/40 ${collapsed ? 'justify-center' : ''}`}
+        title={collapsed ? name : undefined}
       >
-        {initial}
-      </div>
-      {!collapsed && (
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{name}</p>
+        <div
+          className={`flex size-[40px] shrink-0 items-center justify-center rounded-full text-[14px] font-semibold text-white ${
+            user?.avatarClassName ?? 'bg-gradient-to-br from-[#84adff] to-[#155eef]'
+          }`}
+        >
+          {initial}
+        </div>
+        {!collapsed && (
+          <>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{name}</p>
+            </div>
+            <ChevronDown
+              size={16}
+              className={`shrink-0 text-[#717680] transition-transform ${open ? 'rotate-180' : ''}`}
+            />
+          </>
+        )}
+      </button>
+
+      {open && (
+        <div
+          id="workspace-account-menu"
+          role="menu"
+          aria-label="Account"
+          className={`absolute bottom-full z-50 mb-[8px] min-w-[220px] rounded-[8px] border border-[#e9eaeb] bg-white p-[6px] shadow-[0px_12px_24px_-8px_rgba(10,13,18,0.18)] ${
+            collapsed ? 'left-full ml-[8px]' : 'inset-x-0'
+          }`}
+        >
+          <div className="border-b border-[#e9eaeb] px-[10px] py-[8px]">
+            <p className="truncate text-[13px] font-semibold leading-[18px] text-[#181d27]">{name}</p>
+            {user?.email ? (
+              <p className="mt-[2px] truncate text-[12px] leading-[18px] text-[#717680]">{user.email}</p>
+            ) : null}
+          </div>
+          <Link
+            href="/profile"
+            role="menuitem"
+            onClick={closeAndNavigate}
+            className="mt-[4px] flex w-full items-center gap-[8px] rounded-[6px] px-[10px] py-[8px] text-[13px] font-medium leading-[18px] text-[#414651] hover:bg-[#f5f8ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#155eef]/30"
+          >
+            <UserRound size={16} />
+            Profile
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void handleSignOut()}
+            className="flex w-full items-center gap-[8px] rounded-[6px] px-[10px] py-[8px] text-left text-[13px] font-medium leading-[18px] text-[#b42318] hover:bg-[#fef3f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f04438]/30"
+          >
+            <LogOut size={16} />
+            Sign out
+          </button>
         </div>
       )}
     </div>
@@ -223,9 +306,9 @@ function SidebarBody({
 
   return (
     <>
-      <div className={`flex items-center gap-[8px] ${collapsed ? 'flex-col' : 'justify-between'}`}>
-        <BrandLink brand={brand} onNavigate={onNavigate} collapsed={collapsed} />
-        <div className={`flex items-center gap-[4px] ${collapsed ? 'flex-col' : ''}`}>
+      <div className={`flex items-center gap-[8px] ${collapsed ? 'justify-center' : 'justify-between'}`}>
+        {!collapsed && <BrandLink brand={brand} onNavigate={onNavigate} />}
+        <div className="flex items-center gap-[4px]">
           {notifications && <NotificationsBell items={notifications} align="left" />}
           {onToggle && (
             <button
@@ -235,7 +318,7 @@ function SidebarBody({
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#f5f8ff] hover:text-[#155eef]"
             >
-              {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
           )}
         </div>
@@ -290,7 +373,7 @@ function SidebarBody({
         </nav>
       )}
 
-      <UserCard user={user} collapsed={collapsed} />
+      <WorkspaceAccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} />
     </>
   )
 }

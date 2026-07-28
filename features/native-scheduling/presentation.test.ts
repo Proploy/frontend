@@ -1,4 +1,5 @@
 import {
+  buildGoogleCalendarEventUrl,
   formatNativeSlot,
   nativeMeetingStatusLabel,
   nativeRequestStatusLabel,
@@ -17,5 +18,35 @@ describe('native scheduling presentation helpers', () => {
       '2026-08-01T05:00:00Z',
       'Asia/Kolkata',
     )).toContain('Aug 1, 2026')
+  })
+
+  describe('buildGoogleCalendarEventUrl', () => {
+    it('builds a render URL with the calendar TEMPLATE action', () => {
+      const url = buildGoogleCalendarEventUrl({
+        title: 'Discovery call',
+        startsAt: '2026-08-01T15:00:00Z',
+        endsAt: '2026-08-01T15:30:00Z',
+        details: 'Project kickoff',
+        location: 'https://meet.google.com/abc-defg-hij',
+        timezone: 'UTC',
+      })
+      expect(url).not.toBeNull()
+      expect(url).toContain('https://calendar.google.com/calendar/render?')
+      expect(url).toContain('action=TEMPLATE')
+      expect(url).toContain('text=Discovery+call')
+      expect(url).toContain('dates=20260801T150000Z%2F20260801T153000Z')
+      expect(url).toContain('location=')
+      expect(url).toContain('ctz=UTC')
+    })
+
+    it('returns null when the meeting has no start time', () => {
+      expect(
+        buildGoogleCalendarEventUrl({
+          title: 'x',
+          startsAt: '',
+          endsAt: '',
+        }),
+      ).toBeNull()
+    })
   })
 })

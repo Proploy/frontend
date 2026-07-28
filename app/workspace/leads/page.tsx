@@ -9,6 +9,7 @@ import {
   WorkspaceShell,
   WorkspaceSignInState,
 } from '@/components/workspace/WorkspaceShell'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   intentStatusClass,
   longDate,
@@ -249,8 +250,8 @@ function LeadsSkeleton() {
     <ul className="divide-y divide-[#f0f1f1]" aria-label="loading">
       {Array.from({ length: 3 }).map((_, idx) => (
         <li key={idx} className="flex flex-col gap-[10px] px-[20px] py-[16px]">
-          <span className="h-[16px] w-[200px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
-          <span className="h-[12px] w-[280px] animate-pulse rounded-[4px] bg-[#f0f0f1]" />
+          <Skeleton className="h-[16px] w-[200px] rounded-[4px]" />
+          <Skeleton className="h-[12px] w-[280px] rounded-[4px]" />
         </li>
       ))}
     </ul>

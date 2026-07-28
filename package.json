@@ -9,7 +9,8 @@
     "lint": "eslint",
     "generate-types": "node scripts/generate-types.js",
     "test-api": "bash test-api.sh",
-    "test": "vitest run"
+    "test": "vitest run",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
@@ -24,12 +25,15 @@
     "import-in-the-middle": "^3.0.1",
     "lucide-react": "^0.563.0",
     "next": "^16.2.4",
+    "nextjs-toploader": "^3.9.17",
     "pg": "^8.20.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.80.0",
+    "react-markdown": "^10.1.0",
     "react-signature-canvas": "^1.1.0-alpha.2",
+    "remark-gfm": "^4.0.1",
     "require-in-the-middle": "^8.0.1",
     "zod": "^3.23.8"
   },
