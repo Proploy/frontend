@@ -43,6 +43,7 @@ export type AiWorkspaceRecommendation = AiWorkspaceRecord
 export type AiWorkspaceSearchResult = AiWorkspaceRecord
 
 export type AiWorkspaceToolCall = {
+  id?: string
   name?: string
   status?: 'started' | 'completed' | 'failed' | string
   input?: AiWorkspaceRecord
@@ -87,7 +88,19 @@ export type AiWorkspaceSession = AiWorkspaceRecord & {
   name?: string
 }
 
-export type AiWorkspaceCandidate = AiWorkspaceRecord
+export type AiWorkspaceCandidate = AiWorkspaceRecord & {
+  candidate_id: string
+  product_id: string | null
+  product_name: string | null
+  short_description: string | null
+  logo_url: string | null
+  primary_category: string | null
+  added_at?: string | null
+  added_via?: string | null
+  review_status?: string | null
+  available: boolean
+  profile_href: string | null
+}
 
 /** Payload accepted by POST /api/v1/ai_workspace/candidates/add. */
 export type AiWorkspaceCandidateAddPayload = {
@@ -180,4 +193,13 @@ export type AiWorkspaceMessage = {
   content: string
   createdAt: string
   status?: 'streaming' | 'complete' | 'failed'
+  runDetails?: AiWorkspaceRunDetail[]
+}
+
+export type AiWorkspaceRunDetail = {
+  id: string
+  kind: 'status' | 'tool'
+  label: string
+  status: 'running' | 'completed' | 'failed'
+  summary?: string
 }

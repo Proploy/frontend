@@ -8,6 +8,11 @@ import {
   rememberAiWorkspacePageContext,
 } from '@/features/ai-workspace/context'
 import { streamAiWorkspaceResearch } from '@/features/ai-workspace/stream'
+import {
+  appendRunDetail,
+  buildAiWorkspaceResearchRequest,
+  mergeToolRunDetail,
+} from '@/features/ai-workspace/session-state'
 import type {
   AiWorkspaceMessage,
   AiWorkspacePageContextInput,
@@ -19,6 +24,8 @@ import type {
 
 type UseAiWorkspaceOptions = {
   initialPageContext?: AiWorkspacePageContextInput
+  resumeStoredSession?: boolean
+  includePageContextHistory?: boolean
 }
 
 function messageStorageKey(sessionId: string): string {
@@ -50,6 +57,7 @@ function createMessage(role: AiWorkspaceMessage['role'], content: string): AiWor
     content,
     createdAt: new Date().toISOString(),
     status: role === 'assistant' ? 'streaming' : 'complete',
+    runDetails: role === 'assistant' ? [] : undefined,
   }
 }
 
@@ -69,6 +77,8 @@ function clearStoredSessionId() {
 }
 
 export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
+  const resumeStoredSession = options.resumeStoredSession ?? true
+  const includePageContextHistory = options.includePageContextHistory ?? true
   const initialContext = useMemo(
     () => normalizeAiWorkspacePageContext(options.initialPageContext),
     [options.initialPageContext],
@@ -93,13 +103,15 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
   }, [])
 
   useEffect(() => {
-    const storedSessionId = readStoredSessionId()
-    if (storedSessionId) {
-      setSessionIdState(storedSessionId)
-      setMessages(safeReadMessages(storedSessionId))
+    if (resumeStoredSession) {
+      const storedSessionId = readStoredSessionId()
+      if (storedSessionId) {
+        setSessionIdState(storedSessionId)
+        setMessages(safeReadMessages(storedSessionId))
+      }
     }
     rememberAiWorkspacePageContext(initialContext)
-  }, [initialContext])
+  }, [initialContext, resumeStoredSession])
 
   useEffect(() => {
     if (!sessionId) return
@@ -175,12 +187,15 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
 
     try {
       await streamAiWorkspaceResearch(
-        {
+        buildAiWorkspaceResearchRequest({
           message,
-          session_id: sessionId || undefined,
-          page_context: normalizeAiWorkspacePageContext(pageContext),
-          page_context_history: readAiWorkspaceContextHistory(),
-        },
+          sessionId,
+          pageContext: normalizeAiWorkspacePageContext(pageContext),
+          pageContextHistory: includePageContextHistory
+            ? readAiWorkspaceContextHistory()
+            : [],
+          includePageContextHistory,
+        }),
         {
           onEvent: (event) => {
             switch (event.type) {
@@ -204,14 +219,32 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
                 break
               }
               case 'thinking': {
-                setThinking({
-                  content: typeof event.data.content === 'string' ? event.data.content : '',
-                  status: typeof event.data.status === 'string' ? event.data.status : 'running',
-                })
+                const content = typeof event.data.content === 'string'
+                  ? event.data.content
+                  : 'Analyzing the request'
+                const status = typeof event.data.status === 'string'
+                  ? event.data.status
+                  : 'running'
+                setThinking({ content, status })
+                setMessages((current) => appendRunDetail(
+                  current,
+                  assistantMessageId,
+                  {
+                    id: 'status-analysis',
+                    kind: 'status',
+                    label: content || 'Analyzing the request',
+                    status: status === 'done' ? 'completed' : 'running',
+                  },
+                ))
                 break
               }
               case 'tool_call': {
                 setToolCalls((current) => [...current, event.data])
+                setMessages((current) => mergeToolRunDetail(
+                  current,
+                  assistantMessageId,
+                  event.data,
+                ))
                 break
               }
               case 'recommendations': {
@@ -237,6 +270,31 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
                 } else if (assistantContent) {
                   updateAssistantMessage(assistantContent, 'complete')
                 }
+                setMessages((current) => {
+                  let next = current.map((item) => {
+                    if (item.id !== assistantMessageId) return item
+                    return {
+                      ...item,
+                      runDetails: (item.runDetails ?? []).map((detail) => (
+                        detail.status === 'running'
+                          ? { ...detail, status: 'completed' as const }
+                          : detail
+                      )),
+                    }
+                  })
+                  if (
+                    typeof event.data.timing_ms === 'number'
+                    && event.data.timing_ms > 0
+                  ) {
+                    next = appendRunDetail(next, assistantMessageId, {
+                      id: 'duration',
+                      kind: 'status',
+                      label: `Completed in ${(event.data.timing_ms / 1000).toFixed(1)}s`,
+                      status: 'completed',
+                    })
+                  }
+                  return next
+                })
                 break
               }
               case 'error': {
@@ -269,7 +327,12 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
       isSendingRef.current = false
       setIsSending(false)
     }
-  }, [pageContext, sessionId, setSessionId])
+  }, [
+    includePageContextHistory,
+    pageContext,
+    sessionId,
+    setSessionId,
+  ])
 
   return useMemo(
     () => ({
