@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { FilterModal } from './FilterModal'
 
 export interface ExpertFilterValues {
   location: string
@@ -38,45 +38,43 @@ export function ExpertFiltersDrawer({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0d12]/35 p-[16px]" onClick={onClose}>
-      <aside className="flex max-h-[min(800px,calc(100vh-32px))] w-[min(920px,100%)] max-w-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.25)]" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h2 className="px-[32px] pt-[28px] text-[22px] font-semibold text-[#181d27]">Expert filters</h2>
-          <button type="button" onClick={onClose} aria-label="Close filters" className="mr-[24px] mt-[24px] rounded-[8px] p-[8px] text-[#535862] hover:bg-[#f2f4f7]"><X size={22} /></button>
-        </div>
-        <div className="grid min-h-0 flex-1 gap-x-[28px] gap-y-[24px] overflow-y-auto px-[32px] py-[28px] sm:grid-cols-2">
-          <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">
-            Sort by
-            <select value={draft.sort} onChange={(event) => setDraft({ ...draft, sort: event.target.value as ExpertFilterValues['sort'] })} className={controlClasses}>
-              <option value="relevance">Relevance</option>
-              <option value="experience">Most experienced</option>
-              <option value="projects">Most projects</option>
-              <option value="name">Name</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">
-            Expert type
-            <select value={draft.entityType} onChange={(event) => setDraft({ ...draft, entityType: event.target.value })} className={controlClasses}>
-              <option value="">Any type</option>
-              <option value="individual">Individual</option>
-              <option value="business">Business or team</option>
-            </select>
-          </label>
-          <Input label="Platform expertise" value={draft.platform} onChange={(platform) => setDraft({ ...draft, platform })} placeholder="e.g., Asana" />
-          <Input label="Industry" value={draft.industry} onChange={(industry) => setDraft({ ...draft, industry })} placeholder="e.g., Fintech" />
-          <Input label="Project type" value={draft.projectType} onChange={(projectType) => setDraft({ ...draft, projectType })} placeholder="e.g., CRM migration" />
-          <Input label="Location" value={draft.location} onChange={(location) => setDraft({ ...draft, location })} placeholder="Country or city" />
-          <label className="flex flex-col gap-[8px] text-[14px] font-medium text-[#414651] sm:col-span-2">
-            Minimum experience: {draft.minimumYears} years
-            <input className="accent-[#155eef]" type="range" min={0} max={20} value={draft.minimumYears} onChange={(event) => setDraft({ ...draft, minimumYears: Number(event.target.value) })} />
-          </label>
-        </div>
-        <div className="flex justify-between border-t border-[#e9eaeb] px-[32px] py-[22px]">
-          <button type="button" onClick={() => setDraft(DEFAULT_EXPERT_FILTERS)} className="font-semibold text-[#414651]">Clear all filters</button>
-          <button type="button" onClick={() => { onApply(draft); onClose() }} className="rounded-[10px] bg-[#181d27] px-[20px] py-[11px] font-semibold text-white">Save filters</button>
-        </div>
-      </aside>
-    </div>
+    <FilterModal
+      title="Expert filters"
+      onClose={onClose}
+      onClear={() => setDraft(DEFAULT_EXPERT_FILTERS)}
+      onSave={() => {
+        onApply(draft)
+        onClose()
+      }}
+    >
+      <div className="grid gap-x-7 gap-y-6 sm:grid-cols-2">
+        <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">
+          Sort by
+          <select value={draft.sort} onChange={(event) => setDraft({ ...draft, sort: event.target.value as ExpertFilterValues['sort'] })} className={controlClasses}>
+            <option value="relevance">Relevance</option>
+            <option value="experience">Most experienced</option>
+            <option value="projects">Most projects</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">
+          Expert type
+          <select value={draft.entityType} onChange={(event) => setDraft({ ...draft, entityType: event.target.value })} className={controlClasses}>
+            <option value="">Any type</option>
+            <option value="individual">Individual</option>
+            <option value="business">Business or team</option>
+          </select>
+        </label>
+        <Input label="Platform expertise" value={draft.platform} onChange={(platform) => setDraft({ ...draft, platform })} placeholder="e.g., Asana" />
+        <Input label="Industry" value={draft.industry} onChange={(industry) => setDraft({ ...draft, industry })} placeholder="e.g., Fintech" />
+        <Input label="Project type" value={draft.projectType} onChange={(projectType) => setDraft({ ...draft, projectType })} placeholder="e.g., CRM migration" />
+        <Input label="Location" value={draft.location} onChange={(location) => setDraft({ ...draft, location })} placeholder="Country or city" />
+        <label className="flex flex-col gap-[8px] text-[14px] font-medium text-[#414651] sm:col-span-2">
+          Minimum experience: {draft.minimumYears} years
+          <input className="accent-[#155eef]" type="range" min={0} max={20} value={draft.minimumYears} onChange={(event) => setDraft({ ...draft, minimumYears: Number(event.target.value) })} />
+        </label>
+      </div>
+    </FilterModal>
   )
 }
 

@@ -2,14 +2,13 @@ import type { ProductFilterValues } from '@/components/filters/ProductFiltersDra
 import type { ProductListRequest } from './types'
 
 export interface ProductListRequestInput extends ProductFilterValues {
-  category?: string
   search?: string
   limit: number
   offset: number
 }
 
 export function buildProductListRequest({
-  category,
+  categoryTermId,
   search,
   pricingBucket,
   freePlan,
@@ -19,7 +18,7 @@ export function buildProductListRequest({
   offset,
 }: ProductListRequestInput): ProductListRequest {
   return {
-    category,
+    category: categoryTermId || undefined,
     search,
     pricing_bucket: pricingBucket || undefined,
     free_plan: freePlan || undefined,
