@@ -437,7 +437,7 @@ export default function Navbar() {
         <div className="flex items-center gap-[12px]">
           <Link
             href="/AI_workspace"
-            className={`hidden md:flex items-center justify-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[15px] leading-[22px] text-[#155eef] hover:bg-[#eff4ff] transition-colors ${BUTTON_SHADOW}`}
+            className={`hidden lg:flex items-center justify-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[15px] leading-[22px] text-[#155eef] hover:bg-[#eff4ff] transition-colors ${BUTTON_SHADOW}`}
             onClick={() => {
               closeNavMenus()
             }}
@@ -448,7 +448,7 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <div ref={profileMenuRef} className="hidden md:block relative">
+              <div ref={profileMenuRef} className="hidden lg:block relative">
                 <button
                   type="button"
                   onClick={() => {
@@ -514,7 +514,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/sign-in"
-              className={`hidden md:flex items-center justify-center bg-white border border-[#d5d7da] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-[#414651] hover:bg-gray-50 transition-colors ${BUTTON_SHADOW}`}
+              className={`hidden lg:flex items-center justify-center bg-white border border-[#d5d7da] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-[#414651] hover:bg-gray-50 transition-colors ${BUTTON_SHADOW}`}
             >
               Log in
             </Link>
@@ -523,7 +523,7 @@ export default function Navbar() {
           <Link
             href={ctaHref}
             onClick={handleCtaClick}
-            className={`hidden md:flex items-center justify-center bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-white hover:bg-[#0e4cc7] transition-colors ${BUTTON_SHADOW}`}
+            className={`hidden lg:flex items-center justify-center bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-white hover:bg-[#0e4cc7] transition-colors ${BUTTON_SHADOW}`}
           >
             {ctaLabel}
           </Link>

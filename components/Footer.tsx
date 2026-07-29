@@ -35,9 +35,9 @@ export default function Footer() {
     <footer className="pt-[64px] pb-[48px]">
       <div className="max-w-[1280px] mx-auto px-[32px]">
         {/* Top section: Logo + link columns */}
-        <div className="flex flex-wrap gap-x-[64px] gap-y-[48px] items-start">
+        <div className="flex flex-col gap-y-[48px] md:flex-row md:flex-wrap md:gap-x-[64px] md:gap-y-[48px] md:items-start">
           {/* Logo and tagline */}
-          <div className="flex flex-col gap-[24px] max-w-[320px] min-w-[320px] flex-1">
+          <div className="flex w-full flex-col gap-[24px] md:max-w-[320px] md:min-w-[280px] md:flex-1">
             <p
               className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#535862]"
               style={{ fontVariationSettings: "'opsz' 14" }}
@@ -47,7 +47,7 @@ export default function Footer() {
           </div>
 
           {/* Link columns */}
-          <div className="flex gap-[32px] flex-1 min-w-[600px]">
+          <div className="flex flex-col gap-[32px] flex-1 md:flex-row md:min-w-0">
             {Object.entries(footerLinks).map(([title, links]) => (
               <div key={title} className="flex-1 flex flex-col gap-[16px] min-w-[96px]">
                 <p className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] leading-[20px] text-[#717680]">
