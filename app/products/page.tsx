@@ -1,8 +1,8 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -15,7 +15,6 @@ import {
   useCategoryTree,
   useProductList,
   type CardProduct,
-  type CategoryNode,
 } from '@/features/catalog'
 import {
   DEFAULT_PRODUCT_FILTERS,
@@ -32,79 +31,7 @@ import {
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
-const ACTIVE_BUTTON_CLASS = 'bg-white text-[#414651] border border-[#e9eaeb] shadow-[0px_1px_3px_0px_rgba(10,13,18,0.1)]'
-const INACTIVE_BUTTON_CLASS = 'text-[#717680] hover:text-[#414651]'
-const BASE_BUTTON_CLASS = 'h-[44px] px-[16px] rounded-[8px] font-semibold text-[14px] leading-[20px] transition-colors'
 const PRODUCT_PAGE_SIZE = 15
-
-function CategoryNavigation({
-  categories,
-  activeCategory,
-  activeRoot,
-  onChange,
-  onRootChange,
-}: {
-  categories: CategoryNode[]
-  activeCategory: string | null
-  activeRoot: string | null
-  onChange: (category: CategoryNode | null) => void
-  onRootChange: (root: CategoryNode) => void
-}) {
-  const [openRootId, setOpenRootId] = useState<string | null>(null)
-
-  return (
-    <div className="flex flex-wrap items-start justify-center gap-[8px]">
-      <button
-        type="button"
-        onClick={() => onChange(null)}
-        className={`${BASE_BUTTON_CLASS} ${activeCategory === null ? ACTIVE_BUTTON_CLASS : INACTIVE_BUTTON_CLASS}`}
-      >
-        View all
-      </button>
-      {categories.map((root) => (
-        <div
-          key={root.term_id}
-          className="relative"
-          onMouseEnter={() => setOpenRootId(root.term_id)}
-          onMouseLeave={() => setOpenRootId(null)}
-          onFocus={() => setOpenRootId(root.term_id)}
-          onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setOpenRootId(null)
-          }}
-        >
-          <button
-            type="button"
-            aria-expanded={openRootId === root.term_id}
-            aria-haspopup="dialog"
-            onClick={() => onRootChange(root)}
-            className={`${BASE_BUTTON_CLASS} inline-flex items-center gap-[6px] ${
-              root.term_id === activeRoot
-                ? ACTIVE_BUTTON_CLASS
-                : INACTIVE_BUTTON_CLASS
-            }`}
-          >
-            {root.label}
-          </button>
-
-          {openRootId === root.term_id && (
-            <div
-              role="dialog"
-              aria-label={`${root.label} category metadata`}
-              className="absolute left-1/2 top-full z-40 mt-[8px] w-[300px] -translate-x-1/2 rounded-[12px] border border-[#e9eaeb] bg-white p-[16px] text-left shadow-[0px_20px_24px_-4px_rgba(10,13,18,0.08),0px_8px_8px_-4px_rgba(10,13,18,0.03)]"
-            >
-              <p className="text-[14px] font-semibold leading-[20px] text-[#181d27]">{root.label}</p>
-              {root.description ? (
-                <p className="mt-[6px] text-[13px] leading-[19px] text-[#717680]">{root.description}</p>
-              ) : (
-                <p className="mt-[6px] text-[13px] leading-[19px] text-[#717680]">Products grouped under this category.</p>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
 
 export default function ProductsPage() {
   return (
@@ -117,13 +44,13 @@ export default function ProductsPage() {
 function ProductsPageSuspenseFallback() {
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] flex flex-col">
-      <div className="pt-[120px] pb-[64px]">
+      <div className="pb-[32px] pt-[120px]">
         <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col items-center gap-[24px]">
           <Skeleton className="h-[64px] w-[824px] max-w-full rounded-full" />
         </div>
       </div>
-      <section className="py-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
+      <section className="pb-[96px] pt-[24px]">
+        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[40px]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-[16px] border border-[#e9eaeb] bg-white p-[24px] flex flex-col gap-[16px]">
@@ -143,44 +70,33 @@ function ProductsPageSuspenseFallback() {
 }
 
 function ProductsPageContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const search = searchParams.get('search')?.trim() || undefined
   const categoryParam = searchParams.get('category')
   const { tree, loading: catLoading, error: catError } = useCategoryTree()
-  const roots = useMemo(
-    () => tree.filter((node) => node.taxonomy_type === 'ui_category' && node.parent_term_id === null),
-    [tree],
-  )
-  const selectedFromUrl = useMemo(
-    () => roots.flatMap((root) => root.children).find((child) => child.term_id === categoryParam) ?? null,
-    [categoryParam, roots],
-  )
-  const selectedRootFromUrl = useMemo(
-    () => roots.find((root) => root.children.some((child) => child.term_id === categoryParam)) ?? roots[0] ?? null,
-    [categoryParam, roots],
-  )
-  const [activeCategory, setActiveCategory] = useState<CategoryNode | null>(selectedFromUrl)
-  const [activeRoot, setActiveRoot] = useState<CategoryNode | null>(selectedRootFromUrl)
-  const [offset, setOffset] = useState(0)
-  const [filters, setFilters] = useState<ProductFilterValues>(DEFAULT_PRODUCT_FILTERS)
-
-  useEffect(() => {
-    setActiveCategory(selectedFromUrl)
-    setOffset(0)
-  }, [selectedFromUrl])
-
-  useEffect(() => {
-    setActiveRoot(selectedRootFromUrl)
-  }, [selectedRootFromUrl])
-
-  useEffect(() => {
-    setOffset(0)
-  }, [search])
+  const requestKey = `${search ?? ''}:${categoryParam ?? ''}`
+  const [paginationState, setPaginationState] = useState({
+    requestKey,
+    offset: 0,
+  })
+  const offset =
+    paginationState.requestKey === requestKey
+      ? paginationState.offset
+      : 0
+  const resetOffset = () =>
+    setPaginationState({ requestKey, offset: 0 })
+  const [storedFilters, setStoredFilters] =
+    useState<ProductFilterValues>(DEFAULT_PRODUCT_FILTERS)
+  const filters: ProductFilterValues = {
+    ...storedFilters,
+    categoryTermId: categoryParam ?? '',
+  }
 
   const { products, loading, error, pagination, refetch } = useProductList({
     ...buildProductListRequest({
-      category: activeCategory?.term_id,
       search,
+      categoryTermId: filters.categoryTermId,
       pricingBucket: filters.pricingBucket,
       freePlan: filters.freePlan,
       freeTrial: filters.freeTrial,
@@ -206,14 +122,30 @@ function ProductsPageContent() {
       <ListingExplorer
         kind="products"
         productFilters={filters}
+        productCategoryTree={tree}
+        productCategoriesLoading={catLoading}
+        productCategoriesError={Boolean(catError)}
+        onSearchChange={resetOffset}
         onProductFiltersChange={(values) => {
-          setFilters(values)
-          setOffset(0)
+          setStoredFilters(values)
+          resetOffset()
+          if (values.categoryTermId !== (categoryParam ?? '')) {
+            const params = new URLSearchParams(
+              searchParams.toString(),
+            )
+            if (values.categoryTermId) {
+              params.set('category', values.categoryTermId)
+            } else {
+              params.delete('category')
+            }
+            const query = params.toString()
+            router.push(`/products${query ? `?${query}` : ''}`)
+          }
         }}
       />
 
-      <section className="py-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
+      <section className="pb-[96px] pt-[24px]">
+        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[40px]">
           <div className="max-w-[768px] mx-auto flex flex-col gap-[20px] text-center">
             <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
               Close more deals, stress less.
@@ -222,68 +154,6 @@ function ProductsPageContent() {
               Hear first-hand from our incredible community of customers.
             </p>
           </div>
-
-          {/* Category filter tabs */}
-          {catLoading ? (
-            <div className="flex justify-center">
-              <span className="text-[#717680] text-[14px]">Loading categories...</span>
-            </div>
-          ) : catError ? (
-            <div className="flex justify-center">
-              <span className="text-red-500 text-[14px]">Failed to load categories</span>
-            </div>
-          ) : (
-            <CategoryNavigation
-              categories={roots}
-              activeCategory={activeCategory?.term_id ?? null}
-              activeRoot={activeRoot?.term_id ?? null}
-              onChange={(category) => {
-                setActiveCategory(category)
-                setOffset(0)
-              }}
-              onRootChange={(root) => {
-                setActiveRoot(root)
-                const firstChild = root.children[0] ?? null
-                setActiveCategory(firstChild)
-                setOffset(0)
-              }}
-            />
-          )}
-
-          {activeRoot && activeRoot.children.length > 0 && (
-            <div className="mx-auto flex max-w-[1040px] flex-wrap justify-center gap-[8px]">
-              {activeRoot.children.map((child) => (
-                <button
-                  key={child.term_id}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory(child)
-                    setOffset(0)
-                  }}
-                  className={`rounded-[8px] border px-[14px] py-[10px] text-[14px] font-semibold transition-colors ${
-                    activeCategory?.term_id === child.term_id
-                      ? 'border-[#155eef] bg-[#eff4ff] text-[#004eeb]'
-                      : 'border-[#d5d7da] bg-white text-[#414651] hover:border-[#b2ccff] hover:bg-[#f9fbff]'
-                  }`}
-                >
-                  {child.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {activeCategory && (
-            <div className="mx-auto -mt-[40px] max-w-[720px] text-center">
-              <p className="text-[14px] font-semibold leading-[20px] text-[#004eeb]">
-                {activeCategory.label}
-              </p>
-              {activeCategory.description && (
-                <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
-                  {activeCategory.description}
-                </p>
-              )}
-            </div>
-          )}
 
           {/* Error state */}
           {error && (
@@ -333,7 +203,12 @@ function ProductsPageContent() {
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => setOffset(getNextProductPageOffset(products))}
+                onClick={() =>
+                  setPaginationState({
+                    requestKey,
+                    offset: getNextProductPageOffset(products),
+                  })
+                }
                 disabled={isLoadingMoreProducts}
                 aria-busy={isLoadingMoreProducts}
                 className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] disabled:cursor-not-allowed disabled:text-[#717680] disabled:opacity-70 ${BUTTON_SKEUO_SHADOW}`}

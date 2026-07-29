@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Search, MapPin, DollarSign, ListFilter, FilterIcon, X } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
-import { getProductDetailHref, useKeywordSearch } from '@/features/catalog'
+import { ProductCategoryDropdown } from '@/components/filters/ProductCategoryDropdown'
+import {
+  getProductDetailHref,
+  useKeywordSearch,
+  type CategoryNode,
+} from '@/features/catalog'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -16,6 +21,16 @@ interface SearchHeroProps {
   initialQuery?: string
   activeLabels?: string[]
   onRemoveLabel?: (label: string) => void
+  quickFilterLabels?: Partial<{
+    category: string
+    pricing: string
+    plans: string
+  }>
+  productCategoryTree?: CategoryNode[]
+  productCategoriesLoading?: boolean
+  productCategoriesError?: boolean
+  selectedCategoryTermId?: string
+  onCategorySelect?: (termId: string) => void
 }
 
 export default function SearchHero({
@@ -25,6 +40,12 @@ export default function SearchHero({
   initialQuery = '',
   activeLabels = ['Label'],
   onRemoveLabel,
+  quickFilterLabels,
+  productCategoryTree = [],
+  productCategoriesLoading = false,
+  productCategoriesError = false,
+  selectedCategoryTermId = '',
+  onCategorySelect,
 }: SearchHeroProps) {
   const [query, setQuery] = useState(initialQuery)
   const [resultsOpen, setResultsOpen] = useState(false)
@@ -56,9 +77,8 @@ export default function SearchHero({
 
   const quickFilters = kind === 'products'
     ? [
-        { icon: <ListFilter size={20} className="text-[#717680]" />, label: 'Any category', width: 200 },
-        { icon: <DollarSign size={20} className="text-[#717680]" />, label: 'Any pricing', width: 200 },
-        { icon: <FilterIcon size={20} className="text-[#717680]" />, label: 'Plans & trials', width: 168 },
+        { icon: <DollarSign size={20} className="text-[#717680]" />, label: quickFilterLabels?.pricing ?? 'Any pricing', width: 200 },
+        { icon: <FilterIcon size={20} className="text-[#717680]" />, label: quickFilterLabels?.plans ?? 'Plans & trials', width: 168 },
       ]
     : [
         { icon: <ListFilter size={20} className="text-[#717680]" />, label: 'Any expert type', width: 200 },
@@ -165,6 +185,16 @@ export default function SearchHero({
         {/* Filter dropdowns */}
         <div className="flex flex-wrap items-start justify-between gap-y-[12px] w-full">
           <div className="flex gap-[12px] items-start">
+            {kind === 'products' ? (
+              <ProductCategoryDropdown
+                categoryTree={productCategoryTree}
+                loading={productCategoriesLoading}
+                error={productCategoriesError}
+                selectedTermId={selectedCategoryTermId}
+                label={quickFilterLabels?.category ?? 'Any category'}
+                onSelect={(termId) => onCategorySelect?.(termId)}
+              />
+            ) : null}
             {quickFilters.map((filter) => (
               <FilterSelect
                 key={filter.label}

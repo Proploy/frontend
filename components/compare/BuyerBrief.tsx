@@ -11,9 +11,11 @@ const ORDER: Record<Complexity, number> = { Low: 1, Medium: 2, High: 3 }
 
 export function deriveBrief(entities: Entity[]) {
   if (entities.length === 0) return null
-  const byFit = [...entities].sort((a, b) => b.fitScore - a.fitScore)
-  const best = byFit[0]
   const complexities = entities.map((e) => e.implComplexity)
+  const easiest = [...entities].sort(
+    (a, b) =>
+      ORDER[a.implComplexity] - ORDER[b.implComplexity],
+  )[0]
   const cheapest = [...entities].sort(
     (a, b) => parseFloat(a.entryPrice.replace(/[^0-9.]/g, '')) - parseFloat(b.entryPrice.replace(/[^0-9.]/g, '')),
   )[0]
@@ -21,19 +23,20 @@ export function deriveBrief(entities: Entity[]) {
   const allSame = complexities.every((c) => c === complexities[0])
   const minComplexity = Math.min(...entities.map((e) => ORDER[e.implComplexity]))
   return {
-    bestFit: { v: best.name, d: `Highest fit among the selected products (${best.fitScore}/100).` },
     complexity: {
       v: allSame
         ? `All ${complexities[0].toLowerCase()}`
         : `${minComplexity === 1 ? 'Low' : 'Mixed'} → ${complexities.includes('High') ? 'High' : 'Medium'}`,
-      d: `${best.name} has the strongest implementation-fit signal among the selected products.`,
+      d: allSame
+        ? 'The selected products report the same implementation complexity.'
+        : `${easiest.name} has the lightest implementation complexity among the selected products.`,
     },
     budget: { v: `From ${cheapest.entryPrice}`, d: `${cheapest.name} has the lowest entry price; implementation cost varies by scope.` },
     risk: {
       v: riskiest.migrationRisk === 'Low' ? 'Low overall' : `Highest on ${riskiest.name}`,
       d: `${riskiest.name} carries the most migration / admin risk.`,
     },
-    action: { v: best.recommendedPath, d: `Recommended for ${best.name}: ${PATH_META[best.recommendedPath].blurb}` },
+    action: { v: easiest.recommendedPath, d: `Recommended for ${easiest.name}: ${PATH_META[easiest.recommendedPath].blurb}` },
   }
 }
 
@@ -94,7 +97,6 @@ export function BuyerBrief({ entities, loading }: { entities: Entity[]; loading?
           ) : brief ? (
             <>
               <div className="brief-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', columnGap: 28, marginTop: 6 }}>
-                <BriefRow icon="check" label="Best fit" value={brief.bestFit.v} detail={brief.bestFit.d} />
                 <BriefRow icon="wrench" label="Implementation" value={brief.complexity.v} detail={brief.complexity.d} />
                 <BriefRow icon="info" label="Budget signal" value={brief.budget.v} detail={brief.budget.d} />
                 <BriefRow icon="shield" label="Support / quality risk" value={brief.risk.v} detail={brief.risk.d} />

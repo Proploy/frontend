@@ -8,8 +8,8 @@
 // details and avoids the older compare-v2 payload mismatch.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { compareApi, type CompareFitFilters } from './client-api'
-import type { Entity, Filters } from '@/lib/compare/data'
+import { compareApi } from './client-api'
+import type { Entity } from '@/lib/compare/data'
 import { compareEntryToEntity } from '@/lib/compare/from-catalog'
 
 interface UseCompareEntitiesResult {
@@ -19,9 +19,8 @@ interface UseCompareEntitiesResult {
   error: string | null
 }
 
-export function useCompareEntities(ids: string[], filters?: Filters): UseCompareEntitiesResult {
+export function useCompareEntities(ids: string[]): UseCompareEntitiesResult {
   const idsKey = ids.join(',')
-  const filtersKey = JSON.stringify(filters ?? {})
   const [byId, setById] = useState<Record<string, Entity>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,16 +38,9 @@ export function useCompareEntities(ids: string[], filters?: Filters): UseCompare
     setLoading(true)
     setError(null)
 
-    const currentFilters = filters ? JSON.parse(filtersKey) as Filters : undefined
-    const fit_filters: CompareFitFilters | undefined = currentFilters
-      ? {
-          category_id: currentFilters.category,
-          company_size: currentFilters.companySize,
-          pricing_bucket: currentFilters.budget,
-          region: currentFilters.region,
-        }
-      : undefined
-    const result = await compareApi.compareProducts({ product_ids: list, fit_filters })
+    const result = await compareApi.compareProducts({
+      product_ids: list,
+    })
     if (requestRef.current !== requestId) return // a newer request superseded this one
 
     const map: Record<string, Entity> = {}
@@ -61,7 +53,7 @@ export function useCompareEntities(ids: string[], filters?: Filters): UseCompare
     setById(map)
     setError(!result.ok ? result.error.message : Object.keys(map).length === 0 ? 'Could not load the selected products.' : null)
     setLoading(false)
-  }, [filters, filtersKey, idsKey])
+  }, [idsKey])
 
   useEffect(() => {
     // Defer out of the effect body so the initial setState isn't synchronous

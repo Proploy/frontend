@@ -8,7 +8,7 @@ describe('catalog filter requests', () => {
   it('maps the Explore Products filter state to service query parameters', () => {
     expect(
       buildProductListRequest({
-        category: 'crm',
+        categoryTermId: 'crm',
         search: 'asana',
         pricingBucket: 'free',
         freePlan: true,
@@ -31,6 +31,7 @@ describe('catalog filter requests', () => {
 
   it('keeps the reference filter defaults deterministic', () => {
     expect(DEFAULT_PRODUCT_FILTERS).toEqual({
+      categoryTermId: '',
       pricingBucket: '',
       freePlan: false,
       freeTrial: false,

@@ -22,8 +22,10 @@ const STARTERS = [
 
 export function WelcomeState({
   onPrompt,
+  disabled = false,
 }: {
   onPrompt: (message: string) => void
+  disabled?: boolean
 }) {
   return (
     <div className="flex min-h-full w-full items-center justify-center px-5 py-10 sm:px-8">
@@ -46,8 +48,9 @@ export function WelcomeState({
             <button
               key={starter.label}
               type="button"
+              disabled={disabled}
               onClick={() => onPrompt(starter.prompt)}
-              className="min-w-0 rounded-xl border border-[#d5d7da] bg-white px-4 py-3 text-left text-sm font-semibold text-[#414651] shadow-[0_1px_2px_rgba(10,13,18,0.04)] transition hover:border-[#84adff] hover:bg-[#f5f8ff] hover:text-[#155eef]"
+              className="min-w-0 rounded-xl border border-[#d5d7da] bg-white px-4 py-3 text-left text-sm font-semibold text-[#414651] shadow-[0_1px_2px_rgba(10,13,18,0.04)] transition hover:border-[#84adff] hover:bg-[#f5f8ff] hover:text-[#155eef] disabled:cursor-wait disabled:opacity-50"
             >
               {starter.label}
             </button>

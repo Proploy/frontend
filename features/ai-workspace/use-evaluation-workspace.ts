@@ -1,6 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import {
   addShortlistProduct,
   archiveEvaluation,
@@ -44,6 +51,9 @@ export function useEvaluationWorkspace() {
   )
   const abortRef = useRef<AbortController | null>(null)
   const refreshSequenceRef = useRef(0)
+  const startingEvaluationRef = useRef(false)
+  const [isStartingEvaluation, setIsStartingEvaluation] =
+    useState(false)
 
   const loadDetail = useCallback(async (evaluationId: string) => {
     const result = await getEvaluation(evaluationId)
@@ -164,14 +174,11 @@ export function useEvaluationWorkspace() {
     [],
   )
 
-  const sendMessage = useCallback(
-    async (message: string) => {
-      const evaluationId = state.activeEvaluationId
-      const detail = evaluationId
-        ? state.detailsById[evaluationId]
-        : null
+  const sendEvaluationMessage = useCallback(
+    async (detail: EvaluationDetail, message: string) => {
+      const evaluationId = detail.evaluation_id
       const markdown = message.trim()
-      if (!evaluationId || !detail || !markdown) return
+      if (!markdown) return
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller
@@ -234,7 +241,40 @@ export function useEvaluationWorkspace() {
         if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [loadDetail, state.activeEvaluationId, state.detailsById],
+    [loadDetail],
+  )
+
+  const sendMessage = useCallback(
+    async (message: string) => {
+      const evaluationId = state.activeEvaluationId
+      const detail = evaluationId
+        ? state.detailsById[evaluationId]
+        : null
+      if (!detail) return
+      await sendEvaluationMessage(detail, message)
+    },
+    [
+      sendEvaluationMessage,
+      state.activeEvaluationId,
+      state.detailsById,
+    ],
+  )
+
+  const startEvaluation = useCallback(
+    async (message: string) => {
+      if (startingEvaluationRef.current) return
+      startingEvaluationRef.current = true
+      setIsStartingEvaluation(true)
+      try {
+        const detail = await newEvaluation()
+        if (!detail) return
+        await sendEvaluationMessage(detail, message)
+      } finally {
+        startingEvaluationRef.current = false
+        setIsStartingEvaluation(false)
+      }
+    },
+    [newEvaluation, sendEvaluationMessage],
   )
 
   const mutateAndReload = useCallback(
@@ -316,9 +356,11 @@ export function useEvaluationWorkspace() {
       isSending: state.activeEvaluationId
         ? Boolean(state.sendingById[state.activeEvaluationId])
         : false,
+      isStartingEvaluation,
       refresh,
       selectEvaluation,
       newEvaluation,
+      startEvaluation,
       updateTitle,
       duplicate,
       archive: (evaluationId: string) =>
@@ -403,6 +445,7 @@ export function useEvaluationWorkspace() {
     [
       activeEvaluation,
       duplicate,
+      isStartingEvaluation,
       mutateAndReload,
       mutateShortlist,
       newEvaluation,
@@ -410,6 +453,7 @@ export function useEvaluationWorkspace() {
       removeEvaluation,
       selectEvaluation,
       sendMessage,
+      startEvaluation,
       state,
       updateTitle,
     ],

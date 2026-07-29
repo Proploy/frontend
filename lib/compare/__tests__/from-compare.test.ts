@@ -97,7 +97,6 @@ function makeEntry(overrides: Partial<CompareProductEntry> = {}): CompareProduct
     outcomes: ['94% on-budget'],
     reviewer_segment: '60% Mid-market',
     reviewer_industry: 'Marketing',
-    fit_score: 85,
     alternatives: [alt],
     ...overrides,
   }
@@ -119,8 +118,55 @@ describe('compareEntryToEntity — required fields', () => {
     // The fixture has [freePlan, plan]. The mapper picks `plan` ($9 / month).
     expect(entity.entryPrice).toBe('$9')
     expect(entity.priceUnit).toBe('/month')
-    expect(entity.pricingModel).toBe('per seat')
+    expect(entity.pricingModel).toBe('Per Seat')
     expect(entity.contactSales).toBe(false)
+  })
+
+  it('falls through an unknown entry-plan model to the next catalog pricing model', () => {
+    const paidPlan = makeEntry().pricing_plans[1]
+    const entity = compareEntryToEntity(
+      makeEntry({
+        pricing_plans: [
+          {
+            ...paidPlan,
+            plan_id: 'paid_1',
+            plan_name: 'Paid Tier 1',
+            pricing_model: 'unknown',
+          },
+          {
+            ...paidPlan,
+            plan_id: 'paid_2',
+            plan_name: 'Paid Tier 2',
+            price_text: '$29',
+            price_value: 29,
+            price_usd: 29,
+            pricing_model: 'paid_tier_2',
+          },
+        ],
+      }),
+    )
+
+    expect(entity.entryPrice).toBe('$9')
+    expect(entity.pricingModel).toBe('Paid Tier 2')
+  })
+
+  it.each([
+    ['paid_tier_1', 'Paid Tier 1'],
+    ['premium', 'Premium'],
+  ])('formats catalog pricing model %s as %s', (pricingModel, expected) => {
+    const paidPlan = makeEntry().pricing_plans[1]
+    const entity = compareEntryToEntity(
+      makeEntry({
+        pricing_plans: [
+          {
+            ...paidPlan,
+            pricing_model: pricingModel,
+          },
+        ],
+      }),
+    )
+
+    expect(entity.pricingModel).toBe(expected)
   })
 
   it('flags contactSales when any plan is contact-sales', () => {
@@ -295,24 +341,7 @@ describe('productAlternativeToCompareAlternative', () => {
   })
 })
 
-describe('compareEntryToEntity — fit & complexity', () => {
-  it('trusts server fit_score when it is a number', () => {
-    const entity = compareEntryToEntity(makeEntry({ fit_score: 91, market_presence_score: 50 }))
-    expect(entity.fitScore).toBe(91)
-  })
-
-  it('falls back to market_presence_score when fit_score is missing', () => {
-    const entity = compareEntryToEntity(
-      makeEntry({ fit_score: undefined as unknown as number, market_presence_score: 73 }),
-    )
-    expect(entity.fitScore).toBe(73)
-  })
-
-  it('clamps fit_score to 0..100', () => {
-    expect(compareEntryToEntity(makeEntry({ fit_score: 250 })).fitScore).toBe(100)
-    expect(compareEntryToEntity(makeEntry({ fit_score: -10 })).fitScore).toBe(0)
-  })
-
+describe('compareEntryToEntity — complexity', () => {
   it('maps complexity → onboardingEffort / adminSkill heuristically', () => {
     const low = compareEntryToEntity(makeEntry({ implementation_complexity: 'Easy' }))
     expect(low.implComplexity).toBe('Low')
@@ -367,7 +396,6 @@ describe('compareEntryToEntity — graceful degradation', () => {
       outcomes: [],
       reviewer_segment: null,
       reviewer_industry: null,
-      fit_score: 0,
       alternatives: [],
     }
     const entity = compareEntryToEntity(minimal)
@@ -376,7 +404,6 @@ describe('compareEntryToEntity — graceful degradation', () => {
     expect(entity.category).toBe('Software') // fallback when primary_category is null
     expect(entity.tagline).toBe('')
     expect(entity.entryPrice).toBe('—')
-    expect(entity.fitScore).toBe(0)
     expect(entity.alternatives).toEqual([])
     expect(entity.reviews.sentiment).toEqual([])
     expect(entity.reviews.outcomes).toEqual([])

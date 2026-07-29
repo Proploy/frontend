@@ -1,6 +1,6 @@
 'use client'
 
-import { LoaderCircle, Plus } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useAuth } from '@/components/providers/auth-provider'
@@ -14,6 +14,7 @@ import { DecisionWorkspace } from './DecisionWorkspace'
 import { EvaluationHeader } from './EvaluationHeader'
 import { EvaluationSidebar } from './EvaluationSidebar'
 import { SamConversation } from './SamConversation'
+import { WelcomeState } from './WelcomeState'
 
 export function SoftwareProcurementWorkspace() {
   const router = useRouter()
@@ -258,13 +259,17 @@ export function SoftwareProcurementWorkspace() {
     (evaluation
       ? shareStateById[evaluation.evaluation_id]
       : undefined) ?? 'idle'
-  const workspaceColumns = sidebarCollapsed
-    ? decisionSidebarCollapsed
-      ? 'lg:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[72px_minmax(600px,1fr)_52px]'
-      : 'lg:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[72px_minmax(600px,1fr)_360px]'
-    : decisionSidebarCollapsed
-      ? 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_52px]'
-      : 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_360px]'
+  const workspaceColumns = evaluation
+    ? sidebarCollapsed
+      ? decisionSidebarCollapsed
+        ? 'lg:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[72px_minmax(600px,1fr)_52px]'
+        : 'lg:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[72px_minmax(600px,1fr)_360px]'
+      : decisionSidebarCollapsed
+        ? 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_52px]'
+        : 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_360px]'
+    : sidebarCollapsed
+      ? 'lg:grid-cols-[72px_minmax(0,1fr)]'
+      : 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]'
 
   return (
     <div className="mt-[80px] h-[calc(100dvh-80px)] min-h-0 overflow-hidden bg-white font-[family-name:var(--font-dm-sans)] text-[#181d27]">
@@ -324,30 +329,21 @@ export function SoftwareProcurementWorkspace() {
               }
             />
           ) : (
-            <div className="flex flex-1 items-center justify-center bg-[#fafbfc] px-4">
-              <div className="max-w-md text-center">
-                <h2 className="text-xl font-semibold text-[#181d27]">
-                  Start your first evaluation
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#535862]">
-                  Each evaluation has independent requirements, conversation,
-                  shortlist, evidence, and recommendation.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void workspace.newEvaluation()}
-                  className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl bg-[#155eef] px-4 text-sm font-semibold text-white hover:bg-[#0e4cc7]"
-                >
-                  <Plus size={16} />
-                  New evaluation
-                </button>
+            <section className="flex min-h-0 flex-1 flex-col bg-white">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <WelcomeState
+                  disabled={workspace.isStartingEvaluation}
+                  onPrompt={(message) =>
+                    void workspace.startEvaluation(message)
+                  }
+                />
               </div>
-            </div>
+            </section>
           )}
         </main>
 
-        <div className="hidden min-h-0 xl:block">
-          {evaluation ? (
+        {evaluation ? (
+          <div className="hidden min-h-0 xl:block">
             <DecisionWorkspace
               evaluation={evaluation}
               onReorder={(productIds) =>
@@ -375,8 +371,8 @@ export function SoftwareProcurementWorkspace() {
                 )
               }
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {evaluationsOpen ? (

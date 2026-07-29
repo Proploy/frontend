@@ -47,6 +47,45 @@ function firstSegment(segments: string[]): string {
   return published.length ? published.join(' · ') : '—'
 }
 
+function formatPricingModel(value: string | null | undefined): string | null {
+  const published = normalizePublishedValue(value)
+  if (!published || published.toLowerCase() === 'unknown') return null
+
+  return published
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function pricingModelFromPlans(
+  plans: PricingPlanItem[],
+  entryPlan: PricingPlanItem | undefined,
+  hasFreePlan: boolean,
+): string {
+  const otherPaidPlans = plans.filter(
+    (plan) =>
+      plan !== entryPlan
+      && !plan.is_free
+      && !plan.is_contact_sales,
+  )
+  const remainingPlans = plans.filter(
+    (plan) =>
+      plan !== entryPlan
+      && !otherPaidPlans.includes(plan),
+  )
+  const candidates = [
+    ...(entryPlan ? [entryPlan] : []),
+    ...otherPaidPlans,
+    ...remainingPlans,
+  ]
+
+  for (const candidate of candidates) {
+    const pricingModel = formatPricingModel(candidate.pricing_model)
+    if (pricingModel) return pricingModel
+  }
+
+  return hasFreePlan ? 'Free plan available' : '—'
+}
+
 // Flatten PricingPlanItem.limits (Record | string[] | null) into a one-line summary.
 function flattenLimits(limits: PricingPlanItem['limits']): string | null {
   if (!limits) return null
@@ -87,9 +126,6 @@ export function productDetailToEntity(detail: ProductDetail): Entity {
   const complexity = toComplexity(detail.implementation_complexity)
   const publishedPlans = detail.pricing_plans.filter((plan) => !isUnpublishedValue(plan.plan_name))
   const entry = publishedPlans.find((p) => !p.is_free && !p.is_contact_sales) ?? publishedPlans[0]
-  const fitScore =
-    detail.market_presence_score != null ? Math.round(Math.max(0, Math.min(100, detail.market_presence_score))) : 0
-
   return {
     id: detail.product_id,
     type: 'product',
@@ -108,7 +144,11 @@ export function productDetailToEntity(detail: ProductDetail): Entity {
     pricingBucket: normalizePublishedValue(detail.pricing_bucket) ?? '—',
     entryPrice: normalizePublishedValue(entry?.price_text) ?? (entry?.price_value != null ? `$${entry.price_value}` : '—'),
     priceUnit: normalizePublishedValue(entry?.billing_period) ? `/${normalizePublishedValue(entry?.billing_period)}` : '',
-    pricingModel: normalizePublishedValue(entry?.pricing_model) ?? (detail.free_plan ? 'Free plan available' : '—'),
+    pricingModel: pricingModelFromPlans(
+      publishedPlans,
+      entry,
+      detail.free_plan,
+    ),
     freeTrial: detail.free_trial,
     freePlan: detail.free_plan,
     contactSales: detail.pricing_plans.some((p) => p.is_contact_sales),
@@ -118,7 +158,6 @@ export function productDetailToEntity(detail: ProductDetail): Entity {
     onboardingEffort: complexity === 'Low' ? 'Light' : complexity === 'High' ? 'Heavy' : 'Moderate',
     adminSkill: complexity === 'Low' ? 'Low' : complexity === 'High' ? 'High' : 'Medium',
     migrationRisk: complexity,
-    fitScore,
     recommendedPath: PATH_BY_COMPLEXITY[complexity],
     fit: {
       teamSize: firstSegment(detail.target_segments),
@@ -147,15 +186,6 @@ export function compareEntryToEntity(entry: CompareProductEntry): Entity {
   const publishedPlans = entry.pricing_plans.filter((plan) => !isUnpublishedValue(plan.plan_name))
   const plan = publishedPlans.find((p) => !p.is_free && !p.is_contact_sales) ?? publishedPlans[0]
 
-  // fit_score is server-computed. v1 derives it from market_presence_score;
-  // v2 (buyer-context-aware) returns a true fit. The mapper trusts the field.
-  const fitScore =
-    typeof entry.fit_score === 'number'
-      ? Math.round(Math.max(0, Math.min(100, entry.fit_score)))
-      : entry.market_presence_score != null
-        ? Math.round(Math.max(0, Math.min(100, entry.market_presence_score)))
-        : 0
-
   // Join all rating source names so the "Review source" row surfaces every channel.
   const reviewSource =
     entry.ratings.length > 0
@@ -179,7 +209,11 @@ export function compareEntryToEntity(entry: CompareProductEntry): Entity {
     pricingBucket: normalizePublishedValue(entry.pricing_bucket) ?? '—',
     entryPrice: normalizePublishedValue(plan?.price_text) ?? (plan?.price_value != null ? `$${plan.price_value}` : '—'),
     priceUnit: normalizePublishedValue(plan?.billing_period) ? `/${normalizePublishedValue(plan?.billing_period)}` : '',
-    pricingModel: normalizePublishedValue(plan?.pricing_model) ?? (entry.free_plan ? 'Free plan available' : '—'),
+    pricingModel: pricingModelFromPlans(
+      publishedPlans,
+      plan,
+      entry.free_plan,
+    ),
     freeTrial: entry.free_trial,
     freePlan: entry.free_plan,
     contactSales: entry.pricing_plans.some((p) => p.is_contact_sales),
@@ -189,7 +223,6 @@ export function compareEntryToEntity(entry: CompareProductEntry): Entity {
     onboardingEffort: complexity === 'Low' ? 'Light' : complexity === 'High' ? 'Heavy' : 'Moderate',
     adminSkill: complexity === 'Low' ? 'Low' : complexity === 'High' ? 'High' : 'Medium',
     migrationRisk: complexity,
-    fitScore,
     recommendedPath: PATH_BY_COMPLEXITY[complexity],
     fit: {
       teamSize: firstSegment(entry.target_segments),

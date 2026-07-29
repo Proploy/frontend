@@ -13,7 +13,7 @@
 import React, { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Footer from '@/components/Footer'
-import { Builder, MAX_COLS, type CatalogOption, type Column, type CompareFilterOptions } from '@/components/compare/CompareBuilder'
+import { Builder, MAX_COLS, type CatalogOption, type Column } from '@/components/compare/CompareBuilder'
 import { BuyerBrief } from '@/components/compare/BuyerBrief'
 import { DesktopTable, MobileCards, ResultsToolbar } from '@/components/compare/CompareTable'
 import {
@@ -31,8 +31,8 @@ import { compareApi, type CompareMatchedExpert } from '@/features/compare/client
 import { useProductList } from '@/features/catalog'
 import { saveAiReport } from '@/features/users'
 import {
-  DEFAULT_FILTERS, TABS,
-  type Entity, type Filters,
+  TABS,
+  type Entity,
 } from '@/lib/compare/data'
 
 function useMediaQuery(q: string) {
@@ -53,13 +53,6 @@ const HIGHLIGHT_BEST = true
 const ROW_STRIPING = true
 const SHOW_BRIEF = true
 
-const EMPTY_FILTER_OPTIONS: CompareFilterOptions = {
-  category: [{ value: null, label: 'All categories' }],
-  companySize: [{ value: null, label: 'Any size' }],
-  budget: [{ value: null, label: 'Any budget' }],
-  region: [{ value: null, label: 'Any region' }],
-}
-
 function seedColumns(productIds: string[]): Column[] {
   return productIds.map((id) => ({ type: 'product', id }))
 }
@@ -76,8 +69,6 @@ function ComparePageInner() {
   const { products: catalogProducts } = useProductList({ limit: 100, sort: 'name' })
 
   const [columns, setColumns] = React.useState<Column[]>(() => seedColumns(productIds))
-  const [filters, setFilters] = React.useState<Filters>({ ...DEFAULT_FILTERS })
-  const [filterOptions, setFilterOptions] = React.useState<CompareFilterOptions>(EMPTY_FILTER_OPTIONS)
   const [tab, setTab] = React.useState<string>('At a glance')
   const [view, setView] = React.useState<'normal' | 'loading'>('normal')
   const [saved, setSaved] = React.useState(false)
@@ -97,23 +88,8 @@ function ComparePageInner() {
     ? `/compare?products=${selectedProductIds.map((id) => encodeURIComponent(id)).join(',')}`
     : '/compare'
 
-  // Live compare data is recomputed by service-apis whenever the selected
-  // products or buyer fit filters change.
-  const { byId: realById, loading: realLoading } = useCompareEntities(selectedProductIds, filters)
-
-  React.useEffect(() => {
-    let active = true
-    void compareApi.getFilters().then((result) => {
-      if (!active || !result.ok) return
-      setFilterOptions({
-        category: [{ value: null, label: 'All categories' }, ...result.data.categories],
-        companySize: [{ value: null, label: 'Any size' }, ...result.data.company_sizes],
-        budget: [{ value: null, label: 'Any budget' }, ...result.data.pricing_buckets],
-        region: [{ value: null, label: 'Any region' }, ...result.data.regions],
-      })
-    })
-    return () => { active = false }
-  }, [])
+  const { byId: realById, loading: realLoading } =
+    useCompareEntities(selectedProductIds)
 
   // Reset the columns whenever the incoming product set changes (e.g. the tray
   // navigates here again with a different selection on the same route).
@@ -122,7 +98,6 @@ function ComparePageInner() {
     if (prevKey.current !== idsKey) {
       prevKey.current = idsKey
       setColumns(seedColumns(productIds))
-      setFilters({ ...DEFAULT_FILTERS })
       setTab('At a glance')
       setSaved(false)
       setToast(null)
@@ -179,24 +154,20 @@ function ComparePageInner() {
       profile: {
         type: 'comparison',
         productIds: selectedProductIds,
-        filters,
         url: compareHref,
       },
       recommendations: filled.map((entity, index) => ({
         rank: index + 1,
         product_id: entity.id,
         name: entity.name,
-        fit_score: entity.fitScore,
       })),
       document: {
         type: 'comparison',
         url: compareHref,
         productIds: selectedProductIds,
-        filters,
         products: filled.map((entity) => ({
           product_id: entity.id,
           name: entity.name,
-          fit_score: entity.fitScore,
           logo_url: entity.logoUrl,
         })),
       },
@@ -276,15 +247,12 @@ function ComparePageInner() {
     >
       <Builder
         columns={builderColumns}
-        filters={filters}
-        setFilters={setFilters}
         onSwap={onSwap}
         onRemove={onRemove}
         onAdd={onAdd}
         onCompare={onCompare}
         onMatched={openMatchedExperts}
         catalog={catalog}
-        filterOptions={filterOptions}
       />
 
       <div style={{ paddingBottom: 8 }}>{renderResults()}</div>

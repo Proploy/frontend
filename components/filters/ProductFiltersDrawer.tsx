@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
 import type { ProductSort } from '@/features/catalog'
+import { FilterModal } from './FilterModal'
 
 export interface ProductFilterValues {
+  categoryTermId: string
   pricingBucket: string
   freePlan: boolean
   freeTrial: boolean
@@ -12,6 +13,7 @@ export interface ProductFilterValues {
 }
 
 export const DEFAULT_PRODUCT_FILTERS: ProductFilterValues = {
+  categoryTermId: '',
   pricingBucket: '',
   freePlan: false,
   freeTrial: false,
@@ -33,80 +35,118 @@ export function ProductFiltersDrawer({
   if (!open) return null
 
   return (
-    <Drawer title="Product filters" onClose={onClose}>
-      <Field label="Pricing">
-        <select
-          value={draft.pricingBucket}
-          onChange={(event) => setDraft({ ...draft, pricingBucket: event.target.value })}
-          className="w-full rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px]"
-        >
-          <option value="">Any pricing</option>
-          <option value="free">Free</option>
-          <option value="low">Low</option>
-          <option value="mid">Mid-market</option>
-          <option value="enterprise">Enterprise</option>
-        </select>
-      </Field>
-      <Checkbox
-        label="Free plan available"
-        checked={draft.freePlan}
-        onChange={(freePlan) => setDraft({ ...draft, freePlan })}
-      />
-      <Checkbox
-        label="Free trial available"
-        checked={draft.freeTrial}
-        onChange={(freeTrial) => setDraft({ ...draft, freeTrial })}
-      />
-      <Field label="Sort by">
-        <select
-          value={draft.sort}
-          onChange={(event) => setDraft({ ...draft, sort: event.target.value as ProductSort })}
-          className="w-full rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px]"
-        >
-          <option value="name">Name</option>
-          <option value="rating">Rating</option>
-          <option value="market_presence">Market presence</option>
-          <option value="created_at">Newest</option>
-        </select>
-      </Field>
-      <DrawerActions
-        onReset={() => setDraft(DEFAULT_PRODUCT_FILTERS)}
-        onApply={() => {
-          onApply(draft)
-          onClose()
-        }}
-      />
-    </Drawer>
-  )
-}
+    <FilterModal
+      title="Product filters"
+      onClose={onClose}
+      onClear={() =>
+        setDraft({
+          ...DEFAULT_PRODUCT_FILTERS,
+          categoryTermId: draft.categoryTermId,
+        })
+      }
+      onSave={() => {
+        onApply(draft)
+        onClose()
+      }}
+    >
+      <div className="grid gap-x-7 gap-y-6 sm:grid-cols-2">
+        <Field label="Pricing">
+          <select
+            value={draft.pricingBucket}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                pricingBucket: event.target.value,
+              })
+            }
+            className={controlClasses}
+          >
+            <option value="">Any pricing</option>
+            <option value="free">Free</option>
+            <option value="low">Low</option>
+            <option value="mid">Mid-market</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </Field>
 
-function Drawer({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-[100] flex justify-end bg-[#0a0d12]/35" onClick={onClose}>
-      <aside
-        role="dialog"
-        aria-label={title}
-        className="flex h-full w-[min(520px,calc(100vw-16px))] max-w-full flex-col gap-[28px] overflow-y-auto border-l border-[#e9eaeb] bg-white p-[24px] shadow-[-20px_0_48px_rgba(10,13,18,0.12)] sm:p-[32px]"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-[22px] font-semibold text-[#181d27]">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close filters" className="rounded-[8px] p-[8px] text-[#535862] hover:bg-[#f2f4f7]"><X size={22} /></button>
+        <Field label="Sort by">
+          <select
+            value={draft.sort}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                sort: event.target.value as ProductSort,
+              })
+            }
+            className={controlClasses}
+          >
+            <option value="name">Name</option>
+            <option value="rating">Rating</option>
+            <option value="market_presence">Market presence</option>
+            <option value="created_at">Newest</option>
+          </select>
+        </Field>
+
+        <div className="flex flex-col gap-3 sm:col-span-2">
+          <p className="text-sm font-medium text-[#414651]">
+            Plans and trials
+          </p>
+          <Checkbox
+            label="Free plan available"
+            checked={draft.freePlan}
+            onChange={(freePlan) =>
+              setDraft({ ...draft, freePlan })
+            }
+          />
+          <Checkbox
+            label="Free trial available"
+            checked={draft.freeTrial}
+            onChange={(freeTrial) =>
+              setDraft({ ...draft, freeTrial })
+            }
+          />
         </div>
-        {children}
-      </aside>
-    </div>
+      </div>
+    </FilterModal>
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="flex flex-col gap-[6px] text-[14px] font-medium text-[#414651]">{label}{children}</label>
+const controlClasses =
+  'h-[50px] w-full rounded-[10px] border border-[#d5d7da] bg-white px-[14px] text-[15px] text-[#181d27] outline-none focus:border-[#155eef]'
+
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <label className="flex flex-col gap-[6px] text-sm font-medium text-[#414651]">
+      {label}
+      {children}
+    </label>
+  )
 }
 
-function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return <label className="flex items-center gap-[10px] text-[14px] text-[#414651]"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />{label}</label>
-}
-
-function DrawerActions({ onReset, onApply }: { onReset: () => void; onApply: () => void }) {
-  return <div className="mt-auto flex justify-between border-t border-[#e9eaeb] pt-[20px]"><button type="button" onClick={onReset} className="font-semibold text-[#004eeb]">Reset</button><button type="button" onClick={onApply} className="rounded-[8px] bg-[#155eef] px-[16px] py-[10px] font-semibold text-white">Apply filters</button></div>
+function Checkbox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="flex items-center gap-2.5 text-sm text-[#414651]">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="accent-[#155eef]"
+      />
+      {label}
+    </label>
+  )
 }

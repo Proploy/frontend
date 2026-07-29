@@ -314,9 +314,7 @@ export default function ExpertProfilePage() {
                     <Mail size={16} />
                     {profile.email}
                   </a>
-                ) : (
-                  <EmptyText>Email is not returned by service-apis.</EmptyText>
-                )}
+                ) : null}
                 {schedulingUrl && profile.schedulingLinkEnabled ? (
                   <a href={schedulingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-[8px] text-[14px] leading-[20px] font-semibold text-[#004eeb] hover:underline">
                     <ArrowUpRight size={16} />

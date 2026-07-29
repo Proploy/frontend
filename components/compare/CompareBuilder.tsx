@@ -1,15 +1,14 @@
 'use client'
 
 // components/compare/CompareBuilder.tsx — comparison builder header
-// Ported from the design prototype (builder.jsx): title, selector columns, filters, CTAs.
+// Ported from the design prototype (builder.jsx): title, selector columns, CTAs.
 //
 // Chunk C trim: the TypeSwitch segmented control (product | expert | business)
 // has been removed. Compare is products only.
 
 import React from 'react'
 import { Icon, LogoTile, Pill, Btn } from './CompareUI'
-import type { CompareFilterOption } from '@/features/compare/client-api'
-import type { Entity, Filters } from '@/lib/compare/data'
+import type { Entity } from '@/lib/compare/data'
 
 export const MAX_COLS = 4
 
@@ -23,10 +22,6 @@ export interface Column {
 }
 
 export type CatalogOption = Pick<Entity, 'id' | 'type' | 'name' | 'initial' | 'logoTone' | 'category' | 'logoUrl'>
-
-export type FilterOption = Omit<CompareFilterOption, 'value'> & { value: string | null }
-
-export type CompareFilterOptions = Record<keyof Filters, FilterOption[]>
 
 // ---- search dropdown to pick / swap an entity -----------------------------
 function SelectorSearch({
@@ -162,79 +157,19 @@ function SelectorColumn({
   )
 }
 
-// ---- a filter dropdown ----------------------------------------------------
-function FilterSelect({
-  label, value, options, onChange,
-}: {
-  label: string
-  value: string | null
-  options: FilterOption[]
-  onChange: (v: string | null) => void
-}) {
-  const [open, setOpen] = React.useState(false)
-  const ref = React.useRef<HTMLDivElement>(null)
-  React.useEffect(() => {
-    const f = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener('mousedown', f)
-    return () => document.removeEventListener('mousedown', f)
-  }, [])
-  const selected = options.find((option) => option.value === value) ?? options[0]
-  const isDefault = value === null
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-[8px] cursor-pointer font-[family-name:var(--font-dm-sans)] font-semibold whitespace-nowrap"
-        style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${isDefault ? '#d5d7da' : '#b2ccff'}`, background: isDefault ? '#fff' : '#f5f8ff', boxShadow: 'var(--shadow-xs)', fontSize: 13.5, color: isDefault ? '#414651' : '#004eeb' }}
-      >
-        <span className="font-medium" style={{ color: '#717680' }}>{label}:</span> {selected?.label ?? 'Any'}
-        <Icon name="chevronDown" size={14} color={isDefault ? '#717680' : '#004eeb'} />
-      </button>
-      {open && (
-        <div
-          className="overflow-x-hidden overflow-y-auto"
-          style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 40, minWidth: 200, maxHeight: 'min(360px, calc(100vh - 180px))', overscrollBehavior: 'contain', background: '#fff', border: '1px solid #e9eaeb', borderRadius: 10, boxShadow: 'var(--shadow-xl)', padding: 6 }}
-        >
-          {options.map((o) => (
-            <button
-              key={o.value ?? 'any'}
-              onClick={() => { onChange(o.value); setOpen(false) }}
-              className="flex items-center justify-between w-full text-left cursor-pointer"
-              style={{ padding: '8px 10px', border: 'none', borderRadius: 6, background: o.value === value ? '#f5f8ff' : 'transparent', fontSize: 14, color: o.value === value ? '#004eeb' : '#414651', fontWeight: o.value === value ? 600 : 400 }}
-              onMouseEnter={(e) => { if (o.value !== value) e.currentTarget.style.background = '#fafafa' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = o.value === value ? '#f5f8ff' : 'transparent' }}
-            >
-              {o.label}{o.value === value && <Icon name="check" size={15} color="#004eeb" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function Builder({
-  columns, filters, setFilters, onSwap, onRemove, onAdd, onCompare, onMatched,
-  catalog = [], filterOptions,
+  columns, onSwap, onRemove, onAdd, onCompare, onMatched,
+  catalog = [],
 }: {
   columns: Column[]
-  filters: Filters
-  setFilters: (fn: (f: Filters) => Filters) => void
   onSwap: (i: number, id: string) => void
   onRemove: (i: number) => void
   onAdd: () => void
   onCompare: () => void
   onMatched: () => void | Promise<void>
   catalog?: CatalogOption[]
-  filterOptions: CompareFilterOptions
 }) {
   const tooMany = columns.length >= MAX_COLS
-  const filterDefs: [string, keyof Filters, FilterOption[]][] = [
-    ['Category', 'category', filterOptions.category],
-    ['Company size', 'companySize', filterOptions.companySize],
-    ['Budget', 'budget', filterOptions.budget],
-    ['Region', 'region', filterOptions.region],
-  ]
   return (
     <section style={{ background: 'linear-gradient(180deg,#f5f8ff 0%, #ffffff 100%)', borderBottom: '1px solid #e9eaeb', paddingTop: 40, paddingBottom: 28 }}>
       <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}>
@@ -293,15 +228,6 @@ export function Builder({
           </div>
         )}
 
-        {/* filters */}
-        <div className="flex items-center gap-[10px] flex-wrap" style={{ marginTop: 18 }}>
-          <span className="inline-flex items-center gap-[7px] font-[family-name:var(--font-dm-sans)] font-semibold uppercase" style={{ fontSize: 13, color: '#717680', letterSpacing: '0.04em' }}>
-            <Icon name="sliders" size={14} color="#717680" /> Fit to my business
-          </span>
-          {filterDefs.map(([label, key, opts]) => (
-            <FilterSelect key={key} label={label} value={filters[key]} options={opts} onChange={(v) => setFilters((f) => ({ ...f, [key]: v }))} />
-          ))}
-        </div>
       </div>
     </section>
   )

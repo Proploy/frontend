@@ -157,11 +157,23 @@ export function Pill({
   )
 }
 
-export function Chip({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: PillTone }) {
+export function Chip({
+  children,
+  tone = 'neutral',
+  wrap = false,
+}: {
+  children: React.ReactNode
+  tone?: PillTone
+  wrap?: boolean
+}) {
   const t = PILL_TONES[tone] || PILL_TONES.neutral
   return (
     <span
-      className="inline-flex items-center gap-[5px] font-[family-name:var(--font-dm-sans)] font-medium whitespace-nowrap"
+      className={`inline-flex items-center gap-[5px] font-[family-name:var(--font-dm-sans)] font-medium ${
+        wrap
+          ? 'min-w-0 max-w-full whitespace-normal break-words'
+          : 'whitespace-nowrap'
+      }`}
       style={{
         padding: '3px 8px', borderRadius: 6, background: t.bg, border: `1px solid ${t.border}`,
         color: t.fg, fontSize: 12.5, lineHeight: '18px',
