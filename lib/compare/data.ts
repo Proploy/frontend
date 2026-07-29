@@ -64,7 +64,6 @@ export interface Entity {
   onboardingEffort: string
   adminSkill: string
   migrationRisk: Complexity
-  fitScore: number
   recommendedPath: RecommendedPath
   fit: EntityFit
   reviews: EntityReviews
@@ -73,20 +72,6 @@ export interface Entity {
   vendorName?: string | null
   logoUrl?: string | null
   officialWebsite?: string | null
-}
-
-export interface Filters {
-  category: string | null
-  companySize: string | null
-  budget: string | null
-  region: string | null
-}
-
-export const DEFAULT_FILTERS: Filters = {
-  category: null,
-  companySize: null,
-  budget: null,
-  region: null,
 }
 
 export const TABS = ['At a glance', 'Pricing', 'Fit', 'Implementation', 'Reviews', 'Alternatives'] as const

@@ -5,15 +5,14 @@
 // and response unwrap — not on transport internals.
 
 import { compareApi, isCompareV2Enabled } from '../client-api'
-import type { CompareFiltersResponse, CompareRequest, CompareResponse } from '../client-api'
+import type { CompareRequest, CompareResponse } from '../client-api'
 
-const { postMock, getMock } = vi.hoisted(() => ({ postMock: vi.fn(), getMock: vi.fn() }))
+const { postMock } = vi.hoisted(() => ({ postMock: vi.fn() }))
 
 vi.mock('@/lib/service-apis/browser', () => ({
   ServiceApisBrowserClient: vi.fn(function ServiceApisBrowserClientMock() {
     return {
       post: postMock,
-      get: getMock,
       patch: vi.fn(),
       put: vi.fn(),
       delete: vi.fn(),
@@ -76,7 +75,6 @@ const successResponse: CompareResponse = {
       outcomes: ['94% on-budget'],
       reviewer_segment: '60% Mid-market',
       reviewer_industry: 'Marketing',
-      fit_score: 85,
       alternatives: [
         { product_id: 'prod_b', product_name: 'Product B', primary_category: 'Project Management', avg_rating: 4.2, logo_url: null },
       ],
@@ -145,40 +143,6 @@ describe('compareApi.compareProducts', () => {
 
     expect(res.ok).toBe(false)
     expect(res).toEqual(transportError)
-  })
-
-  it('sends buyer fit filters to the canonical compare endpoint', async () => {
-    postMock.mockResolvedValueOnce({ ok: true, data: successResponse })
-    const request: CompareRequest = {
-      product_ids: ['prod_a', 'prod_b'],
-      fit_filters: { category_id: 'cat-1', company_size: 'mid-market' },
-    }
-
-    await compareApi.compareProducts(request)
-
-    expect(postMock).toHaveBeenCalledWith('/api/v1/catalog/compare', request, undefined)
-  })
-})
-
-describe('compareApi.getFilters', () => {
-  beforeEach(() => {
-    getMock.mockReset()
-  })
-
-  it('loads filter options from service-apis', async () => {
-    const filters: CompareFiltersResponse = {
-      categories: [{ value: 'cat-1', label: 'Project management' }],
-      company_sizes: [{ value: 'mid-market', label: 'Mid-market' }],
-      pricing_buckets: [{ value: '$$', label: '$$' }],
-      regions: [{ value: 'EMEA', label: 'EMEA' }],
-      timelines: [{ value: '2–6 weeks', label: '2–6 weeks' }],
-    }
-    getMock.mockResolvedValueOnce({ ok: true, data: filters })
-
-    const result = await compareApi.getFilters()
-
-    expect(getMock).toHaveBeenCalledWith('/api/v1/catalog/compare/filters', undefined)
-    expect(result).toEqual({ ok: true, data: filters })
   })
 })
 

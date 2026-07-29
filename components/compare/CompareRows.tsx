@@ -4,7 +4,7 @@
 // Ported from the design prototype (rows.jsx).
 
 import React from 'react'
-import { Icon, LogoTile, Pill, Chip, YesNo, NoData, ScoreRing, Btn, type PillTone } from './CompareUI'
+import { Icon, LogoTile, Pill, Chip, YesNo, NoData, Btn, type PillTone } from './CompareUI'
 import { PATH_META, type Entity, type Complexity, type Tab, type AlternativeEntity } from '@/lib/compare/data'
 
 export interface Row {
@@ -44,12 +44,22 @@ export function Stars({ rating, size = 14 }: { rating: number; size?: number }) 
   )
 }
 
-export function ChipList({ items, tone = 'neutral', max }: { items: string[]; tone?: PillTone; max?: number }) {
+export function ChipList({
+  items,
+  tone = 'neutral',
+  max,
+  wrapItems = false,
+}: {
+  items: string[]
+  tone?: PillTone
+  max?: number
+  wrapItems?: boolean
+}) {
   const shown = max ? items.slice(0, max) : items
   const extra = max && items.length > max ? items.length - max : 0
   return (
-    <div className="flex flex-wrap gap-[6px]">
-      {shown.map((it, i) => <Chip key={i} tone={tone}>{it}</Chip>)}
+    <div className="flex min-w-0 max-w-full flex-wrap gap-[6px]">
+      {shown.map((it, i) => <Chip key={i} tone={tone} wrap={wrapItems}>{it}</Chip>)}
       {extra > 0 && <Chip tone="neutral">+{extra} more</Chip>}
     </div>
   )
@@ -166,7 +176,6 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Pricing', cell: (e) => <div className="flex items-center gap-[8px]"><PriceBucket bucket={e.pricingBucket} /><span style={{ fontSize: 13, color: '#717680' }}>from {e.entryPrice}{e.priceUnit}</span></div> },
       { label: 'Free trial / free plan', cell: (e) => <div className="flex flex-col gap-[6px]"><YesNo value={e.freeTrial} yes="Free trial" no="No trial" /><YesNo value={e.freePlan} yes="Free plan" no="No free plan" /></div> },
       { label: 'Implementation complexity', cell: (e) => <Pill tone={complexityTone(e.implComplexity)} dot>{e.implComplexity}</Pill>, best: lowestComplexity },
-      { label: 'Proploy fit score', sub: 'Scored against your filters', cell: (e) => <ScoreRing value={e.fitScore} />, best: (es) => [...es].sort((a, b) => b.fitScore - a.fitScore)[0]?.id },
     ],
     Pricing: [
       { label: 'Entry price', cell: (e) => <div><span className="font-[family-name:var(--font-dm-sans)] font-bold" style={{ fontSize: 22, color: '#181d27', letterSpacing: '-0.01em' }}>{e.entryPrice}</span><span style={{ fontSize: 13, color: '#717680' }}> {e.priceUnit}</span></div>, best: (es) => [...es].sort((a, b) => priceNum(a) - priceNum(b))[0]?.id },
@@ -180,7 +189,7 @@ export function buildRows(tab: Tab | string): Row[] {
     Fit: [
       { label: 'Team size', cell: (e) => txt(e.fit.teamSize) },
       { label: 'Industry fit', cell: (e) => txt(e.fit.industryFit) },
-      { label: 'Workflows supported', cell: (e) => <ChipList items={e.fit.workflows} tone="brand" /> },
+      { label: 'Workflows supported', cell: (e) => <ChipList items={e.fit.workflows} tone="brand" wrapItems /> },
       { label: 'Integrations', cell: (e) => <ChipList items={e.fit.integrations} tone="neutral" max={4} /> },
       { label: 'Compliance / security', cell: (e) => <ChipList items={e.fit.compliance} tone="success" /> },
       { label: 'Deployment model', cell: (e) => txt(e.fit.deployment) },

@@ -7,7 +7,7 @@
 // have been removed. Compare is products only.
 
 import React from 'react'
-import { Icon, LogoTile, Pill, ScoreRing, Btn, NoData } from './CompareUI'
+import { Icon, LogoTile, Pill, Btn, NoData } from './CompareUI'
 import { buildRows, AltCard, type Row } from './CompareRows'
 import { useProductAlternatives } from '@/features/catalog'
 import { productAlternativeToCompareAlternative } from '@/lib/compare/from-catalog'
@@ -142,13 +142,6 @@ export function ColumnHeader({
           <div className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 12, color: '#717680' }}>{entity.category}</div>
         </div>
       </div>
-      <div className="flex items-center gap-[9px]">
-        <ScoreRing value={entity.fitScore} size={38} />
-        <div style={{ lineHeight: 1.1 }}>
-          <div className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ fontSize: 11, color: '#717680' }}>FIT SCORE</div>
-          <div style={{ fontSize: 11.5, color: '#a4a7ae' }}>vs your filters</div>
-        </div>
-      </div>
     </div>
   )
 }
@@ -168,22 +161,31 @@ interface TableProps {
 export function DesktopTable({ entities, tab, tabs, onTab, onRemove, density, highlight = true, striping = true }: TableProps) {
   const rows = getRows(tab)
   const n = entities.length
-  const isFit = tab === 'Fit'
-  const labelCol = isFit ? 260 : 220
-  const minProductCol = isFit ? 380 : 260
+  const labelCol = 220
+  const minProductCol = 260
   const cols = `${labelCol}px repeat(${n}, minmax(${minProductCol}px, 1fr))`
   const minTableWidth = labelCol + (n * minProductCol)
   const rowPadV = density === 'compact' ? '11px' : '16px'
   return (
-    <div style={{ maxWidth: isFit ? 1540 : 1440, margin: '0 auto', padding: '0 32px' }}>
+    <div
+      data-testid="comparison-table-frame"
+      style={{ maxWidth: 1440, margin: '0 auto', padding: '0 32px' }}
+    >
       {/* overflow:clip (not hidden) keeps the rounded corners WITHOUT turning the card
           into a scroll container — an overflow:hidden ancestor would break the sticky header. */}
-      <div className={isFit ? 'overflow-x-auto overflow-y-visible' : 'overflow-clip'} style={{ border: '1px solid #e9eaeb', borderRadius: 16, background: '#fff', boxShadow: 'var(--shadow-sm)' }}>
+      <div
+        data-testid="comparison-table-scroller"
+        className="overflow-clip"
+        style={{ border: '1px solid #e9eaeb', borderRadius: 16, background: '#fff', boxShadow: 'var(--shadow-sm)' }}
+      >
         <div style={{ minWidth: minTableWidth }}>
         {/* sticky tabs + header */}
         <div style={{ position: 'sticky', top: 80, zIndex: 30 }}>
           <TabBar tabs={tabs} active={tab} onChange={onTab} />
-          <div style={{ display: 'grid', gridTemplateColumns: cols, background: '#fff', borderBottom: '1px solid #e9eaeb' }}>
+          <div
+            data-testid="comparison-table-header-grid"
+            style={{ display: 'grid', gridTemplateColumns: cols, background: '#fff', borderBottom: '1px solid #e9eaeb' }}
+          >
             <div className="flex items-end" style={{ padding: '14px 18px', borderRight: '1px solid #f0f0f0' }}>
               <span className="font-[family-name:var(--font-dm-sans)] font-semibold uppercase" style={{ fontSize: 12, color: '#a4a7ae', letterSpacing: '0.05em' }}>{tab}</span>
             </div>
@@ -214,11 +216,12 @@ export function DesktopTable({ entities, tab, tabs, onTab, onRemove, density, hi
                   return (
                     <div
                       key={e.id}
-                      className="relative flex items-center"
+                      data-testid="comparison-product-cell"
+                      className="relative flex min-w-0 items-center"
                       style={{ padding: `${rowPadV} 16px`, borderRight: ci < n - 1 ? '1px solid #f0f0f0' : 'none', background: isBest ? '#f5f9ff' : r.highlight ? '#fcfcff' : 'transparent' }}
                     >
                       {isBest && <span style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: '#155eef' }} />}
-                      <div style={{ width: '100%' }}>{r.cell(e)}</div>
+                      <div className="min-w-0" style={{ width: '100%' }}>{r.cell(e)}</div>
                     </div>
                   )
                 })}
@@ -230,7 +233,7 @@ export function DesktopTable({ entities, tab, tabs, onTab, onRemove, density, hi
       </div>
       <p className="flex items-center gap-[7px]" style={{ margin: '12px 2px 0', fontSize: 12.5, color: '#a4a7ae' }}>
         <span className="inline-flex" style={{ width: 10, height: 10, borderRadius: 3, background: '#f5f9ff', border: '1px solid #b2ccff' }} />
-        Highlighted cells indicate the strongest option for that row, given your filters.
+        Highlighted cells indicate the strongest option for that row.
       </p>
     </div>
   )

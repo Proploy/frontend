@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_FILTERS,
   PATH_META,
   TABS,
   TYPE_META,
@@ -26,14 +25,5 @@ describe('lib/compare/data', () => {
       'Self-serve',
       'White-glove project',
     ])
-  })
-
-  it('starts with neutral filters instead of prototype buyer context', () => {
-    expect(DEFAULT_FILTERS).toEqual({
-      category: null,
-      companySize: null,
-      budget: null,
-      region: null,
-    })
   })
 })

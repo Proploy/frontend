@@ -22,7 +22,7 @@ export function EmptyState({ onAdd, onMatched }: { onAdd: () => void; onMatched?
         </div>
         <div style={{ maxWidth: 420 }}>
           <h3 className="font-[family-name:var(--font-dm-sans)] font-semibold" style={{ margin: 0, fontSize: 20, color: '#181d27' }}>Nothing to compare yet</h3>
-          <p style={{ margin: '8px 0 0', fontSize: 15, lineHeight: '22px', color: '#535862' }}>Add a product to each slot above. We&apos;ll score every option against your filters and brief you on the practical differences.</p>
+          <p style={{ margin: '8px 0 0', fontSize: 15, lineHeight: '22px', color: '#535862' }}>Add a product to each slot above. We&apos;ll brief you on the practical differences between the options.</p>
         </div>
         <div className="flex gap-[10px] flex-wrap justify-center">
           <Btn variant="primary" icon="plus" onClick={onAdd}>Add your first option</Btn>

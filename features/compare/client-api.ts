@@ -3,7 +3,7 @@
 // features/compare/client-api.ts — dedicated compare endpoint client.
 //
 // Calls the canonical service-apis compare endpoints once for up to 4 product
-// ids and returns comparison-ready catalog data plus live filter metadata.
+// ids and returns comparison-ready catalog data.
 //
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 
@@ -18,14 +18,6 @@ import type { ApiResult, CatalogRequestOptions } from '@/features/catalog/shared
 
 export interface CompareRequest {
   product_ids: string[]
-  fit_filters?: CompareFitFilters
-}
-
-export interface CompareFitFilters {
-  category_id?: string | null
-  company_size?: string | null
-  pricing_bucket?: string | null
-  region?: string | null
 }
 
 // ---- Response -------------------------------------------------------------
@@ -86,9 +78,6 @@ export interface CompareProductEntry {
   reviewer_segment: string | null
   reviewer_industry: string | null
 
-  // Fit (v1: derived from market_presence_score)
-  fit_score: number
-
   // Alternatives — product-only
   alternatives: AlternativeItem[]
 }
@@ -99,19 +88,6 @@ export interface AlternativeItem {
   primary_category: string | null
   avg_rating: number | null
   logo_url: string | null
-}
-
-export interface CompareFilterOption {
-  value: string
-  label: string
-}
-
-export interface CompareFiltersResponse {
-  categories: CompareFilterOption[]
-  company_sizes: CompareFilterOption[]
-  pricing_buckets: CompareFilterOption[]
-  regions: CompareFilterOption[]
-  timelines: CompareFilterOption[]
 }
 
 export interface CompareMatchedExpertsRequest {
@@ -155,10 +131,6 @@ export const compareApi = {
       request,
       options,
     )
-  },
-
-  getFilters(options?: CatalogRequestOptions): Promise<ApiResult<CompareFiltersResponse>> {
-    return client.get<CompareFiltersResponse>('/api/v1/catalog/compare/filters', options)
   },
 
   getMatchedExperts(
