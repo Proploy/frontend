@@ -358,6 +358,7 @@ function ProfileTab({
           <input
             id="profile-displayName"
             type="text"
+            aria-label="Display name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={DISPLAY_NAME_MAX + 16}
@@ -403,6 +404,7 @@ function ProfileTab({
         <div>
           <select
             id="profile-timezone"
+            aria-label="Timezone"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
             className="w-full rounded-[10px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-[#181d27] outline-none focus:border-[#155eef] focus:ring-[2px] focus:ring-[#eff4ff]"

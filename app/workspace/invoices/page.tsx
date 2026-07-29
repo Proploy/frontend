@@ -38,6 +38,7 @@ import {
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type { InvoiceStatus, WorkspaceInvoice } from '@/features/workspace/home-types'
 import type { WorkspaceEngagement } from '@/features/workspace/types'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
 
 const OUTSTANDING_STATUSES = new Set<InvoiceStatus>(['draft', 'sent', 'overdue'])
 
@@ -97,6 +98,7 @@ function emptyInvoiceForm(engagementId = ''): InvoiceFormInput {
 export default function WorkspaceInvoicesPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const requestedInvoiceId = useWorkspaceQueryParam('invoice')
   const [invoices, setInvoices] = useState<WorkspaceInvoice[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [error, setError] = useState<NormalizedError | null>(null)
@@ -107,11 +109,6 @@ export default function WorkspaceInvoicesPage() {
   const [saving, setSaving] = useState(false)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [settlingId, setSettlingId] = useState<string | null>(null)
-  const [requestedInvoiceId] = useState(() =>
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('invoice')
-      : null,
-  )
   const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
 
   useEffect(() => {
@@ -147,7 +144,7 @@ export default function WorkspaceInvoicesPage() {
     return () => {
       cancelled = true
     }
-  }, [state.isPending, state.user, workspace])
+  }, [requestedInvoiceId, state.isPending, state.user, workspace])
 
   const sorted = useMemo(
     () => invoices.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),

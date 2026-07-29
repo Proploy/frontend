@@ -31,6 +31,7 @@ import {
 } from '@/components/workspace/workspace-format'
 import { useCurrentUserRole, useWorkspace } from '@/features/workspace'
 import { useWorkspaceExperience } from '@/features/workspace/workspace-experience'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
 import type {
   WorkspaceEngagement,
   WorkspaceRole,
@@ -66,6 +67,7 @@ export default function WorkspaceProposalsPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
   const { showToast } = useWorkspaceExperience()
+  const requestedProposalId = useWorkspaceQueryParam('proposal')
   const [proposals, setProposals] = useState<WorkspaceProposal[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -92,12 +94,9 @@ export default function WorkspaceProposalsPage() {
 
       let nextError: NormalizedError | null = null
       if (proposalResult.ok) {
-        const requested = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('proposal')
-          : null
         setProposals(proposalResult.data.proposals)
         setSelectedId(
-          (current) => current ?? requested ?? proposalResult.data.proposals[0]?.id ?? null,
+          (current) => current ?? requestedProposalId ?? proposalResult.data.proposals[0]?.id ?? null,
         )
       } else {
         nextError = proposalResult
@@ -120,7 +119,15 @@ export default function WorkspaceProposalsPage() {
     return () => {
       cancelled = true
     }
-  }, [state.isPending, state.user, workspace])
+  }, [requestedProposalId, state.isPending, state.user, workspace])
+
+  useEffect(() => {
+    if (!requestedProposalId || !proposals.some((proposal) => proposal.id === requestedProposalId)) return
+    // The URL is external navigation state; keep the visible record synchronized
+    // when Next.js changes only the query string on the mounted page.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedId(requestedProposalId)
+  }, [proposals, requestedProposalId])
 
   const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
   const isBuyerWorkspace = state.role === 'buyer'

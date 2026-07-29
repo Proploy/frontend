@@ -766,9 +766,10 @@ export default function WorkspaceProjectsPage() {
                       placeholder="What will be delivered"
                       className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[9px] text-[13px]"
                     />
-                    <input
-                      type="datetime-local"
-                      value={milestone.dueAt}
+	                    <input
+	                      type="datetime-local"
+	                      aria-label={`Milestone ${index + 1} due date`}
+	                      value={milestone.dueAt}
                       onChange={(event) => setForm((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, dueAt: event.target.value } : item) }))}
                       className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[9px] text-[13px]"
                     />

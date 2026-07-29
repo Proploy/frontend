@@ -27,6 +27,7 @@ import {
 import { useCurrentUserRole, useWorkspace } from '@/features/workspace'
 import type { WorkspaceEngagement } from '@/features/workspace/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
 import { NativeAvailabilityCard } from '@/features/native-scheduling/components/NativeAvailabilityCard'
 import { applyEngagementStatusResponse } from '@/features/workspace/engagement-status'
 
@@ -48,6 +49,7 @@ const STATUS_CLASS: Record<WorkspaceEngagement['status'], string> = {
 export default function WorkspaceEngagementsPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const requestedEngagementId = useWorkspaceQueryParam('engagement')
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<EngagementFilter>('all')
@@ -65,12 +67,9 @@ export default function WorkspaceEngagementsPage() {
       const result = await workspace.listEngagements()
       if (cancelled) return
       if (result.ok) {
-        const requested = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('engagement')
-          : null
         setEngagements(result.data.engagements)
         setSelectedId(
-          (current) => current ?? requested ?? result.data.engagements[0]?.id ?? null,
+          (current) => current ?? requestedEngagementId ?? result.data.engagements[0]?.id ?? null,
         )
       } else {
         setError(result)
@@ -82,7 +81,16 @@ export default function WorkspaceEngagementsPage() {
     return () => {
       cancelled = true
     }
-  }, [state.isPending, state.user, workspace])
+  }, [requestedEngagementId, state.isPending, state.user, workspace])
+
+  useEffect(() => {
+    if (
+      !requestedEngagementId
+      || !engagements.some((engagement) => engagement.id === requestedEngagementId)
+    ) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedId(requestedEngagementId)
+  }, [engagements, requestedEngagementId])
 
   const visible = useMemo(
     () => (filter === 'all' ? engagements : engagements.filter((engagement) => engagement.status === filter)),
