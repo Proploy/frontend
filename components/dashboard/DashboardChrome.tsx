@@ -270,6 +270,7 @@ function SidebarBody({
   user,
   brand,
   notifications,
+  notificationTrigger,
   onNavigate,
   collapsed = false,
   onToggle,
@@ -279,6 +280,7 @@ function SidebarBody({
   user?: DashboardUser
   brand: DashboardBrand
   notifications?: NotificationItem[]
+  notificationTrigger?: ReactNode
   onNavigate?: () => void
   collapsed?: boolean
   onToggle?: () => void
@@ -309,7 +311,7 @@ function SidebarBody({
       <div className={`flex items-center gap-[8px] ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed && <BrandLink brand={brand} onNavigate={onNavigate} />}
         <div className="flex items-center gap-[4px]">
-          {notifications && <NotificationsBell items={notifications} align="left" />}
+          {notificationTrigger ?? (notifications && <NotificationsBell items={notifications} align="left" />)}
           {onToggle && (
             <button
               type="button"
@@ -385,6 +387,7 @@ export function DashboardSidebar({
   user,
   brand = DEFAULT_BRAND,
   notifications,
+  notificationTrigger,
   collapsed = false,
   onToggle,
 }: {
@@ -393,12 +396,13 @@ export function DashboardSidebar({
   user?: DashboardUser
   brand?: DashboardBrand
   notifications?: NotificationItem[]
+  notificationTrigger?: ReactNode
   collapsed?: boolean
   onToggle?: () => void
 }) {
   return (
     <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col gap-[24px] overflow-hidden border-r border-[#e9eaeb] bg-white px-[16px] py-[24px] transition-[width] duration-200 lg:flex ${collapsed ? 'w-[80px]' : 'w-[296px]'}`}>
-      <SidebarBody nav={nav} secondaryNav={secondaryNav} user={user} brand={brand} notifications={notifications} collapsed={collapsed} onToggle={onToggle} />
+      <SidebarBody nav={nav} secondaryNav={secondaryNav} user={user} brand={brand} notifications={notifications} notificationTrigger={notificationTrigger} collapsed={collapsed} onToggle={onToggle} />
     </aside>
   )
 }
@@ -410,6 +414,7 @@ export function DashboardChrome({
   user,
   brand = DEFAULT_BRAND,
   notifications,
+  notificationTrigger,
   children,
 }: {
   nav: DashNavItem[]
@@ -417,6 +422,7 @@ export function DashboardChrome({
   user?: DashboardUser
   brand?: DashboardBrand
   notifications?: NotificationItem[]
+  notificationTrigger?: ReactNode
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -441,6 +447,7 @@ export function DashboardChrome({
           user={user}
           brand={brand}
           notifications={notifications}
+          notificationTrigger={notificationTrigger}
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed((current) => !current)}
         />
@@ -450,7 +457,7 @@ export function DashboardChrome({
           <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] bg-white px-[16px] py-[12px]">
             <BrandLink brand={brand} compact />
             <div className="flex items-center gap-[4px]">
-              {notifications && <NotificationsBell items={notifications} align="right" />}
+              {notificationTrigger ?? (notifications && <NotificationsBell items={notifications} align="right" />)}
               <button
                 type="button"
                 onClick={() => setOpen(true)}

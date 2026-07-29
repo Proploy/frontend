@@ -24,6 +24,7 @@ import {
   type DashNavItem,
 } from '@/components/dashboard/DashboardChrome'
 import type { WorkspaceRole } from '@/features/workspace/types'
+import { WorkspaceNotificationTrigger } from '@/features/workspace/workspace-experience'
 
 export { BUTTON_SKEUO, CARD_SHADOW }
 
@@ -94,6 +95,7 @@ export function WorkspaceShell({
       nav={visibleNavItems(NAV_PRIMARY, role)}
       user={user}
       brand={WORKSPACE_BRAND}
+      notificationTrigger={<WorkspaceNotificationTrigger />}
     >
       {children}
     </DashboardChrome>

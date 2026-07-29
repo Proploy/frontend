@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { AlertCircle, Check, Link2, X } from 'lucide-react'
 
 export type ActionToastState = {
   tone?: 'success' | 'info' | 'error'
   title: string
   body?: string
+  actionLabel?: string
+  actionHref?: string
 }
 
 export function ActionToast({
@@ -52,6 +55,15 @@ export function ActionToast({
             <span className="block truncate text-[13px] leading-[18px] text-[#717680]">
               {toast.body}
             </span>
+          ) : null}
+          {toast.actionLabel && toast.actionHref ? (
+            <Link
+              href={toast.actionHref}
+              onClick={onClose}
+              className="mt-[3px] inline-flex text-[12px] font-semibold text-[#155eef] hover:underline"
+            >
+              {toast.actionLabel}
+            </Link>
           ) : null}
         </span>
         <button
