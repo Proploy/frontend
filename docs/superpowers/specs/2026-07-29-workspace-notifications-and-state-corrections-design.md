@@ -17,6 +17,8 @@ formatting:
 5. Workspace success, information, and error nudges must use the existing
    universal foreground toast at the bottom center instead of page-level
    banners at the top.
+6. The universal Ask Proploy launcher must not cover workspace actions; on
+   desktop it reveals only when the pointer reaches the bottom-right corner.
 
 The existing notification outbox remains the source for both in-app
 notifications and transactional email. In-app read state and email delivery
@@ -39,6 +41,7 @@ state are independent properties of the same recipient-targeted event.
 - Resend configuration validation, worker startup, retry behavior, and
   duplicate-send protection.
 - Migration of workspace action feedback to the universal bottom-center toast.
+- A non-obstructive desktop activation zone for the Ask Proploy launcher.
 
 ### Excluded
 
@@ -229,6 +232,18 @@ create competing fixed overlays. New workspace nudges call that controller;
 static status badges and persistent error/empty states remain inline because
 they are content rather than transient feedback.
 
+### 11. Ask Proploy desktop launcher
+
+The Ask Proploy chatbot remains universally available, but its desktop
+launcher is hidden by default. A pointer entering the bottom-right corner of
+the viewport reveals it without placing an invisible overlay over page
+controls. The launcher stays visible while hovered or focused and hides after
+the pointer leaves, unless the chatbot panel is open.
+
+Keyboard focus reveals the launcher, preserving non-pointer access. On
+touch/coarse-pointer layouts where hover is unavailable, the launcher remains
+visible in its existing accessible form.
+
 ## Data flow
 
 1. A recipient-relevant workspace action completes.
@@ -278,6 +293,8 @@ they are content rather than transient feedback.
 - Recent-activity link test.
 - Universal workspace toast placement, action, dismissal, and replacement of
   the proposal acceptance banner.
+- Ask Proploy bottom-right pointer activation, hover retention, keyboard focus,
+  and touch fallback tests.
 - Slot-format test under at least `en-IN` and a non-Latin locale.
 - Google Calendar timestamp test without any fixed US locale.
 - Typecheck, lint, and the frontend QA runbook.

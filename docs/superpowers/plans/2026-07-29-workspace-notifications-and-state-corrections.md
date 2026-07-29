@@ -668,7 +668,58 @@ git add features/native-scheduling/presentation.ts features/native-scheduling/pr
 git commit -m "fix(scheduling): make date formatting locale safe"
 ```
 
-### Task 9: Cross-repo verification and deployment handoff
+### Task 9: Non-obstructive Ask Proploy launcher
+
+**Files:**
+- Modify: `frontend/components/agent/ProployResearchPanel.tsx`
+- Create: `frontend/components/agent/ProployResearchPanel.test.tsx`
+
+**Interfaces:**
+- Preserves the existing chatbot open/close behavior.
+- Produces desktop bottom-right pointer activation without an overlay.
+- Preserves keyboard focus and touch/coarse-pointer access.
+
+- [ ] **Step 1: Write failing launcher behavior tests**
+
+Assert the desktop launcher starts hidden, reveals after a pointer event within
+48 pixels of both viewport edges, remains visible while hovered/focused, and
+does not add a full-size invisible hit target over the page.
+
+- [ ] **Step 2: Run test and confirm it fails**
+
+```bash
+npm test -- components/agent/ProployResearchPanel.test.tsx
+```
+
+- [ ] **Step 3: Implement pointer activation**
+
+Listen for desktop `pointermove` events and reveal when:
+
+```ts
+window.innerWidth - event.clientX <= 48
+  && window.innerHeight - event.clientY <= 48
+```
+
+Use a short delayed hide when the pointer leaves the launcher so it remains
+reachable after activation. Reveal on focus. Keep the launcher visible on
+coarse pointers and while the chatbot panel is open.
+
+- [ ] **Step 4: Run focused tests**
+
+```bash
+npm test -- components/agent/ProployResearchPanel.test.tsx
+```
+
+- [ ] **Step 5: Commit only after explicit user approval**
+
+Suggested commit:
+
+```bash
+git add components/agent/ProployResearchPanel.tsx components/agent/ProployResearchPanel.test.tsx
+git commit -m "fix(agent): reveal launcher from desktop corner"
+```
+
+### Task 10: Cross-repo verification and deployment handoff
 
 **Files:**
 - Verify all modified files in `frontend/` and `service-apis/`.
