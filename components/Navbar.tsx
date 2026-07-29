@@ -25,6 +25,7 @@ const WORKSPACE_PREFIXES = [
   '/experts/account',
   '/experts/chat',
   '/workspace',
+  '/AI_workspace',
 ]
 
 const ABOUT_LINKS = [

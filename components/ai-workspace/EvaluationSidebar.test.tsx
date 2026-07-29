@@ -29,6 +29,46 @@ function summary(
 }
 
 describe('EvaluationSidebar', () => {
+  it('shows the Proploy wordmark when expanded and keeps the collapse control accessible', async () => {
+    const props = {
+      evaluations: [summary('progress', 'in_progress')],
+      activeEvaluationId: 'progress',
+      onSelect: () => undefined,
+      onNew: () => undefined,
+      onRename: () => undefined,
+      onDuplicate: () => undefined,
+      onArchive: () => undefined,
+      onDelete: () => undefined,
+      onToggleCollapsed: () => undefined,
+    }
+    const view = await render(
+      <EvaluationSidebar {...props} />,
+    )
+
+    expect(
+      view.container.querySelector('img[alt="Proploy"]'),
+    ).not.toBeNull()
+    expect(
+      view.container.querySelector(
+        'button[aria-label="Collapse evaluations"]',
+      ),
+    ).not.toBeNull()
+
+    await view.rerender(
+      <EvaluationSidebar {...props} collapsed />,
+    )
+
+    expect(
+      view.container.querySelector('img[alt="Proploy"]'),
+    ).toBeNull()
+    expect(
+      view.container.querySelector(
+        'button[aria-label="Expand evaluations"]',
+      ),
+    ).not.toBeNull()
+    await view.unmount()
+  })
+
   it('renders workflow groups, meaningful state, and sidebar creation', async () => {
     const view = await render(
       <EvaluationSidebar
