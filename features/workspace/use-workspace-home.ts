@@ -117,6 +117,15 @@ function computeKpis(args: {
   }
 }
 
+export function workspaceActivityHref(
+  kind: 'engagement' | 'proposal' | 'contract' | 'invoice',
+  id: string,
+): string {
+  const encodedId = encodeURIComponent(id)
+  const section = kind === 'engagement' ? 'engagements' : `${kind}s`
+  return `/workspace/${section}?${kind}=${encodedId}`
+}
+
 function buildRecentActivity(args: {
   engagements: WorkspaceEngagement[]
   proposals: WorkspaceProposal[]
@@ -135,7 +144,7 @@ function buildRecentActivity(args: {
       createdAt: e.updatedAt ?? e.createdAt ?? '',
       title: `Engagement updated`,
       detail: e.expertDisplayName ?? e.buyerDisplayName ?? null,
-      href: `/workspace/engagements`,
+      href: workspaceActivityHref('engagement', e.id),
     })
   }
 
@@ -146,7 +155,7 @@ function buildRecentActivity(args: {
       createdAt: p.sentAt ?? p.updatedAt ?? p.createdAt,
       title: p.title,
       detail: `Proposal · ${statusLabelForViewer(p.status, args.viewerRole)}`,
-      href: `/workspace/proposals`,
+      href: workspaceActivityHref('proposal', p.id),
     })
   }
 
@@ -157,7 +166,7 @@ function buildRecentActivity(args: {
       createdAt: c.updatedAt ?? c.createdAt,
       title: `Contract ${statusLabelForViewer(c.status, args.viewerRole)}`,
       detail: null,
-      href: `/workspace/contracts`,
+      href: workspaceActivityHref('contract', c.id),
     })
   }
 
@@ -167,8 +176,14 @@ function buildRecentActivity(args: {
       kind: 'invoice',
       createdAt: i.paidAt ?? i.createdAt,
       title: `Invoice ${statusLabelForViewer(i.status, args.viewerRole)}`,
-      detail: i.totalCents ? `Total ${(i.totalCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}` : null,
-      href: `/workspace/invoices`,
+      detail: i.totalCents
+        ? `Total ${new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: i.currency || 'USD',
+            maximumFractionDigits: 0,
+          }).format(i.totalCents / 100)}`
+        : null,
+      href: workspaceActivityHref('invoice', i.id),
     })
   }
 
@@ -383,7 +398,7 @@ export function useWorkspaceHome(): WorkspaceHomeSnapshot {
     return () => {
       cancelled = true
     }
-  }, [state.expert?.id, state.isPending, state.user, workspace])
+  }, [state.expert?.id, state.isPending, state.role, state.user, workspace])
 
   return snapshot
 }

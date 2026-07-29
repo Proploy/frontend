@@ -79,8 +79,13 @@ export default function WorkspaceContractsPage() {
       ])
       if (cancelled) return
       if (result.ok) {
+        const requested = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('contract')
+          : null
         setContracts(result.data.contracts ?? [])
-        setSelectedId((current) => current ?? result.data.contracts[0]?.id ?? null)
+        setSelectedId(
+          (current) => current ?? requested ?? result.data.contracts[0]?.id ?? null,
+        )
       } else {
         setContracts([])
         setError(result)

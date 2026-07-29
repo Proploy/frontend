@@ -107,6 +107,11 @@ export default function WorkspaceInvoicesPage() {
   const [saving, setSaving] = useState(false)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [settlingId, setSettlingId] = useState<string | null>(null)
+  const [requestedInvoiceId] = useState(() =>
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('invoice')
+      : null,
+  )
   const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
 
   useEffect(() => {
@@ -155,6 +160,13 @@ export default function WorkspaceInvoicesPage() {
   const kpis = useMemo(() => ({
     outstandingCount: invoices.filter((invoice) => OUTSTANDING_STATUSES.has(invoice.status)).length,
   }), [invoices])
+
+  useEffect(() => {
+    if (loading || !requestedInvoiceId) return
+    document.getElementById(`invoice-${requestedInvoiceId}`)?.scrollIntoView({
+      block: 'center',
+    })
+  }, [loading, requestedInvoiceId])
 
   function openCreate() {
     setForm(emptyInvoiceForm(engagements[0]?.id ?? ''))
@@ -298,7 +310,13 @@ export default function WorkspaceInvoicesPage() {
               {sorted.map((invoice) => {
                 const engagement = engagementMap.get(invoice.engagementId)
                 return (
-                  <li key={invoice.id} className="flex flex-col gap-[12px] px-[20px] py-[16px]">
+                  <li
+                    id={`invoice-${invoice.id}`}
+                    key={invoice.id}
+                    className={`flex flex-col gap-[12px] px-[20px] py-[16px] ${
+                      requestedInvoiceId === invoice.id ? 'bg-[#f5f8ff]' : ''
+                    }`}
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-[12px]">
                       <div className="min-w-0">
                         <p className="truncate text-[15px] font-semibold leading-[22px] text-[#181d27]">

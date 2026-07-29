@@ -65,8 +65,13 @@ export default function WorkspaceEngagementsPage() {
       const result = await workspace.listEngagements()
       if (cancelled) return
       if (result.ok) {
+        const requested = typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('engagement')
+          : null
         setEngagements(result.data.engagements)
-        setSelectedId((current) => current ?? result.data.engagements[0]?.id ?? null)
+        setSelectedId(
+          (current) => current ?? requested ?? result.data.engagements[0]?.id ?? null,
+        )
       } else {
         setError(result)
       }

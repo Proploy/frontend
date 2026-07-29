@@ -14,6 +14,9 @@ export async function render(node: ReactNode) {
   await act(async () => root.render(node))
   return {
     container,
+    rerender: async (next: ReactNode) => {
+      await act(async () => root.render(next))
+    },
     unmount: async () => {
       await act(async () => root.unmount())
       container.remove()
