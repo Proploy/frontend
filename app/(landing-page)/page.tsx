@@ -636,7 +636,7 @@ export default function Landing() {
         <div className="content-stretch flex gap-[64px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="2075:7484">
           <FadeUp delay={0.1}>
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start max-w-[560px] min-h-px min-w-px relative" data-name="Content" data-node-id="2075:7485">
-              <button onClick={() => setActiveTab(0)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 0 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7486">
+              <button type="button" onClick={() => setActiveTab(0)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 0 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7486">
               <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full" data-name="Text and supporting text" data-node-id="I2075:7486;3285:387427">
                 <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-lg,28px)] relative shrink-0 text-[color:var(--colors\/text\/text-primary-\(900\),#181d27)] text-[length:var(--font-size\/text-lg,18px)] text-left w-full" data-node-id="I2075:7486;3285:387428">
                   Improve Implementation Success Assurance
@@ -658,7 +658,7 @@ export default function Landing() {
                 </motion.div>
               </div>
             </button>
-            <button onClick={() => setActiveTab(1)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 1 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7487">
+            <button type="button" onClick={() => setActiveTab(1)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 1 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7487">
               <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full" data-name="Text and supporting text" data-node-id="I2075:7487;3285:387418">
                 <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-lg,28px)] relative shrink-0 text-[color:var(--colors\/text\/text-primary-\(900\),#181d27)] text-[length:var(--font-size\/text-lg,18px)] text-left w-full" data-node-id="I2075:7487;3285:387419">
                   Maximise Return on Technology Investments
@@ -680,7 +680,7 @@ export default function Landing() {
                 </motion.div>
               </div>
               </button>
-            <button onClick={() => setActiveTab(2)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 2 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7488">
+            <button type="button" onClick={() => setActiveTab(2)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 2 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7488">
               <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full" data-name="Text and supporting text" data-node-id="I2075:7488;3285:387418">
                 <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/text-lg,28px)] relative shrink-0 text-[color:var(--colors\/text\/text-primary-\(900\),#181d27)] text-[length:var(--font-size\/text-lg,18px)] text-left w-full" data-node-id="I2075:7488;3285:387419">
                   Strengthen Cost Control Measures

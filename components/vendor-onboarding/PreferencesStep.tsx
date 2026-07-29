@@ -123,9 +123,10 @@ function MultiSelectTagInput({
               className="inline-flex items-center gap-[4px] bg-[#f5f5f6] rounded-[6px] px-[8px] py-[4px] font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#414651]"
             >
               {value}
-              <button
-                type="button"
-                onClick={(e) => {
+	              <button
+	                type="button"
+	                aria-label={`Remove ${value}`}
+	                onClick={(e) => {
                   e.stopPropagation();
                   handleRemove(value);
                 }}
@@ -243,10 +244,11 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
 
       {/* Field 4: Earliest start date */}
       <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]">
+        <label htmlFor="earliest-start-date" className="font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]">
           Earliest start date
         </label>
         <input
+          id="earliest-start-date"
           type="date"
           value={earliestStartDate}
           onChange={(e) => updateField('earliestStartDate', e.target.value)}

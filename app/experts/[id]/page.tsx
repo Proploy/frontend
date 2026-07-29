@@ -187,7 +187,7 @@ export default function ExpertProfilePage() {
         <header className="flex flex-col gap-[24px] md:flex-row md:items-center">
           <div className="size-[144px] rounded-full bg-[#e9eaeb] overflow-hidden relative shrink-0">
             {profilePictureUrl ? (
-              <Image src={profilePictureUrl} alt={profile.displayName} fill className="object-cover" />
+              <Image src={profilePictureUrl} alt={profile.displayName} fill sizes="144px" className="object-cover" />
             ) : (
               <div className="size-full bg-gradient-to-br from-[#fde68a] to-[#c084fc] flex items-center justify-center text-white font-bold text-[48px]">
                 {profile.displayName.charAt(0)}

@@ -87,9 +87,10 @@ export default function TagInput({
             style={{ fontVariationSettings: "'opsz' 14" }}
           />
           {allowCustom && (
-            <button
-              type="button"
-              onClick={() => addTag()}
+	            <button
+	              type="button"
+	              aria-label={`Add ${label.toLowerCase()}`}
+	              onClick={() => addTag()}
               disabled={!input.trim()}
               className="shrink-0 size-[28px] rounded-[6px] bg-[#155eef] text-white flex items-center justify-center hover:bg-[#004eeb] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >

@@ -118,6 +118,7 @@ export default function Tag({
           </span>
           <input
             type="checkbox"
+            aria-label={`Toggle ${children}`}
             checked={checked}
             onChange={(e) => onCheckedChange?.(e.target.checked)}
             className="absolute inset-0 opacity-0 cursor-pointer"
@@ -163,8 +164,10 @@ export default function Tag({
       )}
 
       {action === 'x-close' && (
-        <button
-          onClick={(event) => onClose?.(event)}
+	        <button
+	          type="button"
+	          aria-label={`Remove ${children}`}
+	          onClick={(event) => onClose?.(event)}
           className="flex items-center justify-center text-[#98a2b3] hover:text-[#667085] transition-colors cursor-pointer shrink-0"
         >
           <X size={s.closeSize} strokeWidth={2} />

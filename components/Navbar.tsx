@@ -450,6 +450,7 @@ export default function Navbar() {
             <>
               <div ref={profileMenuRef} className="hidden md:block relative">
                 <button
+                  type="button"
                   onClick={() => {
                     setIsCatalogOpen(false)
                     setIsExpertsOpen(false)
@@ -499,6 +500,7 @@ export default function Navbar() {
                     </Link>
                   )}
                   <button
+                    type="button"
                     onClick={handleSignOut}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
@@ -527,6 +529,7 @@ export default function Navbar() {
           </Link>
 
           <button
+            type="button"
             className="lg:hidden p-2 text-[#414651]"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
@@ -614,6 +617,7 @@ export default function Navbar() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
                     handleSignOut()
                     setIsMenuOpen(false)
