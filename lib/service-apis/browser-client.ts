@@ -1,5 +1,4 @@
 import { normalizeServiceApiError, type NormalizedError } from './error-utils'
-import { createClient } from '@/lib/supabase/client'
 
 interface RequestOptions {
   requireAuth?: boolean
@@ -20,9 +19,17 @@ async function resolveAccessToken(accessToken?: string | null): Promise<string |
   if (accessToken !== undefined) return accessToken
 
   try {
-    const supabase = createClient()
-    const { data } = await supabase.auth.getSession()
-    return data.session?.access_token ?? null
+    const response = await fetch('/api/auth/session-token', {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+    if (!response.ok) return null
+
+    const payload: unknown = await response.json().catch(() => null)
+    if (!payload || typeof payload !== 'object') return null
+
+    const token = (payload as { accessToken?: unknown }).accessToken
+    return typeof token === 'string' ? token : null
   } catch {
     return null
   }
@@ -70,8 +77,8 @@ export async function serviceApisBrowserFetch(
  * IMPORTANT: This module is for Client Components and browser code only.
  * Server Components must use lib/service-apis/server (serviceApisFetch).
  *
- * Authenticated requests read the current Supabase browser session and send
- * its access token directly to service-apis. Next.js is not in this path.
+ * Authenticated requests ask a first-party Next.js route for the current
+ * access token before calling service-apis.
  */
 export class ServiceApisBrowserClient {
   private async fetch<T>(

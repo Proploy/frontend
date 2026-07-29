@@ -13,11 +13,18 @@ describe('native scheduling presentation helpers', () => {
   })
 
   it('formats a slot in the requested timezone', () => {
+    const formatter = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Asia/Kolkata',
+    })
     expect(formatNativeSlot(
       '2026-08-01T04:30:00Z',
       '2026-08-01T05:00:00Z',
       'Asia/Kolkata',
-    )).toContain('Aug 1, 2026')
+    )).toBe(
+      `${formatter.format(new Date('2026-08-01T04:30:00Z'))} – ${formatter.format(new Date('2026-08-01T05:00:00Z'))} (Asia/Kolkata)`,
+    )
   })
 
   describe('buildGoogleCalendarEventUrl', () => {
@@ -47,6 +54,18 @@ describe('native scheduling presentation helpers', () => {
           endsAt: '',
         }),
       ).toBeNull()
+    })
+
+    it('keeps calendar timestamps absolute while preserving the requested display timezone', () => {
+      const url = buildGoogleCalendarEventUrl({
+        title: 'Kolkata discovery call',
+        startsAt: '2026-08-01T15:00:00Z',
+        endsAt: '2026-08-01T15:30:00Z',
+        timezone: 'Asia/Kolkata',
+      })
+
+      expect(url).toContain('dates=20260801T150000Z%2F20260801T153000Z')
+      expect(url).toContain('ctz=Asia%2FKolkata')
     })
   })
 })

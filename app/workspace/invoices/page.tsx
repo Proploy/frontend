@@ -38,6 +38,7 @@ import {
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type { InvoiceStatus, WorkspaceInvoice } from '@/features/workspace/home-types'
 import type { WorkspaceEngagement } from '@/features/workspace/types'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
 
 const OUTSTANDING_STATUSES = new Set<InvoiceStatus>(['draft', 'sent', 'overdue'])
 
@@ -97,6 +98,7 @@ function emptyInvoiceForm(engagementId = ''): InvoiceFormInput {
 export default function WorkspaceInvoicesPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const requestedInvoiceId = useWorkspaceQueryParam('invoice')
   const [invoices, setInvoices] = useState<WorkspaceInvoice[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [error, setError] = useState<NormalizedError | null>(null)
@@ -142,7 +144,7 @@ export default function WorkspaceInvoicesPage() {
     return () => {
       cancelled = true
     }
-  }, [state.isPending, state.user, workspace])
+  }, [requestedInvoiceId, state.isPending, state.user, workspace])
 
   const sorted = useMemo(
     () => invoices.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -155,6 +157,13 @@ export default function WorkspaceInvoicesPage() {
   const kpis = useMemo(() => ({
     outstandingCount: invoices.filter((invoice) => OUTSTANDING_STATUSES.has(invoice.status)).length,
   }), [invoices])
+
+  useEffect(() => {
+    if (loading || !requestedInvoiceId) return
+    document.getElementById(`invoice-${requestedInvoiceId}`)?.scrollIntoView({
+      block: 'center',
+    })
+  }, [loading, requestedInvoiceId])
 
   function openCreate() {
     setForm(emptyInvoiceForm(engagements[0]?.id ?? ''))
@@ -298,7 +307,13 @@ export default function WorkspaceInvoicesPage() {
               {sorted.map((invoice) => {
                 const engagement = engagementMap.get(invoice.engagementId)
                 return (
-                  <li key={invoice.id} className="flex flex-col gap-[12px] px-[20px] py-[16px]">
+                  <li
+                    id={`invoice-${invoice.id}`}
+                    key={invoice.id}
+                    className={`flex flex-col gap-[12px] px-[20px] py-[16px] ${
+                      requestedInvoiceId === invoice.id ? 'bg-[#f5f8ff]' : ''
+                    }`}
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-[12px]">
                       <div className="min-w-0">
                         <p className="truncate text-[15px] font-semibold leading-[22px] text-[#181d27]">

@@ -38,12 +38,19 @@ describe('evaluation client', () => {
   })
 
   it('uses authenticated evaluation endpoints without client user IDs', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ evaluation_id: 'evaluation-1' }), {
-        status: 201,
-        headers: { 'content-type': 'application/json' },
-      }),
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'fake-token' }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValue(
+        new Response(JSON.stringify({ evaluation_id: 'evaluation-1' }), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
     vi.stubGlobal('fetch', fetchMock)
 
     await createEvaluation({
@@ -51,7 +58,7 @@ describe('evaluation client', () => {
       user_id: 'forged-owner',
     } as never)
 
-    const [url, request] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [url, request] = fetchMock.mock.calls[1] as [string, RequestInit]
     expect(url).toContain('/api/v1/ai_workspace/evaluations')
     expect(JSON.parse(String(request.body))).toEqual({
       title: 'Project management tools',
@@ -59,17 +66,24 @@ describe('evaluation client', () => {
   })
 
   it('encodes the evaluation ID in comparison selection requests', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({}), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }),
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'fake-token' }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValue(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
     vi.stubGlobal('fetch', fetchMock)
 
     await setComparisonSelection('evaluation/one', ['asana', 'clickup'])
 
-    const [url, request] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [url, request] = fetchMock.mock.calls[1] as [string, RequestInit]
     expect(url).toContain(
       '/evaluations/evaluation%2Fone/comparison-selection',
     )
@@ -80,17 +94,24 @@ describe('evaluation client', () => {
   })
 
   it('saves the native durable evaluation without the legacy profile flow', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ saved: true }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }),
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'fake-token' }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValue(
+        new Response(JSON.stringify({ saved: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
     vi.stubGlobal('fetch', fetchMock)
 
     await saveEvaluation('evaluation/one')
 
-    const [url, request] = fetchMock.mock.calls[0] as [
+    const [url, request] = fetchMock.mock.calls[1] as [
       string,
       RequestInit,
     ]
@@ -102,23 +123,30 @@ describe('evaluation client', () => {
   })
 
   it('reports an incomplete stream so optimistic text is not replaced by stale history', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        [
-          'event: message_delta',
-          'data: {"delta":"New response"}',
-          '',
-          'event: error',
-          'data: {"code":"TIMEOUT","message":"Timed out","retryable":true}',
-          '',
-          '',
-        ].join('\n'),
-        {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'fake-token' }), {
           status: 200,
-          headers: { 'content-type': 'text/event-stream' },
-        },
-      ),
-    )
+        }),
+      )
+      .mockResolvedValue(
+        new Response(
+          [
+            'event: message_delta',
+            'data: {"delta":"New response"}',
+            '',
+            'event: error',
+            'data: {"code":"TIMEOUT","message":"Timed out","retryable":true}',
+            '',
+            '',
+          ].join('\n'),
+          {
+            status: 200,
+            headers: { 'content-type': 'text/event-stream' },
+          },
+        ),
+      )
     vi.stubGlobal('fetch', fetchMock)
     const events: string[] = []
 
@@ -133,9 +161,14 @@ describe('evaluation client', () => {
   })
 
   it('marks an unexpected end-of-stream as interrupted', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'fake-token' }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValue(
         new Response(
           [
             'event: message_delta',
@@ -148,8 +181,8 @@ describe('evaluation client', () => {
             headers: { 'content-type': 'text/event-stream' },
           },
         ),
-      ),
-    )
+      )
+    vi.stubGlobal('fetch', fetchMock)
     const events: string[] = []
 
     const result = await streamEvaluationResearch(
@@ -163,15 +196,20 @@ describe('evaluation client', () => {
   })
 
   it('emits a visible error when a successful response has no body', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'fake-token' }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValue(
         new Response(null, {
           status: 200,
           headers: { 'content-type': 'text/event-stream' },
         }),
-      ),
-    )
+      )
+    vi.stubGlobal('fetch', fetchMock)
     const events: string[] = []
 
     const result = await streamEvaluationResearch(

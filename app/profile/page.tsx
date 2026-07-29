@@ -558,6 +558,7 @@ function ProfileIdentityCard({
           <input
             ref={fileInputRef}
             type="file"
+            aria-label="Upload profile photo"
             accept="image/png,image/jpeg,image/webp,image/gif"
             className="sr-only"
             onChange={(event) => void handlePictureChange(event)}

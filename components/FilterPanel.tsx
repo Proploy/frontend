@@ -83,6 +83,8 @@ export default function FilterPanel({ isOpen, onClose }: FilterPanelProps) {
                 </p>
               </div>
               <button
+                type="button"
+                aria-label="Close filters"
                 onClick={onClose}
                 className="size-[36px] flex items-center justify-center text-[#535862] hover:text-[#181d27] hover:bg-[#fafafa] rounded-[8px] transition-colors cursor-pointer shrink-0"
               >
@@ -157,7 +159,7 @@ export default function FilterPanel({ isOpen, onClose }: FilterPanelProps) {
                     />
                   ))}
                 </div>
-                <button className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] leading-[20px] text-[#004eeb] text-left hover:underline cursor-pointer">
+                <button type="button" className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] leading-[20px] text-[#004eeb] text-left hover:underline cursor-pointer">
                   Show 10 more
                 </button>
               </div>
@@ -197,7 +199,7 @@ export default function FilterPanel({ isOpen, onClose }: FilterPanelProps) {
 
             {/* Footer */}
             <div className="px-[24px] py-[16px] border-t border-[#e9eaeb] flex items-center justify-between shrink-0">
-              <button className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline cursor-pointer">
+              <button type="button" className="font-[family-name:var(--font-dm-sans)] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline cursor-pointer">
                 Save filter
               </button>
               <div className="flex items-center gap-[12px]">

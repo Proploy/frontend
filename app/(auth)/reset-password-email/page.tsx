@@ -7,7 +7,6 @@ import Image from 'next/image'
 export default function ResetPasswordEmailPage() {
   const router = useRouter()
   const [code, setCode] = useState(['', '', '', ''])
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) return
@@ -21,24 +20,11 @@ export default function ResetPasswordEmailPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      const fullCode = code.join('')
-      console.log('Reset password code:', fullCode)
-      router.push('/set-new-password')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   return (
     <div className="flex h-[calc(100vh-80px)] w-full">
       {/* Left Section - Hero */}
       <div className="hidden lg:flex flex-[3] relative flex-col items-center justify-center overflow-hidden">
-        <Image alt="" src="/login-backdrop.png" fill className="absolute inset-0 object-cover" />
+        <Image alt="" src="/login-backdrop.png" fill sizes="(max-width: 1023px) 0px, 60vw" className="absolute inset-0 object-cover" />
         <div className="absolute inset-0 bg-[#0040c1] opacity-80" />
 
         <div className="relative z-10 flex flex-col gap-12 w-[640px] px-8">
@@ -92,8 +78,9 @@ export default function ResetPasswordEmailPage() {
                 <input
                   key={index}
                   id={`reset-code-${index}`}
-                  type="text"
-                  inputMode="numeric"
+	                  type="text"
+	                  aria-label={`Password reset code digit ${index + 1}`}
+	                  inputMode="numeric"
                   maxLength={1}
                   value={code[index]}
                   onChange={(e) => handleCodeChange(index, e.target.value)}
@@ -103,6 +90,7 @@ export default function ResetPasswordEmailPage() {
             </div>
 
             <button
+              type="button"
               onClick={() => router.push('/set-new-password')}
               className="w-full bg-[#155eef] text-white font-inter font-semibold text-[16px] py-2.5 rounded-lg hover:bg-[#1248d4] transition"
             >
@@ -111,13 +99,14 @@ export default function ResetPasswordEmailPage() {
           </div>
 
           <p className="text-center font-inter text-[14px] text-[#535862]">
-            Didn't receive the email?{' '}
-            <button className="text-[#004eeb] font-semibold hover:underline">
+            Didn&apos;t receive the email?{' '}
+            <button type="button" className="text-[#004eeb] font-semibold hover:underline">
               Click to resend
             </button>
           </p>
 
           <button
+            type="button"
             onClick={() => router.push('/sign-in')}
             className="w-full mt-4 text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
           >

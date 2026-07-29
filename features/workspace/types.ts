@@ -257,14 +257,16 @@ export interface WorkspaceMeeting {
 
 // ─── Notification (outbox state) ─────────────────────────────────────────
 
-export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'dead_letter'
+export type NotificationStatus = 'pending' | 'processing' | 'sent' | 'failed' | 'dead_letter'
 
 export interface WorkspaceNotification {
   id: string
-  recipientUserId: string
   template: string
-  subject: string
   status: NotificationStatus
+  title: string
+  body: string
+  href?: string | null
+  readAt?: string | null
   createdAt: string
   sentAt?: string | null
 }

@@ -150,6 +150,7 @@ export function AltCard({ alt }: { alt: AlternativeEntity }) {
         </div>
       </div>
       <button
+        type="button"
         aria-label="Add to comparison"
         className="shrink-0 flex items-center justify-center cursor-pointer"
         style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #d5d7da', background: '#fff', boxShadow: 'var(--shadow-xs)' }}

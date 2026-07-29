@@ -33,6 +33,10 @@ export type {
   TimeSummary,
 } from '@/features/workspace/use-workspace-project-detail'
 export { useWorkspaceHome } from '@/features/workspace/use-workspace-home'
+export {
+  useWorkspaceExperience,
+  WorkspaceExperienceProvider,
+} from '@/features/workspace/workspace-experience'
 export type {
   WorkspaceContract,
   WorkspaceContractDocumentUploadResponse,

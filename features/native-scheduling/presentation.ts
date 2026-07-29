@@ -50,8 +50,8 @@ type GoogleCalendarEventInput = {
  * Returns null if the meeting has no usable start time.
  */
 export function buildGoogleCalendarEventUrl(input: GoogleCalendarEventInput): string | null {
-  const start = formatGoogleCalendarDate(input.startsAt, input.timezone)
-  const end = formatGoogleCalendarDate(input.endsAt, input.timezone)
+  const start = formatGoogleCalendarDate(input.startsAt)
+  const end = formatGoogleCalendarDate(input.endsAt)
   if (!start || !end) return null
   const params = new URLSearchParams({
     action: 'TEMPLATE',
@@ -64,29 +64,9 @@ export function buildGoogleCalendarEventUrl(input: GoogleCalendarEventInput): st
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-function formatGoogleCalendarDate(value: string | null | undefined, timezone?: string | null): string | null {
+function formatGoogleCalendarDate(value: string | null | undefined): string | null {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone || undefined,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(date)
-  const lookup = (type: string) => parts.find((part) => part.type === type)?.value
-  const year = lookup('year')
-  const month = lookup('month')
-  const day = lookup('day')
-  const hour = lookup('hour')
-  const minute = lookup('minute')
-  const second = lookup('second')
-  if (!year || !month || !day || hour === undefined || minute === undefined || second === undefined) {
-    return null
-  }
-  return `${year}${month}${day}T${hour}${minute}${second}Z`
+  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
 }

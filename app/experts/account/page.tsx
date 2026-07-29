@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Search,
   Home,
@@ -491,7 +491,7 @@ function MyDetailsPanel({
 }) {
   const [details, setDetails] = useState<DetailsState>(DEFAULT_DETAILS)
   // Snapshot taken when entering edit mode so Cancel can revert cleanly.
-  const [snapshot, setSnapshot] = useState<DetailsState | null>(null)
+  const snapshotRef = useRef<DetailsState | null>(null)
   const ro = !editing
 
   // Hydrate from localStorage after mount (avoids SSR mismatch).
@@ -502,8 +502,8 @@ function MyDetailsPanel({
 
   // Capture a snapshot when an edit session begins.
   useEffect(() => {
-    if (editing) setSnapshot((prev) => prev ?? details)
-    else setSnapshot(null)
+    if (editing) snapshotRef.current ??= details
+    else snapshotRef.current = null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
 
@@ -512,13 +512,13 @@ function MyDetailsPanel({
 
   const handleSave = () => {
     saveJSON(STORAGE_KEYS.details, details)
-    setSnapshot(null)
+    snapshotRef.current = null
     onDone()
   }
 
   const handleCancel = () => {
-    if (snapshot) setDetails(snapshot)
-    setSnapshot(null)
+    if (snapshotRef.current) setDetails(snapshotRef.current)
+    snapshotRef.current = null
     onDone()
   }
 
@@ -667,6 +667,7 @@ function MyDetailsPanel({
 
         <FormRow label="Country">
           <SelectField
+            ariaLabel="Country"
             value={details.country}
             onChange={(v) => set('country', v as (typeof COUNTRIES)[number]['code'])}
             options={COUNTRIES.map((c) => ({ value: c.code, label: c.label }))}
@@ -679,6 +680,7 @@ function MyDetailsPanel({
 
         <FormRow label="Timezone">
           <SelectField
+            ariaLabel="Timezone"
             value={details.timezone}
             onChange={(v) => set('timezone', v as (typeof TIMEZONES)[number])}
             options={TIMEZONES.map((t) => ({ value: t, label: t }))}
@@ -700,7 +702,7 @@ function MyDetailsPanel({
         <Divider />
 
         <FormRow label="Bio*" sublabel="Write a short introduction." align="start">
-          <BioEditor value={details.bio} onChange={(v) => set('bio', v)} disabled={ro} />
+          <BioEditor ariaLabel="Bio" value={details.bio} onChange={(v) => set('bio', v)} disabled={ro} />
         </FormRow>
 
         <Divider />
@@ -862,13 +864,16 @@ function PasswordPanel() {
 function PasswordInput({
   value,
   onChange,
+  ariaLabel = 'Password',
 }: {
   value: string
   onChange: (v: string) => void
+  ariaLabel?: string
 }) {
   return (
     <input
       type="password"
+      aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`w-full bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 ${INPUT_SHADOW}`}
@@ -922,7 +927,7 @@ function TeamPanel() {
             <tr className="border-y border-[#e9eaeb] bg-[#fafafa]">
               <Th className="pl-[24px]">
                 <div className="flex items-center gap-[12px]">
-                  <input type="checkbox" className="size-[16px] rounded-[4px] accent-[#155eef]" />
+	                  <input type="checkbox" aria-label="Select all team members" className="size-[16px] rounded-[4px] accent-[#155eef]" />
                   <SortHeader label="Name" />
                 </div>
               </Th>
@@ -943,9 +948,10 @@ function TeamPanel() {
               <tr key={m.handle} className="border-b border-[#e9eaeb] last:border-b-0">
                 <Td className="pl-[24px]">
                   <div className="flex items-center gap-[12px]">
-                    <input
-                      type="checkbox"
-                      className="size-[16px] rounded-[4px] accent-[#155eef]"
+	                    <input
+	                      type="checkbox"
+	                      aria-label={`Select ${m.name}`}
+	                      className="size-[16px] rounded-[4px] accent-[#155eef]"
                     />
                     <div
                       className={`size-[40px] rounded-full flex items-center justify-center text-white font-semibold text-[14px] shrink-0 border border-black/[0.08] ${m.gradient}`}
@@ -1198,7 +1204,7 @@ function BillingPanel() {
               <tr className="border-b border-[#e9eaeb] bg-[#fafafa]">
                 <Th className="pl-[24px]">
                   <div className="flex items-center gap-[12px]">
-                    <input type="checkbox" className="size-[16px] rounded-[4px] accent-[#155eef]" />
+	                    <input type="checkbox" aria-label="Select all invoices" className="size-[16px] rounded-[4px] accent-[#155eef]" />
                     <SortHeader label="Invoice" />
                   </div>
                 </Th>
@@ -1225,9 +1231,10 @@ function BillingPanel() {
                 <tr key={inv.label} className="border-b border-[#e9eaeb] last:border-b-0">
                   <Td className="pl-[24px]">
                     <div className="flex items-center gap-[12px]">
-                      <input
-                        type="checkbox"
-                        className="size-[16px] rounded-[4px] accent-[#155eef]"
+	                      <input
+	                        type="checkbox"
+	                        aria-label={`Select invoice ${inv.label}`}
+	                        className="size-[16px] rounded-[4px] accent-[#155eef]"
                       />
                       <PdfIcon />
                       <span className="font-medium text-[14px] leading-[20px] text-[#181d27] whitespace-nowrap">
@@ -1784,6 +1791,7 @@ function TextInput({
 }
 
 function SelectField({
+  ariaLabel,
   value,
   onChange,
   options,
@@ -1791,6 +1799,7 @@ function SelectField({
   leadingFlag,
   disabled,
 }: {
+  ariaLabel: string
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
@@ -1809,6 +1818,7 @@ function SelectField({
         <span className="absolute left-[14px] top-1/2 -translate-y-1/2">{leadingIcon}</span>
       )}
       <select
+        aria-label={ariaLabel}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
@@ -1831,10 +1841,12 @@ function SelectField({
 }
 
 function BioEditor({
+  ariaLabel,
   value,
   onChange,
   disabled,
 }: {
+  ariaLabel: string
   value: string
   onChange: (v: string) => void
   disabled?: boolean
@@ -1877,6 +1889,7 @@ function BioEditor({
         </ToolbarBtn>
       </div>
       <textarea
+        aria-label={ariaLabel}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value.slice(0, max))}

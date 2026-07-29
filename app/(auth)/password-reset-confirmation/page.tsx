@@ -22,7 +22,7 @@ export default function PasswordResetConfirmationPage() {
     <div className="flex h-[calc(100vh-80px)] w-full">
       {/* Left Section - Hero */}
       <div className="hidden lg:flex flex-[3] relative flex-col items-center justify-center overflow-hidden">
-        <Image alt="" src="/login-backdrop.png" fill className="absolute inset-0 object-cover" />
+        <Image alt="" src="/login-backdrop.png" fill sizes="(max-width: 1023px) 0px, 60vw" className="absolute inset-0 object-cover" />
         <div className="absolute inset-0 bg-[#0040c1] opacity-80" />
 
         <div className="relative z-10 flex flex-col gap-12 w-[640px] px-8">
@@ -72,6 +72,7 @@ export default function PasswordResetConfirmationPage() {
 
           <div className="space-y-4">
             <button
+              type="button"
               onClick={handleContinue}
               disabled={isLoading}
               className="w-full bg-[#155eef] text-white font-inter font-semibold text-[16px] py-2.5 rounded-lg hover:bg-[#1248d4] disabled:opacity-50 transition"
@@ -80,6 +81,7 @@ export default function PasswordResetConfirmationPage() {
             </button>
 
             <button
+              type="button"
               onClick={() => router.push('/sign-in')}
               className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
             >

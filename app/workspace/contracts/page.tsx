@@ -19,6 +19,7 @@ import {
 import { useCurrentUserRole, useWorkspace } from '@/features/workspace'
 import type { WorkspaceContract } from '@/features/workspace/home-types'
 import type { WorkspaceEngagement, WorkspaceRole } from '@/features/workspace/types'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import {
   CONTRACT_FIELDS,
@@ -35,6 +36,7 @@ type ContractBusyAction = 'save' | 'send' | 'cancel' | 'decline' | 'sign'
 export default function WorkspaceContractsPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const requestedContractId = useWorkspaceQueryParam('contract')
   const [contracts, setContracts] = useState<WorkspaceContract[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -80,7 +82,9 @@ export default function WorkspaceContractsPage() {
       if (cancelled) return
       if (result.ok) {
         setContracts(result.data.contracts ?? [])
-        setSelectedId((current) => current ?? result.data.contracts[0]?.id ?? null)
+        setSelectedId(
+          (current) => current ?? requestedContractId ?? result.data.contracts[0]?.id ?? null,
+        )
       } else {
         setContracts([])
         setError(result)
@@ -97,7 +101,12 @@ export default function WorkspaceContractsPage() {
     return () => {
       cancelled = true
     }
-  }, [refreshNonce, state.isPending, state.user, workspace])
+  }, [refreshNonce, requestedContractId, state.isPending, state.user, workspace])
+
+  useEffect(() => {
+    if (!requestedContractId || !contracts.some((contract) => contract.id === requestedContractId)) return
+    setSelectedId(requestedContractId)
+  }, [contracts, requestedContractId])
 
   const sorted = useMemo(
     () => contracts.slice().sort((a, b) => new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime()),

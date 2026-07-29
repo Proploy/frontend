@@ -92,6 +92,7 @@ export function TabBar({ tabs, active, onChange }: { tabs: readonly string[]; ac
           const on = t === active
           return (
             <button
+              type="button"
               key={t}
               onClick={() => onChange(t)}
               className="relative cursor-pointer whitespace-nowrap font-[family-name:var(--font-dm-sans)] font-semibold"
@@ -122,6 +123,7 @@ export function ColumnHeader({
     <div className="relative flex flex-col gap-[9px]" style={{ padding: density === 'compact' ? '12px 12px' : '16px 14px' }}>
       {canRemove && (
         <button
+          type="button"
           onClick={onRemove}
           aria-label="Remove column"
           className="absolute flex cursor-pointer"

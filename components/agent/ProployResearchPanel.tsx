@@ -25,6 +25,37 @@ type QuickPrompt = {
 }
 
 const TYPING_DOT_DELAY_CLASSES = ['', '[animation-delay:140ms]', '[animation-delay:280ms]']
+const LAUNCHER_ACTIVATION_THRESHOLD = 48
+
+type ActivationPoint = {
+  clientX: number
+  clientY: number
+  viewportWidth: number
+  viewportHeight: number
+  threshold?: number
+}
+
+export function isBottomRightActivationPoint({
+  clientX,
+  clientY,
+  viewportWidth,
+  viewportHeight,
+  threshold = LAUNCHER_ACTIVATION_THRESHOLD,
+}: ActivationPoint): boolean {
+  if (
+    clientX < 0
+    || clientY < 0
+    || clientX > viewportWidth
+    || clientY > viewportHeight
+  ) {
+    return false
+  }
+
+  return (
+    viewportWidth - clientX <= threshold
+    && viewportHeight - clientY <= threshold
+  )
+}
 
 function getQuickPrompts(pageType: string, productName?: string): QuickPrompt[] {
   if (pageType === 'product' && productName) {
@@ -97,7 +128,10 @@ export default function ProployResearchPanel() {
   const { user } = useAuth()
 
   const [draft, setDraft] = useState('')
+  const [launcherRevealed, setLauncherRevealed] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const launcherHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const coarsePointerRef = useRef(false)
   const isDedicatedWorkspace = pathname?.startsWith('/AI_workspace') ?? false
 
   const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
@@ -110,6 +144,53 @@ export default function ProployResearchPanel() {
     if (!scrollRef.current) return
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages.length, isSending])
+
+  useEffect(() => {
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+    coarsePointerRef.current = coarsePointer
+    if (coarsePointer) {
+      return
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!isBottomRightActivationPoint({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      })) {
+        return
+      }
+
+      if (launcherHideTimerRef.current) clearTimeout(launcherHideTimerRef.current)
+      setLauncherRevealed(true)
+      launcherHideTimerRef.current = setTimeout(() => {
+        setLauncherRevealed(false)
+        launcherHideTimerRef.current = null
+      }, 1400)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      if (launcherHideTimerRef.current) clearTimeout(launcherHideTimerRef.current)
+    }
+  }, [])
+
+  const keepLauncherVisible = () => {
+    if (launcherHideTimerRef.current) clearTimeout(launcherHideTimerRef.current)
+    launcherHideTimerRef.current = null
+    setLauncherRevealed(true)
+  }
+
+  const scheduleLauncherHide = () => {
+    if (coarsePointerRef.current) return
+    if (launcherHideTimerRef.current) clearTimeout(launcherHideTimerRef.current)
+    launcherHideTimerRef.current = setTimeout(() => {
+      setLauncherRevealed(false)
+      launcherHideTimerRef.current = null
+    }, 350)
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -140,9 +221,17 @@ export default function ProployResearchPanel() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        onPointerEnter={keepLauncherVisible}
+        onPointerLeave={scheduleLauncherHide}
+        onFocus={keepLauncherVisible}
+        onBlur={scheduleLauncherHide}
         aria-label="Open Proploy Chatbot"
         className={`fixed bottom-6 right-6 z-[90] flex items-center gap-2 rounded-full bg-brand-700 px-4 py-3 text-white shadow-[0_10px_30px_rgba(0,78,235,0.35)] transition-all duration-200 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
-          isOpen ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100'
+          isOpen
+            ? 'opacity-0 pointer-events-none translate-y-2'
+            : launcherRevealed
+              ? 'opacity-100 pointer-events-auto translate-y-0'
+              : 'opacity-0 pointer-events-none translate-y-2 max-md:opacity-100 max-md:pointer-events-auto max-md:translate-y-0 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:pointer-events-auto [@media(pointer:coarse)]:translate-y-0'
         }`}
       >
         <Sparkles className="h-4 w-4" />

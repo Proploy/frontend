@@ -36,6 +36,7 @@ import {
   timeDate,
 } from '@/components/workspace/workspace-format'
 import { useCurrentUserRole } from '@/features/workspace'
+import { useWorkspaceExperience } from '@/features/workspace/workspace-experience'
 import { useWorkspaceHome } from '@/features/workspace/use-workspace-home'
 import type { WorkspaceHomeActivity, WorkspaceHomeSnapshot } from '@/features/workspace/home-types'
 import type {
@@ -52,6 +53,7 @@ const SERVICE_UNAVAILABLE_LABEL = 'service unavailable'
 export default function WorkspaceHomePage() {
   const state = useCurrentUserRole()
   const home = useWorkspaceHome()
+  const workspaceExperience = useWorkspaceExperience()
 
   const firstName = useMemo(() => {
     const source = state.user?.name ?? state.user?.email ?? 'there'
@@ -88,7 +90,11 @@ export default function WorkspaceHomePage() {
               )}
             </div>
           </div>
-          <QuickActions isExpert={isExpert} unreadNotifications={home.unreadNotifications} />
+          <QuickActions
+            isExpert={isExpert}
+            unreadNotifications={workspaceExperience.unreadCount}
+            onOpenNotifications={workspaceExperience.openNotifications}
+          />
         </div>
 
         {/* Per-endpoint error banner (collapses when empty) */}
@@ -160,7 +166,11 @@ export default function WorkspaceHomePage() {
         {/* Main two-column area: activity + side cards */}
         <div className="mt-[24px] grid grid-cols-1 gap-[24px] lg:grid-cols-[1.6fr_1fr]">
           <div className="flex flex-col gap-[24px]">
-            <RecentActivity items={home.recentActivity} isLoading={home.isLoading} />
+            <RecentActivity
+              items={home.recentActivity}
+              isLoading={home.isLoading}
+              onOpenNotifications={workspaceExperience.openNotifications}
+            />
             <ActiveProjects projects={home.projects} engagements={home.engagements} viewerRole={state.role} />
           </div>
           <div className="flex flex-col gap-[24px]">
@@ -175,7 +185,15 @@ export default function WorkspaceHomePage() {
 
 // ─── Quick actions ─────────────────────────────────────────────────────────
 
-function QuickActions({ isExpert, unreadNotifications }: { isExpert: boolean; unreadNotifications: number }) {
+function QuickActions({
+  isExpert,
+  unreadNotifications,
+  onOpenNotifications,
+}: {
+  isExpert: boolean
+  unreadNotifications: number
+  onOpenNotifications: () => void
+}) {
   return (
     <div className="flex flex-wrap items-center gap-[10px]">
       <Link
@@ -203,8 +221,9 @@ function QuickActions({ isExpert, unreadNotifications }: { isExpert: boolean; un
           View sales
         </Link>
       )}
-      <Link
-        href="/workspace/notifications"
+      <button
+        type="button"
+        onClick={onOpenNotifications}
         className={`relative flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
       >
         <Bell size={16} />
@@ -214,7 +233,7 @@ function QuickActions({ isExpert, unreadNotifications }: { isExpert: boolean; un
             {unreadNotifications}
           </span>
         )}
-      </Link>
+      </button>
     </div>
   )
 }
@@ -288,14 +307,14 @@ function SectionCard({
   children,
 }: {
   title: string
-  action?: { label: string; href: string }
+  action?: { label: string; href?: string; onClick?: () => void }
   children: ReactNode
 }) {
   return (
     <section className={`rounded-[12px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
       <div className="flex items-center justify-between gap-[12px] border-b border-[#f0f0f1] px-[20px] py-[16px]">
         <h2 className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{title}</h2>
-        {action && (
+        {action?.href && (
           <Link
             href={action.href}
             className="inline-flex items-center gap-[4px] text-[13px] font-semibold leading-[18px] text-[#004eeb] hover:text-[#155eef]"
@@ -303,6 +322,16 @@ function SectionCard({
             {action.label}
             <ArrowUpRight size={14} />
           </Link>
+        )}
+        {action?.onClick && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className="inline-flex items-center gap-[4px] text-[13px] font-semibold leading-[18px] text-[#004eeb] hover:text-[#155eef]"
+          >
+            {action.label}
+            <ArrowUpRight size={14} />
+          </button>
         )}
       </div>
       {children}
@@ -312,43 +341,60 @@ function SectionCard({
 
 // ─── Recent activity ───────────────────────────────────────────────────────
 
-function RecentActivity({
+export function RecentActivity({
   items,
   isLoading,
+  onOpenNotifications,
 }: {
   items: WorkspaceHomeActivity[]
   isLoading: boolean
+  onOpenNotifications?: () => void
 }) {
   return (
-    <SectionCard title="Recent activity" action={{ label: 'All events', href: '/workspace/notifications' }}>
+    <SectionCard
+      title="Recent activity"
+      action={
+        onOpenNotifications
+          ? { label: 'All events', onClick: onOpenNotifications }
+          : undefined
+      }
+    >
       {isLoading ? (
         <ActivitySkeleton />
       ) : items.length === 0 ? (
         <EmptyRows message="No recent activity yet." />
       ) : (
         <ul className="divide-y divide-[#f0f0f1]">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-start gap-[12px] px-[20px] py-[14px]">
-              <span className="mt-[2px] flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#f5f8ff] text-[#155eef]">
-                {activityIcon(item.kind)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-[8px]">
-                  <p className="truncate font-semibold text-[14px] leading-[20px] text-[#181d27]">
-                    {item.title}
-                  </p>
-                  <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">
-                    {relativeDate(item.createdAt)}
-                  </span>
+          {items.map((item) => {
+            const content = (
+              <>
+                <span className="mt-[2px] flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#f5f8ff] text-[#155eef]">
+                  {activityIcon(item.kind)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-[8px]">
+                    <p className="truncate font-semibold text-[14px] leading-[20px] text-[#181d27]">{item.title}</p>
+                    <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">{relativeDate(item.createdAt)}</span>
+                  </div>
+                  {item.detail && <p className="mt-[2px] truncate text-[13px] leading-[18px] text-[#717680]">{item.detail}</p>}
                 </div>
-                {item.detail && (
-                  <p className="mt-[2px] truncate text-[13px] leading-[18px] text-[#717680]">
-                    {item.detail}
-                  </p>
+              </>
+            )
+            return (
+              <li key={item.id}>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="flex items-start gap-[12px] px-[20px] py-[14px] hover:bg-[#fafafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#155eef]"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div className="flex items-start gap-[12px] px-[20px] py-[14px]">{content}</div>
                 )}
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
     </SectionCard>

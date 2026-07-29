@@ -4,30 +4,32 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   MessageSquare,
-  Paperclip,
   RefreshCw,
-  Send,
 } from 'lucide-react'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
 } from '@/components/workspace/WorkspaceShell'
 import {
   engagementTitle,
-  initials,
-  relativeDate,
-  timeDate,
 } from '@/components/workspace/workspace-format'
 import { useCurrentUserRole, useWorkspace } from '@/features/workspace'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
+import {
+  ConversationHeader,
+  ConversationThreadCard,
+  MessageBubble,
+  MessageComposer,
+  MessagesLayout,
+} from '@/features/workspace/messages-ui'
 import type { WorkspaceConversation, WorkspaceEngagement, WorkspaceMessage } from '@/features/workspace/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
 export default function WorkspaceConversationsPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const requestedConversationId = useWorkspaceQueryParam('conversation')
   const [conversations, setConversations] = useState<WorkspaceConversation[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -52,11 +54,8 @@ export default function WorkspaceConversationsPage() {
       ])
       if (cancelled) return
       if (result.ok) {
-        const requested = typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('conversation')
-          : null
         setConversations(result.data.conversations)
-        setSelectedId((current) => current ?? requested ?? result.data.conversations[0]?.id ?? null)
+        setSelectedId((current) => current ?? requestedConversationId ?? result.data.conversations[0]?.id ?? null)
       } else {
         setError(result)
       }
@@ -72,7 +71,16 @@ export default function WorkspaceConversationsPage() {
     return () => {
       cancelled = true
     }
-  }, [state.isPending, state.user, workspace])
+  }, [requestedConversationId, state.isPending, state.user, workspace])
+
+  useEffect(() => {
+    if (
+      !requestedConversationId
+      || !conversations.some((conversation) => conversation.id === requestedConversationId)
+    ) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedId(requestedConversationId)
+  }, [conversations, requestedConversationId])
 
   useEffect(() => {
     if (!selectedId) {
@@ -139,11 +147,13 @@ export default function WorkspaceConversationsPage() {
   if (!state.user) return <WorkspaceSignInState redirect="/workspace/messages" />
   return (
     <WorkspaceShell role={state.role}>
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <div className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <MessageSquare size={22} className="text-[#155eef]" />
+      <main className="flex min-h-[calc(100dvh-65px)] min-w-0 flex-1 flex-col overflow-hidden bg-[#f8f9ff] lg:h-dvh lg:min-h-0">
+        <header className="relative z-20 flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e5e7f2] bg-white/95 px-[20px] py-[16px] backdrop-blur-xl sm:px-[24px]">
+          <div className="flex items-center gap-[11px]">
+            <span className="flex size-[38px] items-center justify-center rounded-[12px] bg-gradient-to-br from-[#eaf1ff] to-[#f0eaff] text-[#155eef]">
+              <MessageSquare size={20} />
+            </span>
+            <h1 className="text-[23px] font-semibold leading-[30px] text-[#181d27]">
               Messages
             </h1>
           </div>
@@ -156,149 +166,107 @@ export default function WorkspaceConversationsPage() {
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[380px] xl:shrink-0 xl:border-b-0 xl:border-r">
-            <div className="border-b border-[#e9eaeb] px-[16px] py-[14px]">
-              <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">Threads</p>
-            </div>
-            <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
-              {conversations.length === 0 && (
-                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
-                  No messages yet.
+        <MessagesLayout
+          threadRail={(
+            <>
+              <div className="border-b border-[#e5e7f2] bg-white/45 px-[16px] py-[13px] backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#667085]">
+                  Threads
                 </p>
-              )}
-              {conversations.map((conversation) => {
-                const active = conversation.id === selected?.id
-                const engagement = engagements.find((item) => item.id === conversation.engagementId)
-                const title = conversation.subject || (engagement ? engagementTitle(engagement, state.role) : 'Engagement')
-                return (
-                  <button
-                    key={conversation.id}
-                    type="button"
-                    onClick={() => setSelectedId(conversation.id)}
-                    className={`rounded-[10px] border p-[12px] text-left transition-colors ${
-                      active ? 'border-[#155eef] bg-[#f5f8ff]' : 'border-transparent hover:bg-[#fafafa]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-[10px]">
-                      <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-[#155eef] text-[12px] font-semibold text-white">
-                        {initials(title)}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
-                          {title}
-                        </span>
-                        <span className="block truncate text-[13px] leading-[18px] text-[#535862]">
-                          Last message {relativeDate(conversation.lastMessageAt)}
-                        </span>
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-
-          <section className="flex min-h-[640px] min-w-0 flex-1 flex-col bg-white">
-            {selected ? (
-              <>
-                <div className={`border-b border-[#e9eaeb] bg-white px-[24px] py-[16px] ${CARD_SHADOW}`}>
-                  <h2 className="text-[18px] font-semibold leading-[28px] text-[#181d27]">
-                    {selected.subject || selectedEngagementLabel}
-                  </h2>
-                  <p className="text-[13px] leading-[18px] text-[#535862]">
-                    Engagement {selectedEngagementLabel}
-                  </p>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-[24px] py-[24px]">
-                  {loadingMessages ? (
-                    <div className="flex h-full items-center justify-center">
-                      <RefreshCw size={24} className="animate-spin text-[#155eef]" />
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="flex h-full items-center justify-center">
-                      <div className="max-w-[360px] text-center">
-                        <MessageSquare size={32} className="mx-auto text-[#d5d7da]" />
-                        <h3 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">No messages yet</h3>
-                        <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
-                          Start a shared project message thread below.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mx-auto flex max-w-[860px] flex-col gap-[12px]">
-                      {messages.map((message) => (
-                        <MessageBubble
-                          key={message.id}
-                          message={message}
-                          own={message.senderUserId === state.user?.id}
-                        />
-                      ))}
-                      <div ref={scrollRef} />
-                    </div>
-                  )}
-                </div>
-
-                <form onSubmit={sendMessage} className="border-t border-[#e9eaeb] bg-white px-[24px] py-[16px]">
-                  <div className="mx-auto flex max-w-[860px] items-end gap-[10px]">
-                    <button
-                      type="button"
-                      disabled
-                      aria-label="Attachments"
-                      className="flex size-[42px] shrink-0 items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white text-[#a4a7ae] disabled:cursor-not-allowed"
-                    >
-                      <Paperclip size={18} />
-                    </button>
-                    <textarea
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      rows={1}
-                      placeholder="Write a message"
-                      className="max-h-[160px] min-h-[42px] flex-1 resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
-                    />
-                    <button
-                      type="submit"
-                      disabled={sending || !draft.trim()}
-                      className={`inline-flex h-[42px] items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
-                    >
-                      <Send size={18} />
-                      Send
-                    </button>
-                  </div>
-                </form>
-              </>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <div className="max-w-[360px] text-center">
-                  <MessageSquare size={32} className="mx-auto text-[#d5d7da]" />
-                  <h2 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">No message thread selected</h2>
-                  <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
-                    Accept a request to start messaging.
-                  </p>
-                </div>
               </div>
-            )}
-          </section>
-        </div>
+              <div className="flex min-h-0 flex-1 flex-col gap-[6px] overflow-y-auto p-[10px]">
+                {conversations.length === 0 && (
+                  <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                    No messages yet.
+                  </p>
+                )}
+                {conversations.map((conversation) => {
+                  const engagement = engagements.find(
+                    (item) => item.id === conversation.engagementId,
+                  )
+                  const title = conversation.subject
+                    || (engagement
+                      ? engagementTitle(engagement, state.role)
+                      : 'Engagement')
+                  return (
+                    <ConversationThreadCard
+                      key={conversation.id}
+                      active={conversation.id === selected?.id}
+                      title={title}
+                      lastMessageAt={conversation.lastMessageAt}
+                      onSelect={() => setSelectedId(conversation.id)}
+                    />
+                  )
+                })}
+              </div>
+            </>
+          )}
+          conversationHeader={selected ? (
+            <ConversationHeader
+              title={selected.subject || selectedEngagementLabel}
+              engagementLabel={selectedEngagementLabel}
+            />
+          ) : undefined}
+          conversationBody={selected ? (
+            <div className="flex min-h-full flex-col px-[16px] py-[22px] sm:px-[24px]">
+              {loadingMessages ? (
+                <div className="flex flex-1 items-center justify-center">
+                  <span className="flex size-[52px] items-center justify-center rounded-[16px] bg-white/75 shadow-sm backdrop-blur-sm">
+                    <RefreshCw size={22} className="animate-spin text-[#155eef]" />
+                  </span>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center">
+                  <div className="max-w-[360px] text-center">
+                    <span className="mx-auto flex size-[54px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[#e8f0ff] to-[#efe7ff] text-[#155eef] shadow-sm">
+                      <MessageSquare size={24} />
+                    </span>
+                    <h3 className="mt-[14px] text-[18px] font-semibold text-[#181d27]">
+                      No messages yet
+                    </h3>
+                    <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                      Start a shared project message thread below.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mx-auto flex w-full max-w-[860px] flex-col gap-[13px]">
+                  {messages.map((message) => (
+                    <MessageBubble
+                      key={message.id}
+                      message={message}
+                      own={message.senderUserId === state.user?.id}
+                    />
+                  ))}
+                  <div ref={scrollRef} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex min-h-full items-center justify-center px-[24px] py-[48px]">
+              <div className="max-w-[360px] text-center">
+                <span className="mx-auto flex size-[54px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[#e8f0ff] to-[#efe7ff] text-[#155eef] shadow-sm">
+                  <MessageSquare size={24} />
+                </span>
+                <h2 className="mt-[14px] text-[18px] font-semibold text-[#181d27]">
+                  No message thread selected
+                </h2>
+                <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  Accept a request to start messaging.
+                </p>
+              </div>
+            </div>
+          )}
+          composer={selected ? (
+            <MessageComposer
+              draft={draft}
+              sending={sending}
+              onDraftChange={setDraft}
+              onSubmit={sendMessage}
+            />
+          ) : undefined}
+        />
       </main>
     </WorkspaceShell>
-  )
-}
-
-function MessageBubble({ message, own }: { message: WorkspaceMessage; own: boolean }) {
-  return (
-    <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-[min(680px,85%)] rounded-[14px] px-[14px] py-[10px] ${
-          own ? 'bg-[#155eef] text-white' : 'border border-[#e9eaeb] bg-white text-[#252b37]'
-        }`}
-      >
-        <p className="whitespace-pre-wrap text-[14px] leading-[20px]">{message.content || message.body}</p>
-        <p className={`mt-[6px] text-[11px] leading-[16px] ${own ? 'text-white/80' : 'text-[#717680]'}`}>
-          {timeDate(message.createdAt)}
-        </p>
-      </div>
-    </div>
   )
 }

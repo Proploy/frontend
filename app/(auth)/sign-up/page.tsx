@@ -6,8 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import InputField from '@/components/ui/InputField'
 import Button from '@/components/ui/Button'
-import { createClient } from '@/lib/supabase/client'
-import { syncUserToServiceApis } from '@/lib/service-apis/auth-sync'
+import { signUpWithPassword, startOAuthSignIn } from '@/lib/auth/browser-client'
 
 const oauthProviders = [
   { label: 'Sign up with Google', provider: 'google' as const },
@@ -47,30 +46,10 @@ export default function SignUpPage() {
     setError('')
 
     try {
-      const supabase = createClient()
-      const [firstName, ...rest] = formData.name.trim().split(/\s+/)
-      const lastName = rest.join(' ')
-      const origin = window.location.origin
-
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${origin}/auth/callback`,
-          data: {
-            full_name: formData.name,
-            first_name: firstName || '',
-            last_name: lastName || '',
-          },
-        },
-      })
-
+      const { error } = await signUpWithPassword(formData.name, formData.email, formData.password)
       if (error) throw error
-      if (data.session?.access_token) {
-        const synced = await syncUserToServiceApis(data.session.access_token)
-        if (!synced) throw new Error('Unable to sync account with service APIs')
-      }
 
+      window.dispatchEvent(new Event('proploy-auth-changed'))
       router.push('/check-email')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create account')
@@ -84,16 +63,9 @@ export default function SignUpPage() {
     setOauthLoading(provider)
 
     try {
-      const supabase = createClient()
-      const origin = window.location.origin
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${origin}/auth/callback`,
-        },
-      })
-
+      const { url, error } = await startOAuthSignIn({ provider })
       if (error) throw error
+      if (url) window.location.assign(url)
     } catch (err) {
       setError(err instanceof Error ? err.message : `Unable to sign up with ${provider}`)
       setOauthLoading(null)
@@ -103,7 +75,7 @@ export default function SignUpPage() {
   return (
     <div className="flex h-[calc(100vh-80px)] w-full">
       <div className="hidden lg:flex flex-[3] relative flex-col items-center justify-center overflow-hidden">
-        <Image alt="" src="/login-backdrop.png" fill className="absolute inset-0 object-cover" />
+        <Image alt="" src="/login-backdrop.png" fill sizes="(max-width: 1023px) 0px, 60vw" className="absolute inset-0 object-cover" />
         <div className="absolute inset-0 bg-[#0040c1] opacity-80" />
 
         <div className="relative z-10 flex flex-col gap-12 w-[640px] px-8">

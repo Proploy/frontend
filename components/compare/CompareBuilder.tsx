@@ -66,6 +66,7 @@ function SelectorSearch({
         )}
         {results.map((e) => (
           <button
+            type="button"
             key={e.id}
             onClick={() => onPick(e.id)}
             disabled={current === e.id}
@@ -105,6 +106,7 @@ function SelectorColumn({
         style={{ border: '1.5px dashed #d5d7da', borderRadius: 14, padding: 14, background: '#fff', minHeight: 150 }}
       >
         <button
+          type="button"
           onClick={() => setOpen(true)}
           className="flex items-center gap-[9px] w-full cursor-pointer"
           style={{ padding: '10px 12px', border: '1px solid #d5d7da', borderRadius: 8, background: '#fff', boxShadow: 'var(--shadow-xs)', fontSize: 14, color: '#717680' }}
@@ -125,6 +127,7 @@ function SelectorColumn({
         <LogoTile initial={entity.initial} tone={entity.logoTone} size={58} type={entity.type} logoUrl={entity.logoUrl} />
         {canRemove && (
           <button
+            type="button"
             onClick={onRemove}
             aria-label="Remove"
             className="flex cursor-pointer"
@@ -146,6 +149,7 @@ function SelectorColumn({
         <div className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 13.5, color: '#717680' }}>{entity.category}</div>
       </div>
       <button
+        type="button"
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-[6px] self-start cursor-pointer font-[family-name:var(--font-dm-sans)] font-semibold"
         style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid #d5d7da', background: '#fff', boxShadow: 'var(--shadow-xs)', fontSize: 13, color: '#414651' }}
@@ -208,6 +212,7 @@ export function Builder({
           ))}
           {!tooMany && (
             <button
+              type="button"
               onClick={onAdd}
               className="flex flex-col items-center justify-center gap-[8px] cursor-pointer"
               style={{ border: '1.5px dashed #b2ccff', borderRadius: 14, background: '#f5f8ff', minHeight: 158, color: '#004eeb' }}

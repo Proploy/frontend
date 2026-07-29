@@ -30,6 +30,8 @@ import {
   statusLabelForViewer,
 } from '@/components/workspace/workspace-format'
 import { useCurrentUserRole, useWorkspace } from '@/features/workspace'
+import { useWorkspaceExperience } from '@/features/workspace/workspace-experience'
+import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query-param'
 import type {
   WorkspaceEngagement,
   WorkspaceRole,
@@ -64,6 +66,8 @@ const EMPTY_FORM = {
 export default function WorkspaceProposalsPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const { showToast } = useWorkspaceExperience()
+  const requestedProposalId = useWorkspaceQueryParam('proposal')
   const [proposals, setProposals] = useState<WorkspaceProposal[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -74,7 +78,6 @@ export default function WorkspaceProposalsPage() {
   const [showTemplate, setShowTemplate] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formError, setFormError] = useState<string | null>(null)
-  const [activationMessage, setActivationMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (state.isPending || !state.user) return
@@ -92,8 +95,9 @@ export default function WorkspaceProposalsPage() {
       let nextError: NormalizedError | null = null
       if (proposalResult.ok) {
         setProposals(proposalResult.data.proposals)
-        const firstProposal = proposalResult.data.proposals[0]
-        setSelectedId((current) => current ?? firstProposal?.id ?? null)
+        setSelectedId(
+          (current) => current ?? requestedProposalId ?? proposalResult.data.proposals[0]?.id ?? null,
+        )
       } else {
         nextError = proposalResult
       }
@@ -115,7 +119,15 @@ export default function WorkspaceProposalsPage() {
     return () => {
       cancelled = true
     }
-  }, [state.isPending, state.user, workspace])
+  }, [requestedProposalId, state.isPending, state.user, workspace])
+
+  useEffect(() => {
+    if (!requestedProposalId || !proposals.some((proposal) => proposal.id === requestedProposalId)) return
+    // The URL is external navigation state; keep the visible record synchronized
+    // when Next.js changes only the query string on the mounted page.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedId(requestedProposalId)
+  }, [proposals, requestedProposalId])
 
   const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
   const isBuyerWorkspace = state.role === 'buyer'
@@ -163,10 +175,20 @@ export default function WorkspaceProposalsPage() {
     const result = await workspace.decideProposal(proposalId, decision)
     if (result.ok) {
       replaceProposal(result.data)
-      setActivationMessage(
+      showToast(
         decision === 'accept'
-          ? 'Confirmed. Your shared messages and contract workspace are now available.'
-          : 'Proposal declined. The expert has been notified.',
+          ? {
+              tone: 'success',
+              title: 'Proposal accepted',
+              body: 'Your shared messages and contract workspace are now available.',
+              actionLabel: 'Open messages',
+              actionHref: '/workspace/messages',
+            }
+          : {
+              tone: 'info',
+              title: 'Proposal declined',
+              body: 'The expert has been notified.',
+            },
       )
     } else setError(result)
     setBusyId(null)
@@ -252,12 +274,6 @@ export default function WorkspaceProposalsPage() {
             {error.error.message || 'Unable to update proposals.'}
           </div>
         )}
-        {activationMessage && (
-          <div className="border-b border-[#abefc6] bg-[#ecfdf3] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#067647]">
-            {activationMessage} <a href="/workspace/messages" className="font-semibold underline">Open messages</a>
-          </div>
-        )}
-
         {isExpertWorkspace && showTemplate && (
           <form onSubmit={createProposal} className="border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
             <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-[12px] lg:grid-cols-[1fr_1fr_160px_160px]">
@@ -399,6 +415,7 @@ export default function WorkspaceProposalsPage() {
           <section className="min-w-0 flex-1 overflow-y-auto bg-white p-[24px]">
             {selected ? (
               <ProposalDetail
+                key={`${selected.id}:${selected.updatedAt}`}
                 proposal={selected}
                 engagement={engagementMap.get(selected.engagementId)}
                 busy={busyId === selected.id}
@@ -429,7 +446,7 @@ export default function WorkspaceProposalsPage() {
   )
 }
 
-function ProposalDetail({
+export function ProposalDetail({
   proposal,
   engagement,
   busy,

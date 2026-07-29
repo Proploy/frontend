@@ -83,6 +83,7 @@ export default function ProjectDocumentsSection({
                     </span>
                     {hasFile && (
                       <button
+                        type="button"
                         onClick={() => handleDownload(project.id)}
                         disabled={isDownloading}
                         className="flex items-center gap-1 text-xs text-[#0466E7] hover:underline disabled:opacity-50 shrink-0"

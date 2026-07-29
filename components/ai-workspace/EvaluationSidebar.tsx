@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 import type {
   EvaluationAttentionGroup,
@@ -44,21 +46,28 @@ export function EvaluationSidebar({
   return (
     <aside className="flex h-full min-h-0 flex-col bg-white">
       <div
-        className={`flex items-center pb-3 pt-5 ${
+        className={`flex min-h-[80px] items-center border-b border-[#e9eaeb] ${
           collapsed ? 'justify-center px-2' : 'justify-between px-4'
         }`}
       >
         {!collapsed ? (
-          <p className="text-[11px] font-bold tracking-[0.12em] text-[#717680]">
-            EVALUATIONS
-          </p>
+          <Link href="/" className="flex items-center px-1">
+            <Image
+              src="/PROPLOY.svg"
+              alt="Proploy"
+              width={121}
+              height={34}
+              className="object-contain"
+              priority
+            />
+          </Link>
         ) : null}
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
             aria-label="Close evaluations"
-            className="flex size-8 items-center justify-center rounded-lg hover:bg-white lg:hidden"
+            className="flex size-8 items-center justify-center rounded-lg text-[#717680] transition hover:bg-[#f5f8ff] hover:text-[#155eef] lg:hidden"
           >
             <X size={17} />
           </button>
@@ -79,6 +88,13 @@ export function EvaluationSidebar({
           </button>
         ) : null}
       </div>
+      {!collapsed ? (
+        <div className="px-4 pb-3 pt-5">
+          <p className="text-[11px] font-bold tracking-[0.12em] text-[#717680]">
+            EVALUATIONS
+          </p>
+        </div>
+      ) : null}
       <div
         className={`min-h-0 flex-1 overflow-y-auto pb-3 ${
           collapsed ? 'px-2' : 'px-2.5'
