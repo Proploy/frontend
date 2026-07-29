@@ -27,6 +27,9 @@ const NOTIFICATIONS_PATH = '/api/v1/workspace/notifications'
 export function notificationToItem(
   notification: WorkspaceNotification,
 ): NotificationItem {
+  const createdAt = /(?:Z|[+-]\d{2}:\d{2})$/i.test(notification.createdAt)
+    ? notification.createdAt
+    : `${notification.createdAt}Z`
   return {
     id: notification.id,
     kind: notification.template === 'message_received' ? 'message' : 'approval',
@@ -35,7 +38,7 @@ export function notificationToItem(
     when: new Intl.DateTimeFormat(undefined, {
       dateStyle: 'medium',
       timeStyle: 'short',
-    }).format(new Date(notification.createdAt)),
+    }).format(new Date(createdAt)),
     unread: notification.readAt == null,
     href: notification.href ?? undefined,
   }

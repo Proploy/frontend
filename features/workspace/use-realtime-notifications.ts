@@ -3,31 +3,16 @@
 /**
  * useRealtimeNotifications — W8 (workspace-completion-harness §8.W8).
  *
- * Subscribes to Supabase Realtime postgres_changes on
- * `workspace.notification_event` filtered by the current user's id.
+ * Polls the service-apis notification feed for new user-targeted rows.
  *
  * Flow:
- *   1. Fetch the channel config from
- *      GET /api/v1/workspace/notifications/realtime-config (auth-gated,
- *      user id bound to the filter on the server).
- *   2. Build a `postgres_changes` channel with the returned
- *      { schema, table, filter }.
- *   3. Invoke the caller's `onNotification` callback for every new row.
- *   4. Return an unsubscribe function so the caller can clean up.
- *
- * Why this is a hook that returns an unsubscribe handle (not a
- * useEffect that subscribes internally):
- *   - The caller controls subscription lifetime (mount/unmount).
- *   - The Supabase client is created on the browser only; SSR
- *     imports of this file must be safe even when the browser
- *     Supabase env vars are missing.
- *
- * No new pip/npm dependencies — `@supabase/supabase-js` is already
- * installed (see frontend/package.json).
+ *   1. Fetch GET /api/v1/workspace/notifications/me through service-apis.
+ *   2. Remember existing ids without replaying old notifications.
+ *   3. Invoke the caller's `onNotification` callback for newly seen rows.
+ *   4. Stop polling on unmount.
  */
 
-import { useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useEffectEvent } from 'react'
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 
 /** Shape of the realtime config returned by service-apis. */
@@ -38,7 +23,7 @@ export interface RealtimeConfig {
   filter: string
 }
 
-/** Shape of a notification_event row, as Supabase Realtime delivers it. */
+/** Shape of a notification_event row returned by service-apis. */
 export interface NotificationEventRow {
   id: string
   template: string
@@ -51,6 +36,7 @@ export interface NotificationEventRow {
 }
 
 const serviceApis = new ServiceApisBrowserClient()
+const NOTIFICATION_POLL_MS = 30000
 
 /**
  * Fetch the realtime config from service-apis. Returns null on
@@ -83,6 +69,17 @@ export async function fetchRealtimeConfig(): Promise<RealtimeConfig | null> {
   }
 }
 
+async function fetchNotificationEvents(): Promise<NotificationEventRow[] | null> {
+  const result = await serviceApis.get<{ notifications: NotificationEventRow[] }>(
+    '/api/v1/workspace/notifications/me',
+    { requireAuth: true },
+  )
+  if (!('ok' in result) || !result.ok) {
+    return null
+  }
+  return Array.isArray(result.data.notifications) ? result.data.notifications : null
+}
+
 export interface UseRealtimeNotificationsOptions {
   /** Called for every new notification row received. */
   onNotification: (row: NotificationEventRow) => void
@@ -94,86 +91,49 @@ export interface UseRealtimeNotificationsOptions {
 }
 
 /**
- * React hook that wires the Supabase Realtime subscription to the
- * caller's notification callback. Cleans up on unmount.
+ * React hook that polls the notification feed and calls back for new rows.
+ * Cleans up on unmount.
  */
 export function useRealtimeNotifications({
   onNotification,
   enabled = true,
 }: UseRealtimeNotificationsOptions): void {
-  // Keep the latest callback in a ref so we can replace it on every
-  // render without resubscribing to the channel.
-  const cbRef = useRef(onNotification)
-  cbRef.current = onNotification
+  const notify = useEffectEvent(onNotification)
 
-  // Suppress unused-import-style lint if Supabase is missing
-  // (the channel is created on the next line).
   useEffect(() => {
     if (!enabled) return
 
     let cancelled = false
-    let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null
-    let removeListener: (() => void) | null = null
+    let initialized = false
+    const seenIds = new Set<string>()
 
-    ;(async () => {
-      const cfg = await fetchRealtimeConfig()
+    const poll = async () => {
+      const rows = await fetchNotificationEvents()
       if (cancelled) return
-      if (!cfg) return
+      if (!rows) return
 
-      const supabase = createClient()
-      channel = supabase
-        .channel(cfg.channelName)
-        .on(
-          // postgres-changes listener: 'INSERT' on the outbox table.
-          // The @supabase/supabase-js types for this overload vary
-          // by version; we cast to keep the dependency surface stable.
-          'postgres_changes' as never,
-          {
-            event: 'INSERT',
-            schema: cfg.schema,
-            table: cfg.tableName,
-            filter: cfg.filter,
-          },
-          (payload: { new: NotificationEventRow }) => {
-            const row = payload?.new
-            if (row) cbRef.current(row)
-          },
-        )
-
-      // Best-effort subscribe — Supabase returns a thenable.
-      // We don't await the resolved promise because the callback
-      // fires for every subsequent INSERT, not on subscribe.
-      try {
-        await channel.subscribe()
-      } catch {
-        // Swallow — caller can retry on the next mount.
+      if (!initialized) {
+        rows.forEach((row) => seenIds.add(row.id))
+        initialized = true
+        return
       }
 
-      removeListener = () => {
-        if (channel) {
-          try {
-            void supabase.removeChannel(channel)
-          } catch {
-            // ignore — channel may already be removed.
-          }
+      rows.forEach((row) => {
+        if (!seenIds.has(row.id)) {
+          seenIds.add(row.id)
+          notify(row)
         }
-      }
-    })()
+      })
+    }
+
+    void poll()
+    const interval = window.setInterval(() => {
+      void poll()
+    }, NOTIFICATION_POLL_MS)
 
     return () => {
       cancelled = true
-      if (removeListener) removeListener()
-      else if (channel) {
-        try {
-          // The Supabase client was created inside the async closure;
-          // we cannot remove the channel without a reference. As a
-          // best-effort, leave a sentinel: the next caller's `onClose`
-          // hook will be no-op because `cbRef` is replaced.
-          // The Supabase SDK cleans up channels on auth-state change.
-        } catch {
-          // ignore
-        }
-      }
+      window.clearInterval(interval)
     }
   }, [enabled])
 }

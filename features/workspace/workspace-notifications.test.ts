@@ -37,4 +37,17 @@ describe('workspace notifications', () => {
     const updated = { ...notification, readAt: '2026-07-29T04:00:00Z' }
     expect(mergeWorkspaceNotifications([notification], [updated])).toEqual([updated])
   })
+
+  it('treats an offset-less service timestamp as UTC', () => {
+    const item = notificationToItem({
+      ...notification,
+      createdAt: '2026-07-29T04:30:00',
+    })
+    const expected = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date('2026-07-29T04:30:00Z'))
+
+    expect(item.when).toBe(expected)
+  })
 })
