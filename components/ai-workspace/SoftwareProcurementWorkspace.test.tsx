@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   selectComparison: vi.fn().mockResolvedValue(true),
   addToShortlist: vi.fn().mockResolvedValue(true),
   saveEvaluation: vi.fn().mockResolvedValue(true),
+  startEvaluation: vi.fn(),
+  emptyWorkspace: false,
 }))
 
 vi.mock('next/navigation', () => ({
@@ -86,17 +88,24 @@ vi.mock('@/features/ai-workspace', async (importOriginal) => {
     await importOriginal<typeof import('@/features/ai-workspace')>()
   return {
     ...original,
-    useEvaluationWorkspace: () => ({
+    useEvaluationWorkspace: () => {
+      const activeEvaluation = mocks.emptyWorkspace ? null : evaluation
+      return {
       state: {
         summaries: [],
-        detailsById: { [evaluation.evaluation_id]: evaluation },
-        activeEvaluationId: evaluation.evaluation_id,
+        detailsById: activeEvaluation
+          ? { [evaluation.evaluation_id]: evaluation }
+          : {},
+        activeEvaluationId: activeEvaluation
+          ? evaluation.evaluation_id
+          : null,
         loading: false,
         sendingById: {},
         error: null,
       },
-      activeEvaluation: evaluation,
+      activeEvaluation,
       isSending: false,
+      isStartingEvaluation: false,
       selectComparison: mocks.selectComparison,
       refresh: vi.fn(),
       selectEvaluation: vi.fn(),
@@ -106,6 +115,7 @@ vi.mock('@/features/ai-workspace', async (importOriginal) => {
       archive: vi.fn(),
       deleteEvaluation: vi.fn(),
       sendMessage: vi.fn(),
+      startEvaluation: mocks.startEvaluation,
       confirmRequirements: vi.fn(),
       addToShortlist: mocks.addToShortlist,
       removeFromShortlist: vi.fn(),
@@ -114,12 +124,15 @@ vi.mock('@/features/ai-workspace', async (importOriginal) => {
       retryRegeneration: vi.fn(),
       saveEvaluation: mocks.saveEvaluation,
       getEvidence: vi.fn(),
-    }),
+      }
+    },
   }
 })
 
 describe('SoftwareProcurementWorkspace', () => {
   beforeEach(() => {
+    mocks.emptyWorkspace = false
+    mocks.startEvaluation.mockReset()
     mocks.push.mockClear()
     mocks.selectComparison.mockClear()
     mocks.selectComparison.mockResolvedValue(true)
@@ -127,6 +140,26 @@ describe('SoftwareProcurementWorkspace', () => {
     mocks.addToShortlist.mockResolvedValue(true)
     mocks.saveEvaluation.mockClear()
     mocks.saveEvaluation.mockResolvedValue(true)
+  })
+
+  it('shows the full welcome screen before the first evaluation and starts from a prompt', async () => {
+    mocks.emptyWorkspace = true
+    const view = await render(<SoftwareProcurementWorkspace />)
+
+    expect(view.container.textContent).toContain(
+      'Describe your requirements and compare suitable products',
+    )
+    expect(view.container.textContent).not.toContain(
+      'Start your first evaluation',
+    )
+    const starterPrompt = Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>('button'),
+    ).find((button) => button.textContent?.includes('Project management'))
+
+    expect(starterPrompt).toBeDefined()
+    await act(async () => starterPrompt?.click())
+    expect(mocks.startEvaluation).toHaveBeenCalledOnce()
+    await view.unmount()
   })
 
   it('saves canonical shortlist IDs before opening the existing compare route', async () => {
