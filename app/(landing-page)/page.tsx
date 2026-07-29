@@ -437,10 +437,10 @@ function HeroSearch() {
   };
 
   return (
-    <div ref={searchRef} className="relative flex gap-[16px]">
-      <div className="relative w-[480px] shrink-0">
+    <div ref={searchRef} className="relative flex w-full flex-col gap-[16px] sm:w-auto sm:flex-row">
+      <div className="relative w-full sm:w-[480px] sm:shrink-0">
         <InputField
-          className="w-[480px] shrink-0"
+          className="w-full sm:w-[480px] sm:shrink-0"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -550,16 +550,16 @@ export default function Landing() {
 
   return (
     <div className="bg-[#fafbfc] content-stretch flex flex-col items-start relative size-full" data-name="Landing" data-node-id="2007:22731">
-      <div className="-translate-x-1/2 absolute h-[1440px] left-1/2 top-0 w-[1920px]" data-name="Background pattern" data-node-id="2047:22656">
+      <div className="-translate-x-1/2 absolute h-[min(1440px,100%)] left-1/2 top-0 w-full max-w-[1920px]" data-name="Background pattern" data-node-id="2047:22656">
         <img alt="" className="absolute inset-0 max-w-none size-full object-cover opacity-80" src="/figma-assets/background-pattern.png" />
       </div>
-      <div className="content-stretch flex flex-col gap-[64px] items-center pt-[160px] relative shrink-0 w-full" data-name="Section" data-node-id="2047:5196">
+      <div className="content-stretch flex flex-col gap-[64px] items-center pt-[80px] relative shrink-0 w-full sm:pt-[120px] lg:pt-[160px]" data-name="Section" data-node-id="2047:5196">
         <div className="content-stretch flex flex-col gap-0 items-center max-w-[1280px] pl-[32px] pr-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="2047:5197">
           <div className="content-stretch flex flex-col gap-[48px] items-center relative shrink-0 w-full" data-name="Content" data-node-id="2047:5198">
             <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[768px] relative shrink-0 text-center w-full" data-name="Heading and supporting text" data-node-id="2047:5199">
               <div className="content-stretch flex flex-col font-semibold gap-[12px] items-center relative shrink-0 w-full" data-name="Heading and subheading" data-node-id="2047:5200">
                 <FadeUp delay={0.1}>
-                  <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/display-2xl,90px)] relative shrink-0 text-[color:var(--colors\/text\/text-primary-\(900\),#181d27)] text-[length:var(--font-size\/display-2xl,72px)] tracking-[-1.44px] w-full whitespace-pre-wrap" data-node-id="2047:5202">
+                  <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[48px] relative shrink-0 text-[color:var(--colors\/text\/text-primary-\(900\),#181d27)] text-[40px] tracking-[-1.44px] w-full whitespace-pre-wrap sm:leading-[68px] sm:text-[56px] lg:leading-[var(--line-height\/display-2xl,90px)] lg:text-[length:var(--font-size\/display-2xl,72px)]" data-node-id="2047:5202">
                     {`Discover, Decide, `}
                     <br aria-hidden="true" />
                     {`Deploy, Done. `}
@@ -633,7 +633,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <div className="content-stretch flex gap-[64px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="2075:7484">
+        <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full md:flex-row md:gap-[64px]" data-name="Container" data-node-id="2075:7484">
           <FadeUp delay={0.1}>
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start max-w-[560px] min-h-px min-w-px relative" data-name="Content" data-node-id="2075:7485">
               <button type="button" onClick={() => setActiveTab(0)} className={`border-l-4 border-solid content-stretch flex flex-col gap-[16px] items-start pl-[24px] py-[16px] relative shrink-0 w-full cursor-pointer transition-colors ${activeTab === 0 ? 'border-[#2970ff]' : 'border-[#f5f5f5]'}`} data-name="_Feature tab" data-node-id="2075:7486">
@@ -704,8 +704,8 @@ export default function Landing() {
             </button>
             </div>
           </FadeUp>
-          <div className="flex-[1_0_0] h-[640px] min-h-px min-w-px overflow-visible relative" data-name="Content" data-node-id="2075:7489">
-            <div className="-translate-y-1/2 absolute h-[640px] left-0 overflow-visible top-1/2 w-[576px]" data-name="Cards wrap" data-node-id="2075:7490">
+          <div className="flex-[1_0_0] h-[320px] min-h-px min-w-px overflow-hidden relative md:h-[640px] md:overflow-visible" data-name="Content" data-node-id="2075:7489">
+            <div className="-translate-y-1/2 absolute h-[320px] left-0 overflow-visible top-1/2 w-full max-w-full md:h-[640px] md:w-[576px]" data-name="Cards wrap" data-node-id="2075:7490">
               <div className="absolute aspect-[2354/1824] left-[-7.12%] right-[-3.65%] top-[73px] overflow-visible" data-name="Feature image" data-node-id="2078:7558">
                 <AnimatePresence mode="wait">
                   <motion.img
@@ -1470,7 +1470,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <div className="content-stretch flex gap-[96px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="I2047:25841;1327:179891">
+        <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full md:flex-row md:gap-[96px]" data-name="Container" data-node-id="I2047:25841;1327:179891">
           <FadeUp delay={0}>
           <div className="content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-start min-h-px min-w-px relative" data-name="Content" data-node-id="I2047:25841;1345:2026">
             <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full" data-name="Icon and text" data-node-id="I2047:25841;1345:2027">
@@ -1527,7 +1527,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <div className="content-stretch flex gap-[96px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="I2047:25841;1327:179914">
+        <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full md:flex-row md:gap-[96px]" data-name="Container" data-node-id="I2047:25841;1327:179914">
           <div className="flex-[1_0_0] h-[512px] min-h-px min-w-px relative" data-name="Content" data-node-id="I2047:25841;1327:180026">
             <div className="absolute bg-[var(--colors\/background\/bg-tertiary,#f5f5f5)] bottom-0 overflow-clip right-0 top-0 w-[768px]" data-name="Mockup wrap" data-node-id="I2047:25841;1327:180027">
               <div className="absolute h-[640px] left-[208px] top-[112px] w-[313.991px]" data-name="iPhone mockup" data-node-id="I2047:25841;1869:457233">
@@ -1679,7 +1679,7 @@ export default function Landing() {
           </div>
         </div>
         <FadeUp delay={0.15}>
-        <div className="content-stretch flex gap-[96px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="I2047:25841;1327:179937">
+        <div className="content-stretch flex flex-col gap-[24px] items-center max-w-[1280px] px-[32px] relative shrink-0 w-full md:flex-row md:gap-[96px]" data-name="Container" data-node-id="I2047:25841;1327:179937">
           <div className="content-stretch flex flex-[1_0_0] flex-col gap-[32px] items-start min-h-px min-w-px relative" data-name="Content" data-node-id="I2047:25841;1345:2098">
             <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full" data-name="Icon and text" data-node-id="I2047:25841;1345:2099">
               <motion.div whileHover={{ rotate: 5, filter: 'brightness(0.95)' }} className="bg-[var(--colors\/background\/bg-brand-secondary,#d1e0ff)] overflow-clip relative rounded-full shrink-0 size-[48px]" data-name="Featured icon" data-node-id="I2047:25841;1345:2100">
@@ -2043,7 +2043,7 @@ export default function Landing() {
       <div className="bg-[var(--colors\/background\/bg-brand-section,#0040c1)] content-stretch flex flex-col gap-0 items-center overflow-clip py-[96px] relative shrink-0 w-full" data-name="Newsletter CTA section" data-node-id="2047:26895">
         <div className="content-stretch flex flex-col gap-0 items-start max-w-[1280px] px-[32px] relative shrink-0 w-full" data-name="Container" data-node-id="I2047:26895;1365:208689">
           <div className="content-start flex flex-wrap gap-[32px] items-start relative shrink-0 w-full" data-name="Content" data-node-id="I2047:26895;1365:208690">
-            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start max-w-[768px] min-h-px min-w-[480px] relative" data-name="Heading and supporting text" data-node-id="I2047:26895;1365:208691">
+            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start max-w-[768px] min-h-px min-w-0 w-full md:min-w-[480px] relative" data-name="Heading and supporting text" data-node-id="I2047:26895;1365:208691">
               <FadeUp delay={0}>
                 <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[var(--line-height\/display-md,44px)] relative shrink-0 text-[color:var(--colors\/text\/text-primary_on-brand,white)] text-[length:var(--font-size\/display-md,36px)] tracking-[-0.72px] w-full" data-node-id="I2047:26895;1365:208692">
                   Transform Your Software Procurement Strategy
@@ -2056,7 +2056,7 @@ export default function Landing() {
               </FadeUp>
             </div>
             <FadeUp delay={0.2}>
-              <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-[480px]" data-name="Email capture" data-node-id="I2047:26895;3288:455916">
+              <div className="content-stretch flex w-full max-w-full flex-col gap-[16px] items-start relative shrink-0 sm:w-[480px] sm:max-w-[480px]" data-name="Email capture" data-node-id="I2047:26895;3288:455916">
                 <div className="flex flex-[1_0_0] flex-col gap-[6px] items-start min-h-px min-w-px relative">
                   <InputField placeholder="Enter your email" />
                   <p className="font-[family-name:var(--font-dm-sans)] font-normal leading-[20px] relative shrink-0 text-[#b2ccff] text-[14px] text-left w-full" style={{ fontVariationSettings: "'opsz' 14" }}>
