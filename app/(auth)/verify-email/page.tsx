@@ -59,7 +59,7 @@ export default function VerifyEmailPage() {
       </div>
 
       {/* Right Section */}
-      <div className="w-full flex flex-col items-center justify-center bg-white px-[100px] py-12 h-full min-w-[480px] lg:flex-[2] overflow-auto">
+      <div className="w-full flex flex-col items-center justify-center bg-white px-6 py-12 h-full sm:px-10 lg:flex-[2] lg:px-[100px] overflow-auto">
         <div className="w-full">
           <Image alt="Proploy" src="/proploy-logomark.png" width={48} height={48} className="mb-8" />
 
