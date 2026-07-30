@@ -75,7 +75,9 @@ export default function Navbar() {
   const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileAvatarObjectUrlRef = useRef<string | null>(null)
-  const hideOnWorkspace = WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  // The homepage ("/") ships its own Nav as part of the v2 design system, so the
+  // global marketing Navbar is suppressed there (in addition to workspace routes).
+  const hideOnWorkspace = pathname === '/' || WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
   const userId = user?.id
   const canAccessProfile = canUsePersonalization(user?.role)
 
