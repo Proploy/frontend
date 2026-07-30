@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Footer from '@/components/Footer'
-import { isPortalRoute } from '@/lib/site-chrome'
+import { hidesGlobalChrome } from '@/lib/site-chrome'
 
 // Renders the marketing Footer globally (mounted once in the root layout),
 // suppressing it on internal portal routes that own their own chrome — the same
@@ -10,6 +10,6 @@ import { isPortalRoute } from '@/lib/site-chrome'
 // public site without each page importing it.
 export default function SiteFooter() {
   const pathname = usePathname()
-  if (isPortalRoute(pathname)) return null
+  if (hidesGlobalChrome(pathname)) return null
   return <Footer />
 }

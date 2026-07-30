@@ -95,7 +95,7 @@ const footerColumns: { title: string; links: { label: string; href: string }[] }
 
 export default function Footer() {
   return (
-    <footer className="w-full pt-[64px] pb-[48px] border-t border-[#e9eaeb]">
+    <footer className="w-full pt-[64px] pb-[48px] border-t border-[#e9eaeb] bg-[#f5f8ff]">
       <div className="max-w-[1280px] mx-auto px-[32px]">
         {/* Top: brand + link columns */}
         <div className="flex flex-col lg:flex-row gap-x-[64px] gap-y-[48px]">
