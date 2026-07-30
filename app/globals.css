@@ -245,6 +245,25 @@
     /* ===== SHADOWS ===== */
     --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-search: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+    /* ===========================================================================
+       PROPLOY V2 DESIGN SYSTEM (homepage — becoming the site-wide system)
+       New token names only; they do not collide with the legacy tokens above.
+       Raw values live in :root below; these map them to Tailwind color utilities.
+       =========================================================================== */
+    --color-ink: var(--ink);
+    --color-ink-soft: var(--ink-soft);
+    --color-paper: var(--paper);
+    --color-paper-deep: var(--paper-deep);
+    --color-cobalt: var(--cobalt);
+    --color-cobalt-deep: var(--cobalt-deep);
+    --color-cobalt-soft: var(--cobalt-soft);
+    --color-signal: var(--signal);
+    --color-line: var(--line);
+    /* border-border resolves to the v2 line color (unused by legacy components) */
+    --color-border: var(--line);
+
+    --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
 }
 
 :root {
@@ -258,6 +277,139 @@ body {
     font-family: var(--font-body);
     font-size: var(--text-md);
     line-height: var(--leading-md);
+}
+
+/* ===========================================================================
+   PROPLOY V2 DESIGN SYSTEM — runtime tokens, utilities, keyframes
+   Ported from the "proploy-ai-expert-match" (Vault/Lovable) prototype.
+   Placed before @layer components (Tailwind v4 drops @utility defined after the
+   plain CSS further down). marquee-track is intentionally NOT redefined here —
+   this branch already ships a .marquee-track utility below.
+   =========================================================================== */
+
+:root {
+    --paper: oklch(0.985 0.004 95);
+    --paper-deep: oklch(0.958 0.006 250);
+    --ink: oklch(0.208 0.035 262);
+    --ink-soft: oklch(0.42 0.028 262);
+    --cobalt: oklch(0.53 0.213 262.5);
+    --cobalt-deep: oklch(0.42 0.203 265);
+    --cobalt-soft: oklch(0.94 0.028 262);
+    --signal: oklch(0.78 0.16 92);
+    --line: oklch(0.9 0.012 258);
+}
+
+@utility blueprint {
+    background-image:
+        linear-gradient(to right, color-mix(in oklab, var(--line) 60%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklab, var(--line) 60%, transparent) 1px, transparent 1px);
+    background-size: 72px 72px;
+}
+
+@utility rule-x {
+    border-top: 1px solid color-mix(in oklab, var(--line) 90%, transparent);
+}
+
+@utility label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--ink-soft) 90%, transparent);
+}
+
+@utility display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+}
+
+@utility glass-card {
+    background: color-mix(in oklab, white 78%, transparent);
+    backdrop-filter: blur(14px);
+    border: 1px solid color-mix(in oklab, var(--line) 100%, transparent);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.8) inset,
+        0 22px 60px -32px color-mix(in oklab, var(--cobalt) 45%, transparent);
+}
+
+@utility lift {
+    transition:
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 0.3s ease;
+    &:hover {
+        transform: translateY(-4px);
+        border-color: color-mix(in oklab, var(--cobalt) 45%, var(--line));
+        box-shadow: 0 30px 60px -40px color-mix(in oklab, var(--cobalt) 70%, transparent);
+    }
+}
+
+@utility spin-slow {
+    animation: spin 44s linear infinite;
+}
+
+@utility spin-slow-rev {
+    animation: spin 44s linear infinite reverse;
+}
+
+@utility spin-slower {
+    animation: spin 70s linear infinite;
+}
+
+@utility spin-slower-rev {
+    animation: spin 70s linear infinite reverse;
+}
+
+@utility pulse-dot {
+    animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@utility scan {
+    animation: scan 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@utility reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+        opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+    &[data-shown="true"] {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 color-mix(in oklab, var(--cobalt) 50%, transparent);
+    }
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 0 7px transparent;
+    }
+}
+
+@keyframes scan {
+    0%   { transform: translateY(-10%); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translateY(320%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1 !important;
+        transform: none !important;
+    }
 }
 
 @layer components {
