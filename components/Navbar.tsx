@@ -11,7 +11,7 @@ import { useAuth } from '@/components/providers/auth-provider'
 import { useExpertApplication } from '@/features/experts/use-expert-application'
 import type { ExpertMe } from '@/features/experts/types'
 import { setAuthIntent } from '@/lib/utils/auth-intent-client'
-import { PORTAL_PREFIXES } from '@/lib/site-chrome'
+import { hidesGlobalChrome } from '@/lib/site-chrome'
 
 const ABOUT_LINKS = [
   { href: '/for-businesses', label: 'For Business', description: 'See how buyers use Proploy to choose and deploy software.' },
@@ -38,7 +38,9 @@ export default function Navbar() {
   const catalogCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expertsCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const hideOnWorkspace = PORTAL_PREFIXES.some((p) => pathname?.startsWith(p))
+  // Suppress the global marketing Navbar on portal routes and on the homepage
+  // ("/"), which ships its own Nav as part of the new design system.
+  const hideOnWorkspace = hidesGlobalChrome(pathname)
   const userId = user?.id
 
   // Must be called before any early returns - rules-of-hooks
