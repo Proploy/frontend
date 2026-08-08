@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* layer(components) so Tailwind utilities (@layer utilities) can still override
+   pp-* styles — unlayered CSS would beat every utility regardless of specificity */
+@import "./v2-pages.css" layer(components);
 
 @theme {
     /* ===== COLOR SYSTEM ===== */

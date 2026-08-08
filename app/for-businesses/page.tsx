@@ -1,11 +1,100 @@
-'use client'
-
+import type { Metadata } from 'next'
+import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ArrowLeft, ArrowUpRight, Check, MessageSquareMore, Zap, BarChart3, MessageCircle } from 'lucide-react'
-import Footer from '@/components/Footer'
 
-const BUTTON_SKEUO_SHADOW =
-  'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
+import { Nav } from '@/components/site/Nav'
+import { Footer } from '@/components/site/Footer'
+import { Reveal } from '@/components/site/Reveal'
+
+import { CaseScroller } from './CaseScroller'
+import { QuoteCarousel } from './QuoteCarousel'
+
+export const metadata: Metadata = {
+  title: 'For Businesses — Proploy',
+  description:
+    'Discover best-fit software, get matched with vetted implementation experts, and launch with confidence — one workflow from software decision to successful launch.',
+}
+
+function CheckMark({ style }: { style?: CSSProperties }) {
+  return (
+    <span className="pp-yes" style={style}>
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      >
+        <path d="m5 13 4 4 10-10" />
+      </svg>
+    </span>
+  )
+}
+
+function LearnMoreArrow() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  )
+}
+
+// true → check mark, '—' → muted dash, any other string → plain text cell.
+type Cell = true | string
+
+interface CompareGroup {
+  title: string
+  rows: { label: string; values: [Cell, Cell, Cell] }[]
+}
+
+const COMPARE_GROUPS: CompareGroup[] = [
+  {
+    title: 'Discovery & matching',
+    rows: [
+      { label: 'Curated software shortlist', values: ['—', '—', true] },
+      { label: 'Vetted implementation experts', values: ['—', true, true] },
+      { label: 'Match based on team context', values: ['—', '—', true] },
+      { label: 'Free initial consultation', values: ['—', '—', 'Included'] },
+      { label: 'Searchable, filterable directory', values: [true, '—', true] },
+      { label: 'Pricing transparency', values: ['—', '—', true] },
+    ],
+  },
+  {
+    title: 'Implementation experience',
+    rows: [
+      { label: 'Single workspace for kickoff', values: ['—', '—', true] },
+      { label: 'Milestone tracking', values: ['Limited', 'Manual', 'Built-in'] },
+      { label: 'Live status updates', values: ['—', '—', true] },
+      { label: 'In-platform comms with expert', values: ['—', '—', true] },
+      { label: 'Document hand-off', values: ['Email', 'Email', 'In-app'] },
+      { label: 'Standardised SOWs', values: ['—', '—', true] },
+      { label: 'Outcome-based check-ins', values: ['—', '—', true] },
+      { label: 'Dedicated success owner', values: ['—', '—', true] },
+      { label: 'Centralised vendor invoicing', values: ['—', '—', true] },
+    ],
+  },
+  {
+    title: 'Trust & accountability',
+    rows: [
+      { label: 'Verified expert credentials', values: ['—', true, true] },
+      { label: 'Public expert ratings', values: ['—', '—', true] },
+      { label: 'Money-back guarantee window', values: ['—', '—', true] },
+      { label: 'Escalation pathway', values: ['Support ticket', 'None', 'White-glove'] },
+      { label: 'Data ownership clarity', values: ['—', '—', true] },
+    ],
+  },
+]
 
 const METRICS = [
   { value: '400+', label: 'Software products curated' },
@@ -13,104 +102,116 @@ const METRICS = [
   { value: '10k', label: 'Buyers & operators served' },
 ]
 
-type Cell = boolean | string
-
-interface ComparisonRow {
-  label: string
-  values: [Cell, Cell, Cell]
-}
-
-interface ComparisonSection {
+interface SolutionCard {
   title: string
-  rows: ComparisonRow[]
+  body: string
+  icon: ReactNode
 }
 
-const COMPARISON_COLUMNS = ['Traditional Platforms', 'Solo Hires', 'Proploy'] as const
-
-const COMPARISON_SECTIONS: ComparisonSection[] = [
+const SOLUTION_CARDS: SolutionCard[] = [
   {
-    title: 'Discovery & matching',
-    rows: [
-      { label: 'Curated software shortlist', values: [false, false, true] },
-      { label: 'Vetted implementation experts', values: [false, true, true] },
-      { label: 'Match based on team context', values: [false, false, true] },
-      { label: 'Free initial consultation', values: ['—', '—', 'Included'] },
-      { label: 'Searchable, filterable directory', values: [true, false, true] },
-      { label: 'Pricing transparency', values: [false, false, true] },
-    ],
+    title: 'Brief us once',
+    body: "Share your team's stage, stack and budget. Proploy turns it into a tailored shortlist of software and experts in days, not weeks.",
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 3.2a8.8 8.8 0 0 1 0 17.6H8.9l-3.6 2.1a.5.5 0 0 1-.74-.57l.85-3.2A8.8 8.8 0 0 1 12 3.2Z" />
+        <circle cx="8.4" cy="12" r=".95" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r=".95" fill="currentColor" stroke="none" />
+        <circle cx="15.6" cy="12" r=".95" fill="currentColor" stroke="none" />
+      </svg>
+    ),
   },
   {
-    title: 'Implementation experience',
-    rows: [
-      { label: 'Single workspace for kickoff', values: [false, false, true] },
-      { label: 'Milestone tracking', values: ['Limited', 'Manual', 'Built-in'] },
-      { label: 'Live status updates', values: [false, false, true] },
-      { label: 'In-platform comms with expert', values: [false, false, true] },
-      { label: 'Document hand-off', values: ['Email', 'Email', 'In-app'] },
-      { label: 'Standardised SOWs', values: [false, false, true] },
-      { label: 'Outcome-based check-ins', values: [false, false, true] },
-      { label: 'Dedicated success owner', values: [false, false, true] },
-      { label: 'Centralised vendor invoicing', values: [false, false, true] },
-    ],
+    title: 'Match with vetted experts',
+    body: "Every implementation expert is interviewed, reference-checked and graded against the playbook for the software you're rolling out.",
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M13.2 2.8 5.6 13.1a.5.5 0 0 0 .4.8h4.3l-.9 7.1a.5.5 0 0 0 .9.35l7.5-10.2a.5.5 0 0 0-.4-.8h-4.2l.9-6.9a.5.5 0 0 0-.9-.35Z" />
+      </svg>
+    ),
   },
   {
-    title: 'Trust & accountability',
-    rows: [
-      { label: 'Verified expert credentials', values: [false, true, true] },
-      { label: 'Public expert ratings', values: [false, false, true] },
-      { label: 'Money-back guarantee window', values: [false, false, true] },
-      { label: 'Escalation pathway', values: ['Support ticket', 'None', 'White-glove'] },
-      { label: 'Data ownership clarity', values: [false, false, true] },
-    ],
+    title: 'Track to go-live',
+    body: 'Milestones, status and approvals live in one workspace — so finance, ops and the expert stay aligned through rollout.',
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3.5 20.5h17" />
+        <rect x="4.5" y="12" width="3.4" height="5.5" rx="1" />
+        <rect x="10.3" y="7.5" width="3.4" height="10" rx="1" />
+        <rect x="16.1" y="10" width="3.4" height="7.5" rx="1" />
+        <path d="M5 5.5 10.5 3l4 2.5L20 2.5" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Stay supported post-launch',
+    body: 'A dedicated success owner keeps the expert engaged through training, cutover and the first 90 days of adoption.',
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="8.6" />
+        <path d="m8.6 12.1 2.3 2.3 4.5-4.9" />
+      </svg>
+    ),
   },
 ]
 
-const SOLUTION_CARDS = [
-  {
-    icon: <MessageSquareMore size={24} className="text-white" />,
-    title: 'Brief us once',
-    body:
-      "Share your team's stage, stack, and budget. Proploy turns it into a tailored shortlist of software and experts in days, not weeks.",
-  },
-  {
-    icon: <Zap size={24} className="text-white" />,
-    title: 'Match with vetted experts',
-    body:
-      "Every implementation expert is interviewed, reference-checked, and graded against the playbook for the software you're rolling out.",
-  },
-  {
-    icon: <BarChart3 size={24} className="text-white" />,
-    title: 'Track to go-live',
-    body:
-      'Milestones, status, and approvals live in one workspace — so finance, ops, and the expert stay aligned through rollout.',
-  },
-  {
-    icon: <MessageCircle size={24} className="text-white" />,
-    title: 'Stay supported post-launch',
-    body:
-      'A dedicated success owner keeps the expert engaged through training, cutover, and the first 90 days of adoption.',
-  },
+const STORY_POINTS = [
+  'A shortlist tuned to your stage, stack and budget — not a vendor leaderboard.',
+  'Implementation partners interviewed and graded against the same playbook every time.',
+  'One workspace from first call to go-live, so nothing falls between calendars.',
 ]
 
 const CASE_STUDIES = [
   {
     company: 'Layers',
-    color: '#155eef',
     quote: '“Proploy shortlisted three tools in two days. We picked one and were live in three weeks.”',
   },
   {
     company: 'Sisyphus',
-    color: '#079455',
     quote: '“The matched implementation expert knew our CRM better than the vendor sales team did.”',
   },
   {
     company: 'Capsule',
-    color: '#1570ef',
     quote: '“One workspace from RFP to rollout. Procurement stopped chasing email threads.”',
   },
   {
     company: 'Catalog',
-    color: '#444ce7',
     quote: '“We replaced a six-month evaluation with a four-week Proploy engagement. Same outcome.”',
   },
 ]
@@ -119,303 +220,334 @@ const LOGOS = ['Fruition', 'Layers', 'Sisyphus', 'Capsule', 'Catalog', 'Coreos',
 
 export default function ForBusinessesPage() {
   return (
-    <div className="min-h-screen bg-white pt-[80px] font-[family-name:var(--font-dm-sans)] flex flex-col">
-      {/* Hero */}
-      <section className="py-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[12px]">
-          <p className="font-semibold text-[16px] leading-[24px] text-[#004eeb]">For Business</p>
-          <div className="flex flex-wrap gap-[32px] items-start w-full">
-            <div className="flex-1 min-w-[480px] max-w-[768px]">
-              <h1 className="font-semibold text-[48px] leading-[60px] text-[#181d27] tracking-[-0.96px]">
-                Find the software and the expert <br /> to make it work, together
-              </h1>
-            </div>
-            <div className="flex-1 min-w-[300px] max-w-[480px] pt-[12px]">
-              <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
-                Proploy helps growing businesses discover best-fit software, get matched with vetted implementation experts, and launch with confidence.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-[12px] mt-[36px]">
-            <Link
-              href="/experts"
-              className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}
-            >
-              Explore experts
-            </Link>
-            <Link
-              href="/sign-up"
-              className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-white ${BUTTON_SKEUO_SHADOW}`}
-            >
-              Get matched
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div className="pp-scope overflow-x-clip">
+      <Nav />
 
-      {/* Metrics */}
-      <section className="pb-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px]">
-          <div className="flex flex-wrap gap-[32px] justify-center bg-[#fafafa] rounded-[16px] p-[64px]">
-            {METRICS.map((m) => (
-              <div key={m.label} className="flex-1 min-w-[240px] flex flex-col items-center gap-[12px]">
-                <p className="font-semibold text-[60px] leading-[72px] text-[#155eef] text-center tracking-[-1.2px]">
-                  {m.value}
+      <main className="pp-page">
+        {/* ── Hero ────────────────────────────────────────────────── */}
+        <section className="pp-blueprint" style={{ paddingBlock: 'var(--sp-20) var(--sp-16)' }}>
+          <div className="pp-glow" style={{ top: -120, right: -60 }} />
+
+          <div className="pp-container">
+            <Reveal className="pp-stack pp-gap-8 pp-soften">
+              <p className="pp-label">For business</p>
+
+              <div className="pp-sec-split" style={{ alignItems: 'start' }}>
+                <h1 className="pp-display pp-d1">
+                  Find the software
+                  <br />
+                  and the expert to
+                  <br />
+                  make it work.
+                </h1>
+
+                <p className="pp-lede">
+                  Discover best-fit software, get matched with vetted experts, and launch with confidence.
                 </p>
-                <p className="font-semibold text-[18px] leading-[28px] text-[#181d27] text-center">{m.label}</p>
               </div>
-            ))}
+
+              <div className="pp-flex pp-wrap pp-gap-3">
+                <Link className="pp-btn pp-btn--primary pp-btn--pill pp-btn--inline" href="/sign-up">
+                  Get matched
+                </Link>
+                <Link className="pp-btn pp-btn--secondary pp-btn--pill pp-btn--inline" href="/experts">
+                  Explore experts
+                </Link>
+              </div>
+            </Reveal>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Comparison */}
-      <section className="pb-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
-          <div className="max-w-[768px] flex flex-col gap-[20px]">
-            <p className="font-semibold text-[16px] leading-[24px] text-[#004eeb]">The problem</p>
-            <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
-              Software buying is broken for growing teams
-            </h2>
-            <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
-              Stacks fall apart between sales calls, agency hand-offs, and Slack threads. Proploy puts discovery,
-              experts, and rollout in one place.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto">
-            <div
-              className="grid min-w-[960px]"
-              style={{ gridTemplateColumns: '304px repeat(3, 1fr)' }}
-            >
-              <div />
-              {COMPARISON_COLUMNS.map((col, idx) => (
-                <div
-                  key={col}
-                  className={`flex items-center justify-center font-semibold text-[20px] leading-[30px] py-[8px] ${
-                    idx === COMPARISON_COLUMNS.length - 1 ? 'text-[#004eeb]' : 'text-[#181d27]'
-                  }`}
-                >
-                  {col}
-                </div>
-              ))}
-
-              {COMPARISON_SECTIONS.map((section) => (
-                <div key={section.title} className="contents">
-                  <div className="col-span-4 py-[8px] font-semibold text-[16px] leading-[24px] text-[#004eeb]">
-                    {section.title}
-                  </div>
-                  {section.rows.map((row, rowIdx) => (
-                    <div key={row.label} className="contents">
-                      <div
-                        className={`flex items-center px-[16px] py-[16px] font-normal text-[16px] leading-[24px] text-[#414651] ${
-                          rowIdx % 2 === 0 ? 'bg-[#fafafa]' : ''
-                        }`}
-                      >
-                        {row.label}
+        {/* ── Metrics ─────────────────────────────────────────────── */}
+        <section style={{ paddingBlock: '0 var(--section-y)' }}>
+          <div className="pp-container">
+            <Reveal>
+              <div className="pp-card pp-card--panel" style={{ paddingBlock: 'var(--sp-12)' }}>
+                <div className="pp-fade-stack pp-stack pp-gap-8">
+                  <div className="pp-grid pp-grid-3" style={{ gap: 'var(--sp-8)' }}>
+                    {METRICS.map((m) => (
+                      <div key={m.label} className="pp-metric">
+                        <p className="pp-metric-value">{m.value}</p>
+                        <p className="pp-label">{m.label}</p>
                       </div>
-                      {row.values.map((v, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-center justify-center px-[16px] py-[16px] font-normal text-[16px] leading-[24px] text-[#414651] ${
-                            rowIdx % 2 === 0 ? 'bg-[#fafafa]' : ''
-                          }`}
-                        >
-                          {typeof v === 'boolean' ? (
-                            v ? (
-                              <span className="size-[24px] rounded-full bg-[#dcfae6] flex items-center justify-center">
-                                <Check size={14} className="text-[#079455]" strokeWidth={3} />
-                              </span>
-                            ) : (
-                              <span className="text-[#717680]">—</span>
-                            )
-                          ) : (
-                            <span>{v}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── Comparison ──────────────────────────────────────────── */}
+        <section className="pp-section pp-band">
+          <div className="pp-container pp-stack pp-gap-16">
+            <Reveal className="pp-sec-split pp-soften">
+              <div className="pp-sec-head">
+                <p className="pp-label">The problem</p>
+                <h2 className="pp-display pp-d3">Software buying is broken for growing teams.</h2>
+              </div>
+
+              <p className="pp-lede">
+                Proploy puts discovery, experts and rollout in one place, not across scattered threads.
+              </p>
+            </Reveal>
+
+            <Reveal>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="fb-compare">
+                  <thead>
+                    <tr>
+                      <th />
+                      <th>Traditional platforms</th>
+                      <th>Solo hires</th>
+                      <th>Proploy</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {COMPARE_GROUPS.map((group) => (
+                      <Fragment key={group.title}>
+                        <tr className="fb-group">
+                          <td className="pp-label" colSpan={4}>
+                            {group.title}
+                          </td>
+                        </tr>
+                        {group.rows.map((row) => (
+                          <tr key={row.label}>
+                            <td>{row.label}</td>
+                            {row.values.map((value, i) => (
+                              <td key={i}>
+                                {value === true ? (
+                                  <CheckMark />
+                                ) : value === '—' ? (
+                                  <span className="pp-no">—</span>
+                                ) : (
+                                  value
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── Solution cards ──────────────────────────────────────── */}
+        <section className="pp-section pp-blueprint">
+          <div className="pp-glow" style={{ top: 40, left: -140 }} />
+
+          <div className="pp-container pp-stack pp-gap-16">
+            <Reveal className="pp-sec-split pp-soften">
+              <div className="pp-sec-head">
+                <p className="pp-label">The solution</p>
+                <h2 className="pp-display pp-d3">One workflow from software decision to successful launch.</h2>
+              </div>
+
+              <p className="pp-lede">
+                Browse, match and ship in a single thread, with the right experts from day one.
+              </p>
+            </Reveal>
+
+            <div className="pp-grid pp-grid-4" style={{ gap: 'var(--sp-6)' }}>
+              {SOLUTION_CARDS.map((card, i) => (
+                <Reveal key={card.title} delay={i * 80}>
+                  <div
+                    className="pp-card pp-lift"
+                    style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-12)', minHeight: 320, height: '100%' }}
+                  >
+                    <span className="pp-ico">{card.icon}</span>
+
+                    <div className="pp-stack pp-gap-4" style={{ marginTop: 'auto' }}>
+                      <div className="pp-stack" style={{ gap: 6 }}>
+                        <p className="pp-h6">{card.title}</p>
+                        <p className="pp-body">{card.body}</p>
+                      </div>
+
+                      <button type="button" className="pp-link-arrow">
+                        Learn more
+                        <LearnMoreArrow />
+                      </button>
+                    </div>
+                  </div>
+                </Reveal>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Solution cards */}
-      <section className="pb-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
-          <div className="max-w-[768px] flex flex-col gap-[20px]">
-            <p className="font-semibold text-[16px] leading-[24px] text-[#004eeb]">The solution</p>
-            <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
-              One workflow from software decision to successful launch.
-            </h2>
-            <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
-              Browse, match, and ship — all in a single thread, with the right experts plugged in from day one.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px]">
-            {SOLUTION_CARDS.map((card) => (
-              <div
-                key={card.title}
-                className="bg-[#fafafa] flex flex-col gap-[64px] p-[24px] min-h-[328px]"
-              >
-                <div className={`size-[48px] rounded-[10px] bg-[#155eef] border-2 border-white/[0.12] flex items-center justify-center ${BUTTON_SKEUO_SHADOW}`}>
-                  {card.icon}
+        {/* ── Our story ───────────────────────────────────────────── */}
+        <section className="pp-section pp-band">
+          <div className="pp-container pp-stack pp-gap-16">
+            <Reveal className="pp-sec-split pp-soften">
+              <div className="pp-sec-head">
+                <p className="pp-label">Our story</p>
+                <h2 className="pp-display pp-d3">We&apos;re just getting started.</h2>
+              </div>
+
+              <p className="pp-lede">Proploy has already helped over 4,000 companies achieve remarkable results.</p>
+            </Reveal>
+
+            <Reveal>
+              <div className="pp-grid pp-grid-2" style={{ gap: 'var(--sp-16)' }}>
+                <div className="pp-stack pp-gap-4">
+                  <p className="pp-lede">
+                    Proploy started in a back room of a procurement consultancy where every other deal hit the same
+                    wall — a strong shortlist, a strong vendor, and no one who could actually take it live for the
+                    team.
+                  </p>
+
+                  <p className="pp-lede">
+                    So we built the bridge. A directory of software the way buyers actually compare it, paired with a
+                    roster of implementation experts who have shipped it before. One brief, one conversation, one
+                    rollout.
+                  </p>
+
+                  <p className="pp-lede">
+                    Today Proploy helps operators, founders and procurement leads at growing companies match with the
+                    right software and the right hands — and stay on the same thread through cutover, training and the
+                    first 90 days.
+                  </p>
                 </div>
-                <div className="flex flex-col gap-[16px]">
-                  <div className="flex flex-col gap-[4px]">
-                    <p className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{card.title}</p>
-                    <p className="font-normal text-[16px] leading-[24px] text-[#535862]">{card.body}</p>
-                  </div>
-                  <button type="button" className="inline-flex items-center gap-[6px] font-semibold text-[16px] leading-[24px] text-[#004eeb] hover:underline self-start">
-                    Learn more <ArrowRight size={20} />
-                  </button>
+
+                <div className="pp-card pp-card--panel pp-stack pp-gap-6">
+                  <p className="pp-label">What it actually feels like</p>
+
+                  <ul className="pp-stack pp-gap-4">
+                    {STORY_POINTS.map((point) => (
+                      <li key={point} className="pp-flex pp-gap-3" style={{ alignItems: 'flex-start' }}>
+                        <CheckMark style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span className="pp-body">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <hr className="pp-rule" />
+
+                  <p className="pp-body">
+                    If the rollout misses the mark, we keep working. The product, the expert and the outcome live on
+                    the same line item.
+                  </p>
                 </div>
               </div>
-            ))}
+            </Reveal>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Our story */}
-      <section className="pb-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
-          <div className="max-w-[768px] flex flex-col gap-[20px]">
-            <p className="font-semibold text-[16px] leading-[24px] text-[#004eeb]">Our story</p>
-            <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
-              We&apos;re just getting started
-            </h2>
-            <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
-              We&apos;ve already helped over 4,000 companies achieve remarkable results.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-[64px] items-start">
-            <div className="flex-1 min-w-[420px] max-w-[720px] flex flex-col gap-[18px] font-normal text-[18px] leading-[28px] text-[#535862]">
-              <p>Proploy started in a back room of a procurement consultancy where every other deal hit the same wall — a strong shortlist, a strong vendor, and no one who could actually take it live for the team.</p>
-              <p>So we built the bridge. A directory of software the way buyers actually compare it, paired with a roster of implementation experts who have shipped it before. One brief, one conversation, one rollout.</p>
-              <p>Today we help operators, founders, and procurement leads at growing companies match with the right software and the right hands — and stay on the same thread through cutover, training, and the first 90 days.</p>
-            </div>
-            <div className="flex-1 min-w-[420px] max-w-[720px] flex flex-col gap-[18px] font-normal text-[18px] leading-[28px] text-[#535862]">
-              <p>What it actually feels like:</p>
-              <ul className="list-disc ms-[24px] flex flex-col gap-[8px]">
-                <li>A shortlist tuned to your stage, stack, and budget — not a vendor leaderboard.</li>
-                <li>Implementation partners interviewed and graded against the same playbook every time.</li>
-                <li>One workspace from first call to go-live, so nothing falls between calendars.</li>
-              </ul>
-              <p>If the rollout misses the mark, we keep working. The product, the expert, and the outcome live on the same line item.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* ── Case studies ────────────────────────────────────────── */}
+        <section className="pp-section">
+          <div className="pp-container-app pp-stack pp-gap-16">
+            <Reveal>
+              <div
+                className="pp-flex pp-wrap pp-gap-8"
+                style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
+              >
+                <div className="pp-sec-head">
+                  <p className="pp-label">Customer stories</p>
+                  <h2 className="pp-display pp-d3">We&apos;re proud of our success stories.</h2>
+                  <p className="pp-lede">Case studies from customers who are building faster.</p>
+                </div>
 
-      <div className="h-px w-full bg-[#e9eaeb]" />
+                <div className="pp-flex pp-wrap pp-gap-3">
+                  <Link className="pp-btn pp-btn--secondary pp-btn--pill pp-btn--inline" href="/">
+                    Our customers
+                  </Link>
+                  <Link className="pp-btn pp-btn--primary pp-btn--pill pp-btn--inline" href="/sign-up">
+                    Create account
+                  </Link>
+                </div>
+              </div>
+            </Reveal>
 
-      {/* Case studies */}
-      <section className="py-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col gap-[64px]">
-          <div className="flex flex-wrap items-start justify-between gap-y-[32px]">
-            <div className="flex-1 min-w-[480px] max-w-[768px] flex flex-col gap-[20px]">
-              <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
-                We&apos;re proud of our success stories
-              </h2>
-              <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
-                Case studies from some of our amazing customers who are building faster.
-              </p>
-            </div>
-            <div className="flex gap-[12px]">
-              <Link href="#" className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}>
-                Our customers
-              </Link>
-              <Link href="/sign-up" className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-white ${BUTTON_SKEUO_SHADOW}`}>
-                Create account
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-[32px]">
-            <div className="flex gap-[32px] overflow-x-auto pb-[8px]">
+            <CaseScroller>
               {CASE_STUDIES.map((cs) => (
-                <article
-                  key={cs.company}
-                  className="relative flex flex-col h-[504px] w-[384px] shrink-0 p-[20px] justify-end"
-                  style={{ backgroundColor: cs.color }}
-                >
-                  <div className="absolute top-[32px] left-[32px] font-semibold text-white text-[24px] leading-[32px]">
+                <article key={cs.company} className="fb-case">
+                  <p className="pp-label fb-case-name" style={{ color: 'rgba(255,255,255,.7)' }}>
                     {cs.company}
-                  </div>
-                  <div className="backdrop-blur-[12px] bg-white/30 border border-white/30 px-[24px] py-[32px] flex flex-col gap-[24px]">
-                    <div className="flex flex-col gap-[12px] text-white">
-                      <p className="font-semibold text-[24px] leading-[32px]">{cs.company}</p>
-                      <p className="font-medium text-[18px] leading-[28px]">{cs.quote}</p>
+                  </p>
+
+                  <div className="fb-case-quote">
+                    <div className="pp-stack pp-gap-3">
+                      <p className="pp-h5" style={{ color: '#fff' }}>
+                        {cs.company}
+                      </p>
+                      <p className="pp-lede" style={{ color: 'rgba(255,255,255,.88)' }}>
+                        {cs.quote}
+                      </p>
                     </div>
-                    <button type="button" className="inline-flex items-center gap-[6px] font-semibold text-[16px] leading-[24px] text-white self-start">
-                      Read case study <ArrowUpRight size={20} />
+
+                    <button type="button" className="pp-link-arrow" style={{ color: '#fff' }}>
+                      Read case study
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M7 17 17 7M9 7h8v8" />
+                      </svg>
                     </button>
                   </div>
                 </article>
               ))}
-            </div>
-            <div className="flex gap-[32px]">
-              <button type="button" aria-label="Previous" className="size-[56px] rounded-full border border-[#e9eaeb] flex items-center justify-center text-[#414651] hover:bg-gray-50">
-                <ArrowLeft size={24} />
-              </button>
-              <button type="button" aria-label="Next" className="size-[56px] rounded-full border border-[#e9eaeb] flex items-center justify-center text-[#414651] hover:bg-gray-50">
-                <ArrowRight size={24} />
-              </button>
-            </div>
+            </CaseScroller>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Quote testimonial */}
-      <section className="py-[96px] bg-[#fafafa]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-col items-center gap-[32px]">
-          <p className="font-semibold text-[16px] leading-[24px] text-[#004eeb]">— Untitled</p>
-          <p className="max-w-[1024px] font-medium text-[30px] leading-[44px] text-[#181d27] text-center tracking-[-0.6px]">
-            “Finding the right implementation partner for a new platform is a daunting task. Proploy matched us with a vetted expert who shipped on time and on scope — we&apos;ll keep using them for every rollout.”
-          </p>
-          <div className="flex items-center gap-[16px]">
-            <div className="size-[48px] rounded-full bg-[#155eef] text-white font-bold flex items-center justify-center">A</div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-[16px] leading-[24px] text-[#181d27]">Adam Wathan</span>
-              <span className="font-normal text-[14px] leading-[20px] text-[#535862]">Head of Operations, Fruition</span>
+        {/* ── Testimonial ─────────────────────────────────────────── */}
+        <section className="pp-section pp-band-deep">
+          <Reveal>
+            <div className="pp-container pp-stack pp-gap-8 pp-center" style={{ alignItems: 'center' }}>
+              <p className="pp-label">Customer voice</p>
+              <QuoteCarousel />
             </div>
-          </div>
-        </div>
-      </section>
+          </Reveal>
+        </section>
 
-      {/* CTA */}
-      <section className="py-[96px]">
-        <div className="max-w-[1280px] mx-auto px-[32px] flex flex-wrap items-start gap-[64px]">
-          <div className="flex-1 min-w-[360px] flex flex-col gap-[48px]">
-            <div className="max-w-[768px] flex flex-col gap-[20px]">
-              <h2 className="font-semibold text-[36px] leading-[44px] text-[#181d27] tracking-[-0.72px]">
-                Join 4,000+ teams choosing software with Proploy
-              </h2>
-              <p className="font-normal text-[20px] leading-[30px] text-[#535862]">
-                Get matched with a vetted implementation expert — first consultation is free.
-              </p>
-            </div>
-            <div className="flex gap-[12px]">
-              <Link href="#" className={`bg-white border border-[#d5d7da] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-[#414651] ${BUTTON_SKEUO_SHADOW}`}>
-                Learn more
-              </Link>
-              <Link href="/sign-up" className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[18px] py-[12px] font-semibold text-[16px] leading-[24px] text-white ${BUTTON_SKEUO_SHADOW}`}>
-                Get started
-              </Link>
-            </div>
-          </div>
-          <div className="flex-1 min-w-[360px] grid grid-cols-3 gap-x-[32px] gap-y-[24px] items-center justify-items-center">
-            {LOGOS.map((l) => (
-              <div key={l} className="font-semibold text-[14px] leading-[20px] text-[#717680] uppercase tracking-[1px]">
-                {l}
+        {/* ── Closing CTA ─────────────────────────────────────────── */}
+        <section className="pp-section">
+          <div className="pp-container-app">
+            <Reveal className="pp-dark">
+              <div className="pp-sec-split" style={{ alignItems: 'center', gap: 'var(--sp-16)' }}>
+                <div className="pp-stack pp-gap-8">
+                  <div className="pp-stack pp-gap-5">
+                    <p className="pp-label">Get started</p>
+                    <h2 className="pp-display pp-d3">Join 4,000+ teams choosing software with Proploy.</h2>
+                    <p className="pp-lede">
+                      Get matched with a vetted implementation expert — first consultation is free.
+                    </p>
+                  </div>
+
+                  <div className="pp-flex pp-wrap pp-gap-3">
+                    <Link className="pp-btn pp-btn--cobalt pp-btn--pill pp-btn--inline" href="/sign-up">
+                      Get started
+                    </Link>
+                    <Link className="pp-btn pp-btn--secondary pp-btn--pill pp-btn--inline" href="/products">
+                      Learn more
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="fb-logos">
+                  {LOGOS.map((logo) => (
+                    <span key={logo} className="pp-label">
+                      {logo}
+                    </span>
+                  ))}
+                </div>
               </div>
-            ))}
+            </Reveal>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>

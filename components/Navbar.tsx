@@ -20,6 +20,9 @@ import {
 
 // Routes that own their own sidebar/shell and therefore should suppress the
 // global Navbar to avoid a double chrome.
+const V2_CHROME_EXACT = ['/experts', '/for-businesses', '/for-experts']
+const V2_CHROME_PREFIXES = ['/products', '/product/']
+
 const WORKSPACE_PREFIXES = [
   '/experts/dashboard',
   '/experts/account',
@@ -75,9 +78,15 @@ export default function Navbar() {
   const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileAvatarObjectUrlRef = useRef<string | null>(null)
-  // The homepage ("/") ships its own Nav as part of the v2 design system, so the
-  // global marketing Navbar is suppressed there (in addition to workspace routes).
-  const hideOnWorkspace = pathname === '/' || WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  // Routes that ship their own v2 Nav (components/site/Nav) as part of the
+  // design-system rollout, so the global marketing Navbar is suppressed there
+  // (in addition to workspace routes). /experts/[id] intentionally keeps the
+  // legacy chrome until that page is redesigned.
+  const hideOnV2Route =
+    pathname === '/' ||
+    V2_CHROME_EXACT.includes(pathname ?? '') ||
+    V2_CHROME_PREFIXES.some((p) => pathname?.startsWith(p))
+  const hideOnWorkspace = hideOnV2Route || WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
   const userId = user?.id
   const canAccessProfile = canUsePersonalization(user?.role)
 
