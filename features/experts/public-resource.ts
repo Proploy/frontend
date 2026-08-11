@@ -1,5 +1,7 @@
 import { getServiceApisBrowserBaseUrl } from '@/lib/service-apis/browser'
 
+const PRODUCTION_SERVICE_APIS_URL = 'https://service-apis-731353524841.australia-southeast1.run.app'
+
 /**
  * Resolve expert media and uploaded evidence through service-apis.
  * Raw Supabase Storage URLs are deliberately rejected, including legacy rows.
@@ -8,8 +10,8 @@ export function resolveExpertPublicResourceUrl(value: string | null | undefined)
   if (!value || typeof value !== 'string') return null
 
   if (value.startsWith('/api/v1/experts/')) {
-    const serviceBaseUrl = getServiceApisBrowserBaseUrl()
-    return serviceBaseUrl ? `${serviceBaseUrl}${value}` : null
+    const serviceBaseUrl = getServiceApisBrowserBaseUrl() || PRODUCTION_SERVICE_APIS_URL
+    return `${serviceBaseUrl}${value}`
   }
 
   if (value.startsWith('/')) return null
