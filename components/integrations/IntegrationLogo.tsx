@@ -207,4 +207,3 @@ export function IntegrationLogo({
 
   return monogram(name.charAt(0).toUpperCase(), '#717680')
 }
-
