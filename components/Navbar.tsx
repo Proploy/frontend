@@ -4,29 +4,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { Menu, X, LogOut, UserRound, LayoutGrid, Sparkles } from 'lucide-react'
+import { Menu, X, LogOut, User, Settings } from 'lucide-react'
 import CatalogMegaMenu from '@/components/catalog/CatalogMegaMenu'
 import ExpertMegaMenu from '@/components/experts/ExpertMegaMenu'
 import { useAuth } from '@/components/providers/auth-provider'
+import { getUserProfilePicture, USER_PROFILE_PICTURE_CHANGED_EVENT } from '@/features/users'
 import { useExpertApplication } from '@/features/experts/use-expert-application'
 import type { ExpertMe } from '@/features/experts/types'
-import { setAuthIntent } from '@/lib/utils/auth-intent-client'
-import {
-  canUsePersonalization,
-  getUserProfile,
-  getUserProfilePicture,
-  USER_PROFILE_PICTURE_CHANGED_EVENT,
-} from '@/features/users'
-
-// Routes that own their own sidebar/shell and therefore should suppress the
-// global Navbar to avoid a double chrome.
-const WORKSPACE_PREFIXES = [
-  '/experts/dashboard',
-  '/experts/account',
-  '/experts/chat',
-  '/workspace',
-  '/AI_workspace',
-]
+import { setServerAuthIntent } from '@/lib/utils/auth-intent-client'
+import { hidesGlobalChrome } from '@/lib/site-chrome'
 
 const ABOUT_LINKS = [
   { href: '/for-businesses', label: 'For Business', description: 'See how buyers use Proploy to choose and deploy software.' },
@@ -36,31 +22,11 @@ const ABOUT_LINKS = [
 const BUTTON_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
 
-function UserAvatar({ src, name, sizeClass = 'size-9' }: { src?: string | null; name?: string | null; sizeClass?: string }) {
-  const initial = name?.trim().charAt(0).toUpperCase() || 'U'
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={name || 'User'}
-        className={`${sizeClass} rounded-full object-cover`}
-      />
-    )
-  }
-
-  return (
-    <div className={`${sizeClass} flex items-center justify-center rounded-full bg-[#0466e7] font-medium text-white`}>
-      {initial}
-    </div>
-  )
-}
-
 export default function Navbar() {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, isLoading, signOut } = useAuth()
   const { getApplication } = useExpertApplication()
   const [expertState, setExpertState] = useState<{ userId: string; expert: ExpertMe | null } | null>(null)
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -74,12 +40,12 @@ export default function Navbar() {
   const expertsCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const profileMenuRef = useRef<HTMLDivElement>(null)
-  const profileAvatarObjectUrlRef = useRef<string | null>(null)
-  // The homepage ("/") ships its own Nav as part of the v2 design system, so the
-  // global marketing Navbar is suppressed there (in addition to workspace routes).
-  const hideOnWorkspace = pathname === '/' || WORKSPACE_PREFIXES.some((p) => pathname?.startsWith(p))
+  // Suppress the global marketing Navbar on portal routes and on the homepage
+  // ("/"), which ships its own Nav as part of the new design system.
+  const hideOnWorkspace = hidesGlobalChrome(pathname)
   const userId = user?.id
-  const canAccessProfile = canUsePersonalization(user?.role)
+
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null)
 
   // Must be called before any early returns - rules-of-hooks
   useEffect(() => {
@@ -87,6 +53,56 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    if (!isProfileOpen) return
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isProfileOpen])
+
+  useEffect(() => {
+    if (!userId || hideOnWorkspace) {
+      setProfilePictureUrl(null)
+      return
+    }
+
+    let active = true
+
+    const loadCustomPhoto = async () => {
+      const result = await getUserProfilePicture()
+      if (!active) return
+      if (result.ok && result.data.size > 0) {
+        const objectUrl = URL.createObjectURL(result.data)
+        setProfilePictureUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev)
+          return objectUrl
+        })
+      } else {
+        setProfilePictureUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev)
+          return null
+        })
+      }
+    }
+
+    void loadCustomPhoto()
+
+    const handlePhotoChange = () => {
+      void loadCustomPhoto()
+    }
+
+    window.addEventListener(USER_PROFILE_PICTURE_CHANGED_EVENT, handlePhotoChange)
+
+    return () => {
+      active = false
+      window.removeEventListener(USER_PROFILE_PICTURE_CHANGED_EVENT, handlePhotoChange)
+    }
+  }, [hideOnWorkspace, userId])
 
   useEffect(() => {
     if (!userId || hideOnWorkspace) return
@@ -107,94 +123,11 @@ export default function Navbar() {
     }
   }, [getApplication, hideOnWorkspace, userId])
 
-  useEffect(() => {
-    const clearBlobAvatar = () => {
-      if (!profileAvatarObjectUrlRef.current) return
-      URL.revokeObjectURL(profileAvatarObjectUrlRef.current)
-      profileAvatarObjectUrlRef.current = null
-    }
-
-    let cancelled = false
-
-    if (!userId || hideOnWorkspace || !canAccessProfile) {
-      clearBlobAvatar()
-      void Promise.resolve().then(() => {
-        if (!cancelled) setProfileAvatarUrl(null)
-      })
-      return () => {
-        cancelled = true
-      }
-    }
-
-    async function loadProfileAvatar() {
-      const profileResult = await getUserProfile()
-      if (cancelled) return
-
-      if (!profileResult.ok) {
-        clearBlobAvatar()
-        setProfileAvatarUrl(null)
-        return
-      }
-
-      if (!profileResult.data.profilePictureKey) {
-        clearBlobAvatar()
-        setProfileAvatarUrl(profileResult.data.avatarUrl ?? null)
-        return
-      }
-
-      const pictureResult = await getUserProfilePicture()
-      if (cancelled) return
-
-      if (!pictureResult.ok) {
-        clearBlobAvatar()
-        setProfileAvatarUrl(profileResult.data.avatarUrl ?? null)
-        return
-      }
-
-      const objectUrl = URL.createObjectURL(pictureResult.data)
-      clearBlobAvatar()
-      profileAvatarObjectUrlRef.current = objectUrl
-      setProfileAvatarUrl(objectUrl)
-    }
-
-    void loadProfileAvatar()
-
-    const refreshProfileAvatar = () => {
-      void loadProfileAvatar()
-    }
-    window.addEventListener(USER_PROFILE_PICTURE_CHANGED_EVENT, refreshProfileAvatar)
-
-    return () => {
-      cancelled = true
-      window.removeEventListener(USER_PROFILE_PICTURE_CHANGED_EVENT, refreshProfileAvatar)
-      clearBlobAvatar()
-    }
-  }, [canAccessProfile, hideOnWorkspace, userId])
-
   useEffect(() => () => {
     if (catalogCloseTimerRef.current) clearTimeout(catalogCloseTimerRef.current)
     if (expertsCloseTimerRef.current) clearTimeout(expertsCloseTimerRef.current)
     if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current)
   }, [])
-
-  useEffect(() => {
-    if (!isProfileOpen) return
-    const closeOnOutside = (event: MouseEvent | TouchEvent) => {
-      if (profileMenuRef.current?.contains(event.target as Node)) return
-      setIsProfileOpen(false)
-    }
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsProfileOpen(false)
-    }
-    document.addEventListener('mousedown', closeOnOutside)
-    document.addEventListener('touchstart', closeOnOutside)
-    document.addEventListener('keydown', closeOnEscape)
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutside)
-      document.removeEventListener('touchstart', closeOnOutside)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [isProfileOpen])
 
   if (hideOnWorkspace) return null
 
@@ -203,8 +136,8 @@ export default function Navbar() {
   const showDashboard = expertStatus === 'approved'
   const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
   const showApplicationPending = expertStatus === 'submitted'
-  const settingsHref = '/profile'
-  const avatarUrl = profileAvatarUrl ?? user?.image ?? null
+  const dashboardHref = '/workspace'
+  const settingsHref = '/settings'
 
   const handleSignOut = async () => {
     await signOut()
@@ -228,14 +161,15 @@ export default function Navbar() {
     : '/experts'
 
   const handleCtaClick = (e: React.MouseEvent) => {
-    setIsProfileOpen(false)
     if (showApplicationPending) {
       e.preventDefault()
       return
     }
     if (!user && ctaHref === '/become-expert') {
       e.preventDefault()
-      setAuthIntent('/become-expert')
+      // Persist the post-sign-in redirect server-side so it cannot be
+      // tampered with by client-side JS. See SECURITY-FIX 2026-08-05.
+      void setServerAuthIntent('/become-expert')
       window.location.href = '/sign-in?redirect=/become-expert'
     }
   }
@@ -247,7 +181,6 @@ export default function Navbar() {
     }
     setIsExpertsOpen(false)
     setIsAboutOpen(false)
-    setIsProfileOpen(false)
     setIsCatalogOpen(true)
   }
 
@@ -266,7 +199,6 @@ export default function Navbar() {
     }
     setIsCatalogOpen(false)
     setIsAboutOpen(false)
-    setIsProfileOpen(false)
     setIsExpertsOpen(true)
   }
 
@@ -285,7 +217,6 @@ export default function Navbar() {
     }
     setIsCatalogOpen(false)
     setIsExpertsOpen(false)
-    setIsProfileOpen(false)
     setIsAboutOpen(true)
   }
 
@@ -301,9 +232,10 @@ export default function Navbar() {
     setIsCatalogOpen(false)
     setIsExpertsOpen(false)
     setIsAboutOpen(false)
-    setIsProfileOpen(false)
     setIsMenuOpen(false)
   }
+
+  const avatarSrc = profilePictureUrl || user?.image
 
   return (
     <nav
@@ -339,10 +271,7 @@ export default function Navbar() {
               href="/products"
               aria-expanded={isCatalogOpen}
               aria-haspopup="menu"
-              onClick={() => {
-                setIsCatalogOpen(false)
-                setIsProfileOpen(false)
-              }}
+              onClick={() => setIsCatalogOpen(false)}
               onFocus={() => setIsCatalogOpen(true)}
               className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
             >
@@ -370,10 +299,7 @@ export default function Navbar() {
               href="/experts"
               aria-expanded={isExpertsOpen}
               aria-haspopup="menu"
-              onClick={() => {
-                setIsExpertsOpen(false)
-                setIsProfileOpen(false)
-              }}
+              onClick={() => setIsExpertsOpen(false)}
               onFocus={() => setIsExpertsOpen(true)}
               className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
             >
@@ -401,10 +327,7 @@ export default function Navbar() {
               type="button"
               aria-expanded={isAboutOpen}
               aria-haspopup="menu"
-              onClick={() => {
-                setIsProfileOpen(false)
-                setIsAboutOpen((open) => !open)
-              }}
+              onClick={() => setIsAboutOpen((open) => !open)}
               onFocus={() => setIsAboutOpen(true)}
               className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
             >
@@ -434,35 +357,44 @@ export default function Navbar() {
               </div>
             )}
           </div>
+
+          <Link
+            href="/AI_workspace"
+            onClick={() => closeNavMenus()}
+            className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
+          >
+            AI Workspace
+          </Link>
         </div>
 
         <div className="flex items-center gap-[12px]">
-          <Link
-            href="/AI_workspace"
-            className={`hidden md:flex items-center justify-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[15px] leading-[22px] text-[#155eef] hover:bg-[#eff4ff] transition-colors ${BUTTON_SHADOW}`}
-            onClick={() => {
-              closeNavMenus()
-            }}
-          >
-            <Sparkles size={16} />
-            AI_workspace
-          </Link>
-
-          {user ? (
+          {isLoading ? (
+            <div className="hidden md:flex items-center gap-[12px]">
+              <div className="size-9 rounded-full bg-gray-200/80 animate-pulse" />
+              <div className="h-[44px] w-[130px] rounded-[8px] bg-gray-200/80 animate-pulse" />
+            </div>
+          ) : user ? (
             <>
               <div ref={profileMenuRef} className="hidden md:block relative">
                 <button
-                  type="button"
-                  onClick={() => {
-                    setIsCatalogOpen(false)
-                    setIsExpertsOpen(false)
-                    setIsAboutOpen(false)
-                    setIsProfileOpen(!isProfileOpen)
-                  }}
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center gap-2"
                 >
-                  <UserAvatar src={avatarUrl} name={user.name} />
-                </button>
+                {avatarSrc ? (
+                  <Image
+                    src={avatarSrc}
+                    alt={user.name || 'User'}
+                    width={36}
+                    height={36}
+                    className="rounded-full size-9 object-cover"
+                    unoptimized={Boolean(profilePictureUrl)}
+                  />
+                ) : (
+                  <div className="size-9 bg-[#0466e7] rounded-full flex items-center justify-center text-white font-medium">
+                    {user.name?.[0] || user.email?.[0] || 'U'}
+                  </div>
+                )}
+              </button>
 
               {isProfileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150">
@@ -470,11 +402,11 @@ export default function Navbar() {
                     <p className="text-sm font-medium text-gray-900">{user.name || 'User'}</p>
                   </div>
                   <Link
-                    href="/workspace"
+                    href={dashboardHref}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => setIsProfileOpen(false)}
                   >
-                    <LayoutGrid size={16} />
+                    <User size={16} />
                     Workspace
                   </Link>
                   {showCompleteApplication && (
@@ -491,18 +423,15 @@ export default function Navbar() {
                       Application Pending
                     </div>
                   )}
-                  {canAccessProfile && (
-                    <Link
-                      href={settingsHref}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <UserRound size={16} />
-                      Profile
-                    </Link>
-                  )}
+                  <Link
+                    href={settingsHref}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <Settings size={16} />
+                    Settings
+                  </Link>
                   <button
-                    type="button"
                     onClick={handleSignOut}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
@@ -522,16 +451,17 @@ export default function Navbar() {
             </Link>
           )}
 
-          <Link
-            href={ctaHref}
-            onClick={handleCtaClick}
-            className={`hidden md:flex items-center justify-center bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-white hover:bg-[#0e4cc7] transition-colors ${BUTTON_SHADOW}`}
-          >
-            {ctaLabel}
-          </Link>
+          {!isLoading && (
+            <Link
+              href={ctaHref}
+              onClick={handleCtaClick}
+              className={`hidden md:flex items-center justify-center bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-white hover:bg-[#0e4cc7] transition-colors ${BUTTON_SHADOW}`}
+            >
+              {ctaLabel}
+            </Link>
+          )}
 
           <button
-            type="button"
             className="lg:hidden p-2 text-[#414651]"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
@@ -600,26 +530,37 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
-            <Link
-              href="/AI_workspace"
-              className={`flex items-center justify-center gap-[8px] bg-white border border-[#d5d7da] rounded-[8px] px-[16px] py-[10px] font-[family-name:var(--font-dm-sans)] font-semibold text-[16px] leading-[24px] text-[#155eef] ${BUTTON_SHADOW}`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Sparkles size={18} />
-              AI_workspace
-            </Link>
+          <Link
+            href="/AI_workspace"
+            onClick={() => setIsMenuOpen(false)}
+            className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
+          >
+            AI Workspace
+          </Link>
 
+          <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
             {user ? (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                  <UserAvatar src={avatarUrl} name={user.name} sizeClass="size-10" />
+                  {avatarSrc ? (
+                    <Image
+                      src={avatarSrc}
+                      alt={user.name || 'User'}
+                      width={40}
+                      height={40}
+                      className="rounded-full size-10 object-cover"
+                      unoptimized={Boolean(profilePictureUrl)}
+                    />
+                  ) : (
+                    <div className="size-10 bg-[#0466e7] rounded-full flex items-center justify-center text-white font-medium">
+                      {user.name?.[0] || user.email?.[0] || 'U'}
+                    </div>
+                  )}
                   <div>
                     <p className="font-medium text-[#181d27]">{user.name || 'User'}</p>
                   </div>
                 </div>
                 <button
-                  type="button"
                   onClick={() => {
                     handleSignOut()
                     setIsMenuOpen(false)
@@ -629,21 +570,19 @@ export default function Navbar() {
                   Sign Out
                 </button>
                 <Link
-                  href="/workspace"
+                  href={dashboardHref}
                   className="text-left text-lg font-semibold text-[#181d27]"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Workspace
                 </Link>
-                {canAccessProfile && (
-                  <Link
-                    href={settingsHref}
-                    className="text-left text-lg font-semibold text-[#181d27]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                )}
+                <Link
+                  href={settingsHref}
+                  className="text-left text-lg font-semibold text-[#181d27]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Settings
+                </Link>
               </div>
             ) : (
               <Link

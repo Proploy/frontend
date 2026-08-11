@@ -1,5 +1,5 @@
 import { render } from '@/test/render'
-import { RecentActivity } from '@/app/workspace/page'
+import { RecentActivity } from '@/app/(site)/workspace/page'
 import { workspaceActivityHref } from '@/features/workspace/use-workspace-home'
 
 describe('workspace recent activity', () => {

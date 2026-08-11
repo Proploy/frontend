@@ -1,4 +1,4 @@
-import { ProposalDetail } from '@/app/workspace/proposals/page'
+import { ProposalDetail } from '@/app/(site)/workspace/proposals/page'
 import { render } from '@/test/render'
 import type { WorkspaceProposal } from '@/features/workspace/home-types'
 

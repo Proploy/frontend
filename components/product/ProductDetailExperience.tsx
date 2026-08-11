@@ -18,6 +18,7 @@ import {
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
 import {
@@ -165,7 +166,7 @@ export default function ProductDetailExperience({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#071638]/70 via-[#071638]/38 to-[#071638]/0" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[440px] max-w-[1280px] items-end px-[24px] pb-[56px] pt-[148px] sm:px-[32px]">
+        <div className="relative mx-auto flex min-h-[280px] max-w-[1280px] items-end px-[24px] pb-[40px] pt-[80px] sm:min-h-[360px] sm:pb-[56px] sm:pt-[120px] md:min-h-[440px] md:pt-[148px] sm:px-[32px]">
           <div className="flex max-w-[760px] flex-col items-start gap-[20px]">
             <div className="flex size-[88px] items-center justify-center overflow-hidden rounded-[18px] border border-white/70 bg-white/95 p-[12px] shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
               {product.product_logo ? (
@@ -219,7 +220,7 @@ export default function ProductDetailExperience({
         </div>
       </section>
 
-      <div className="sticky top-[72px] z-30 border-b border-[#e9eaeb] bg-white/95 backdrop-blur">
+      <div className="sticky top-[64px] z-30 border-b border-[#e9eaeb] bg-white/95 pt-[8px] backdrop-blur">
         <div className="mx-auto flex max-w-[1280px] gap-[4px] overflow-x-auto px-[24px] py-[10px] sm:px-[32px]">
           {tabs.map((tab) => (
             <button
@@ -872,7 +873,7 @@ function MediaDialog({
 }
 
 function LogoFallback({ name }: { name: string }) {
-  return <span className="text-[34px] font-bold text-[#155eef]">{name.charAt(0).toUpperCase()}</span>
+  return <IntegrationLogo name={name.toLowerCase()} size={112} />
 }
 
 function StatusPill({ label }: { label: string }) {

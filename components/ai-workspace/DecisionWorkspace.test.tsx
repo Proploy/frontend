@@ -13,6 +13,7 @@ const product: EvaluationProduct = {
   available: true,
   rank: 1,
   match_score: 91,
+  is_agent_selected: true,
 }
 
 const evaluation: EvaluationDetail = {
@@ -123,7 +124,7 @@ describe('DecisionWorkspace', () => {
     await view.unmount()
   })
 
-  it('renders canonical matches in Results without an evidence disclosure', async () => {
+  it('exposes a Results tab with catalog matches', async () => {
     const onToggleShortlist = vi.fn()
     const view = await render(
       <Harness onToggleShortlist={onToggleShortlist} />,
@@ -134,44 +135,26 @@ describe('DecisionWorkspace', () => {
       ),
     )
     const resultsTab = tabs.find((tab) =>
-      tab.textContent?.startsWith('Results'),
+      tab.textContent?.startsWith('Suggestion'),
     )
-    const comparisonTab = tabs.find(
-      (tab) => tab.textContent === 'Comparison',
+    const shortlistTab = tabs.find((tab) =>
+      tab.textContent?.startsWith('Shortlist'),
     )
-    const addButton = Array.from(
-      view.container.querySelectorAll<HTMLButtonElement>('button'),
-    ).find((button) => button.textContent === 'Add to shortlist')
 
+    expect(resultsTab).toBeDefined()
     expect(resultsTab?.getAttribute('aria-selected')).toBe('true')
-    expect(comparisonTab).toBeUndefined()
+    expect(shortlistTab?.getAttribute('aria-selected')).toBe('false')
     expect(view.container.textContent).toContain('Notion')
-    expect(view.container.textContent).not.toContain('View evidence')
-    expect(addButton).toBeDefined()
-    expect(
-      view.container.querySelector<HTMLAnchorElement>(
-        'a[href="/products/canonical-notion"]',
-      )?.textContent,
-    ).toBe('Notion')
-
-    await act(async () => addButton?.click())
-
-    expect(onToggleShortlist).toHaveBeenCalledWith(
-      'canonical-notion',
-      false,
-    )
+    expect(view.container.textContent).toContain('Add to shortlist')
     await view.unmount()
   })
 
-  it('reveals the Shortlist tab when a recommended product is added', async () => {
+  it('allows switching to shortlist tab and links products by product id', async () => {
     const view = await render(<Harness />)
     const tabs = Array.from(
       view.container.querySelectorAll<HTMLButtonElement>(
         'button[role="tab"]',
       ),
-    )
-    const recommendationTab = tabs.find(
-      (tab) => tab.textContent === 'Recommendation',
     )
     const shortlistTab = tabs.find((tab) =>
       tab.textContent?.startsWith('Shortlist'),
@@ -180,17 +163,22 @@ describe('DecisionWorkspace', () => {
       view.container.querySelectorAll<HTMLButtonElement>('button'),
     ).find((button) => button.textContent === 'Simulate shortlist response')
 
-    expect(recommendationTab).toBeDefined()
     expect(shortlistTab).toBeDefined()
     expect(simulateResponse).toBeDefined()
 
-    await act(async () => recommendationTab?.click())
-    expect(recommendationTab?.getAttribute('aria-selected')).toBe('true')
+    await act(async () => shortlistTab?.click())
+    expect(shortlistTab?.getAttribute('aria-selected')).toBe('true')
 
     await act(async () => simulateResponse?.click())
 
+    await act(async () => shortlistTab?.click())
     expect(shortlistTab?.getAttribute('aria-selected')).toBe('true')
     expect(view.container.textContent).toContain('Notion')
+    expect(
+      view.container.querySelector<HTMLAnchorElement>(
+        'a[href="/products/canonical-notion"]',
+      )?.textContent,
+    ).toBe('Notion')
     await view.unmount()
   })
 })

@@ -14,6 +14,12 @@ import type {
   AiWorkspaceSessionLoadPayload,
   AiWorkspaceSessionSavePayload,
 } from '@/features/ai-workspace/types'
+import type {
+  EvaluationCreateRequest,
+  EvaluationDetail,
+  EvaluationSummary,
+  ShortlistUpdateRequest,
+} from '@/features/ai-workspace/evaluation-types'
 
 const client = new ServiceApisBrowserClient()
 const AI_WORKSPACE_ROOT = '/api/v1/ai_workspace'
@@ -115,6 +121,42 @@ export async function loadAiWorkspaceSession(
   return authedPost<AiWorkspaceRecord>('/session/load', payload)
 }
 
+export async function listAiWorkspaceEvaluations(): Promise<AiWorkspaceApiResult<EvaluationSummary[]>> {
+  return authedGet<EvaluationSummary[]>('/evaluations')
+}
+
+export async function createAiWorkspaceEvaluation(
+  payload: EvaluationCreateRequest = {},
+): Promise<AiWorkspaceApiResult<EvaluationDetail>> {
+  return authedPost<EvaluationDetail>('/evaluations', payload)
+}
+
+export async function getAiWorkspaceEvaluation(
+  evaluationId: string,
+): Promise<AiWorkspaceApiResult<EvaluationDetail>> {
+  return authedGet<EvaluationDetail>(`/evaluations/${encodeURIComponent(evaluationId)}`)
+}
+
+export async function updateAiWorkspaceShortlist(
+  evaluationId: string,
+  payload: ShortlistUpdateRequest,
+): Promise<AiWorkspaceApiResult<EvaluationDetail>> {
+  return authedPatch<EvaluationDetail>(
+    `/evaluations/${encodeURIComponent(evaluationId)}/shortlist`,
+    payload,
+  )
+}
+
+export async function updateAiWorkspaceEvaluation(
+  evaluationId: string,
+  payload: { title?: string; status?: string },
+): Promise<AiWorkspaceApiResult<EvaluationDetail>> {
+  return authedPatch<EvaluationDetail>(
+    `/evaluations/${encodeURIComponent(evaluationId)}`,
+    payload,
+  )
+}
+
 export const useAiWorkspaceClient = () =>
   useMemo(
     () => ({
@@ -129,6 +171,11 @@ export const useAiWorkspaceClient = () =>
       removeCandidate: removeAiWorkspaceCandidate,
       saveSession: saveAiWorkspaceSession,
       loadSession: loadAiWorkspaceSession,
+      listEvaluations: listAiWorkspaceEvaluations,
+      createEvaluation: createAiWorkspaceEvaluation,
+      getEvaluation: getAiWorkspaceEvaluation,
+      updateEvaluation: updateAiWorkspaceEvaluation,
+      updateShortlist: updateAiWorkspaceShortlist,
     }),
     [],
   )

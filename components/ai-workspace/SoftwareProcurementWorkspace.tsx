@@ -284,10 +284,7 @@ export function SoftwareProcurementWorkspace() {
               void workspace.selectEvaluation(evaluationId)
             }
             onNew={() => void workspace.newEvaluation()}
-            onRename={(item) => void rename(item)}
-            onDuplicate={(evaluationId) =>
-              void workspace.duplicate(evaluationId)
-            }
+            onRename={rename}
             onArchive={(evaluationId) =>
               void remove(evaluationId, true)
             }
@@ -389,10 +386,7 @@ export function SoftwareProcurementWorkspace() {
                 setEvaluationsOpen(false)
                 void workspace.newEvaluation()
               }}
-              onRename={(item) => void rename(item)}
-              onDuplicate={(evaluationId) =>
-                void workspace.duplicate(evaluationId)
-              }
+              onRename={rename}
               onArchive={(evaluationId) =>
                 void remove(evaluationId, true)
               }

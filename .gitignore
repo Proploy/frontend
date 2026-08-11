@@ -49,3 +49,6 @@ next-env.d.ts
 .codex
 .agents
 .claude 
+
+# sanity
+/sanity/extract.json

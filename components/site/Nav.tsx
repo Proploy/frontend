@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, Settings, LogOut } from "lucide-react";
+import { Menu, X, LogOut, LayoutGrid, UserRound } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useExpertApplication } from "@/features/experts/use-expert-application";
 import type { ExpertMe } from "@/features/experts/types";
-import { setAuthIntent } from "@/lib/utils/auth-intent-client";
+import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
 
 // Curated from the legacy global Navbar. The legacy version had two mega-menus
 // (Explore Products / Explore Experts) plus an "About Us" dropdown; those are
@@ -73,8 +73,10 @@ export function Nav() {
   const showPending = status === "submitted";
   const showComplete = status === "draft" || status === "changes_requested";
 
+  // Approved experts see their own workspace pill, matching the legacy global
+  // Navbar behavior — non-experts see the marketplace CTA.
   const ctaLabel = showDashboard
-    ? "Expert Dashboard"
+    ? "Workspace"
     : showPending
     ? "Application Pending"
     : showComplete
@@ -82,7 +84,7 @@ export function Nav() {
     : "Find an Expert";
 
   const ctaHref = showDashboard
-    ? "/experts/dashboard"
+    ? "/workspace"
     : showComplete
     ? "/become-expert"
     : showPending
@@ -96,7 +98,9 @@ export function Nav() {
     }
     if (!user && ctaHref === "/become-expert") {
       e.preventDefault();
-      setAuthIntent("/become-expert");
+      // Persist the post-sign-in redirect server-side so it cannot be
+      // tampered with by client-side JS. See SECURITY-FIX 2026-08-05.
+      void setServerAuthIntent("/become-expert");
       window.location.href = "/sign-in?redirect=/become-expert";
     }
   };
@@ -148,13 +152,22 @@ export function Nav() {
                   >
                     <p className="truncate px-2.5 py-2 text-[0.75rem] text-ink-soft">{user.email}</p>
                     <Link
+                      href="/workspace"
+                      role="menuitem"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.85rem] text-ink transition-colors hover:bg-cobalt-soft/50"
+                    >
+                      <LayoutGrid className="h-4 w-4 text-ink-soft" />
+                      Workspace
+                    </Link>
+                    <Link
                       href="/settings"
                       role="menuitem"
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.85rem] text-ink transition-colors hover:bg-cobalt-soft/50"
                     >
-                      <Settings className="h-4 w-4 text-ink-soft" />
-                      Settings
+                      <UserRound className="h-4 w-4 text-ink-soft" />
+                      Profile
                     </Link>
                     <button
                       type="button"
@@ -223,8 +236,11 @@ export function Nav() {
               <li className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
                 {user ? (
                   <>
+                    <Link href="/workspace" onClick={() => setMenuOpen(false)} className="py-1.5 text-[0.9375rem] text-ink-soft">
+                      Workspace
+                    </Link>
                     <Link href="/settings" onClick={() => setMenuOpen(false)} className="py-1.5 text-[0.9375rem] text-ink-soft">
-                      Settings
+                      Profile
                     </Link>
                     <button
                       type="button"
@@ -266,17 +282,19 @@ export function Nav() {
   );
 }
 
-// Real Proploy lockup (mark + wordmark). Replaces the prototype's placeholder
-// SVG; the adjacent "Proploy" text is dropped since the lockup includes it.
+// Real Proploy lockup (mark + wordmark). Same SVG the legacy global Navbar
+// uses (`/PROPLOY.svg`), so the brand mark is identical regardless of which
+// header a visitor lands on. The adjacent "Proploy" text is dropped since the
+// lockup includes it.
 export function Logo({ className = "h-7" }: { className?: string }) {
   return (
     <Image
-      src="/proploy-logo.png"
+      src="/PROPLOY.svg"
       alt="Proploy"
-      width={456}
-      height={128}
+      width={192}
+      height={54}
       priority
-      className={`${className} w-auto`}
+      className={`${className} w-auto object-contain`}
     />
   );
 }

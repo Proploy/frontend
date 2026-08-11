@@ -8,14 +8,20 @@
     "start": "next start",
     "lint": "eslint",
     "generate-types": "node scripts/generate-types.js",
+    "sanity:typegen": "sanity schema extract --path=sanity/extract.json && sanity typegen generate",
+    "typecheck": "tsc --noEmit",
     "test-api": "bash test-api.sh",
     "test": "vitest run",
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
+    "@portabletext/react": "^7.0.1",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@react-pdf/renderer": "^4.5.1",
+    "@sanity/client": "^7.26.2",
+    "@sanity/image-url": "^2.1.1",
+    "@sanity/vision": "^6.9.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@upstash/ratelimit": "^1.1.3",
@@ -25,6 +31,7 @@
     "import-in-the-middle": "^3.0.1",
     "lucide-react": "^0.563.0",
     "next": "^16.2.4",
+    "next-sanity": "^13.3.1",
     "nextjs-toploader": "^3.9.17",
     "pg": "^8.20.0",
     "react": "^19.2.3",
@@ -35,6 +42,8 @@
     "react-signature-canvas": "^1.1.0-alpha.2",
     "remark-gfm": "^4.0.1",
     "require-in-the-middle": "^8.0.1",
+    "sanity": "^6.9.0",
+    "styled-components": "^6.5.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -105,7 +105,6 @@ describe('EvaluationSidebar', () => {
     ) as HTMLButtonElement
     await act(async () => actions.click())
     expect(view.container.textContent).toContain('Rename')
-    expect(view.container.textContent).toContain('Duplicate')
     expect(view.container.textContent).toContain('Archive')
     expect(view.container.textContent).toContain('Delete')
     await view.unmount()

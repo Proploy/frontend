@@ -73,6 +73,7 @@ export type EvaluationProduct = {
   data_freshness?: string | null
   uncertain_data?: string[]
   buyer_note?: string | null
+  is_agent_selected?: boolean
 }
 
 export type EvaluationRecommendation = {
@@ -111,6 +112,7 @@ export type EvaluationDetail = EvaluationSummary & {
   matches: EvaluationProduct[]
   shortlist: EvaluationProduct[]
   recommendation: EvaluationRecommendation | null
+  documents?: Array<Record<string, unknown>>
   messages: EvaluationMessage[]
 }
 
@@ -139,12 +141,28 @@ export type ShortlistMutationResponse = {
   job_id?: string | null
 }
 
+export type EvaluationCreateRequest = {
+  title?: string
+  agent_session_id?: string
+  user_id?: never
+}
+
+export type ShortlistUpdateRequest = {
+  items: EvaluationProduct[]
+  user_id?: never
+}
+
 export type EvaluationApiResult<T> =
   | { ok: true; data: T }
   | NormalizedError
 
 export type EvaluationStreamEvent =
   | { type: 'message_delta'; data: { delta: string } }
+  | { type: 'message_final'; data: { content: string } }
+  | {
+      type: 'status'
+      data: { content?: string; status?: 'running' | 'done' | string }
+    }
   | {
       type: 'evaluation_state'
       data: Partial<EvaluationDetail>
@@ -173,6 +191,10 @@ export type EvaluationStreamEvent =
       data: { recommendation: EvaluationRecommendation }
     }
   | {
+      type: 'document_ready'
+      data: { document: Record<string, unknown> }
+    }
+  | {
       type: 'regeneration_status'
       data: {
         status: RegenerationStatus
@@ -185,7 +207,12 @@ export type EvaluationStreamEvent =
     }
   | {
       type: 'done'
-      data: { evaluation_id: string; agent_session_id: string }
+      data: {
+        evaluation_id?: string
+        agent_session_id?: string
+        session_id?: string
+        evaluation?: EvaluationDetail
+      }
     }
 
 export type EvaluationWorkspaceState = {

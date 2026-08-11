@@ -4,6 +4,7 @@ import { MoreHorizontal } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import type { ProductPageModel } from '@/features/catalog/products/types'
 import { getProductDetailTabs, type ProductTabKey } from './product-tabs'
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
 
 const BUTTON_SKEUO_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -44,10 +45,10 @@ export default function ProductHeader({
                     src={logo}
                     alt={name}
                     className="size-full object-contain p-[12px]"
-                    fallback={<span className="text-[48px] font-bold text-[#155eef]">{name.charAt(0)}</span>}
+                    fallback={<IntegrationLogo name={name.toLowerCase()} size={148} />}
                   />
                 ) : (
-                  <span className="text-[48px] font-bold text-[#155eef]">{name.charAt(0)}</span>
+                  <IntegrationLogo name={name.toLowerCase()} size={148} />
                 )}
               </div>
             </div>

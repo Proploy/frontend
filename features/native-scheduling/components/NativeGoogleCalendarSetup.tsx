@@ -16,9 +16,11 @@ const DEFAULT_PROFILE = {
 export function NativeGoogleCalendarSetup({
   testOnly = false,
   testCompleted = false,
+  returnPath,
 }: {
   testOnly?: boolean
   testCompleted?: boolean
+  returnPath?: string
 }) {
   const calendar = useNativeGoogleCalendar(!testOnly)
   const [form, setForm] = useState(DEFAULT_PROFILE)
@@ -46,7 +48,7 @@ export function NativeGoogleCalendarSetup({
   const connected = calendar.status?.connected === true
 
   function handleConnect() {
-    void calendar.connect(nativeSchedulingOAuthReturnPath(testOnly))
+    void calendar.connect(returnPath || nativeSchedulingOAuthReturnPath(testOnly))
   }
 
   return (

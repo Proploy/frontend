@@ -101,3 +101,36 @@ export async function signOutSession(): Promise<void> {
     credentials: 'same-origin',
   })
 }
+
+export async function verifyEmail(
+  email: string,
+  code: string,
+): Promise<AuthResult> {
+  const response = await fetch('/api/auth/verify-email', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+    cache: 'no-store',
+    credentials: 'same-origin',
+  })
+  const payload = await readJson(response)
+  if (!response.ok) return { user: null, error: errorFromPayload(payload, 'Unable to verify email') }
+
+  const user = payload && typeof payload === 'object' ? (payload as { user?: unknown }).user : null
+  return { user: user && typeof user === 'object' ? (user as AuthUser) : null, error: null }
+}
+
+export async function resendVerification(
+  email: string,
+): Promise<{ error: Error | null }> {
+  const response = await fetch('/api/auth/resend-verification', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email }),
+    cache: 'no-store',
+    credentials: 'same-origin',
+  })
+  const payload = await readJson(response)
+  if (!response.ok) return { error: errorFromPayload(payload, 'Unable to resend verification email') }
+  return { error: null }
+}
