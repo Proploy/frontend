@@ -1,74 +1,111 @@
 'use client'
 
-import Link from "next/link";
-import { useMemo } from "react";
-import { CatalogImage } from "@/components/catalog/CatalogImage";
-import { getProductDetailHref, useProductList } from "@/features/catalog";
+import { useMemo } from 'react'
+import Link from 'next/link'
+import { getProductDetailHref, useProductList } from '@/features/catalog'
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
 
-// Real logos: pulls the catalog's most market-present products and marquees the
-// ones that actually have a logo — the same source the legacy homepage used.
+// Tiles come from the live catalog (approved_logo_url via the backend gateway)
+// rather than a hardcoded set of invented brand names. While the request is in
+// flight or the catalog is empty, we fall back to a small static set so the
+// marquee layout never collapses during initial paint.
+const FALLBACK_NAMES = ['Slack', 'Stripe', 'Linear', 'Jira', 'Zoom', 'HubSpot', 'Figma', 'DocuSign']
+
 export function LogoMarquee() {
-  const { products, loading } = useProductList({ limit: 100, sort: "market_presence" });
-  // Dedupe by logo (the catalog has several products per brand) and cap the set
-  // so the loop stays tight — a shorter track reads calmer at a given duration.
-  const logos = useMemo(() => {
-    const seen = new Set<string>();
-    const out: typeof products = [];
-    for (const p of products) {
-      if (!p.product_logo) continue;
-      const brand = p.vendor_name ?? p.product_logo; // one logo per brand
-      if (seen.has(brand)) continue;
-      seen.add(brand);
-      out.push(p);
-      if (out.length >= 16) break;
+  const { products, loading } = useProductList({ limit: 100 })
+
+  const tiles = useMemo(() => {
+    const fromCatalog = (products ?? [])
+      .filter((p) => p.product_logo)
+      .slice(0, 14)
+      .map((p) => ({
+        href: getProductDetailHref(p.product_id),
+        logo: p.product_logo as string,
+        alt: p.product_name,
+      }))
+    if (fromCatalog.length > 0) return fromCatalog
+
+    // Only fallback to mock names if loading is complete and catalog returned 0 products
+    if (!loading && (products ?? []).length === 0) {
+      return FALLBACK_NAMES.map((name) => ({
+        href: null,
+        logo: null,
+        alt: name,
+      }))
     }
-    return out;
-  }, [products]);
+
+    return []
+  }, [products, loading])
+
+  if (loading && tiles.length === 0) {
+    return (
+      <section
+        aria-label="Loading companies..."
+        className="relative border-y border-border bg-white/50 py-8 overflow-hidden"
+      >
+        <div className="flex items-center justify-around gap-14 px-6 opacity-60">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-10 w-32 bg-gray-200/80 rounded-lg animate-pulse shrink-0" />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  // Duplicate the strip once so the CSS marquee animation reads as seamless.
+  const track = [...tiles, ...tiles]
 
   return (
     <section
       aria-label="Companies growing with Proploy"
-      className="relative border-y border-border bg-white/50 py-6"
+      className="relative border-y border-border bg-white/50 py-8"
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-[linear-gradient(90deg,var(--paper),transparent)]" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-[linear-gradient(270deg,var(--paper),transparent)]" />
-      {loading || logos.length === 0 ? (
-        <div className="h-[40px] w-full" aria-hidden />
-      ) : (
-        <div className="flex overflow-hidden">
-          <ul
-            className="marquee-track flex shrink-0 items-center gap-12 pr-12"
-            style={{ animationDuration: "70s" }}
-          >
-            {[...logos, ...logos].map((p, i) => (
-              <li key={`${p.product_id}-${i}`} className="shrink-0">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-28 bg-[linear-gradient(90deg,var(--paper),transparent)]" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-28 bg-[linear-gradient(270deg,var(--paper),transparent)]" />
+      <div className="flex overflow-hidden">
+        <ul
+          className="marquee-track flex shrink-0 items-center gap-22 pr-22"
+          style={{ animationDuration: '48s' }}
+          aria-busy={loading}
+        >
+          {track.map((t, i) => (
+            <li key={`${t.alt}-${i}`} className="shrink-0 flex items-center justify-center">
+              {t.href ? (
                 <Link
-                  href={getProductDetailHref(p.product_id)}
-                  title={p.product_name}
-                  aria-label={`View ${p.product_name}`}
-                  className="group flex h-[40px] items-center gap-[10px] opacity-70 outline-offset-4 transition-opacity duration-300 hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cobalt"
+                  href={t.href}
+                  aria-label={`Open ${t.alt}`}
+                  className="group flex h-10 items-center justify-center transition-transform duration-300 hover:scale-105"
                 >
-                  <span className="grid size-[32px] shrink-0 place-items-center overflow-hidden rounded-[6px] border border-border bg-white">
+                  {t.logo ? (
                     <CatalogImage
-                      src={p.product_logo as string}
-                      alt=""
-                      className="size-full object-contain p-[3px]"
-                      fallback={
-                        <span className="text-[13px] font-bold text-cobalt-deep">
-                          {p.product_name.charAt(0)}
-                        </span>
-                      }
+                      src={t.logo}
+                      alt={t.alt}
+                      className="h-8 max-h-9 w-auto max-w-[130px] object-contain opacity-80 transition-opacity group-hover:opacity-100"
+                      fallback={<IntegrationLogo name={t.alt} size={36} borderless />}
                     />
-                  </span>
-                  <span className="display max-w-[160px] truncate text-[1.05rem] tracking-[-0.02em] text-ink-soft/70 transition-colors duration-300 group-hover:text-ink">
-                    {p.product_name}
-                  </span>
+                  ) : (
+                    <IntegrationLogo name={t.alt} size={36} borderless />
+                  )}
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+              ) : (
+                <div className="flex h-10 items-center justify-center">
+                  {t.logo ? (
+                    <CatalogImage
+                      src={t.logo}
+                      alt={t.alt}
+                      className="h-8 max-h-9 w-auto max-w-[130px] object-contain opacity-80"
+                      fallback={<IntegrationLogo name={t.alt} size={36} borderless />}
+                    />
+                  ) : (
+                    <IntegrationLogo name={t.alt} size={36} borderless />
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
-  );
+  )
 }

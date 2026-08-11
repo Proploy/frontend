@@ -43,6 +43,7 @@ export function WelcomeState({
           SAM will clarify the critical details, evaluate products from the
           published catalog, and help you build an evidence-backed shortlist.
         </p>
+
         <div className="mt-7 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {STARTERS.map((starter) => (
             <button

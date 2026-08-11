@@ -1,8 +1,13 @@
+/**
+ * Server-side auth_intent cookie helpers.
+ *
+ * The `auth_intent` cookie holds a post-sign-in redirect path (e.g.
+ * `/become-expert`). It is now set exclusively by `app/api/auth/intent/route.ts`
+ * with hardened options (HttpOnly, Secure in prod, SameSite=Lax). The
+ * client-side `document.cookie` helper that used to set this cookie has been
+ * removed — see SECURITY-FIX 2026-08-05.
+ */
 export const AUTH_INTENT_COOKIE = 'auth_intent'
-
-export function setAuthIntentCookie(value: string, maxAge = 3600): string {
-  return `${AUTH_INTENT_COOKIE}=${value}; path=/; max-age=${maxAge}; HttpOnly`
-}
 
 export function getAuthIntentFromCookie(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null
@@ -12,8 +17,4 @@ export function getAuthIntentFromCookie(cookieHeader: string | null): string | n
     return authIntent.split('=')[1]
   }
   return null
-}
-
-export function clearAuthIntentCookie(): string {
-  return `${AUTH_INTENT_COOKIE}=; path=/; max-age=0`
 }

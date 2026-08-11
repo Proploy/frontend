@@ -14,8 +14,20 @@ function HeroSearch() {
   const router = useRouter();
   const [query, setQuery] = React.useState("");
   const [resultsOpen, setResultsOpen] = React.useState(false);
+  const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const searchRef = React.useRef<HTMLDivElement>(null);
-  const { products, loading, error, search, clear } = useKeywordSearch();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const {
+    products,
+    loading,
+    error,
+    suggestedCorrection,
+    ghostSuffix,
+    fullCompletion,
+    search,
+    clear,
+  } = useKeywordSearch();
 
   React.useEffect(() => {
     if (query.trim().length > 1) {
@@ -23,6 +35,7 @@ function HeroSearch() {
     } else {
       clear();
     }
+    setSelectedIndex(-1);
   }, [clear, query, search]);
 
   React.useEffect(() => {
@@ -35,10 +48,45 @@ function HeroSearch() {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  const handleSubmit = () => {
-    const value = query.trim();
+  const handleSubmit = (targetQuery?: string) => {
+    const value = (targetQuery ?? query).trim();
     if (!value) return;
+    setResultsOpen(false);
     router.push(`/products?search=${encodeURIComponent(value)}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Tab" || e.key === "ArrowRight") {
+      if (ghostSuffix && fullCompletion && inputRef.current?.selectionStart === query.length) {
+        e.preventDefault();
+        setQuery(fullCompletion);
+        return;
+      }
+    }
+
+    if (!resultsOpen || products.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < products.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : products.length - 1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      const selectedProduct = products[selectedIndex];
+      if (selectedProduct) {
+        setResultsOpen(false);
+        router.push(getProductDetailHref(selectedProduct.product_id));
+      }
+    } else if (e.key === "Escape") {
+      setResultsOpen(false);
+    }
+  };
+
+  const applyCorrection = (correction: string) => {
+    setQuery(correction);
+    void search(correction, 6);
   };
 
   return (
@@ -47,27 +95,45 @@ function HeroSearch() {
         id="hero-search"
         onSubmit={(e) => {
           e.preventDefault();
-          handleSubmit();
+          if (selectedIndex >= 0 && products[selectedIndex]) {
+            router.push(getProductDetailHref(products[selectedIndex].product_id));
+            setResultsOpen(false);
+          } else {
+            handleSubmit();
+          }
         }}
         className="flex flex-col gap-2 rounded-2xl border border-border bg-white p-2 shadow-[0_24px_60px_-46px_color-mix(in_oklab,var(--cobalt)_80%,transparent)] sm:flex-row sm:items-center"
       >
         <label htmlFor="hero-q" className="sr-only">
           What are you trying to solve?
         </label>
-        <input
-          id="hero-q"
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setResultsOpen(true);
-          }}
-          onFocus={() => {
-            if (query.trim().length > 1) setResultsOpen(true);
-          }}
-          placeholder="What are you trying to solve?"
-          className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-soft/70"
-        />
+        <div className="relative flex flex-1 items-center min-w-0">
+          {ghostSuffix && query.length > 0 && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-3.5 top-2.5 z-0 select-none text-[0.9375rem] whitespace-pre text-ink-soft/40"
+            >
+              <span className="opacity-0">{query}</span>
+              <span>{ghostSuffix}</span>
+            </div>
+          )}
+          <input
+            ref={inputRef}
+            id="hero-q"
+            type="text"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setResultsOpen(true);
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (query.trim().length > 1) setResultsOpen(true);
+            }}
+            placeholder="What are you trying to solve?"
+            className="relative z-10 w-full min-w-0 bg-transparent px-3.5 py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-soft/70"
+          />
+        </div>
         <button
           type="submit"
           className="group inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-cobalt px-5 text-[0.875rem] font-medium text-white transition-all duration-300 hover:bg-cobalt-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt"
@@ -80,19 +146,38 @@ function HeroSearch() {
       </form>
 
       {resultsOpen && query.trim().length > 1 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-border bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.18)]">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[100] max-h-[380px] overflow-y-auto rounded-2xl border border-border bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.25)]">
+          {suggestedCorrection && (
+            <div className="flex items-center justify-between border-b border-border bg-[#eff4ff] px-4 py-2.5">
+              <p className="text-[0.8125rem] text-[#155eef]">
+                Did you mean:{" "}
+                <button
+                  type="button"
+                  onClick={() => applyCorrection(suggestedCorrection.suggestion)}
+                  className="font-bold text-[#004eeb] underline hover:text-[#0038a8]"
+                >
+                  {suggestedCorrection.suggestion}
+                </button>?
+              </p>
+              <span className="text-[0.7rem] font-medium tracking-wide uppercase text-[#2e90fa]">Typo detected</span>
+            </div>
+          )}
+
           {loading ? (
             <p className="px-4 py-3.5 text-center text-[0.8125rem] text-ink-soft">Searching products…</p>
           ) : error ? (
             <p className="px-4 py-3.5 text-center text-[0.8125rem] text-red-600">Unable to search products.</p>
           ) : products.length > 0 ? (
             <div className="py-1.5">
-              {products.map((product) => (
+              {products.map((product, idx) => (
                 <Link
                   key={product.product_id}
                   href={getProductDetailHref(product.product_id)}
                   onClick={() => setResultsOpen(false)}
-                  className="flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-cobalt-soft/40"
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors ${
+                    idx === selectedIndex ? "bg-cobalt-soft/60" : "hover:bg-cobalt-soft/40"
+                  }`}
                 >
                   <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white text-[0.85rem] font-semibold text-cobalt-deep">
                     {product.product_logo ? (
@@ -112,14 +197,16 @@ function HeroSearch() {
               ))}
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={() => handleSubmit()}
                 className="w-full border-t border-border px-3.5 py-2.5 text-center text-[0.8125rem] font-semibold text-cobalt-deep hover:bg-cobalt-soft/40"
               >
                 View all results for &quot;{query}&quot;
               </button>
             </div>
           ) : (
-            <p className="px-4 py-3.5 text-center text-[0.8125rem] text-ink-soft">No products found.</p>
+            <div className="px-4 py-4 text-center">
+              <p className="text-[0.8125rem] text-ink-soft">No products found matching &quot;{query}&quot;.</p>
+            </div>
           )}
         </div>
       )}
@@ -129,9 +216,9 @@ function HeroSearch() {
 
 export function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden pt-28 pb-16 lg:pt-36 lg:pb-24">
+    <section id="top" className="relative z-20 pt-28 pb-16 lg:pt-36 lg:pb-24">
       {/* backdrop */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="blueprint absolute inset-0 opacity-70 [mask-image:radial-gradient(120%_80%_at_50%_0%,black,transparent_75%)]" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

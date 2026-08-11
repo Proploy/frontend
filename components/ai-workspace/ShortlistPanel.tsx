@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import type { EvaluationProduct } from '@/features/ai-workspace'
+import { getProductDetailHref } from '@/features/catalog/products/product-detail-view'
 
 export function ShortlistPanel({
   items,
@@ -46,7 +47,9 @@ export function ShortlistPanel({
   return (
     <div className="space-y-3">
       <ol className="space-y-2">
-        {items.map((product, index) => (
+        {items.map((product, index) => {
+          const profileHref = product.profile_href ?? getProductDetailHref(product.product_id)
+          return (
           <li
             key={product.product_id}
             draggable
@@ -79,18 +82,12 @@ export function ShortlistPanel({
               {index + 1}
             </span>
             <div className="min-w-0 flex-1">
-              {product.profile_href ? (
-                <Link
-                  href={product.profile_href}
-                  className="block truncate text-sm font-semibold text-[#181d27] hover:text-[#155eef]"
-                >
-                  {product.product_name || product.product_id}
-                </Link>
-              ) : (
-                <p className="truncate text-sm font-semibold text-[#181d27]">
-                  {product.product_name || product.product_id}
-                </p>
-              )}
+              <Link
+                href={profileHref}
+                className="block truncate text-sm font-semibold text-[#181d27] hover:text-[#155eef]"
+              >
+                {product.product_name || product.product_id}
+              </Link>
               {product.match_score != null ? (
                 <p className="text-xs text-[#079455]">
                   {Math.round(product.match_score)}% match
@@ -132,7 +129,8 @@ export function ShortlistPanel({
               </button>
             </div>
           </li>
-        ))}
+          )
+        })}
       </ol>
       {items.length >= 2 ? (
         <button

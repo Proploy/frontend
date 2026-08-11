@@ -8,3 +8,4 @@ export * from '@/features/native-scheduling/components/NativeBookingRequestsPane
 export * from '@/features/native-scheduling/components/NativeGoogleCalendarSetup'
 export * from '@/features/native-scheduling/components/NativeMeetingActions'
 export * from '@/features/native-scheduling/components/NativeMeetingEntryCard'
+export * from '@/features/native-scheduling/components/ConnectCalendarModal'

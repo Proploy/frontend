@@ -14,6 +14,7 @@ type Props = {
   isCalendarOpen: boolean
   onToggleCalendar: () => void
   onOpenChange: (engagementId: string) => void
+  onConnectCalendar?: () => void
   pendingRequestCountForSelected?: number
 }
 
@@ -24,6 +25,7 @@ export function NativeMeetingEntryCard({
   isCalendarOpen,
   onToggleCalendar,
   onOpenChange,
+  onConnectCalendar,
   pendingRequestCountForSelected = 0,
 }: Props) {
   const isBuyer = role === 'buyer'
@@ -78,13 +80,24 @@ export function NativeMeetingEntryCard({
       </div>
       <div className="flex flex-wrap items-center gap-[8px]">
         {isAdminTest ? (
-          <Link
-            href={settingsHref}
-            className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:bg-[#004eeb] ${BUTTON_SKEUO}`}
-          >
-            {primaryLabel}
-            <ArrowRight size={15} />
-          </Link>
+          onConnectCalendar ? (
+            <button
+              type="button"
+              onClick={onConnectCalendar}
+              className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:bg-[#004eeb] ${BUTTON_SKEUO}`}
+            >
+              {primaryLabel}
+              <ArrowRight size={15} />
+            </button>
+          ) : (
+            <Link
+              href={settingsHref}
+              className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[13px] font-semibold text-white hover:bg-[#004eeb] ${BUTTON_SKEUO}`}
+            >
+              {primaryLabel}
+              <ArrowRight size={15} />
+            </Link>
+          )
         ) : (
           <button
             type="button"
@@ -105,12 +118,22 @@ export function NativeMeetingEntryCard({
           </button>
         )}
         {!isBuyer && !isAdminTest && (
-          <Link
-            href={settingsHref}
-            className="inline-flex items-center gap-[8px] rounded-[8px] border border-[#c7d7fe] bg-white px-[14px] py-[10px] text-[13px] font-semibold text-[#155eef] hover:bg-[#eff4ff]"
-          >
-            <Settings2 size={15} /> Connect calendar
-          </Link>
+          onConnectCalendar ? (
+            <button
+              type="button"
+              onClick={onConnectCalendar}
+              className="inline-flex items-center gap-[8px] rounded-[8px] border border-[#c7d7fe] bg-white px-[14px] py-[10px] text-[13px] font-semibold text-[#155eef] hover:bg-[#eff4ff]"
+            >
+              <Settings2 size={15} /> Connect calendar
+            </button>
+          ) : (
+            <Link
+              href={settingsHref}
+              className="inline-flex items-center gap-[8px] rounded-[8px] border border-[#c7d7fe] bg-white px-[14px] py-[10px] text-[13px] font-semibold text-[#155eef] hover:bg-[#eff4ff]"
+            >
+              <Settings2 size={15} /> Connect calendar
+            </Link>
+          )
         )}
         {isBuyer && hasEngagement && (
           <button

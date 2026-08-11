@@ -13,8 +13,18 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const searchBarRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const { products, loading, error, search, clear } = useKeywordSearch()
+  const {
+    products,
+    loading,
+    error,
+    suggestedCorrection,
+    ghostSuffix,
+    fullCompletion,
+    search,
+    clear,
+  } = useKeywordSearch()
 
   // The hook debounces requests and invalidates any previous in-flight search.
   useEffect(() => {
@@ -36,26 +46,54 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const showDropdown = isDropdownOpen && searchQuery.trim().length > 1 && !loading && products.length > 0
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' || e.key === 'ArrowRight') {
+      if (ghostSuffix && fullCompletion && inputRef.current?.selectionStart === searchQuery.length) {
+        e.preventDefault()
+        setSearchQuery(fullCompletion)
+      }
+    }
+  }
+
+  const applyCorrection = (correction: string) => {
+    setSearchQuery(correction)
+    void search(correction)
+  }
+
+  const showDropdown = isDropdownOpen && searchQuery.trim().length > 1
 
   return (
     <div ref={searchBarRef} className={`relative w-full max-w-[824px] ${className}`}>
       <div className="search-bar-container">
-        <div className="w-full md:flex-1 flex items-center gap-2 py-3 md:py-0">
+        <div className="relative w-full md:flex-1 flex items-center gap-2 py-3 md:py-0">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-4 shrink-0">
             <path d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z" stroke="#98A2B3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setIsDropdownOpen(true)
-            }}
-            onFocus={() => searchQuery.length > 1 && setIsDropdownOpen(true)}
-            placeholder="Search products..."
-            className="w-full h-10 md:h-full bg-transparent outline-none text-[15px] md:text-[16px] text-text-primary placeholder:text-gray-400 px-2"
-          />
+
+          <div className="relative flex-1 flex items-center min-w-0">
+            {ghostSuffix && searchQuery.length > 0 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 z-0 select-none text-[15px] md:text-[16px] whitespace-pre text-gray-400/50"
+              >
+                <span className="opacity-0">{searchQuery}</span>
+                <span>{ghostSuffix}</span>
+              </div>
+            )}
+            <input 
+              ref={inputRef}
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setIsDropdownOpen(true)
+              }}
+              onKeyDown={handleKeyDown}
+              onFocus={() => searchQuery.length > 1 && setIsDropdownOpen(true)}
+              placeholder="Search products..."
+              className="relative z-10 w-full h-10 md:h-full bg-transparent outline-none text-[15px] md:text-[16px] text-text-primary placeholder:text-gray-400 px-2"
+            />
+          </div>
         </div>
       </div>
 
@@ -74,36 +112,61 @@ export default function SearchBar({ className = '' }: SearchBarProps) {
       )}
 
       {/* Search Dropdown */}
-      {showDropdown && (
+      {showDropdown && !loading && (
         <div className="absolute top-full left-0 w-full bg-white border border-secondary-light rounded-2xl shadow-2xl z-50 overflow-hidden mt-2">
-          <div className="py-4">
-            {products.map((product) => (
-              <Link
-                key={product.product_id}
-                href={getProductDetailHref(product.product_id)}
-                className="flex items-center gap-4 px-8 py-4 hover:bg-blue-50 transition-colors group"
-              >
-                <div className="size-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">
-                  {product.product_logo ? (
-                    <CatalogImage
-                      src={product.product_logo}
-                      alt=""
-                      className="size-full object-contain"
-                      fallback={<span className="flex size-full items-center justify-center font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 rounded animate-pulse" />
-                  )}
-                </div>
-                <div className="text-left">
-                  <div className="text-[14px] font-bold text-text-primary group-hover:text-cta-button">{product.product_name}</div>
-                  <div className="text-[12px] text-gray-400 line-clamp-1 truncate italic">Software Product</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
-            <Link href={`/products?search=${searchQuery}`} className="text-cta-button font-bold text-[12px] hover:underline">
+          {suggestedCorrection && (
+            <div className="bg-blue-50 border-b border-blue-100 px-6 py-3 flex items-center justify-between">
+              <p className="text-[13px] text-[#155eef]">
+                Did you mean:{" "}
+                <button
+                  type="button"
+                  onClick={() => applyCorrection(suggestedCorrection.suggestion)}
+                  className="font-bold underline text-[#004eeb] hover:text-[#0038a8]"
+                >
+                  {suggestedCorrection.suggestion}
+                </button>?
+              </p>
+              <span className="text-[11px] font-semibold tracking-wider uppercase text-[#2e90fa]">Typo detected</span>
+            </div>
+          )}
+
+          {products.length > 0 ? (
+            <div className="py-2">
+              {products.map((product) => (
+                <Link
+                  key={product.product_id}
+                  href={getProductDetailHref(product.product_id)}
+                  className="flex items-center gap-4 px-8 py-3 hover:bg-blue-50 transition-colors group"
+                >
+                  <div className="size-10 flex-shrink-0 bg-gray-50 rounded-lg p-1 border border-gray-100">
+                    {product.product_logo ? (
+                      <CatalogImage
+                        src={product.product_logo}
+                        alt=""
+                        className="size-full object-contain"
+                        fallback={<span className="flex size-full items-center justify-center font-bold text-[#155eef]">{product.product_name.charAt(0)}</span>}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 rounded animate-pulse" />
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[14px] font-bold text-text-primary group-hover:text-cta-button">{product.product_name}</div>
+                    <div className="text-[12px] text-gray-400 line-clamp-1 truncate italic">
+                      {product.primary_category ?? "Software Product"}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center">
+              <p className="text-[13px] text-gray-500">No products found matching &quot;{searchQuery}&quot;.</p>
+            </div>
+          )}
+
+          <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
+            <Link href={`/products?search=${encodeURIComponent(searchQuery)}`} className="text-cta-button font-bold text-[12px] hover:underline">
               View all results for &quot;{searchQuery}&quot;
             </Link>
           </div>

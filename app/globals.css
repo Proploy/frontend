@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Tailwind v4 doesn't auto-scan arbitrary source directories in monorepo-ish
+   layouts; explicitly add the components/site tree so V2 homepage utilities
+   (display/label/glass-card/blueprint/etc.) get emitted in the dev build. */
+@source "../components/site/**/*.{ts,tsx}";
+
 @theme {
     /* ===== COLOR SYSTEM ===== */
 
@@ -282,9 +287,8 @@ body {
 /* ===========================================================================
    PROPLOY V2 DESIGN SYSTEM — runtime tokens, utilities, keyframes
    Ported from the "proploy-ai-expert-match" (Vault/Lovable) prototype.
-   Placed before @layer components (Tailwind v4 drops @utility defined after the
-   plain CSS further down). marquee-track is intentionally NOT redefined here —
-   this branch already ships a .marquee-track utility below.
+   Scoped to new token/utility names so legacy pages are untouched. This is the
+   base for the planned site-wide redesign.
    =========================================================================== */
 
 :root {
@@ -298,6 +302,8 @@ body {
     --signal: oklch(0.78 0.16 92);
     --line: oklch(0.9 0.012 258);
 }
+
+/* ---- Custom utilities (Tailwind v4 @utility) ---- */
 
 @utility blueprint {
     background-image:
@@ -346,6 +352,16 @@ body {
     }
 }
 
+@keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+@utility marquee-track {
+    animation: marquee 38s linear infinite;
+    &:hover { animation-play-state: paused; }
+}
+
 @utility spin-slow {
     animation: spin 44s linear infinite;
 }
@@ -382,6 +398,8 @@ body {
     }
 }
 
+/* ---- Keyframes (marquee + spin already exist / are built in) ---- */
+
 @keyframes fade-in {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: none; }
@@ -411,6 +429,7 @@ body {
         transform: none !important;
     }
 }
+
 
 @layer components {
     .btn-cta {
@@ -627,15 +646,6 @@ body {
         100% { transform: translateX(-50%); }
     }
 
-    .marquee-track {
-        animation: marquee 35s linear infinite;
-        animation-play-state: running;
-    }
-
-    .marquee-track:hover {
-        animation-play-state: paused;
-    }
-
     /* Gradient Text Utility */
     .text-gradient-blue {
         background: linear-gradient(90deg, #197CFF 0%, #011127 100%);
@@ -674,8 +684,7 @@ body {
     background-size: 200% 100%;
     animation: compareShimmer 1.3s linear infinite;
 }
-.compare-toast,
-.app-action-toast { animation: compareToast 240ms cubic-bezier(.4, 0, .2, 1); }
+.compare-toast { animation: compareToast 240ms cubic-bezier(.4, 0, .2, 1); }
 
 /* Hide scrollbars on the tab strip and mobile swipe rail */
 .tabbar-scroll::-webkit-scrollbar,

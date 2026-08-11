@@ -14,12 +14,21 @@ import {
 } from '../search/mappers'
 import { isUnpublishedValue } from '../products/published-values'
 
+import {
+  findInlineCompletion,
+  findSpellingCorrection,
+  type SpellingCorrectionResult,
+} from './spell-check'
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface UseKeywordSearchResult {
   products: CardProduct[]
   loading: boolean
   error: NormalizedError | null
+  suggestedCorrection: SpellingCorrectionResult | null
+  ghostSuffix: string | null
+  fullCompletion: string | null
   search: (query: string, limit?: number) => Promise<void>
   clear: () => void
 }
@@ -42,14 +51,17 @@ interface UseCatalogProductMatchesResult {
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
 /**
- * Keyword search for typeahead/autocomplete.
+ * Keyword search for typeahead/autocomplete with spell judgment and ghost completion.
  * Backend: POST /api/v1/catalog/search/keyword
- * Returns lightweight results with product_id, name, slug, vendor, category, logo.
  */
 export function useKeywordSearch(): UseKeywordSearchResult {
   const [products, setProducts] = useState<CardProduct[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<NormalizedError | null>(null)
+  const [suggestedCorrection, setSuggestedCorrection] = useState<SpellingCorrectionResult | null>(null)
+  const [ghostSuffix, setGhostSuffix] = useState<string | null>(null)
+  const [fullCompletion, setFullCompletion] = useState<string | null>(null)
+
   const requestGuardRef = useRef(createLatestRequestGuard())
   const debounceRef = useRef<{
     timer: ReturnType<typeof setTimeout>
@@ -75,7 +87,7 @@ export function useKeywordSearch(): UseKeywordSearchResult {
 
     await new Promise<void>((resolve) => {
       debounce = {
-        timer: setTimeout(resolve, 250),
+        timer: setTimeout(resolve, 200),
         resolve,
       }
       debounceRef.current = debounce
@@ -84,17 +96,27 @@ export function useKeywordSearch(): UseKeywordSearchResult {
 
     if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!query.trim()) {
+    const trimmed = query.trim()
+
+    // Client-side instant spell judgment & completion before API returns
+    const localCorrection = findSpellingCorrection(trimmed)
+    setSuggestedCorrection(localCorrection)
+
+    if (!trimmed) {
       setProducts([])
       setLoading(false)
       setError(null)
+      setGhostSuffix(null)
+      setFullCompletion(null)
       return
     }
 
     setLoading(true)
     setError(null)
 
-    const result = await clientCatalogApi.search.keyword(query, limit)
+    // Search with exact query or corrected query if exact is severe typo
+    const targetSearchQuery = localCorrection && localCorrection.distance === 1 ? localCorrection.suggestion : trimmed
+    const result = await clientCatalogApi.search.keyword(targetSearchQuery, limit)
 
     if (!requestGuardRef.current.isLatest(requestId)) return
 
@@ -102,12 +124,36 @@ export function useKeywordSearch(): UseKeywordSearchResult {
       setError(result)
       setProducts([])
       setLoading(false)
+      setGhostSuffix(null)
+      setFullCompletion(null)
       return
     }
 
     const mapped = mapKeywordSearchResponseToResults(result.data, limit, 0)
     setProducts(mapped.products)
     setLoading(false)
+
+    // Compute ghost completion suffix from product candidates & dictionary
+    const candidates = Array.from(new Set([
+      ...mapped.products.map((p) => p.product_name),
+      ...mapped.products.map((p) => p.primary_category).filter(Boolean) as string[],
+    ]))
+
+    const inline = findInlineCompletion(trimmed, candidates)
+    if (inline) {
+      setGhostSuffix(inline.ghostSuffix)
+      setFullCompletion(inline.fullMatch)
+    } else {
+      setGhostSuffix(null)
+      setFullCompletion(null)
+    }
+
+    // Dynamic correction calculation including returned product names
+    const refinedCorrection = findSpellingCorrection(
+      trimmed,
+      mapped.products.map((p) => p.product_name),
+    )
+    setSuggestedCorrection(refinedCorrection)
   }, [cancelDebounce])
 
   const clear = useCallback(() => {
@@ -116,6 +162,9 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     setProducts([])
     setLoading(false)
     setError(null)
+    setSuggestedCorrection(null)
+    setGhostSuffix(null)
+    setFullCompletion(null)
   }, [cancelDebounce])
 
   useEffect(() => {
@@ -126,7 +175,16 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     }
   }, [cancelDebounce])
 
-  return { products, loading, error, search, clear }
+  return {
+    products,
+    loading,
+    error,
+    suggestedCorrection,
+    ghostSuffix,
+    fullCompletion,
+    search,
+    clear,
+  }
 }
 
 /**
