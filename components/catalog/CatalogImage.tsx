@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import Image from 'next/image'
 
 interface CatalogImageProps {
   src: string
@@ -10,31 +9,25 @@ interface CatalogImageProps {
   fallback?: ReactNode
 }
 
-function catalogImageLoader({ src }: { src: string }) {
-  return src
-}
-
 /**
  * Catalog media is supplied by service-apis and can use arbitrary approved hosts.
- * Rendering it directly avoids rejecting valid URLs through Next Image's static host allowlist.
+ * Rendering standard HTML img directly avoids Next.js domain constraints
+ * and prevents 1px HTML attribute sizing collapses in production builds.
  */
 export function CatalogImage({ src, alt, className = '', fallback = null }: CatalogImageProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
 
-  if (failedSrc === src) {
-    return fallback
+  if (!src || failedSrc === src) {
+    return <>{fallback}</>
   }
 
   return (
-    <Image
-      loader={catalogImageLoader}
-      unoptimized
+    <img
       src={src}
       alt={alt}
-      width={1}
-      height={1}
       onError={() => setFailedSrc(src)}
       className={className}
+      loading="lazy"
     />
   )
 }
