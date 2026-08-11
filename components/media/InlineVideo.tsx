@@ -1,6 +1,6 @@
 'use client'
 
-import { ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 type InlineVideoMode = 'auto' | 'direct'
 
@@ -75,6 +75,18 @@ export function InlineVideo({
 }: InlineVideoProps) {
   const embedUrl = mode === 'auto' ? getEmbedUrl(url) : null
   const canPlayDirectly = mode === 'direct' || isDirectVideoUrl(url) || isManagedExpertFileUrl(url)
+  const [videoSrc, setVideoSrc] = useState(url)
+
+  useEffect(() => {
+    setVideoSrc(url)
+  }, [url])
+
+  const handleVideoError = () => {
+    if (videoSrc.includes('localhost:8020') || videoSrc.includes('127.0.0.1:8020')) {
+      const cloudRunUrl = videoSrc.replace(/http:\/\/(localhost|127\.0\.0\.1):8020/, 'https://service-apis-731353524841.australia-southeast1.run.app')
+      setVideoSrc(cloudRunUrl)
+    }
+  }
 
   return (
     <div className={`flex size-full flex-col bg-[#181d27] ${className}`}>
@@ -90,7 +102,14 @@ export function InlineVideo({
           />
         ) : canPlayDirectly ? (
           // Captions are rendered when the backend supplies a WebVTT URL.
-          <video src={url} controls playsInline preload="metadata" className="absolute inset-0 size-full object-contain">
+          <video
+            src={videoSrc}
+            controls
+            playsInline
+            preload="metadata"
+            onError={handleVideoError}
+            className="absolute inset-0 size-full object-contain"
+          >
             {captionUrl ? (
               <track kind="captions" src={captionUrl} srcLang="en" label="English captions" default />
             ) : null}
@@ -100,19 +119,6 @@ export function InlineVideo({
             This video provider cannot be embedded.
           </div>
         )}
-      </div>
-
-      <div className="flex items-center justify-between gap-[12px] px-[12px] py-[8px] text-[12px] text-white/80">
-        <span>{captionUrl ? 'Captions available' : 'Captions were not provided'}</span>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-[4px] font-semibold text-white hover:underline"
-        >
-          Open video
-          <ExternalLink size={12} />
-        </a>
       </div>
     </div>
   )

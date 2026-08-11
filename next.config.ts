@@ -29,9 +29,10 @@ const securityHeaders = [
       "font-src 'self' data: https://fonts.gstatic.com",
       // Supabase auth/storage + Sanity CDN + Google avatar CDN + GitHub + Microsoft CDN + local & Cloud Run service-apis gateway.
       "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co https://cdn.sanity.io https://lh3.googleusercontent.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://*.githubusercontent.com https://*.microsoft.com https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
-      "connect-src 'self' http://localhost:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co wss://*.supabase.co https://*.sanity.io https://service-apis-731353524841.australia-southeast1.run.app",
-      // OAuth provider redirects land in the top frame.
-      "frame-src 'self' https://accounts.google.com https://github.com https://login.microsoftonline.com https://*.supabase.co",
+      "media-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
+      "connect-src 'self' http://localhost:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co wss://*.supabase.co https://*.sanity.io https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
+      // Document previews, video embeds (YouTube, Vimeo, Loom), and OAuth redirects.
+      "frame-src 'self' blob: data: http://localhost:* http://127.0.0.1:* https://accounts.google.com https://github.com https://login.microsoftonline.com https://*.supabase.co https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app https://www.youtube-nocookie.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://vimeo.com https://www.loom.com https://loom.com https://drive.google.com https://docs.google.com",
       "frame-ancestors 'none'",
       "form-action 'self'",
       "base-uri 'self'",
