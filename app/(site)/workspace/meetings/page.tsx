@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Calendar,
   ChevronDown,
@@ -9,6 +10,7 @@ import {
   RefreshCw,
   XCircle,
 } from 'lucide-react'
+import { ActionToast } from '@/components/ui/action-toast'
 import {
   BUTTON_SKEUO,
   CARD_SHADOW,
@@ -24,6 +26,7 @@ import { NativeAvailabilityCard } from '@/features/native-scheduling/components/
 import { NativeMeetingActions } from '@/features/native-scheduling/components/NativeMeetingActions'
 import { NativeBookingRequestsPanel } from '@/features/native-scheduling/components/NativeBookingRequestsPanel'
 import { NativeMeetingEntryCard } from '@/features/native-scheduling/components/NativeMeetingEntryCard'
+import { ConnectCalendarModal } from '@/features/native-scheduling/components/ConnectCalendarModal'
 
 type MeetingFilter = 'all' | WorkspaceMeeting['status']
 
@@ -43,20 +46,43 @@ const STATUS_CLASS: Record<string, string> = {
 }
 
 export default function WorkspaceMeetingsPage() {
+  return (
+    <Suspense fallback={<WorkspaceLoading />}>
+      <WorkspaceMeetingsContent />
+    </Suspense>
+  )
+}
+
+function WorkspaceMeetingsContent() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
+  const searchParams = useSearchParams()
+  const googleCalendarParam = searchParams.get('google_calendar')
   const [meetings, setMeetings] = useState<WorkspaceMeeting[]>([])
   const [engagements, setEngagements] = useState<WorkspaceEngagement[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedEngagementId, setSelectedEngagementId] = useState<string | null>(null)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false)
   const [engagementDropdownOpen, setEngagementDropdownOpen] = useState(false)
   const [filter, setFilter] = useState<MeetingFilter>('all')
   const [error, setError] = useState<NormalizedError | null>(null)
   const [loading, setLoading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
   const bookingRequestsAnchorRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!googleCalendarParam) return
+    if (googleCalendarParam === 'connected') {
+      setToast({ kind: 'success', message: 'Google Calendar connected successfully.' })
+    } else if (googleCalendarParam === 'denied') {
+      setToast({ kind: 'error', message: 'Google Calendar connection was denied.' })
+    } else if (googleCalendarParam === 'server_error') {
+      setToast({ kind: 'error', message: 'Google Calendar connection failed due to a server error.' })
+    }
+  }, [googleCalendarParam])
 
   useEffect(() => {
     if (state.isPending || !state.user) return
@@ -274,6 +300,7 @@ export default function WorkspaceMeetingsPage() {
               setIsCalendarOpen((current) => !current)
             }}
             onOpenChange={openBookingRequestsForEngagement}
+            onConnectCalendar={() => setIsConnectModalOpen(true)}
             pendingRequestCountForSelected={pendingRequestCountForSelected}
           />
           {isBuyer && isCalendarOpen && selectedEngagement && selectedEngagement.status === 'active' && (
@@ -478,6 +505,16 @@ export default function WorkspaceMeetingsPage() {
           </section>
         </div>
       </main>
+      <ConnectCalendarModal
+        open={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+        returnPath="/workspace/meetings"
+      />
+      <ActionToast
+        show={!!toast}
+        toast={toast ? { tone: toast.kind, title: toast.message } : null}
+        onClose={() => setToast(null)}
+      />
     </WorkspaceShell>
   )
 }
