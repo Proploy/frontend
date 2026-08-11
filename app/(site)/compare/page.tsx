@@ -12,7 +12,6 @@
 
 import React, { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Footer from '@/components/Footer'
 import { Builder, MAX_COLS, type CatalogOption, type Column } from '@/components/compare/CompareBuilder'
 import { BuyerBrief } from '@/components/compare/BuyerBrief'
 import { DesktopTable, MobileCards, ResultsToolbar } from '@/components/compare/CompareTable'
@@ -256,10 +255,6 @@ function ComparePageInner() {
       />
 
       <div style={{ paddingBottom: 8 }}>{renderResults()}</div>
-
-      <div style={{ marginTop: 64 }}>
-        <Footer />
-      </div>
 
       <ActionToast show={!!toast} toast={toast} onClose={() => setToast(null)} />
       <ShareComparisonModal

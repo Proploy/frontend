@@ -160,7 +160,14 @@ export function IntegrationLogo({ name, size = 40 }: { name: string; size?: numb
           <path d="M14.5 12a8.6 8.6 0 0 1-.3 2.2 8.6 8.6 0 0 1-2.2.3 8.6 8.6 0 0 1-2.2-.3A8.6 8.6 0 0 1 9.5 12a8.6 8.6 0 0 1 .3-2.2A8.6 8.6 0 0 1 12 9.5a8.6 8.6 0 0 1 2.2.3 8.6 8.6 0 0 1 .3 2.2ZM24 10.6h-6.8l4.8-4.8-1.7-1.7-4.8 4.8V2.1h-2.4v6.8L8.3 4.1 6.6 5.8l4.8 4.8H4.6v2.4h6.8l-4.8 4.8 1.7 1.7 4.8-4.8v6.8h2.4v-6.8l4.8 4.8 1.7-1.7-4.8-4.8H24Z" fill="#ff4f00" />
         </svg>,
       )
+    case 'jira':
+      return wrap(<img src="/figma-assets/3cfffe4377ece59c767cedf8f8508772137336a0.svg" alt="Jira" style={{ width: inner, height: inner }} />);
+    case 'notion':
+      return wrap(<img src="/figma-assets/080d123fdd49f2bef0a3ff77860937bc5900aedf.svg" alt="Notion" style={{ width: inner, height: inner }} />);
+    case 'zendesk':
+      return wrap(<img src="/figma-assets/db1d93e4c70dee1f2295fa860e2783918ef1e51f.svg" alt="Zendesk" style={{ width: inner, height: inner }} />);
     default:
       return monogram(name.charAt(0).toUpperCase(), '#717680')
   }
 }
+

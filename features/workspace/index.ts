@@ -12,7 +12,6 @@ export {
   WorkspaceRoleProvider,
 } from '@/features/workspace/use-current-user-role'
 export { useWorkspace } from '@/features/workspace/use-workspace'
-export { useDashboard } from '@/features/workspace/use-dashboard'
 export { useMeetings } from '@/features/workspace/use-meetings'
 export {
   useWorkspaceProjectDetail,

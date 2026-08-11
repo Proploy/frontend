@@ -18,6 +18,7 @@ import {
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
 import {
@@ -872,7 +873,7 @@ function MediaDialog({
 }
 
 function LogoFallback({ name }: { name: string }) {
-  return <span className="text-[34px] font-bold text-[#155eef]">{name.charAt(0).toUpperCase()}</span>
+  return <IntegrationLogo name={name.toLowerCase()} size={112} />
 }
 
 function StatusPill({ label }: { label: string }) {

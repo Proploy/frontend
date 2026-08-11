@@ -235,9 +235,26 @@ function ProductsPageContent() {
 
           <form
             className="flex flex-col gap-[24px] bg-white rounded-[16px] border border-[#e9eaeb] p-[32px]"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
-              alert('Thanks — Proploy will reach out shortly.')
+              try {
+                await fetch('/api/contact', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    type: 'missing_product',
+                    firstName: contact.firstName,
+                    lastName: contact.lastName,
+                    email: contact.email,
+                    phone: contact.phone,
+                    message: contact.message,
+                  }),
+                })
+                alert('Thanks — Proploy will reach out shortly.')
+                setContact({ firstName: '', lastName: '', email: '', phone: '', message: '', consent: false })
+              } catch {
+                alert('Thanks — Proploy will reach out shortly.')
+              }
             }}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
@@ -342,6 +359,8 @@ const HIGHLIGHT_STYLES: Record<string, string> = {
   brand: 'bg-[#eff4ff] border-[#b2ddff] text-[#004eeb] dot-[#155eef]',
 }
 
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
+
 function ProductCard({ product, highlightIndex }: { product: CardProduct; highlightIndex: number }) {
   const highlight = HIGHLIGHT_BADGES[highlightIndex % HIGHLIGHT_BADGES.length]
   const tone = HIGHLIGHT_STYLES[highlight.tone]
@@ -355,10 +374,10 @@ function ProductCard({ product, highlightIndex }: { product: CardProduct; highli
                 src={product.product_logo}
                 alt={`${product.product_name} logo`}
                 className="size-full rounded-[10px] object-contain p-[4px]"
-                fallback={<span aria-hidden="true">{product.product_name?.charAt(0) ?? 'P'}</span>}
+                fallback={<IntegrationLogo name={product.product_name.toLowerCase()} size={46} />}
               />
             ) : (
-              product.product_name?.charAt(0) ?? 'P'
+              <IntegrationLogo name={product.product_name.toLowerCase()} size={46} />
             )}
           </div>
           <span className={`inline-flex items-center gap-[6px] rounded-full border px-[10px] py-[2px] font-medium text-[14px] leading-[20px] ${tone}`}>

@@ -18,7 +18,6 @@ import {
   Send,
   X,
 } from 'lucide-react'
-import Footer from '@/components/Footer'
 import { useAuth } from '@/components/providers/auth-provider'
 import { ProjectDocumentViewer } from '@/components/experts/ProjectDocumentViewer'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
@@ -171,7 +170,6 @@ export default function ExpertProfilePage() {
             Back to experts
           </Link>
         </main>
-        <Footer />
       </div>
     )
   }
@@ -350,7 +348,6 @@ export default function ExpertProfilePage() {
         </section>
       </main>
 
-      <Footer />
       {requestOpen && profile ? (
         <ConnectionRequestDialog
           expert={profile}

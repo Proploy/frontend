@@ -20,3 +20,5 @@ export * from './products/published-values'
 export * from './search/types'
 export * from './search/mappers'
 export * from './search/hooks'
+export * from './search/spell-check'
+

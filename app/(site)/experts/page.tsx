@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Footer from '@/components/Footer'
 import ListingExplorer from '@/components/ListingExplorer'
 import { ExpertDiscoveryCard } from '@/components/experts/ExpertDiscoveryCard'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -181,8 +180,6 @@ function ExpertsPageContent() {
           )}
         </div>
       </section>
-
-      <Footer />
     </div>
   )
 }
