@@ -1,5 +1,7 @@
 import { getServiceApisBrowserBaseUrl } from '@/lib/service-apis/browser'
 
+const PRODUCTION_SERVICE_APIS_URL = 'https://service-apis-731353524841.australia-southeast1.run.app'
+
 // Product logo URLs resolve directly through the service-apis gateway.
 
 /**
@@ -11,7 +13,19 @@ import { getServiceApisBrowserBaseUrl } from '@/lib/service-apis/browser'
  */
 export function getProductLogoUrl(productId: string, logoReference: string | null | undefined): string | null {
   if (!logoReference) return null
-  const baseUrl = getServiceApisBrowserBaseUrl()
-  if (!baseUrl) return null
+
+  const baseUrl = getServiceApisBrowserBaseUrl() || PRODUCTION_SERVICE_APIS_URL
+
+  if (logoReference.startsWith('/')) {
+    return `${baseUrl}${logoReference}`
+  }
+
+  if (logoReference.startsWith('http://') || logoReference.startsWith('https://')) {
+    if (logoReference.includes('/api/v1/catalog/products/')) {
+      const path = logoReference.substring(logoReference.indexOf('/api/v1/catalog/products/'))
+      return `${baseUrl}${path}`
+    }
+  }
+
   return `${baseUrl}/api/v1/catalog/products/${encodeURIComponent(productId)}/logo`
 }

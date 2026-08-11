@@ -27,8 +27,8 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sanity.io",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      // Supabase auth/storage + Sanity CDN + Google avatar CDN + GitHub + Microsoft CDN + local service-apis gateway.
-      "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co https://cdn.sanity.io https://lh3.googleusercontent.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://*.githubusercontent.com https://*.microsoft.com",
+      // Supabase auth/storage + Sanity CDN + Google avatar CDN + GitHub + Microsoft CDN + local & Cloud Run service-apis gateway.
+      "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co https://cdn.sanity.io https://lh3.googleusercontent.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://*.githubusercontent.com https://*.microsoft.com https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
       "connect-src 'self' http://localhost:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co wss://*.supabase.co https://*.sanity.io https://service-apis-731353524841.australia-southeast1.run.app",
       // OAuth provider redirects land in the top frame.
       "frame-src 'self' https://accounts.google.com https://github.com https://login.microsoftonline.com https://*.supabase.co",
@@ -110,6 +110,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.microsoft.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'service-apis-731353524841.australia-southeast1.run.app',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.run.app',
       },
     ],
   },
