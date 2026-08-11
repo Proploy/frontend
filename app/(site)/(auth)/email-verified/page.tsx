@@ -1,18 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 
 export default function EmailVerifiedPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') ?? '/'
   const [isLoading, setIsLoading] = useState(false)
 
   const handleContinue = async () => {
     setIsLoading(true)
     try {
-      console.log('Email verified, proceeding')
-      router.push('/sign-in')
+      window.dispatchEvent(new Event('proploy-auth-changed'))
+      router.push(redirectTo)
+      router.refresh()
     } finally {
       setIsLoading(false)
     }

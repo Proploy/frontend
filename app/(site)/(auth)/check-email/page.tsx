@@ -1,10 +1,38 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+
+import { resendVerification } from '@/lib/auth/browser-client'
 
 export default function CheckEmailPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const email = searchParams.get('email') ?? ''
+  const redirectTo = searchParams.get('redirectTo') ?? ''
+
+  const [isResending, setIsResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState<string | null>(null)
+
+  const handleResend = async () => {
+    if (!email || isResending) return
+    setIsResending(true)
+    setResendMessage(null)
+    const { error } = await resendVerification(email)
+    setResendMessage(
+      error
+        ? error.message
+        : 'Verification email resent. Check your inbox.',
+    )
+    setIsResending(false)
+  }
+
+  const enterCodeHref = (() => {
+    const params = new URLSearchParams({ email })
+    if (redirectTo) params.set('redirectTo', redirectTo)
+    return `/verify-email?${params.toString()}`
+  })()
 
   return (
     <div className="flex h-[calc(100vh-80px)] w-full">
@@ -54,14 +82,22 @@ export default function CheckEmailPage() {
               Check your email
             </h2>
             <p className="font-inter text-[16px] text-[#535862]">
-              We sent a verification link to your email address.
+              {email
+                ? `We sent a verification link to ${email}.`
+                : 'We sent a verification link to your email address.'}
             </p>
           </div>
+
+          {resendMessage ? (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm" role="status">
+              {resendMessage}
+            </div>
+          ) : null}
 
           <div className="space-y-4">
             <button
               type="button"
-              onClick={() => router.push('/verify-email')}
+              onClick={() => router.push(enterCodeHref)}
               className="w-full bg-[#155eef] text-white font-inter font-semibold text-[16px] py-2.5 rounded-lg hover:bg-[#1248d4] transition"
             >
               Enter code manually
@@ -69,8 +105,13 @@ export default function CheckEmailPage() {
 
             <p className="text-center font-inter text-[14px] text-[#535862]">
               Didn&apos;t receive the email?{' '}
-              <button type="button" className="text-[#004eeb] font-semibold hover:underline">
-                Click to resend
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={!email || isResending}
+                className="text-[#004eeb] font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResending ? 'Resending...' : 'Click to resend'}
               </button>
             </p>
 

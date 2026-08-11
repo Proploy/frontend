@@ -50,7 +50,10 @@ export default function SignUpPage() {
       if (error) throw error
 
       window.dispatchEvent(new Event('proploy-auth-changed'))
-      router.push('/check-email')
+      const params = new URLSearchParams({ email: formData.email })
+      const redirectTo = new URL(window.location.href).searchParams.get('redirectTo')
+      if (redirectTo) params.set('redirectTo', redirectTo)
+      router.push(`/check-email?${params.toString()}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create account')
     } finally {

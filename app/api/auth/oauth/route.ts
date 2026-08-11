@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
     provider: provider as 'google' | 'github' | 'azure' | 'linkedin',
     options: {
       redirectTo: callbackUrl.toString(),
-      queryParams: rememberMe ? { access_type: 'offline', prompt: 'consent' } : undefined,
+      queryParams: provider === 'google' && rememberMe ? { access_type: 'offline', prompt: 'consent' } : undefined,
+      scopes: provider === 'azure' ? 'openid profile email' : undefined,
     },
   })
 
