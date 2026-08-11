@@ -42,6 +42,70 @@ export function IntegrationLogo({
 
   const key = name.toLowerCase().trim()
 
+  if (key.includes('asana')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="7" r="4" fill="#f95738" />
+        <circle cx="6.5" cy="16.5" r="4" fill="#f95738" />
+        <circle cx="17.5" cy="16.5" r="4" fill="#f95738" />
+      </svg>,
+    )
+  }
+  if (key.includes('bamboo')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="11" fill="#71b439" />
+        <path d="M9 7v10M13 7v10M9 12c2-1 4-1 4 0" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      </svg>,
+    )
+  }
+  if (key.includes('clickup')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="24" height="24" rx="5" fill="#7b68ee" />
+        <path d="M6 13l4 4 8-8" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>,
+    )
+  }
+  if (key.includes('coda')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="24" height="24" rx="5" fill="#f36c3d" />
+        <text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff" fontFamily="sans-serif">
+          c
+        </text>
+      </svg>,
+    )
+  }
+  if (key.includes('deel')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="24" height="24" rx="5" fill="#153375" />
+        <text x="12" y="15.5" textAnchor="middle" fontSize="10" fontWeight="800" fill="#fff" fontFamily="sans-serif">
+          deel
+        </text>
+      </svg>,
+    )
+  }
+  if (key.includes('greenhouse')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="24" height="24" rx="5" fill="#00b274" />
+        <path d="M12 6L6 11v7h12v-7L12 6z" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />
+      </svg>,
+    )
+  }
+  if (key.includes('google')) {
+    return wrap(
+      <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+      </svg>,
+    )
+  }
+
   if (key === 'cal_com' || key.includes('cal.com')) {
     return wrap(
       <svg width={inner} height={inner} viewBox="0 0 24 24" aria-hidden="true">
