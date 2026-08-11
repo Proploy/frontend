@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 
 interface CatalogImageProps {
   src: string
@@ -9,23 +9,41 @@ interface CatalogImageProps {
   fallback?: ReactNode
 }
 
+const PRODUCTION_GATEWAY = 'https://service-apis-731353524841.australia-southeast1.run.app'
+
 /**
  * Catalog media is supplied by service-apis and can use arbitrary approved hosts.
  * Rendering standard HTML img directly avoids Next.js domain constraints
  * and prevents 1px HTML attribute sizing collapses in production builds.
  */
 export function CatalogImage({ src, alt, className = '', fallback = null }: CatalogImageProps) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const [currentSrc, setCurrentSrc] = useState<string>(src)
+  const [hasFailed, setHasFailed] = useState<boolean>(false)
 
-  if (!src || failedSrc === src) {
+  useEffect(() => {
+    setCurrentSrc(src)
+    setHasFailed(false)
+  }, [src])
+
+  if (!src || hasFailed) {
     return <>{fallback}</>
+  }
+
+  const handleError = () => {
+    // If local localhost:8020 backend failed, retry with Cloud Run production backend before giving up
+    if (currentSrc.includes('localhost:8020') || currentSrc.includes('127.0.0.1:8020')) {
+      const cloudRunUrl = currentSrc.replace(/http:\/\/(localhost|127\.0\.0\.1):8020/, PRODUCTION_GATEWAY)
+      setCurrentSrc(cloudRunUrl)
+    } else {
+      setHasFailed(true)
+    }
   }
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt}
-      onError={() => setFailedSrc(src)}
+      onError={handleError}
       className={className}
       loading="lazy"
     />
