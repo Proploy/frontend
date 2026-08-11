@@ -7,7 +7,20 @@ function isExternalHref(href: string | undefined): boolean {
   return Boolean(href && /^https?:\/\//i.test(href))
 }
 
+function cleanMarkdown(text: string): string {
+  if (!text) return ''
+  return text
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+    .replace(/```(?:json)?\s*\{\s*"(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary)"[\s\S]*?\}\s*```/gi, '')
+    .replace(/\{\s*"(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary)"[\s\S]*?\}/gi, '')
+    .replace(/(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary):\s*(?:\[|\{)[\s\S]*?(?:\]|\})/gi, '')
+    .replace(/```(?:json)?\s*\[\s*\{\s*"product_id"[\s\S]*?\]\s*```/gi, '')
+    .replace(/\[\s*\{\s*"product_id"[\s\S]*?\]/gi, '')
+    .trim()
+}
+
 export function MarkdownMessage({ content }: { content: string }) {
+  const sanitized = cleanMarkdown(content)
   return (
     <div className="min-w-0 text-[15px] leading-[24px] text-[#181d27]">
       <ReactMarkdown
@@ -98,7 +111,7 @@ export function MarkdownMessage({ content }: { content: string }) {
           hr: () => <hr className="my-[16px] border-0 border-t border-[#e9eaeb]" />,
         }}
       >
-        {content}
+        {sanitized}
       </ReactMarkdown>
     </div>
   )

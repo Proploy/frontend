@@ -5,11 +5,11 @@ describe('AI workspace page shell', () => {
   it('suppresses the global navbar and fills the viewport with its own shell', () => {
     const root = process.cwd()
     const pageSource = fs.readFileSync(
-      path.join(root, 'app/AI_workspace/page.tsx'),
+      path.join(root, 'app/(site)/AI_workspace/page.tsx'),
       'utf8',
     )
     const layoutSource = fs.readFileSync(
-      path.join(root, 'app/layout.tsx'),
+      path.join(root, 'app/(site)/layout.tsx'),
       'utf8',
     )
     const navbarSource = fs.readFileSync(
@@ -40,7 +40,7 @@ describe('AI workspace page shell', () => {
 
     expect(pageSource).not.toContain('<Navbar')
     expect(layoutSource.match(/<Navbar \/>/g)).toHaveLength(1)
-    expect(navbarSource).toContain("'/AI_workspace'")
+    expect(navbarSource).toContain('"/AI_workspace"')
     expect(workspaceSource).toContain('h-dvh')
     expect(workspaceSource).not.toContain('mt-[80px]')
     expect(workspaceSource).not.toContain('h-[calc(100dvh-80px)]')

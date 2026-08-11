@@ -39,7 +39,21 @@ export type AiWorkspaceProfile = {
   [key: string]: unknown
 }
 
-export type AiWorkspaceRecommendation = AiWorkspaceRecord
+export type AiWorkspaceRecommendation = AiWorkspaceRecord & {
+  product_id?: string
+  name?: string
+  product_name?: string
+  short_description?: string
+  agent_summary?: string
+  best_for?: string
+  fit_score?: number
+  match_score?: number
+  match_strength?: string
+  core_features?: string[]
+  reasons?: string[]
+  considerations?: string[]
+  profile_href?: string
+}
 export type AiWorkspaceSearchResult = AiWorkspaceRecord
 
 export type AiWorkspaceToolCall = {
@@ -130,19 +144,30 @@ export type AiWorkspaceApiResult<T> = { ok: true; data: T } | NormalizedError
 
 export type AiWorkspaceStreamEventName =
   | 'session'
+  | 'status'
   | 'message_delta'
   | 'message_final'
   | 'thinking'
   | 'tool_call'
   | 'recommendations'
   | 'profile'
+  | 'evaluation_state'
+  | 'shortlist_updated'
+  | 'recommendation_published'
+  | 'document_ready'
   | 'error'
   | 'done'
 
 export type AiWorkspaceStreamPayloadByEvent = {
   session: {
     session_id?: string
+    evaluation_id?: string
     user_id?: string
+    [key: string]: unknown
+  }
+  status: {
+    content?: string
+    status?: 'running' | 'done' | string
     [key: string]: unknown
   }
   message_delta: {
@@ -165,6 +190,22 @@ export type AiWorkspaceStreamPayloadByEvent = {
   }
   profile: {
     profile?: AiWorkspaceProfile
+    [key: string]: unknown
+  }
+  evaluation_state: {
+    evaluation?: import('./evaluation-types').EvaluationDetail
+    [key: string]: unknown
+  }
+  shortlist_updated: {
+    items?: import('./evaluation-types').EvaluationProduct[]
+    [key: string]: unknown
+  }
+  recommendation_published: {
+    recommendation?: import('./evaluation-types').EvaluationRecommendation
+    [key: string]: unknown
+  }
+  document_ready: {
+    document?: Record<string, unknown>
     [key: string]: unknown
   }
   error: {

@@ -11,7 +11,7 @@ import { ProductMatchCard } from './ProductMatchCard'
 import { RecommendationPanel } from './RecommendationPanel'
 import { ShortlistPanel } from './ShortlistPanel'
 
-type Tab = 'results' | 'shortlist' | 'recommendation'
+type Tab = 'results' | 'products' | 'shortlist'
 
 export function DecisionWorkspace({
   evaluation,
@@ -39,19 +39,36 @@ export function DecisionWorkspace({
   collapsed?: boolean
   onToggleCollapsed?: () => void
 }) {
+  const recommendations = evaluation.matches
+    .filter(m => m.is_agent_selected)
+    .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0))
+    .slice(0, 1)
+  const products = evaluation.matches
+
   const [view, setView] = useState<{
     tab: Tab
+    matchCount: number
     shortlistCount: number
   }>({
-    tab: 'results',
+    tab: recommendations.length > 0 ? 'results' : products.length > 0 ? 'products' : 'shortlist',
+    matchCount: evaluation.matches.length,
     shortlistCount: evaluation.shortlist.length,
   })
-  if (view.shortlistCount !== evaluation.shortlist.length) {
+
+  if (
+    view.matchCount !== evaluation.matches.length ||
+    view.shortlistCount !== evaluation.shortlist.length
+  ) {
     setView({
       tab:
-        evaluation.shortlist.length > view.shortlistCount
-          ? 'shortlist'
-          : view.tab,
+        recommendations.length > 0 && view.tab === 'shortlist'
+          ? 'results'
+          : products.length > view.matchCount && view.tab !== 'results'
+            ? 'products'
+            : evaluation.shortlist.length > view.shortlistCount
+              ? 'shortlist'
+              : view.tab,
+      matchCount: evaluation.matches.length,
       shortlistCount: evaluation.shortlist.length,
     })
   }
@@ -81,14 +98,21 @@ export function DecisionWorkspace({
   const tabs: Array<{ id: Tab; label: string }> = [
     {
       id: 'results',
-      label: `Results ${evaluation.matches.length}`,
+      label: recommendations.length > 0 ? 'Suggestion' : 'Suggestions 0',
+    },
+    {
+      id: 'products',
+      label: `Products ${products.length}`,
     },
     {
       id: 'shortlist',
       label: `Shortlist ${evaluation.shortlist.length}`,
     },
-    { id: 'recommendation', label: 'Recommendation' },
   ]
+
+  const shortlistedIds = new Set(
+    evaluation.shortlist.map((item) => item.product_id),
+  )
 
   return (
     <aside className="flex h-full min-h-0 flex-col border-l border-[#e9eaeb] bg-white">
@@ -133,7 +157,7 @@ export function DecisionWorkspace({
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`min-w-0 flex-1 rounded-lg px-2 py-2 text-[11px] font-semibold transition ${
+            className={`min-w-0 flex-1 rounded-lg px-1.5 py-2 text-[11px] font-semibold transition ${
               tab === item.id
                 ? 'bg-white text-[#181d27] shadow-sm'
                 : 'text-[#717680] hover:text-[#414651]'
@@ -148,23 +172,17 @@ export function DecisionWorkspace({
         className="min-h-0 flex-1 overflow-y-auto px-3 py-4"
       >
         {tab === 'results' ? (
-          evaluation.matches.length ? (
+          recommendations.length > 0 ? (
             <div className="space-y-3">
-              {evaluation.matches.map((product) => {
-                const shortlisted = evaluation.shortlist.some(
-                  (item) =>
-                    item.product_id === product.product_id,
-                )
+              {recommendations.map((product) => {
+                const shortlisted = shortlistedIds.has(product.product_id)
                 return (
                   <ProductMatchCard
                     key={product.product_id}
                     product={product}
                     shortlisted={shortlisted}
                     onToggleShortlist={() =>
-                      onToggleShortlist(
-                        product.product_id,
-                        shortlisted,
-                      )
+                      onToggleShortlist(product.product_id, shortlisted)
                     }
                   />
                 )
@@ -173,11 +191,39 @@ export function DecisionWorkspace({
           ) : (
             <div className="rounded-xl border border-dashed border-[#d5d7da] bg-white px-4 py-5 text-center">
               <p className="text-sm font-semibold text-[#414651]">
-                No results yet
+                No suggestions yet
               </p>
               <p className="mt-1 text-xs leading-5 text-[#717680]">
-                SAM&apos;s catalog matches will appear here as they
-                become available.
+                Once SAM evaluates options for you, the final suggestions will appear here.
+              </p>
+            </div>
+          )
+        ) : null}
+        {tab === 'products' ? (
+          products.length > 0 ? (
+            <div className="space-y-3">
+              {products.map((product) => {
+                const shortlisted = shortlistedIds.has(product.product_id)
+                return (
+                  <ProductMatchCard
+                    key={`prod-${product.product_id}`}
+                    product={product}
+                    shortlisted={shortlisted}
+                    minimal={true}
+                    onToggleShortlist={() =>
+                      onToggleShortlist(product.product_id, shortlisted)
+                    }
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-[#d5d7da] bg-white px-4 py-5 text-center">
+              <p className="text-sm font-semibold text-[#414651]">
+                No products discovered
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[#717680]">
+                SAM will list all products it evaluates or searches for in this tab.
               </p>
             </div>
           )
@@ -188,13 +234,6 @@ export function DecisionWorkspace({
             onReorder={onReorder}
             onRemove={onRemove}
             onCompare={onCompare}
-          />
-        ) : null}
-        {tab === 'recommendation' ? (
-          <RecommendationPanel
-            evaluation={evaluation}
-            onGenerate={onGenerateRecommendation}
-            onRetry={onRetry}
           />
         ) : null}
       </div>

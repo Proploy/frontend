@@ -11,7 +11,7 @@ import { InterestCaptureProvider } from '@/features/interests/InterestCapturePro
 import { FavoritesProvider } from '@/features/users'
 import CompareTray from '@/components/compare/CompareTray'
 
-import './globals.css'
+import '../globals.css'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],

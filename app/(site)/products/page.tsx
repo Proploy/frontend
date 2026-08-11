@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import CompareToggle from '@/components/compare/CompareToggle'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import ListingExplorer from '@/components/ListingExplorer'
-import Footer from '@/components/Footer'
 import {
   getProductDetailHref,
   useCategoryTree,
@@ -323,7 +322,6 @@ function ProductsPageContent() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

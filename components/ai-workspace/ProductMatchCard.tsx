@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { ArrowUpRight, Check, LoaderCircle, Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { EvaluationProduct } from '@/features/ai-workspace'
 import { getProductDetailHref } from '@/features/catalog/products/product-detail-view'
+import { clientCatalogApi } from '@/features/catalog/shared/client-api'
 
 export function ProductMatchCard({
   product,
   shortlisted,
   onToggleShortlist,
+  minimal = false,
 }: {
   product: EvaluationProduct
   shortlisted: boolean
@@ -17,9 +19,24 @@ export function ProductMatchCard({
     | void
     | boolean
     | Promise<boolean>
+  minimal?: boolean
 }) {
   const score = Math.round(product.match_score ?? 0)
   const [updatingShortlist, setUpdatingShortlist] = useState(false)
+  const [resolvedName, setResolvedName] = useState<string | null>(null)
+  
+  useEffect(() => {
+    if (product.product_name === product.product_id) {
+      clientCatalogApi.products.getDetail(product.product_id).then((res) => {
+        if (res.ok && res.data?.product_name) {
+          setResolvedName(res.data.product_name)
+        }
+      })
+    }
+  }, [product.product_id, product.product_name])
+
+  const displayName = resolvedName || product.product_name || 'Product'
+
   const profileHref = product.available
     ? product.profile_href ?? getProductDetailHref(product.product_id)
     : null
@@ -32,11 +49,19 @@ export function ProductMatchCard({
               href={profileHref}
               className="text-lg font-semibold text-[#181d27] hover:text-[#155eef]"
             >
-              {product.product_name || 'Product'}
+              {displayName === product.product_id ? (
+                <span className="animate-pulse bg-gray-200 text-transparent rounded w-32 inline-block">Loading</span>
+              ) : (
+                displayName
+              )}
             </Link>
           ) : (
             <h3 className="text-lg font-semibold text-[#181d27]">
-              {product.product_name || 'Product unavailable'}
+              {displayName === product.product_id ? (
+                <span className="animate-pulse bg-gray-200 text-transparent rounded w-32 inline-block">Loading</span>
+              ) : (
+                displayName
+              )}
             </h3>
           )}
           <p className="mt-0.5 text-sm font-medium text-[#079455]">
@@ -48,7 +73,7 @@ export function ProductMatchCard({
         </span>
       </div>
 
-      {product.best_for ? (
+      {!minimal && product.best_for ? (
         <div className="mt-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#717680]">
             Best for
@@ -82,7 +107,7 @@ export function ProductMatchCard({
         </div>
       ) : null}
 
-      {product.considerations?.length ? (
+      {!minimal && product.considerations?.length ? (
         <div className="mt-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#717680]">
             Considerations

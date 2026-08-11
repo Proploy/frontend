@@ -13,6 +13,7 @@ import {
   buildAiWorkspaceResearchRequest,
   mergeToolRunDetail,
 } from '@/features/ai-workspace/session-state'
+import { loadAiWorkspaceSessionHistory } from '@/features/ai-workspace/session-history'
 import type {
   AiWorkspaceMessage,
   AiWorkspacePageContextInput,
@@ -30,19 +31,6 @@ type UseAiWorkspaceOptions = {
 
 function messageStorageKey(sessionId: string): string {
   return `proploy-ai-workspace-messages:${sessionId}`
-}
-
-function safeReadMessages(sessionId: string): AiWorkspaceMessage[] {
-  if (typeof window === 'undefined' || !sessionId) return []
-
-  try {
-    const raw = window.sessionStorage.getItem(messageStorageKey(sessionId))
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? parsed as AiWorkspaceMessage[] : []
-  } catch {
-    return []
-  }
 }
 
 function persistMessages(sessionId: string, messages: AiWorkspaceMessage[]) {
@@ -93,6 +81,7 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
   const [profile, setProfile] = useState<AiWorkspaceProfile | null>(null)
   const [thinking, setThinking] = useState<{ content: string; status: string } | null>(null)
   const [toolCalls, setToolCalls] = useState<AiWorkspaceToolCall[]>([])
+  const [isResuming, setIsResuming] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
   const isSendingRef = useRef(false)
 
@@ -107,7 +96,22 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
       const storedSessionId = readStoredSessionId()
       if (storedSessionId) {
         setSessionIdState(storedSessionId)
-        setMessages(safeReadMessages(storedSessionId))
+        setIsResuming(true)
+        const cancelled = false
+        loadAiWorkspaceSessionHistory(storedSessionId)
+          .then((loaded) => {
+            if (cancelled) return
+            setMessages(loaded)
+          })
+          .catch((error: unknown) => {
+            if (cancelled) return
+            const message = error instanceof Error ? error.message : 'Failed to load session'
+            setLastError(message)
+          })
+          .finally(() => {
+            if (cancelled) return
+            setIsResuming(false)
+          })
       }
     }
     rememberAiWorkspacePageContext(initialContext)
@@ -142,13 +146,28 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
     setToolCalls([])
   }, [])
 
-  const openSession = useCallback((nextSessionId: string, restoredMessages?: AiWorkspaceMessage[]) => {
+  const openSession = useCallback(async (nextSessionId: string, restoredMessages?: AiWorkspaceMessage[]) => {
     if (!nextSessionId) return
     stopStreaming()
     persistSessionId(nextSessionId)
     setSessionIdState(nextSessionId)
-    setMessages(restoredMessages ?? safeReadMessages(nextSessionId))
-    resetTransientState()
+    if (restoredMessages) {
+      setMessages(restoredMessages)
+      resetTransientState()
+      return
+    }
+    setIsResuming(true)
+    try {
+      const loaded = await loadAiWorkspaceSessionHistory(nextSessionId)
+      setMessages(loaded)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to load session'
+      setLastError(message)
+      setMessages([])
+    } finally {
+      setIsResuming(false)
+      resetTransientState()
+    }
   }, [resetTransientState, stopStreaming])
 
   const startNewSession = useCallback(() => {
@@ -345,6 +364,7 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
       openSession,
       startNewSession,
       isSending,
+      isResuming,
       lastError,
       lastAnswer,
       recommendations,
@@ -362,6 +382,7 @@ export function useAiWorkspace(options: UseAiWorkspaceOptions = {}) {
       openSession,
       startNewSession,
       isSending,
+      isResuming,
       lastError,
       lastAnswer,
       recommendations,

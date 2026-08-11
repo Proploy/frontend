@@ -58,7 +58,7 @@ describe('AI_workspace write payloads', () => {
       profile_name: 'AI Workspace Profile',
     })
 
-    const [, request] = fetchMock.mock.calls[1] as [string, RequestInit]
+    const [, request] = (fetchMock.mock.calls.at(-1) ?? fetchMock.mock.calls[0]) as [string, RequestInit]
     expect(JSON.parse(String(request.body))).toEqual({
       session_id: 'session-1',
       profile_name: 'AI Workspace Profile',

@@ -27,7 +27,6 @@ export function EvaluationRow({
   active: boolean
   onSelect: () => void
   onRename: () => void
-  onDuplicate: () => void
   onArchive: () => void
   onDelete: () => void
   collapsed?: boolean
@@ -107,7 +106,10 @@ export function EvaluationRow({
         <div ref={menuRef}>
           <button
             type="button"
-            onClick={() => setOpen((value) => !value)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen((value) => !value)
+            }}
             aria-label={`Actions for ${evaluation.title}`}
             aria-expanded={open}
             className={`absolute right-2 top-2.5 flex size-7 items-center justify-center rounded-lg text-[#717680] hover:bg-white hover:text-[#181d27] focus-visible:opacity-100 ${
@@ -122,16 +124,20 @@ export function EvaluationRow({
             <div className="absolute right-2 top-10 z-30 w-36 rounded-xl border border-[#e9eaeb] bg-white p-1.5 text-sm shadow-[0_12px_32px_rgba(10,13,18,0.14)]">
               {[
                 ['Rename', onRename],
-                ['Duplicate', onDuplicate],
                 ['Archive', onArchive],
                 ['Delete', onDelete],
               ].map(([label, handler]) => (
                 <button
                   key={label as string}
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     setOpen(false)
-                    ;(handler as () => void)()
+                    // Defer execution slightly to allow menu to unmount safely
+                    // before blocking the main thread with window.prompt or confirm
+                    window.setTimeout(() => {
+                      ;(handler as () => void)()
+                    }, 10)
                   }}
                   className={`block w-full rounded-lg px-2.5 py-2 text-left hover:bg-[#f5f8ff] ${
                     label === 'Delete'

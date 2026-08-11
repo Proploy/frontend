@@ -12,6 +12,12 @@ export function RecommendationCard({
   onEvidence?: () => void
 }) {
   const product = recommendation.recommended_product
+  const whyItWon = recommendation.why_it_won.length > 0
+    ? recommendation.why_it_won
+    : (product.reasons && product.reasons.length > 0
+        ? product.reasons
+        : (product.best_for ? [product.best_for] : ['Matches core requirements and constraints']))
+
   return (
     <article className="overflow-hidden rounded-2xl border border-[#84adff] bg-white shadow-[0_6px_24px_rgba(21,94,239,0.10)]">
       <div className="bg-[#eff4ff] px-4 py-3">
@@ -43,7 +49,7 @@ export function RecommendationCard({
             Why it won
           </p>
           <ul className="mt-2 space-y-1.5 text-sm leading-5 text-[#344054]">
-            {recommendation.why_it_won.map((item) => (
+            {whyItWon.map((item) => (
               <li key={item}>✓ {item}</li>
             ))}
           </ul>
@@ -78,10 +84,11 @@ export function RecommendationCard({
           ) : null}
           <button
             type="button"
+            onClick={() => window.print()}
             className="flex h-9 items-center gap-1.5 rounded-lg bg-[#155eef] px-3 text-sm font-semibold text-white hover:bg-[#0e4cc7]"
           >
             <Download size={14} />
-            Export recommendation
+            Export recommendation (PDF)
           </button>
         </div>
       </div>

@@ -36,7 +36,6 @@ export function EvaluationSidebar({
   onSelect: (evaluationId: string) => void
   onNew: () => void
   onRename: (evaluation: EvaluationSummary) => void
-  onDuplicate: (evaluationId: string) => void
   onArchive: (evaluationId: string) => void
   onDelete: (evaluationId: string) => void
   onClose?: () => void
@@ -125,9 +124,6 @@ export function EvaluationSidebar({
                       }
                       onSelect={() => onSelect(evaluation.evaluation_id)}
                       onRename={() => onRename(evaluation)}
-                      onDuplicate={() =>
-                        onDuplicate(evaluation.evaluation_id)
-                      }
                       onArchive={() =>
                         onArchive(evaluation.evaluation_id)
                       }
