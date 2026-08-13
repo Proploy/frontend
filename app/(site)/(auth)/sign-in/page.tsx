@@ -3,21 +3,13 @@
 import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import InputField from '@/components/ui/InputField'
-import Button from '@/components/ui/Button'
-import Checkbox from '@/components/ui/Checkbox'
 import { signInWithPassword, startOAuthSignIn } from '@/lib/auth/browser-client'
-
-const oauthProviders = [
-  { label: 'Continue with Google', provider: 'google' as const },
-  { label: 'Continue with GitHub', provider: 'github' as const },
-  { label: 'Continue with Azure', provider: 'azure' as const },
-]
+import { AuthShell } from '../auth-shell'
+import { AuthError, AuthField, OAuthButtons, OrDivider, type OAuthProvider } from '../auth-ui'
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="h-[calc(100vh-80px)] w-full bg-white" />}>
+    <Suspense fallback={<div className="pp-scope min-h-dvh" style={{ background: 'var(--paper)' }} />}>
       <SignInPageContent />
     </Suspense>
   )
@@ -62,7 +54,7 @@ function SignInPageContent() {
     }
   }
 
-  const handleOAuth = async (provider: 'google' | 'github' | 'azure') => {
+  const handleOAuth = async (provider: OAuthProvider) => {
     setError('')
     setOauthLoading(provider)
 
@@ -77,84 +69,85 @@ function SignInPageContent() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] w-full">
-      <div className="hidden lg:flex flex-[3] relative flex-col items-center justify-center overflow-hidden">
-        <Image alt="" src="/login-backdrop.png" fill sizes="(max-width: 1023px) 0px, 60vw" className="absolute inset-0 object-cover" />
-        <div className="absolute inset-0 bg-[#0040c1] opacity-80"></div>
-
-        <div className="relative z-10 flex flex-col gap-12 w-[640px] px-8">
-          <Image alt="Proploy" src="/proploy-logomark-white.png" width={48} height={48} />
-
-          <div className="flex flex-col gap-6">
-            <h1 className="font-dm-sans font-semibold text-[72px] leading-[90px] text-white" style={{ letterSpacing: '-1.44px' }}>
-              Discover, Decide, Deploy, Done.
-            </h1>
-            <p className="font-inter font-medium text-[20px] leading-[30px] text-[#b2ccff]">
-              AI-powered marketplace that matches businesses with the right software solutions and the vetted experts to implement them successfully.
-            </p>
-          </div>
+    <AuthShell>
+      <div className="pp-stack pp-gap-8">
+        <div className="pp-stack pp-gap-3">
+          <p className="pp-label">Welcome back</p>
+          <h2 className="pp-display pp-d3">Log in</h2>
+          <p className="pp-body">Please enter your details.</p>
         </div>
+
+        {(error || errorParam) && (
+          <AuthError
+            message={
+              error ||
+              (errorParam === 'auth_callback_failed'
+                ? 'Sign-in callback failed. Please try again.'
+                : 'Authentication error. Please try again.')
+            }
+          />
+        )}
+
+        <form onSubmit={handleSubmit} className="pp-stack pp-gap-6">
+          <AuthField
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            autoComplete="email"
+          />
+
+          <div className="pp-stack pp-gap-4">
+            <AuthField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+            />
+
+            <div className="pp-flex" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <label className="pp-check">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                Remember for 30 days
+              </label>
+              <Link
+                href="/forgot-password"
+                className="pp-small"
+                style={{ color: 'var(--cobalt)', fontWeight: 'var(--weight-semibold)' }}
+              >
+                Forgot password
+              </Link>
+            </div>
+          </div>
+
+          <button type="submit" className="pp-btn pp-btn--cobalt pp-btn--block" disabled={isLoading}>
+            {isLoading ? 'Logging in…' : 'Log in'}
+          </button>
+        </form>
+
+        <OrDivider />
+
+        <OAuthButtons verb="Continue" loadingProvider={oauthLoading} onSelect={handleOAuth} />
+
+        <p className="pp-body" style={{ textAlign: 'center' }}>
+          Don&apos;t have an account?{' '}
+          <Link
+            href="/sign-up"
+            style={{ color: 'var(--cobalt)', fontWeight: 'var(--weight-semibold)' }}
+          >
+            Create an account
+          </Link>
+        </p>
       </div>
-
-      <div className="w-full flex flex-col items-center justify-center bg-white px-6 py-12 h-full sm:px-10 lg:flex-[2] lg:px-[100px] overflow-auto">
-        <div className="w-full">
-          <Image alt="Proploy" src="/proploy-logomark.png" width={48} height={48} className="mb-8" />
-
-          <div className="mb-8">
-            <h2 className="font-dm-sans font-semibold text-[30px] leading-[38px] text-[#181d27] mb-2">Log in</h2>
-            <p className="font-inter text-[16px] text-[#535862]">Welcome back! Please enter your details.</p>
-          </div>
-
-          {(error || errorParam) && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {error || (errorParam === 'auth_callback_failed' ? 'Sign-in callback failed. Please try again.' : 'Authentication error. Please try again.')}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6 mb-6">
-            <InputField label="Email" name="email" inputType="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" />
-
-            <div className="flex flex-col gap-4">
-              <InputField label="Password" name="password" inputType="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" />
-
-              <div className="flex items-center justify-between">
-                <Checkbox checked={rememberMe} onChange={setRememberMe} label="Remember for 30 days" size="sm" />
-                <Link href="/forgot-password" className="text-[#004eeb] font-semibold text-[14px] hover:underline">
-                  Forgot password
-                </Link>
-              </div>
-            </div>
-
-            <Button type="submit" variant="primary" size="lg" loading={isLoading} loadingText="Logging in..." className="w-full">
-              Log in
-            </Button>
-          </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#e9eaeb]"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-[#535862]">OR</span>
-            </div>
-          </div>
-
-          <div className="space-y-3 mb-6">
-            {oauthProviders.map(({ label, provider }) => (
-              <Button key={provider} type="button" variant="secondary" size="lg" className="w-full" onClick={() => handleOAuth(provider)} loading={oauthLoading === provider}>
-                {label}
-              </Button>
-            ))}
-          </div>
-
-          <p className="text-center font-inter text-[14px] text-[#535862]">
-            Don&apos;t have an account?{' '}
-            <Link href="/sign-up" className="text-[#004eeb] font-semibold hover:underline">
-              Create an account
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   )
 }

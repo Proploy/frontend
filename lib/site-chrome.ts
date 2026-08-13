@@ -72,6 +72,25 @@ export const V2_CHROME_PREFIXES = [
   '/legal',
 ] as const
 
+// Auth-flow routes render a standalone v2 shell (split brand panel + form)
+// with no marketing Navbar/Footer around them.
+export const AUTH_ROUTES = [
+  '/sign-in',
+  '/sign-up',
+  '/check-email',
+  '/email-verified',
+  '/forgot-password',
+  '/password-reset-confirmation',
+  '/reset-password-email',
+  '/set-new-password',
+  '/verify-email',
+] as const
+
+export function isAuthRoute(pathname: string | null | undefined): boolean {
+  if (!pathname) return false
+  return AUTH_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
 export function isV2ChromeRoute(pathname: string | null | undefined): boolean {
   if (!pathname) return false
   return (
@@ -86,5 +105,5 @@ export function isV2ChromeRoute(pathname: string | null | undefined): boolean {
 // they ship the v2 Nav/Footer themselves. Keep this the single source of
 // truth for both components.
 export function hidesGlobalChrome(pathname: string | null | undefined): boolean {
-  return isPortalRoute(pathname) || isV2ChromeRoute(pathname)
+  return isPortalRoute(pathname) || isV2ChromeRoute(pathname) || isAuthRoute(pathname)
 }
