@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { EvaluationProduct } from '@/features/ai-workspace'
+import { ProductName } from './ProductName'
 
 export function ComparisonPanel({
   items,
@@ -68,9 +69,16 @@ export function ComparisonPanel({
                 }
                 className="size-4 accent-[#155eef]"
               />
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#344054]">
-                {product.product_name || product.product_id}
-              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-[#181d27]">
+                  <ProductName product={product} />
+                </p>
+                {product.match_score != null && (
+                  <p className="text-xs text-[#717680]">
+                    Match score: {(product.match_score * 100).toFixed(0)}%
+                  </p>
+                )}
+              </div>
             </label>
           )
         })}
