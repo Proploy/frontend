@@ -4,9 +4,25 @@ import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options'
 
 const publicRoutes = ['/', '/sign-in', '/sign-up', '/auth/callback', '/become-expert']
 
+// Public expert-directory category pages (footer links) — static marketing
+// routes that live alongside the auth-gated /experts/[id] profiles.
+const PUBLIC_EXPERT_CATEGORY_ROUTES = [
+  '/experts/top',
+  '/experts/engineering',
+  '/experts/data-ai',
+  '/experts/product',
+  '/experts/marketing',
+  '/experts/finance-ops',
+  '/experts/consulting',
+]
+
 function isProtectedExpertRoute(pathname: string) {
   if (pathname.startsWith('/experts/dashboard') || pathname.startsWith('/experts/account') || pathname.startsWith('/experts/chat')) {
     return true
+  }
+
+  if (PUBLIC_EXPERT_CATEGORY_ROUTES.includes(pathname)) {
+    return false
   }
 
   return pathname.startsWith('/experts/')

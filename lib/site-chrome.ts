@@ -23,8 +23,54 @@ export function isPortalRoute(pathname: string | null | undefined): boolean {
 // marketing Navbar/Footer must be suppressed there. /experts/[id] intentionally
 // keeps the legacy chrome until that page is redesigned, hence exact matches
 // for /experts rather than a prefix.
-export const V2_CHROME_EXACT = ['/experts', '/for-businesses', '/for-experts'] as const
-export const V2_CHROME_PREFIXES = ['/products', '/product/'] as const
+export const V2_CHROME_EXACT = [
+  '/experts',
+  '/for-businesses',
+  '/for-experts',
+  // Expert category directories (static siblings of /experts/[id])
+  '/experts/top',
+  '/experts/engineering',
+  '/experts/data-ai',
+  '/experts/product',
+  '/experts/marketing',
+  '/experts/finance-ops',
+  '/experts/consulting',
+] as const
+export const V2_CHROME_PREFIXES = [
+  '/products',
+  '/product/',
+  // Footer-linked v2 pages (app/(site)/(v2)/**)
+  '/find-work',
+  '/get-discovered',
+  '/manage-projects',
+  '/sign-contracts',
+  '/send-invoices',
+  '/payments',
+  '/global-payments',
+  '/commission',
+  '/discover-experts',
+  '/post-a-job',
+  '/hiring-workspace',
+  '/manage-team-projects',
+  '/approve-invoices',
+  '/proploy-agent',
+  '/hiring-calculator',
+  '/customers',
+  '/guides',
+  '/events',
+  '/partnerships',
+  '/blog',
+  '/faqs',
+  '/refer',
+  '/mission',
+  '/careers',
+  '/contact',
+  '/help',
+  '/for-agencies',
+  '/for-partners',
+  '/for-investors',
+  '/legal',
+] as const
 
 export function isV2ChromeRoute(pathname: string | null | undefined): boolean {
   if (!pathname) return false
