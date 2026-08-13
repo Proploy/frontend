@@ -58,7 +58,9 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         style={{ flex: 2, padding: 'var(--sp-8) var(--sp-6)', overflowY: 'auto' }}
       >
         <div style={{ maxWidth: 420, width: '100%', marginInline: 'auto' }}>
-          <Link href="/" aria-label="Proploy home" className="inline-flex" style={{ marginBottom: 'var(--sp-12)' }}>
+          {/* Only shown on small screens, where the brand panel (with its own
+              logo) is hidden — on lg+ the left panel already carries the mark. */}
+          <Link href="/" aria-label="Proploy home" className="inline-flex lg:hidden" style={{ marginBottom: 'var(--sp-12)' }}>
             <Image alt="Proploy" src="/proploy-logomark.png" width={44} height={44} />
           </Link>
           {children}
