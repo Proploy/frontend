@@ -29,16 +29,16 @@ export const V2_CHROME_PREFIXES = ['/products', '/product/'] as const
 export function isV2ChromeRoute(pathname: string | null | undefined): boolean {
   if (!pathname) return false
   return (
+    pathname === '/' ||
     (V2_CHROME_EXACT as readonly string[]).includes(pathname) ||
     V2_CHROME_PREFIXES.some((p) => pathname.startsWith(p))
   )
 }
 
-// The homepage ("/") uses the established global marketing Navbar/Footer.
 // Portal routes suppress the global chrome because they own their own
-// sidebar/shell; v2-redesigned routes suppress it because they ship the v2
-// Nav/Footer themselves. Keep this the single source of truth for both
-// components.
+// sidebar/shell; the homepage and v2-redesigned routes suppress it because
+// they ship the v2 Nav/Footer themselves. Keep this the single source of
+// truth for both components.
 export function hidesGlobalChrome(pathname: string | null | undefined): boolean {
   return isPortalRoute(pathname) || isV2ChromeRoute(pathname)
 }

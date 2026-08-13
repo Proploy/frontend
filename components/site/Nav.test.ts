@@ -6,19 +6,20 @@ function readSource(file: string) {
 }
 
 describe('Landing page navbar ownership', () => {
-  it('uses the established global marketplace navbar on the landing page', () => {
+  it('ships the v2 Nav on the landing page with the global navbar suppressed', () => {
     const layoutSource = readSource('app/(site)/layout.tsx')
     const pageSource = readSource('app/(site)/(landing-page)/page.tsx')
-    const navbarSource = readSource('components/Navbar.tsx')
+    const chromeSource = readSource('lib/site-chrome.ts')
 
-    // The root layout owns the navbar, and the landing page no longer
-    // double-mounts a V2-only header on top of it.
+    // The root layout still mounts the global Navbar for legacy routes...
     expect(layoutSource).toContain('<Navbar />')
-    expect(pageSource).not.toContain('@/components/site/Nav')
-    expect(pageSource).not.toContain('<Nav />')
-
-    // The established global navbar uses the /PROPLOY.svg lockup.
-    expect(navbarSource).toContain('src="/PROPLOY.svg"')
+    // ...but the landing page owns its own v2 chrome (Nav + Footer)...
+    expect(pageSource).toContain('@/components/site/Nav')
+    expect(pageSource).toContain('<Nav />')
+    expect(pageSource).toContain('<Footer />')
+    // ...and site-chrome suppresses the global chrome on "/" so the two never
+    // stack (the "twin navbars" regression).
+    expect(chromeSource).toContain("pathname === '/'")
   })
 })
 
