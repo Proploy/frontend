@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Download, FileCheck2 } from 'lucide-react'
 import type { EvaluationRecommendation } from '@/features/ai-workspace'
+import { ProductName } from './ProductName'
 
 export function RecommendationCard({
   recommendation,
@@ -35,11 +36,11 @@ export function RecommendationCard({
             href={product.profile_href}
             className="mt-2 block text-xl font-semibold text-[#181d27] hover:text-[#155eef]"
           >
-            {product.product_name || product.product_id}
+            <ProductName product={product} />
           </Link>
         ) : (
           <h3 className="mt-2 text-xl font-semibold text-[#181d27]">
-            {product.product_name || product.product_id}
+            <ProductName product={product} />
           </h3>
         )}
       </div>
