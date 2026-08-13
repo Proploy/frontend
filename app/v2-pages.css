@@ -144,6 +144,13 @@
 .pp-btn--block{width:100%}
 .pp-btn[disabled],.pp-btn[aria-disabled="true"]{opacity:.55;cursor:default;transform:none}
 .pp-btn-icon{width:44px;padding:0;border-radius:var(--r-control)}
+/* Solid buttons (ink / cobalt fills) always carry light text, including any
+   nested spans, icons or links — regardless of what the element also inherits. */
+.pp-btn.pp-btn--cobalt,.pp-btn.pp-btn--cobalt:hover,.pp-btn.pp-btn--cobalt:visited,
+.pp-btn.pp-btn--primary,.pp-btn.pp-btn--primary:hover,.pp-btn.pp-btn--primary:visited,
+.pp-btn.pp-btn--soft[aria-pressed="true"],.pp-btn.pp-btn--soft[aria-pressed="true"]:hover{color:#fff}
+.pp-btn--cobalt *,.pp-btn--primary *,.pp-btn--soft[aria-pressed="true"] *{color:inherit}
+.pp-btn--cobalt svg,.pp-btn--primary svg{stroke:currentColor}
 .pp-link-arrow{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:var(--weight-semibold);color:var(--cobalt);cursor:pointer;background:none;border:0;padding:0}
 .pp-link-arrow svg{transition:transform var(--d-base) var(--ease)}
 .pp-link-arrow:hover{color:var(--cobalt-deep);text-decoration:none}
