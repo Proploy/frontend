@@ -2072,9 +2072,36 @@ export default function Landing() {
               </FadeUp>
             </div>
             <FadeUp delay={0.2}>
-              <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-[480px]" data-name="Email capture" data-node-id="I2047:26895;3288:455916">
+              <form 
+                className="content-stretch flex gap-[16px] items-start relative shrink-0 w-[480px]" 
+                data-name="Email capture"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  const formData = new FormData(e.currentTarget)
+                  const email = formData.get('email') as string
+                  if (!email) return
+                  try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVICE_APIS_URL}/api/v1/contact`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'newsletter',
+                        email: email.trim(),
+                      }),
+                    })
+                    if (res.ok) {
+                      alert('Subscribed.')
+                      ;(e.target as HTMLFormElement).reset()
+                    } else {
+                      alert('Failed to subscribe. Please try again.')
+                    }
+                  } catch {
+                    alert('Failed to subscribe. Please try again.')
+                  }
+                }}
+              >
                 <div className="flex flex-[1_0_0] flex-col gap-[6px] items-start min-h-px min-w-px relative">
-                  <InputField placeholder="Enter your email" />
+                  <InputField name="email" type="email" placeholder="Enter your email" required />
                   <p className="font-[family-name:var(--font-dm-sans)] font-normal leading-[20px] relative shrink-0 text-[#b2ccff] text-[14px] text-left w-full" style={{ fontVariationSettings: "'opsz' 14" }}>
                     <span>{`We care about your data in our `}</span>
                     <span className="[text-decoration-skip-ink:none] decoration-solid underline">
@@ -2083,15 +2110,15 @@ export default function Landing() {
                     <span>.</span>
                   </p>
                 </div>
-                <motion.div whileHover={{ filter: 'brightness(0.95)' }} whileTap={{ filter: 'brightness(0.9)' }} transition={{ duration: 0.2 }} className="bg-[#155eef] border-2 border-[rgba(255,255,255,0.12)] border-solid content-stretch flex gap-[6px] items-center justify-center overflow-clip px-[18px] py-[12px] relative rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] shrink-0 cursor-pointer" data-name="Buttons/Button" data-node-id="I2047:26895;3288:455918">
-                  <div className="content-stretch flex items-center justify-center px-[2px] relative shrink-0" data-name="Text padding" data-node-id="I2047:26895;3288:455918;6421:283565">
-                    <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[24px] relative shrink-0 text-white text-[16px] whitespace-nowrap" data-node-id="I2047:26895;3288:455918;3287:432937">
+                <button type="submit" className="bg-[#155eef] border-2 border-[rgba(255,255,255,0.12)] border-solid content-stretch flex gap-[6px] items-center justify-center overflow-clip px-[18px] py-[12px] relative rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] shrink-0 cursor-pointer" data-name="Buttons/Button">
+                  <div className="content-stretch flex items-center justify-center px-[2px] relative shrink-0" data-name="Text padding">
+                    <p className="font-[family-name:var(--font-dm-sans)] font-semibold leading-[24px] relative shrink-0 text-white text-[16px] whitespace-nowrap">
                       Subscribe
                     </p>
                   </div>
                   <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]" />
-                </motion.div>
-              </div>
+                </button>
+              </form>
             </FadeUp>
           </div>
         </div>
