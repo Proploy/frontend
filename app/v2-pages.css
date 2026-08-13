@@ -1,3 +1,4 @@
+@layer components {
 /* ===========================================================================
    PROPLOY V2 DESIGN SYSTEM — page-level extension ("设计系统扩展")
    Ported from the design-system-extension artifact (products / experts /
@@ -452,4 +453,5 @@
 .pp-reveal{opacity:1;transform:none;transition:none}
 .pp-lift,.pp-btn{transition:none}
 .pp-lift:hover,.pp-btn:hover{transform:none}
+}
 }
