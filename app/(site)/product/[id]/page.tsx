@@ -2,8 +2,31 @@
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import ProductDetailExperience from '@/components/product/ProductDetailExperience'
-import { useProductDetail } from '@/features/catalog'
+import { Footer } from '@/components/site/Footer'
+import { Nav } from '@/components/site/Nav'
+import { useProductDetail } from '@/features/catalog/products/hooks'
+import ProductDetailV2 from './product-detail-v2'
+
+function PageChrome({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pp-scope overflow-x-clip">
+      <Nav />
+      <main className="pp-page">{children}</main>
+      <Footer />
+    </div>
+  )
+}
+
+function CenteredState({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="pp-container-app pp-stack pp-gap-6"
+      style={{ minHeight: '55vh', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+    >
+      {children}
+    </div>
+  )
+}
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -20,42 +43,56 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-32 flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full size-12 border-b-2 border-[#0466e7]" />
+      <div className="pp-scope overflow-x-clip">
+        <Nav />
+        <main
+          className="pp-page"
+          style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            className="animate-spin rounded-full size-12 border-b-2"
+            style={{ borderBottomColor: 'var(--cobalt)' }}
+            aria-label="Loading product"
+          />
+        </main>
       </div>
     )
   }
 
   if (notFound) {
     return (
-      <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-white gap-8">
-        <h1 className="font-semibold text-[36px] text-[#181d27]">Product not found</h1>
-        <Link href="/products" className="text-[#004eeb] font-semibold hover:underline">Back to products</Link>
-      </div>
+      <PageChrome>
+        <CenteredState>
+          <p className="pp-label">Product</p>
+          <h1 className="pp-display pp-d3">Product not found.</h1>
+          <Link href="/products" className="pp-btn pp-btn--secondary" style={{ color: 'var(--ink)' }}>
+            Back to products
+          </Link>
+        </CenteredState>
+      </PageChrome>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-white gap-8">
-        <p className="text-red-500 font-medium">
-          {error.error.code === 'CIRCUIT_OPEN'
-            ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
-            : 'Unable to load product. Please try again.'}
-        </p>
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={refetch}
-            className="px-[16px] py-[8px] bg-[#155eef] text-white rounded-[8px] font-semibold text-[14px]"
-          >
-            Retry
-          </button>
-          <Link href="/products" className="px-[16px] py-[8px] border border-[#d5d7da] rounded-[8px] font-semibold text-[14px] text-[#414651]">
-            Back to products
-          </Link>
-        </div>
-      </div>
+      <PageChrome>
+        <CenteredState>
+          <p className="pp-label">Something went wrong</p>
+          <p className="pp-lede">
+            {error.error.code === 'CIRCUIT_OPEN'
+              ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
+              : 'Unable to load product. Please try again.'}
+          </p>
+          <div className="pp-flex pp-gap-3">
+            <button type="button" onClick={refetch} className="pp-btn pp-btn--cobalt">
+              Retry
+            </button>
+            <Link href="/products" className="pp-btn pp-btn--secondary" style={{ color: 'var(--ink)' }}>
+              Back to products
+            </Link>
+          </div>
+        </CenteredState>
+      </PageChrome>
     )
   }
 
@@ -64,12 +101,12 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <ProductDetailExperience
+    <PageChrome>
+      <ProductDetailV2
         product={product}
         mediaError={Boolean(mediaError)}
         onRetryMedia={refetch}
       />
-    </div>
+    </PageChrome>
   )
 }

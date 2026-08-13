@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* layer(components) so Tailwind utilities (@layer utilities) can still override
+   pp-* styles — unlayered CSS would beat every utility regardless of specificity */
+@import "./v2-pages.css" layer(components);
 
 /* Tailwind v4 doesn't auto-scan arbitrary source directories in monorepo-ish
    layouts; explicitly add the components/site tree so V2 homepage utilities

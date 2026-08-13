@@ -24,6 +24,16 @@ vi.mock('@/features/catalog', async (importOriginal) => {
       loading: false,
       error: null,
     }),
+    useKeywordSearch: () => ({
+      products: [],
+      loading: false,
+      error: null,
+      suggestedCorrection: null,
+      ghostSuffix: null,
+      fullCompletion: null,
+      search: vi.fn(),
+      clear: vi.fn(),
+    }),
     useProductList: (request: Record<string, unknown>) => {
       mocks.productRequests.push(request)
       return {
@@ -50,56 +60,42 @@ vi.mock('@/features/catalog', async (importOriginal) => {
   }
 })
 
-vi.mock('@/components/ListingExplorer', () => ({
-  default: ({
-    productFilters,
-    onProductFiltersChange,
-    onSearchChange,
-  }: {
-    productFilters?: ProductFilterValues
-    onProductFiltersChange?: (
-      values: ProductFilterValues,
-    ) => void
-    onSearchChange?: () => void
-  }) => (
-    <div>
-      <output data-testid="product-filters">
-        {JSON.stringify(productFilters)}
-      </output>
-      <button
-        type="button"
-        onClick={() =>
-          productFilters &&
-          onProductFiltersChange?.({
-            ...productFilters,
-            freePlan: true,
-          })
-        }
-      >
-        Apply free plan
-      </button>
-      <button type="button" onClick={onSearchChange}>
-        Change search
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          productFilters &&
-          onProductFiltersChange?.({
-            ...productFilters,
-            categoryTermId: '',
-          })
-        }
-      >
-        Clear category
-      </button>
-    </div>
-  ),
-}))
+// The filters drawer is the page's filter entry point; the mock exposes the
+// received values and an apply action, mirroring how the real drawer calls
+// onApply with a draft.
+vi.mock('@/components/filters/ProductFiltersDrawer', async (importOriginal) => {
+  const original = await importOriginal<
+    typeof import('@/components/filters/ProductFiltersDrawer')
+  >()
+  return {
+    ...original,
+    ProductFiltersDrawer: ({
+      values,
+      onApply,
+      onClose,
+    }: {
+      values: ProductFilterValues
+      onApply: (values: ProductFilterValues) => void
+      onClose: () => void
+    }) => (
+      <div>
+        <output data-testid="product-filters">{JSON.stringify(values)}</output>
+        <button
+          type="button"
+          onClick={() => {
+            onApply({ ...values, freePlan: true })
+            onClose()
+          }}
+        >
+          Apply free plan
+        </button>
+      </div>
+    ),
+  }
+})
 
-vi.mock('@/components/Footer', () => ({
-  default: () => null,
-}))
+vi.mock('@/components/site/Nav', () => ({ Nav: () => null }))
+vi.mock('@/components/site/Footer', () => ({ Footer: () => null }))
 
 vi.mock('@/components/personalization/FavoriteToggle', () => ({
   default: () => null,
@@ -127,6 +123,17 @@ function ProductsHarness() {
   )
 }
 
+function findButton(container: HTMLElement, label: string) {
+  return Array.from(
+    container.querySelectorAll<HTMLButtonElement>('button'),
+  ).find((button) => button.textContent?.trim() === label)
+}
+
+async function applyFreePlan(container: HTMLElement) {
+  await act(async () => findButton(container, 'More filters')?.click())
+  await act(async () => findButton(container, 'Apply free plan')?.click())
+}
+
 describe('ProductsPage filter state', () => {
   beforeEach(() => {
     mocks.push.mockReset()
@@ -136,14 +143,10 @@ describe('ProductsPage filter state', () => {
 
   it('resets a loaded-more offset when URL search and category change without clearing filters', async () => {
     const view = await render(<ProductsHarness />)
-    const findButton = (label: string) =>
-      Array.from(
-        view.container.querySelectorAll<HTMLButtonElement>('button'),
-      ).find((button) => button.textContent === label)
 
-    await act(async () => findButton('Apply free plan')?.click())
+    await applyFreePlan(view.container)
     await act(async () =>
-      findButton('Load more products')?.click(),
+      findButton(view.container, 'Load more products')?.click(),
     )
     expect(mocks.productRequests.at(-1)).toMatchObject({
       search: 'crm',
@@ -152,7 +155,7 @@ describe('ProductsPage filter state', () => {
     })
 
     await act(async () =>
-      findButton('Browser history search')?.click(),
+      findButton(view.container, 'Browser history search')?.click(),
     )
     expect(mocks.productRequests.at(-1)).toMatchObject({
       search: 'new',
@@ -163,32 +166,43 @@ describe('ProductsPage filter state', () => {
     await view.unmount()
   })
 
-  it('preserves applied product filters when search pagination resets', async () => {
+  it('preserves applied product filters when a new search resets pagination', async () => {
     const view = await render(<ProductsPage />)
-    const findButton = (label: string) =>
-      Array.from(
-        view.container.querySelectorAll<HTMLButtonElement>('button'),
-      ).find((button) => button.textContent === label)
 
-    await act(async () => findButton('Apply free plan')?.click())
-    expect(
-      view.container.querySelector('[data-testid="product-filters"]')
-        ?.textContent,
-    ).toContain('"freePlan":true')
+    await applyFreePlan(view.container)
+    expect(mocks.productRequests.at(-1)).toMatchObject({ free_plan: true })
 
-    await act(async () => findButton('Change search')?.click())
-    expect(
-      view.container.querySelector('[data-testid="product-filters"]')
-        ?.textContent,
-    ).toContain('"freePlan":true')
+    const searchInput = view.container.querySelector<HTMLInputElement>(
+      '.pp-search input',
+    )
+    expect(searchInput).toBeTruthy()
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        'value',
+      )!.set!
+      setValue.call(searchInput, 'billing')
+      searchInput!.dispatchEvent(new Event('input', { bubbles: true }))
+      searchInput!.form!.dispatchEvent(
+        new Event('submit', { bubbles: true, cancelable: true }),
+      )
+    })
+
+    // Navigation is pushed with the new search while the free-plan filter is
+    // still applied to the request state.
+    expect(mocks.push).toHaveBeenCalledWith(
+      expect.stringContaining('search=billing'),
+    )
+    expect(mocks.productRequests.at(-1)).toMatchObject({ free_plan: true })
     await view.unmount()
   })
 
-  it('removes only the category parameter when category is cleared', async () => {
+  it('removes only the category parameter when the category tag is cleared', async () => {
     const view = await render(<ProductsPage />)
-    const clearCategory = Array.from(
-      view.container.querySelectorAll<HTMLButtonElement>('button'),
-    ).find((button) => button.textContent === 'Clear category')
+    const clearCategory = view.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Remove Selected category"]',
+    )
+    expect(clearCategory).toBeTruthy()
 
     await act(async () => clearCategory?.click())
 
