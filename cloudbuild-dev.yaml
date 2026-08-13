@@ -5,7 +5,7 @@ steps:
     args:
     - '-c'
     - |
-      docker build -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend . \
+      docker build -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev . \
         --build-arg NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL \
         --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY \
         --build-arg NEXT_PUBLIC_APP_URL=$_NEXT_PUBLIC_APP_URL \
@@ -13,16 +13,16 @@ steps:
         --build-arg DATABASE_URL=$_DATABASE_URL
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend']
+    args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
     - 'run'
     - 'deploy'
-    - 'proploy-frontend'
+    - 'proploy-frontend-dev'
     - '--image'
-    - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend'
+    - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev'
     - '--region'
     - 'australia-southeast1'
     - '--platform'
@@ -32,7 +32,7 @@ steps:
     - 'proploy-deployer@coral-polymer-484212-r3.iam.gserviceaccount.com'
 
 images:
-  - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend'
+  - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev'
 
 substitutions:
   _NEXT_PUBLIC_SUPABASE_URL: "https://eczlamdmamicyugklabj.supabase.co"
