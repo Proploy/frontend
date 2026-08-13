@@ -197,15 +197,17 @@ export function SoftwareProcurementWorkspace() {
                   <Skeleton className="h-[14px] w-[180px] rounded-[8px]" />
                 </div>
               </div>
-            </div>
-            <div className="border-t border-[#e9eaeb] p-[16px]">
-              <Skeleton className="h-[80px] w-full rounded-[12px]" />
-              <div className="mt-[12px] flex items-center justify-between">
-                <div className="flex items-center gap-[8px]">
-                  <LoaderCircle size={14} className="animate-spin text-[#155eef] motion-reduce:animate-none" />
-                  <span className="text-[12px] text-[#717680]">Preparing your workspace…</span>
+              <div className="mt-8 flex flex-col items-center justify-center gap-4 pb-12">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[#e9eaeb]">
+                  <LoaderCircle size={24} className="animate-spin text-[#155eef] motion-reduce:animate-none" />
                 </div>
-                <Skeleton className="h-[40px] w-[100px] rounded-[8px]" />
+                <span className="text-[15px] font-medium text-[#414651]">Preparing your workspace...</span>
+              </div>
+            </div>
+            <div className="flex min-h-[88px] w-full items-center border-t border-[#e9eaeb] bg-white px-4 sm:px-6">
+              <div className="mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl border border-[#d5d7da] bg-white p-2.5">
+                <Skeleton className="h-[44px] flex-1 rounded-[8px]" />
+                <Skeleton className="size-[40px] shrink-0 rounded-xl" />
               </div>
             </div>
           </main>

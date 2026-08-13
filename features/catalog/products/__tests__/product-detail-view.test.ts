@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  classifyProductMediaAsset,
   getProductDetailHref,
   getProductDetailTabs,
   getProductHeroMedia,
@@ -72,6 +73,24 @@ describe('mapMediaAssetsToPreview', () => {
         mimeType: 'video/mp4',
       },
     ])
+  })
+
+  it('recognizes videos and GIFs from MIME types, URL extensions, and hosted players', () => {
+    expect(classifyProductMediaAsset({
+      asset_kind: 'screenshot',
+      mime_type: null,
+      public_url: 'https://cdn.example.com/demo.webm?download=1',
+    })).toBe('video')
+    expect(classifyProductMediaAsset({
+      asset_kind: 'screenshot',
+      mime_type: 'image/gif; charset=binary',
+      public_url: 'https://cdn.example.com/animation',
+    })).toBe('gif')
+    expect(classifyProductMediaAsset({
+      asset_kind: 'screenshot',
+      mime_type: null,
+      public_url: 'https://www.youtube.com/watch?v=abc123',
+    })).toBe('video')
   })
 
   it('uses the first non-logo image as the hero media', () => {

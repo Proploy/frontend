@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, LogOut, LayoutGrid, UserRound } from "lucide-react";
+import { Menu, X, LogOut, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useExpertApplication } from "@/features/experts/use-expert-application";
 import type { ExpertMe } from "@/features/experts/types";
@@ -16,8 +16,14 @@ import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
 const LINKS = [
   { href: "/products", label: "Products" },
   { href: "/experts", label: "Experts" },
-  { href: "/for-businesses", label: "For business" },
-  { href: "/for-experts", label: "For experts" },
+  {
+    label: "About us",
+    items: [
+      { href: "/for-businesses", label: "For business" },
+      { href: "/for-experts", label: "For experts" },
+    ],
+  },
+  { href: "/AI_workspace", label: "Ask SAM" },
 ];
 
 export function Nav() {
@@ -121,14 +127,36 @@ export function Nav() {
           </Link>
 
           <ul className="ml-2 hidden items-center gap-7 md:flex">
-            {LINKS.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className="relative text-[0.875rem] text-ink-soft transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-cobalt after:transition-transform after:duration-300 hover:after:origin-left hover:after:scale-x-100"
-                >
-                  {l.label}
-                </Link>
+            {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => (
+              <li key={l.label} className="relative group">
+                {l.items ? (
+                  <>
+                    <button className="relative flex items-center gap-1 text-[0.875rem] text-ink-soft transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-cobalt after:transition-transform after:duration-300 group-hover:after:origin-left group-hover:after:scale-x-100">
+                      {l.label}
+                      <ChevronDown className="h-3 w-3 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
+                    </button>
+                    <div className="absolute left-0 top-full pt-4 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+                      <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-[0_24px_48px_-16px_rgba(10,13,18,0.18)] min-w-[160px]">
+                        {l.items.map((sub) => (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className="rounded-lg px-3 py-2 text-[0.85rem] text-ink transition-colors hover:bg-cobalt-soft/50"
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <Link
+                    href={l.href!}
+                    className="relative text-[0.875rem] text-ink-soft transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-cobalt after:transition-transform after:duration-300 hover:after:origin-left hover:after:scale-x-100"
+                  >
+                    {l.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -222,15 +250,33 @@ export function Nav() {
         {menuOpen && (
           <div className="border-t border-border bg-paper/95 backdrop-blur-xl md:hidden">
             <ul className="mx-auto flex max-w-[1240px] flex-col px-6 py-3">
-              {LINKS.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    href={l.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="block py-2.5 text-[0.9375rem] text-ink-soft transition-colors hover:text-cobalt"
-                  >
-                    {l.label}
-                  </Link>
+              {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => (
+                <li key={l.label}>
+                  {l.items ? (
+                    <div className="py-2.5">
+                      <span className="block text-[0.9375rem] font-medium text-ink mb-1">{l.label}</span>
+                      <div className="flex flex-col gap-1 pl-3 border-l-2 border-border/50 ml-1">
+                        {l.items.map(sub => (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            onClick={() => setMenuOpen(false)}
+                            className="block py-1.5 text-[0.9375rem] text-ink-soft transition-colors hover:text-cobalt"
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <Link
+                      href={l.href!}
+                      onClick={() => setMenuOpen(false)}
+                      className="block py-2.5 text-[0.9375rem] text-ink-soft transition-colors hover:text-cobalt"
+                    >
+                      {l.label}
+                    </Link>
+                  )}
                 </li>
               ))}
               <li className="mt-2 flex flex-col gap-2 border-t border-border pt-3">

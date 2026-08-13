@@ -82,6 +82,8 @@
 
 /* ---------- surface motifs ---------- */
 .pp-blueprint{position:relative;overflow:hidden}
+.pp-products-hero{overflow:visible}
+.pp-search-results{display:none!important}
 .pp-blueprint::before{content:"";position:absolute;inset:0;pointer-events:none;filter:blur(.6px);opacity:.9;background-image:linear-gradient(to right,color-mix(in oklab,var(--line) 60%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in oklab,var(--line) 60%,transparent) 1px,transparent 1px);background-size:72px 72px;-webkit-mask-image:radial-gradient(120% 90% at 50% 0%,#000 20%,transparent 75%);mask-image:radial-gradient(120% 90% at 50% 0%,#000 20%,transparent 75%)}
 .pp-blueprint>*{position:relative}
 .pp-glow{position:absolute;width:420px;height:420px;border-radius:var(--r-full);background:radial-gradient(circle,color-mix(in oklab,var(--cobalt) 22%,transparent),transparent 70%);filter:blur(40px);pointer-events:none}

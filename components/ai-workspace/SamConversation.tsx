@@ -126,7 +126,7 @@ export function SamConversation({
                   </p>
                   <MarkdownMessage content={cleanMarkdown(message.markdown)} />
                   {message.status === 'streaming' ? (
-                    <span className="inline-block size-2 animate-ping rounded-full bg-[#155eef] ml-1" />
+                    <span className="sr-only">SAM is typing...</span>
                   ) : null}
                   {message.status === 'failed' ? (
                     <p className="mt-2 text-xs font-medium text-[#b42318]">
@@ -208,7 +208,7 @@ export function SamConversation({
         )}
       </div>
 
-      <div className="border-t border-[#e9eaeb] bg-white px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4">
+      <div className="flex min-h-[88px] w-full items-center border-t border-[#e9eaeb] bg-white px-4 sm:px-6">
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -229,23 +229,21 @@ export function SamConversation({
                 submit()
               }
             }}
+            disabled={isSending}
+            placeholder="Describe your team, workflow, end goal, or ask about products..."
             rows={1}
-            placeholder="Describe your team, workflow, end goal, or ask about products…"
             className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-[#181d27] outline-none placeholder:text-[#a4a7ae]"
           />
           <button
             type="submit"
             disabled={!draft.trim() || isSending}
-            aria-label="Send message to SAM"
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#155eef] text-white transition hover:bg-[#0e4cc7] disabled:cursor-not-allowed disabled:bg-[#d5d7da]"
+            aria-label="Send message"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#d5d7da] text-white transition hover:bg-[#a4a7ae] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#155eef] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#e9eaeb] disabled:text-white data-[active=true]:bg-[#155eef] data-[active=true]:hover:bg-[#0e4cc7]"
+            data-active={draft.trim().length > 0 && !isSending}
           >
             <SendHorizontal size={17} />
           </button>
         </form>
-        <p className="mx-auto mt-2.5 max-w-[960px] px-2 text-center text-xs leading-5 text-[#8a8f98]">
-          SAM answers with evidence from Proploy&apos;s published catalog
-          and reviews.
-        </p>
       </div>
     </section>
   )

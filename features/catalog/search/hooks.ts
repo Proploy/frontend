@@ -33,7 +33,9 @@ interface UseKeywordSearchResult {
   clear: () => void
 }
 
-type UseCatalogSearchOptions = CatalogSearchRequest
+type UseCatalogSearchOptions = CatalogSearchRequest & {
+  enabled?: boolean
+}
 
 interface UseCatalogSearchResult {
   products: CardProduct[]
@@ -198,8 +200,17 @@ export function useCatalogSearch(options: UseCatalogSearchOptions = {}): UseCata
   const [error, setError] = useState<NormalizedError | null>(null)
   const requestGuardRef = useRef(createLatestRequestGuard())
   const requestKey = JSON.stringify(options)
+  const enabled = options.enabled ?? true
 
   const fetch_ = useCallback(async () => {
+    if (!enabled) {
+      setProducts([])
+      setPagination(null)
+      setError(null)
+      setLoading(false)
+      return
+    }
+
     const requestId = requestGuardRef.current.begin()
     await Promise.resolve()
     if (!requestGuardRef.current.isLatest(requestId)) return
@@ -208,6 +219,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions = {}): UseCata
     setError(null)
 
     const request = JSON.parse(requestKey) as UseCatalogSearchOptions
+    delete request.enabled
     const { limit = 20, offset = 0, ...filters } = request
 
     const result = await clientCatalogApi.search.hybrid({
@@ -228,7 +240,7 @@ export function useCatalogSearch(options: UseCatalogSearchOptions = {}): UseCata
     setProducts(mapped.products)
     setPagination(mapped.pagination)
     setLoading(false)
-  }, [requestKey])
+  }, [enabled, requestKey])
 
   useEffect(() => {
     const requestGuard = requestGuardRef.current

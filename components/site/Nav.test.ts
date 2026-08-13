@@ -31,3 +31,26 @@ describe('V2 section Logo component (used by Footer)', () => {
     expect(footerSource).toContain('src="/PROPLOY.svg"')
   })
 })
+
+describe('Role-aware expert navigation', () => {
+  it('uses the server-supplied account role to control the expert CTA', () => {
+    const navbarSource = readSource('components/Navbar.tsx')
+    const rolesSource = readSource('lib/auth/roles.ts')
+
+    expect(navbarSource).toContain('canSeeExpertJoinLink')
+    expect(navbarSource).toContain('isExpertRole')
+    expect(navbarSource).toContain("label: 'Join Us'")
+    expect(navbarSource).toContain("link.href !== '/for-experts'")
+    expect(navbarSource).toContain('canJoinAsExpert')
+    expect(navbarSource).toContain("href=\"/for-experts\"")
+    expect(navbarSource).toContain('aria-label="Join Us"')
+    expect(navbarSource).toContain('<ToggleLeft')
+    expect(navbarSource).toContain('Join us as an expert')
+    expect(navbarSource).toContain('role="tooltip"')
+    expect(navbarSource).toContain(": 'Find an Expert'")
+    expect(navbarSource).toContain(": '/experts'")
+    expect(navbarSource).toContain('{showAiWorkspace && (')
+    expect(rolesSource).toContain("role === 'user'")
+    expect(rolesSource).toContain('!isAuthenticated')
+  })
+})

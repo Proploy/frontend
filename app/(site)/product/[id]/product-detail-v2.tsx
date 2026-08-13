@@ -18,6 +18,7 @@ import { buildComparisonAdditions } from '@/components/product/product-detail-co
 import { Reveal } from '@/components/site/Reveal'
 import { Skeleton } from '@/components/ui/Skeleton'
 import {
+  getProductDetailHref,
   getProductGalleryMedia,
   isUnpublishedValue,
   useProductAlternatives,
@@ -50,8 +51,20 @@ interface ProductDetailV2Props {
 
 export default function ProductDetailV2({ product, mediaError, onRetryMedia }: ProductDetailV2Props) {
   const gallery = getProductGalleryMedia(product.media)
-  const heroShot = gallery.find((item) => item.type === 'image') ?? gallery[0] ?? null
+  const rotatingHeroMedia = gallery.filter((item) => item.type !== 'video')
+  const [heroMediaIndex, setHeroMediaIndex] = useState(0)
+  const heroShot = rotatingHeroMedia.length > 0
+    ? rotatingHeroMedia[heroMediaIndex % rotatingHeroMedia.length]
+    : gallery[0] ?? null
   const [dialogIndex, setDialogIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (rotatingHeroMedia.length < 2 || dialogIndex !== null) return
+    const timer = window.setInterval(() => {
+      setHeroMediaIndex((current) => (current + 1) % rotatingHeroMedia.length)
+    }, 10_000)
+    return () => window.clearInterval(timer)
+  }, [dialogIndex, rotatingHeroMedia.length])
 
   const { experts, loading: expertsLoading } = useApprovedExperts({
     platform: product.product_name,
@@ -63,7 +76,7 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
     error: alternativesError,
     refetch: refetchAlternatives,
   } = useProductAlternatives({ productId: product.product_id, limit: 6 })
-  const { toggle, addMany, count: comparisonCount, isSelected } = useCompareSelection()
+  const { addMany, count: comparisonCount, isSelected } = useCompareSelection()
   const { track: trackRecentlyViewed } = useRecentlyViewed()
 
   const currentComparisonProduct = useMemo<SelectedProduct>(() => ({
@@ -150,8 +163,6 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
   const pricingSourceUrl = product.pricing_plans.find((plan) => plan.source_url)?.source_url ?? null
 
   const expertCtaHref = experts.length > 0 ? '#experts' : '/experts'
-
-  const compareSelected = isSelected(product.product_id)
 
   return (
     <>
@@ -339,12 +350,24 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
                     aria-label={`Open ${product.product_name} media preview`}
                     style={{ border: 'var(--bw) solid var(--line)', padding: 0, cursor: 'zoom-in' }}
                   >
-                    <CatalogImage
-                      src={heroShot.url}
-                      alt={heroShot.alt || `${product.product_name} interface preview`}
-                      className="size-full object-cover"
-                      fallback={<span className="size-full" style={{ display: 'block' }} />}
-                    />
+                    {heroShot.type === 'video' ? (
+                      <ProductMediaVideo
+                        src={heroShot.url}
+                        title={heroShot.alt || `${product.product_name} video preview`}
+                        className="object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        controls={false}
+                      />
+                    ) : (
+                      <CatalogImage
+                        src={heroShot.url}
+                        alt={heroShot.alt || `${product.product_name} interface preview`}
+                        className="size-full object-cover"
+                        fallback={<span className="size-full" style={{ display: 'block' }} />}
+                      />
+                    )}
                   </button>
                 )}
 
@@ -626,32 +649,6 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
               </div>
             )}
 
-            <div className="pp-card pp-stack pp-gap-4">
-              <p className="pp-label">Compare</p>
-              <p className="pp-body">
-                Add this product to a side-by-side comparison with up to {MAX_COMPARE - 1} alternatives.
-              </p>
-              <button
-                type="button"
-                className="pp-btn pp-btn--secondary pp-btn--block pp-btn--sm"
-                onClick={() => toggle(currentComparisonProduct)}
-              >
-                {compareSelected ? (
-                  'Remove from compare'
-                ) : (
-                  <>
-                    <PlusIcon />
-                    Add to compare
-                  </>
-                )}
-              </button>
-              <p className="pp-small">{comparisonCount}/{MAX_COMPARE} products selected</p>
-              <Link className="pp-link-arrow" href="/products">
-                Back to all products
-                <ArrowIcon />
-              </Link>
-            </div>
-
             <AlternativesCard
               alternatives={alternatives}
               loading={alternativesLoading}
@@ -892,8 +889,13 @@ function AlternativesCard({
                       <span>{alternative.product_name.charAt(0).toUpperCase()}</span>
                     )}
                   </span>
-                  <div style={{ minWidth: 0 }}>
-                    <p className="pp-h6" style={{ fontSize: 15 }}>{alternative.product_name}</p>
+                  <div className="min-w-0">
+                    <Link
+                      href={getProductDetailHref(alternative.product_id)}
+                      className="pp-h6 text-[15px] hover:text-[var(--cobalt)]"
+                    >
+                      {alternative.product_name}
+                    </Link>
                     {alternative.short_description && (
                       <p className="pp-small pp-clamp-3" style={{ marginTop: 2 }}>
                         {alternative.short_description}
@@ -901,15 +903,23 @@ function AlternativesCard({
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="pp-btn pp-btn--secondary pp-btn--block pp-btn--sm"
-                  disabled={selected || blocked}
-                  title={blocked ? `Compare up to ${MAX_COMPARE} products — remove one first` : undefined}
-                  onClick={() => onCompare(alternative)}
-                >
-                  {selected ? 'Added' : blocked ? 'Tray full' : 'Compare'}
-                </button>
+                <div className="pp-stack pp-gap-2">
+                  <Link
+                    href={getProductDetailHref(alternative.product_id)}
+                    className="pp-btn pp-btn--secondary pp-btn--block pp-btn--sm"
+                  >
+                    View product
+                  </Link>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--secondary pp-btn--block pp-btn--sm"
+                    disabled={selected || blocked}
+                    title={blocked ? `Compare up to ${MAX_COMPARE} products — remove one first` : undefined}
+                    onClick={() => onCompare(alternative)}
+                  >
+                    {selected ? 'Added' : blocked ? 'Tray full' : 'Compare'}
+                  </button>
+                </div>
               </article>
             )
           })}
@@ -1079,14 +1089,6 @@ function ArrowIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M5 12h14M12 5v14" />
     </svg>
   )
 }

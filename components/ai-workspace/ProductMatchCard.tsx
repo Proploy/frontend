@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import type { EvaluationProduct } from '@/features/ai-workspace'
 import { getProductDetailHref } from '@/features/catalog/products/product-detail-view'
 import { clientCatalogApi } from '@/features/catalog/shared/client-api'
+import { ProductName } from './ProductName'
 
 export function ProductMatchCard({
   product,
@@ -23,19 +24,6 @@ export function ProductMatchCard({
 }) {
   const score = Math.round(product.match_score ?? 0)
   const [updatingShortlist, setUpdatingShortlist] = useState(false)
-  const [resolvedName, setResolvedName] = useState<string | null>(null)
-  
-  useEffect(() => {
-    if (product.product_name === product.product_id) {
-      clientCatalogApi.products.getDetail(product.product_id).then((res) => {
-        if (res.ok && res.data?.product_name) {
-          setResolvedName(res.data.product_name)
-        }
-      })
-    }
-  }, [product.product_id, product.product_name])
-
-  const displayName = resolvedName || product.product_name || 'Product'
 
   const profileHref = product.available
     ? product.profile_href ?? getProductDetailHref(product.product_id)
@@ -49,19 +37,11 @@ export function ProductMatchCard({
               href={profileHref}
               className="text-lg font-semibold text-[#181d27] hover:text-[#155eef]"
             >
-              {displayName === product.product_id ? (
-                <span className="animate-pulse bg-gray-200 text-transparent rounded w-32 inline-block">Loading</span>
-              ) : (
-                displayName
-              )}
+              <ProductName product={product} />
             </Link>
           ) : (
             <h3 className="text-lg font-semibold text-[#181d27]">
-              {displayName === product.product_id ? (
-                <span className="animate-pulse bg-gray-200 text-transparent rounded w-32 inline-block">Loading</span>
-              ) : (
-                displayName
-              )}
+              <ProductName product={product} />
             </h3>
           )}
           <p className="mt-0.5 text-sm font-medium text-[#079455]">

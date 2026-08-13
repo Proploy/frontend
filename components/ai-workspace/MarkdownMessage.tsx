@@ -15,7 +15,8 @@ function cleanMarkdown(text: string): string {
     .replace(/\{\s*"(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary)"[\s\S]*?\}/gi, '')
     .replace(/(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary):\s*(?:\[|\{)[\s\S]*?(?:\]|\})/gi, '')
     .replace(/```(?:json)?\s*\[\s*\{\s*"product_id"[\s\S]*?\]\s*```/gi, '')
-    .replace(/\[\s*\{\s*"product_id"[\s\S]*?\]/gi, '')
+    .replace(/(?:,\s*)?\{\s*"product_id"[\s\S]*?\}(?:\s*,)?/gi, '')
+    .replace(/\[\s*\]/gi, '')
     .trim()
 }
 

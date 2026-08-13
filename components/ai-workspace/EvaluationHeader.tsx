@@ -27,7 +27,7 @@ export function EvaluationHeader({
   saved: boolean
 }) {
   return (
-    <header className="flex min-h-[74px] items-center justify-between gap-4 border-b border-[#e9eaeb] bg-white px-4 sm:px-6">
+    <header className="flex min-h-[80px] items-center justify-between gap-4 border-b border-[#e9eaeb] bg-white px-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"

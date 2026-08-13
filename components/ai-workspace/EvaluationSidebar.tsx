@@ -147,7 +147,7 @@ export function EvaluationSidebar({
           </div>
         ) : null}
       </div>
-      <div className="border-t border-[#e9eaeb] p-3">
+      <div className="flex min-h-[88px] items-center border-t border-[#e9eaeb] px-4">
         <button
           type="button"
           onClick={onNew}

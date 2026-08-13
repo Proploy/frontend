@@ -34,3 +34,24 @@ export function mapCategoryTreeToFilters(tree: CategoryNode[]): CategoryFilter[]
 export function mapCategoryTreeToRoots(tree: CategoryNode[]): CategoryNode[] {
   return tree.filter(node => node.taxonomy_type === 'ui_category' && node.parent_term_id === null)
 }
+
+/**
+ * Return every product-category term in a selected branch, including the
+ * selected term when it is itself a product category. The list endpoint
+ * filters by one exact term, so callers use these IDs to build a recursive
+ * category result set on the client.
+ */
+export function getDescendantProductCategoryTermIds(node: CategoryNode | null): string[] {
+  if (!node) return []
+
+  const termIds: string[] = []
+  const visit = (current: CategoryNode) => {
+    if (current.taxonomy_type === 'product_category') {
+      termIds.push(current.term_id)
+    }
+    current.children.forEach(visit)
+  }
+
+  visit(node)
+  return termIds
+}

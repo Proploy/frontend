@@ -5,7 +5,8 @@ import ProductsPage from './page'
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
-  searchParams: 'search=crm&category=ai',
+  keywordSearch: vi.fn(),
+  searchParams: 'category=ai',
   productRequests: [] as Array<Record<string, unknown>>,
 }))
 
@@ -25,16 +26,27 @@ vi.mock('@/features/catalog', async (importOriginal) => {
       error: null,
     }),
     useKeywordSearch: () => ({
-      products: [],
+      products: [{
+        product_id: 'search-product',
+        product_name: 'Search Product',
+        product_description: 'Relevant keyword result',
+        product_logo: null,
+        rating: null,
+        reviews: null,
+        primary_category: 'CRM',
+        vendor_name: 'Vendor',
+        free_plan_available: false,
+        free_trial_available: false,
+      }],
       loading: false,
       error: null,
       suggestedCorrection: null,
       ghostSuffix: null,
       fullCompletion: null,
-      search: vi.fn(),
+      search: mocks.keywordSearch,
       clear: vi.fn(),
     }),
-    useProductList: (request: Record<string, unknown>) => {
+    useRecursiveCategoryProductList: (request: Record<string, unknown>) => {
       mocks.productRequests.push(request)
       return {
         products: [
@@ -112,7 +124,7 @@ function ProductsHarness() {
       <button
         type="button"
         onClick={() => {
-          mocks.searchParams = 'search=new&category=sales'
+          mocks.searchParams = 'category=sales'
           setRevision((revision) => revision + 1)
         }}
       >
@@ -137,7 +149,8 @@ async function applyFreePlan(container: HTMLElement) {
 describe('ProductsPage filter state', () => {
   beforeEach(() => {
     mocks.push.mockReset()
-    mocks.searchParams = 'search=crm&category=ai'
+    mocks.keywordSearch.mockReset()
+    mocks.searchParams = 'category=ai'
     mocks.productRequests = []
   })
 
@@ -149,7 +162,6 @@ describe('ProductsPage filter state', () => {
       findButton(view.container, 'Load more products')?.click(),
     )
     expect(mocks.productRequests.at(-1)).toMatchObject({
-      search: 'crm',
       free_plan: true,
       offset: 1,
     })
@@ -158,7 +170,6 @@ describe('ProductsPage filter state', () => {
       findButton(view.container, 'Browser history search')?.click(),
     )
     expect(mocks.productRequests.at(-1)).toMatchObject({
-      search: 'new',
       category: 'sales',
       free_plan: true,
       offset: 0,
@@ -192,6 +203,7 @@ describe('ProductsPage filter state', () => {
     // still applied to the request state.
     expect(mocks.push).toHaveBeenCalledWith(
       expect.stringContaining('search=billing'),
+      { scroll: false },
     )
     expect(mocks.productRequests.at(-1)).toMatchObject({ free_plan: true })
     await view.unmount()
@@ -206,7 +218,18 @@ describe('ProductsPage filter state', () => {
 
     await act(async () => clearCategory?.click())
 
-    expect(mocks.push).toHaveBeenCalledWith('/products?search=crm')
+    expect(mocks.push).toHaveBeenCalledWith('/products', { scroll: false })
+    await view.unmount()
+  })
+
+  it('uses keyword results for a search URL instead of the product-list response', async () => {
+    mocks.searchParams = 'search=crm'
+
+    const view = await render(<ProductsPage />)
+
+    expect(mocks.keywordSearch).toHaveBeenCalledWith('crm', 6)
+    expect(view.container.textContent).toContain('Search Product')
+    expect(view.container.textContent).not.toContain('Product One')
     await view.unmount()
   })
 })

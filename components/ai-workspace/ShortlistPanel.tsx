@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import type { EvaluationProduct } from '@/features/ai-workspace'
 import { getProductDetailHref } from '@/features/catalog/products/product-detail-view'
+import { ProductName } from './ProductName'
 
 export function ShortlistPanel({
   items,
@@ -86,7 +87,7 @@ export function ShortlistPanel({
                 href={profileHref}
                 className="block truncate text-sm font-semibold text-[#181d27] hover:text-[#155eef]"
               >
-                {product.product_name || product.product_id}
+                <ProductName product={product} />
               </Link>
               {product.match_score != null ? (
                 <p className="text-xs text-[#079455]">
