@@ -46,14 +46,18 @@ export function ClosingCTA() {
                   if (!email.trim() || submitting) return;
                   setSubmitting(true);
                   try {
-                    await fetch('/api/contact', {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVICE_APIS_URL}/api/v1/contact`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ email: email.trim(), type: 'newsletter' }),
                     });
-                    setSent(true);
+                    if (res.ok) {
+                      setSent(true);
+                    } else {
+                      alert('Failed to subscribe. Please try again.');
+                    }
                   } catch {
-                    setSent(true);
+                    alert('Failed to subscribe. Please try again.');
                   } finally {
                     setSubmitting(false);
                   }

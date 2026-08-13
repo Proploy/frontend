@@ -4,23 +4,42 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { Menu, X, LogOut, User, Settings } from 'lucide-react'
+import { Menu, X, LogOut, User, Settings, ToggleLeft } from 'lucide-react'
 import CatalogMegaMenu from '@/components/catalog/CatalogMegaMenu'
 import ExpertMegaMenu from '@/components/experts/ExpertMegaMenu'
 import { useAuth } from '@/components/providers/auth-provider'
 import { getUserProfilePicture, USER_PROFILE_PICTURE_CHANGED_EVENT } from '@/features/users'
 import { useExpertApplication } from '@/features/experts/use-expert-application'
 import type { ExpertMe } from '@/features/experts/types'
+import { canSeeExpertJoinLink, isExpertRole } from '@/lib/auth/roles'
 import { setServerAuthIntent } from '@/lib/utils/auth-intent-client'
 import { hidesGlobalChrome } from '@/lib/site-chrome'
 
 const ABOUT_LINKS = [
   { href: '/for-businesses', label: 'For Business', description: 'See how buyers use Proploy to choose and deploy software.' },
-  { href: '/for-experts', label: 'For Expert', description: 'Learn how implementation experts join and work on Proploy.' },
+  { href: '/for-experts', label: 'Join Us', description: 'Learn how implementation experts join and work on Proploy.' },
 ]
 
 const BUTTON_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
+
+function JoinUsToggle({ mobile = false }: { mobile?: boolean }) {
+  return (
+    <Link
+      href="/for-experts"
+      aria-label="Join Us"
+      className={`${mobile ? 'flex' : 'hidden md:flex'} group relative size-10 items-center justify-center rounded-[8px] text-[#155eef] transition-colors hover:bg-[#eef4ff] hover:text-[#0e4cc7]`}
+    >
+      <ToggleLeft size={24} aria-hidden="true" />
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-max rounded-md bg-[#181d27] px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+      >
+        Join us as an expert
+      </span>
+    </Link>
+  )
+}
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -138,6 +157,11 @@ export default function Navbar() {
   const showApplicationPending = expertStatus === 'submitted'
   const dashboardHref = '/workspace'
   const settingsHref = '/settings'
+  const canJoinAsExpert = canSeeExpertJoinLink(user?.role, Boolean(user))
+  const showAiWorkspace = !isExpertRole(user?.role)
+  const visibleAboutLinks = canJoinAsExpert
+    ? ABOUT_LINKS
+    : ABOUT_LINKS.filter((link) => link.href !== '/for-experts')
 
   const handleSignOut = async () => {
     await signOut()
@@ -342,7 +366,7 @@ export default function Navbar() {
                 className="absolute left-1/2 top-full w-[360px] -translate-x-1/2 pt-[16px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150"
               >
                 <div className="overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white p-[8px] shadow-[0_24px_48px_-12px_rgba(10,13,18,0.2)]">
-                  {ABOUT_LINKS.map((link) => (
+                  {visibleAboutLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
@@ -358,13 +382,15 @@ export default function Navbar() {
             )}
           </div>
 
-          <Link
-            href="/AI_workspace"
-            onClick={() => closeNavMenus()}
-            className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
-          >
-            AI Workspace
-          </Link>
+          {showAiWorkspace && (
+            <Link
+              href="/AI_workspace"
+              onClick={() => closeNavMenus()}
+              className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
+            >
+              AI Workspace
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-[12px]">
@@ -461,6 +487,10 @@ export default function Navbar() {
             </Link>
           )}
 
+          {canJoinAsExpert && (
+            <JoinUsToggle />
+          )}
+
           <button
             className="lg:hidden p-2 text-[#414651]"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -516,7 +546,7 @@ export default function Navbar() {
             </button>
             {isMobileAboutOpen && (
               <div className="mt-[14px] flex flex-col gap-[8px] rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] p-[8px] animate-in fade-in-0 slide-in-from-top-1 duration-150">
-                {ABOUT_LINKS.map((link) => (
+                {visibleAboutLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -530,13 +560,15 @@ export default function Navbar() {
             )}
           </div>
 
-          <Link
-            href="/AI_workspace"
-            onClick={() => setIsMenuOpen(false)}
-            className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
-          >
-            AI Workspace
-          </Link>
+          {showAiWorkspace && (
+            <Link
+              href="/AI_workspace"
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
+            >
+              AI Workspace
+            </Link>
+          )}
 
           <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
             {user ? (
@@ -603,6 +635,9 @@ export default function Navbar() {
             >
               {ctaLabel}
             </Link>
+            {canJoinAsExpert && (
+              <JoinUsToggle mobile />
+            )}
           </div>
         </div>
       )}

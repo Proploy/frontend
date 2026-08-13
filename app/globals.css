@@ -6,7 +6,8 @@
 /* Tailwind v4 doesn't auto-scan arbitrary source directories in monorepo-ish
    layouts; explicitly add the components/site tree so V2 homepage utilities
    (display/label/glass-card/blueprint/etc.) get emitted in the dev build. */
-@source "../components/site/**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
 
 @theme {
     /* ===== COLOR SYSTEM ===== */

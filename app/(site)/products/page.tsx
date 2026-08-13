@@ -556,9 +556,30 @@ function ProductsPageContent() {
               <form
                 className="pp-card pp-card--panel pp-stack pp-gap-6"
                 style={{ maxWidth: 620, marginInline: 'auto', width: '100%' }}
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault()
-                  alert('Thanks — Proploy will reach out shortly.')
+                  try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVICE_APIS_URL}/api/v1/contact`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'missing_product',
+                        firstName: contact.firstName,
+                        lastName: contact.lastName,
+                        email: contact.email,
+                        phone: contact.phone,
+                        message: contact.message,
+                      }),
+                    })
+                    if (res.ok) {
+                      alert('Thanks — Proploy will reach out shortly.')
+                      setContact({ firstName: '', lastName: '', email: '', phone: '', message: '', consent: false })
+                    } else {
+                      alert('Failed to send message. Please try again.')
+                    }
+                  } catch {
+                    alert('Failed to send message. Please try again.')
+                  }
                 }}
               >
                 <div className="pp-grid pp-grid-2" style={{ gap: 'var(--sp-5)' }}>
@@ -670,13 +691,34 @@ function ProductsPageContent() {
                 </div>
                 <form
                   className="pp-stack pp-gap-3"
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault()
-                    alert('Subscribed.')
+                    const formData = new FormData(e.currentTarget)
+                    const email = formData.get('email') as string
+                    if (!email) return
+                    try {
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVICE_APIS_URL}/api/v1/contact`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          type: 'newsletter',
+                          email: email.trim(),
+                        }),
+                      })
+                      if (res.ok) {
+                        alert('Subscribed.')
+                        ;(e.target as HTMLFormElement).reset()
+                      } else {
+                        alert('Failed to subscribe. Please try again.')
+                      }
+                    } catch {
+                      alert('Failed to subscribe. Please try again.')
+                    }
                   }}
                 >
                   <div className="pp-flex pp-gap-3">
                     <input
+                      name="email"
                       className="pp-input"
                       type="email"
                       required
