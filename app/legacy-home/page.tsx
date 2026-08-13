@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+'use client'
 
 // LEGACY HOMEPAGE — reference copy, kept at /legacy-home for side-by-side
 // comparison with the new v2 design at "/". Source of truth for content and
@@ -122,22 +122,12 @@ function Logo({ className }: { className?: string }) {
   );
 }
 
-// New homepage design (ported from the "proploy-ai-expert-match" prototype).
-// The global marketing Navbar and SiteFooter are suppressed on this route
-// (see lib/site-chrome.ts) so this page owns its own Nav + Footer. The AI
-// chatbot (ProployAgentShell) and CompareTray remain mounted from the root layout.
-export default function LandingPage() {
+function Bitbucket({ className }: { className?: string }) {
   return (
-    <div className="font-inter overflow-x-clip bg-paper text-ink">
-      <Nav />
-      <Hero />
-      <LogoMarquee />
-      <ValueProps />
-      <Industries />
-      <HowItWorks />
-      <Integrations />
-      <ClosingCTA />
-      <Footer />
+    <div className={className || "relative size-[32px]"} data-name="bitbucket" data-node-id="2047:23213">
+      <div className="absolute inset-[9.38%_6.25%]" data-name="bitbucket" data-node-id="2047:23214">
+        <img alt="" className="absolute block max-w-none size-full" src={imgBitbucket} />
+      </div>
     </div>
   );
 }
