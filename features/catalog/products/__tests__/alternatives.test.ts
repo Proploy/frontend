@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from 'vitest'
 import { mapProductAlternative } from '../mappers'
 
 describe('product alternatives', () => {
+  it('preserves the API product ID for detail navigation and comparison', () => {
+    expect(mapProductAlternative({
+      product_id: 'product/id',
+      product_name: 'Alternative',
+      short_description: null,
+      pricing_bucket: null,
+      logo_url: null,
+    }).product_id).toBe('product/id')
+  })
+
   it('maps alternative logo references through the service-apis logo route', () => {
     vi.stubEnv('NEXT_PUBLIC_SERVICE_APIS_URL', 'http://localhost:8020')
 

@@ -14,9 +14,10 @@ import {
   getProductDetailHref,
   useCategoryTree,
   useKeywordSearch,
-  useProductList,
+  useRecursiveCategoryProductList,
   type CardProduct,
   type CategoryNode,
+  getDescendantProductCategoryTermIds,
 } from '@/features/catalog'
 import {
   DEFAULT_PRODUCT_FILTERS,
@@ -197,10 +198,13 @@ function ProductsPageContent() {
     categoryTermId: categoryParam ?? '',
   }
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const hasKeywordSearch = Boolean(search)
 
-  const { products, loading, error, pagination, refetch } = useProductList({
+  const selectedCategoryNode = findCategoryNode(tree, filters.categoryTermId)
+  const categoryTermIds = getDescendantProductCategoryTermIds(selectedCategoryNode)
+  const { products: listedProducts, loading: listLoading, error: listError, pagination, refetch } = useRecursiveCategoryProductList({
     ...buildProductListRequest({
-      search,
+      search: undefined,
       categoryTermId: filters.categoryTermId,
       pricingBucket: filters.pricingBucket,
       freePlan: filters.freePlan,
@@ -209,10 +213,30 @@ function ProductsPageContent() {
       limit: PRODUCT_PAGE_SIZE,
       offset,
     }),
+    categoryTermIds,
+    enabled: !hasKeywordSearch,
     append: true,
   })
-  const isLoadingInitialProducts =
-    loading && (offset === 0 || products.length === 0)
+  const {
+    products: searchProducts,
+    loading: searchLoading,
+    error: searchError,
+    search: runKeywordSearch,
+    clear: clearKeywordSearch,
+  } = useKeywordSearch()
+
+  useEffect(() => {
+    if (search) {
+      void runKeywordSearch(search, 6)
+    } else {
+      clearKeywordSearch()
+    }
+  }, [clearKeywordSearch, runKeywordSearch, search])
+
+  const products = hasKeywordSearch ? searchProducts : listedProducts
+  const loading = hasKeywordSearch ? searchLoading : listLoading
+  const error = hasKeywordSearch ? searchError : listError
+  const isLoadingInitialProducts = loading && (offset === 0 || products.length === 0)
   const isLoadingMoreProducts = loading && offset > 0 && products.length > 0
 
   /* category rail state: which ui_category root is expanded */
@@ -226,7 +250,6 @@ function ProductsPageContent() {
   const subcategories = selectedRoot
     ? flattenSelectableCategories(selectedRoot)
     : []
-  const selectedCategoryNode = findCategoryNode(tree, filters.categoryTermId)
   const describedNode = selectedCategoryNode ?? selectedRoot
   const categoryLabel = selectedCategoryNode?.label ?? null
 
@@ -235,7 +258,7 @@ function ProductsPageContent() {
     const params = new URLSearchParams(searchParams.toString())
     mutate(params)
     const query = params.toString()
-    router.push(`/products${query ? `?${query}` : ''}`)
+    router.push(`/products${query ? `?${query}` : ''}`, { scroll: false })
   }
 
   const selectCategory = (termId: string) => {
@@ -322,7 +345,7 @@ function ProductsPageContent() {
       <main className="pp-page">
         {/* ── Listing explorer: search hero ─────────────────── */}
         <section
-          className="pp-blueprint"
+          className="pp-blueprint pp-products-hero"
           style={{ paddingBlock: 'var(--sp-20) var(--sp-16)' }}
         >
           <div className="pp-glow" style={{ top: -140, right: -60 }} />
@@ -408,14 +431,7 @@ function ProductsPageContent() {
                           aria-pressed={selectedRoot?.term_id === root.term_id}
                           onClick={() => {
                             setRailRootOverride(root.term_id)
-                            if (root.taxonomy_type === 'product_category') {
-                              selectCategory(root.term_id)
-                            } else if (
-                              filters.categoryTermId &&
-                              !subtreeContains(root, filters.categoryTermId)
-                            ) {
-                              selectCategory('')
-                            }
+                            selectCategory(root.term_id)
                           }}
                         >
                           {root.label}
@@ -514,7 +530,7 @@ function ProductsPageContent() {
                 </Reveal>
               )}
 
-              {pagination?.hasNextPage && (
+              {!hasKeywordSearch && pagination?.hasNextPage && (
                 <div className="pp-fade-action" style={{ marginTop: 0 }}>
                   <button
                     type="button"
@@ -833,6 +849,7 @@ function ProductSearchPanel({
 
           {resultsOpen && query.trim().length > 1 && (
             <div
+              className="pp-search-results"
               style={{
                 position: 'absolute',
                 left: 0,

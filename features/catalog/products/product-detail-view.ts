@@ -23,6 +23,39 @@ export interface ProductMediaPreview {
   mimeType: string | null
 }
 
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'm4v', 'ogv', 'ogg', 'm3u8', 'gifv'])
+const GIF_EXTENSIONS = new Set(['gif'])
+
+function mediaUrlExtension(url: string): string {
+  try {
+    const pathname = new URL(url, 'https://media.local').pathname
+    return pathname.split('.').pop()?.toLowerCase() ?? ''
+  } catch {
+    return url.split(/[?#]/, 1)[0].split('.').pop()?.toLowerCase() ?? ''
+  }
+}
+
+export function classifyProductMediaAsset(
+  asset: Pick<ProductMediaAssetItem, 'asset_kind' | 'mime_type' | 'public_url'>,
+): ProductMediaPreview['type'] {
+  const assetKind = asset.asset_kind.trim().toLowerCase()
+  const mimeType = asset.mime_type?.split(';', 1)[0].trim().toLowerCase() ?? ''
+  const extension = mediaUrlExtension(asset.public_url ?? '')
+
+  if (
+    assetKind.includes('video')
+    || mimeType.startsWith('video/')
+    || VIDEO_EXTENSIONS.has(extension)
+    || /(?:youtube\.com|youtu\.be|vimeo\.com|loom\.com)/i.test(asset.public_url ?? '')
+  ) return 'video'
+
+  if (assetKind.includes('gif') || mimeType === 'image/gif' || GIF_EXTENSIONS.has(extension)) {
+    return 'gif'
+  }
+
+  return 'image'
+}
+
 const PRODUCT_DETAIL_TABS: ProductDetailTab[] = [
   { key: 'product-information', label: 'Product Information' },
   { key: 'integrations', label: 'Integrations' },
@@ -49,13 +82,8 @@ export function mapMediaAssetsToPreview(
     .flatMap((asset) => {
     if (!asset.public_url) return []
 
-    const mimeType = asset.mime_type?.toLowerCase() ?? ''
-    const assetKind = asset.asset_kind.toLowerCase()
-    const type = assetKind === 'video' || mimeType.startsWith('video/')
-      ? 'video' as const
-      : assetKind === 'gif' || mimeType === 'image/gif'
-        ? 'gif' as const
-        : 'image' as const
+    const assetKind = asset.asset_kind.trim().toLowerCase()
+    const type = classifyProductMediaAsset(asset)
 
     return [{
       id: asset.media_id,
