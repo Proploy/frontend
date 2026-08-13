@@ -1,5 +1,6 @@
 export * from './types'
 export { useApprovedExperts } from './use-approved-experts'
+export { useExpertKeywordSearch } from './use-expert-keyword-search'
 export { useExpertApplication } from './use-expert-application'
 export { useExpertDashboard } from './use-expert-dashboard'
 export { useExpertProfile } from './use-expert-profile'

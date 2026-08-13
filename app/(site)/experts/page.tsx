@@ -8,6 +8,7 @@ import { Footer } from '@/components/site/Footer'
 import { Reveal } from '@/components/site/Reveal'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useApprovedExperts } from '@/features/experts/use-approved-experts'
+import { useExpertKeywordSearch } from '@/features/experts/use-expert-keyword-search'
 import { useCatalogProductMatches } from '@/features/catalog'
 import type { ExpertListItem } from '@/features/experts/types'
 import {
@@ -160,7 +161,6 @@ function ExpertsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const searchFromUrl = searchParams.get('search') ?? ''
-  const search = searchFromUrl.trim().toLowerCase()
 
   const filtersFromUrl = useMemo<ExpertFilterValues>(() => ({
     ...DEFAULT_EXPERT_FILTERS,
@@ -187,21 +187,32 @@ function ExpertsPageContent() {
     projectType: filters.projectType || undefined,
     limit: 50,
   })
+  const {
+    experts: keywordExperts,
+    loading: keywordLoading,
+    error: keywordError,
+    refetch: refetchKeywordExperts,
+  } = useExpertKeywordSearch(query, 50, {
+    platform: filters.platform,
+    industry: filters.industry,
+    projectType: filters.projectType,
+    location: filters.location,
+    minimumYears: filters.minimumYears,
+    entityType: filters.entityType,
+    sort: filters.sort,
+  })
+  const showingKeywordResults = Boolean(query.trim())
+  const displayedExperts = showingKeywordResults ? keywordExperts : experts
 
   const typedExperts: ExpertListItem[] = useMemo(() => {
+    if (showingKeywordResults) return keywordExperts
+
     const filtered = experts.filter((expert) => {
       const location = [expert.regionCity, expert.regionCountry].filter(Boolean).join(' ').toLowerCase()
-      const searchable = [
-        expert.displayName,
-        expert.headline,
-        location,
-        ...(expert.tags?.map((tag) => tag.tagValue) ?? []),
-      ].filter(Boolean).join(' ').toLowerCase()
-      const matchesSearch = !search || searchable.includes(search)
       const matchesLocation = !filters.location || location.includes(filters.location.toLowerCase())
       const matchesYears = (expert.yearsExperience ?? 0) >= filters.minimumYears
       const matchesType = !filters.entityType || expert.entityType?.toLowerCase().includes(filters.entityType)
-      return matchesSearch && matchesLocation && matchesYears && matchesType
+      return matchesLocation && matchesYears && matchesType
     })
 
     if (filters.sort === 'experience') {
@@ -214,7 +225,7 @@ function ExpertsPageContent() {
       return [...filtered].sort((a, b) => a.displayName.localeCompare(b.displayName))
     }
     return filtered
-  }, [experts, filters, search])
+  }, [experts, filters, keywordExperts, showingKeywordResults])
 
   const activeChips = useMemo(
     () => buildFilterChips(filters, setFilters),
@@ -224,8 +235,8 @@ function ExpertsPageContent() {
   // Resolve the experts' platform labels to catalog products so cards can show
   // real product logos (capped to keep the keyword-search fan-out bounded).
   const platformQueries = useMemo(
-    () => dedupe(experts.flatMap((expert) => expertPlatforms(expert))).slice(0, 24),
-    [experts],
+    () => dedupe(displayedExperts.flatMap((expert) => expertPlatforms(expert))).slice(0, 24),
+    [displayedExperts],
   )
   const { products: platformProducts } = useCatalogProductMatches(platformQueries)
 
@@ -239,7 +250,9 @@ function ExpertsPageContent() {
   }
 
   const count = typedExperts.length
-  const directoryLede = loading || error
+  const directoryLoading = showingKeywordResults ? keywordLoading : loading
+  const directoryError = showingKeywordResults ? keywordError : error
+  const directoryLede = directoryLoading || directoryError
     ? 'Specialists with verified credentials and published case studies, matched to your filters.'
     : `${count} ${count === 1 ? 'specialist matches' : 'specialists match'} your filters, each with verified credentials and published case studies.`
 
@@ -377,13 +390,13 @@ function ExpertsPageContent() {
             <p className="pp-lede">{directoryLede}</p>
           </Reveal>
 
-          {loading ? (
+          {directoryLoading ? (
             <ExpertGridSkeleton />
-          ) : error ? (
+          ) : directoryError ? (
             <div className="pp-stack pp-gap-4" style={{ alignItems: 'center', paddingBlock: 'var(--sp-16)', textAlign: 'center' }}>
               <p className="pp-lede">We couldn&apos;t load approved experts right now.</p>
-              <p className="pp-small">{error.error.message}</p>
-              <button type="button" onClick={refetch} className="pp-btn pp-btn--cobalt pp-btn--inline">
+              <p className="pp-small">{directoryError.error.message}</p>
+              <button type="button" onClick={showingKeywordResults ? refetchKeywordExperts : refetch} className="pp-btn pp-btn--cobalt pp-btn--inline">
                 Try again
               </button>
             </div>
