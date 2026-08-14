@@ -1,0 +1,45 @@
+steps:
+
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      docker build -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev . \
+        --build-arg NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL \
+        --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY \
+        --build-arg NEXT_PUBLIC_APP_URL=$_NEXT_PUBLIC_APP_URL \
+        --build-arg NEXT_PUBLIC_SERVICE_APIS_URL=$_NEXT_PUBLIC_SERVICE_APIS_URL \
+        --build-arg DATABASE_URL=$_DATABASE_URL
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+    - 'run'
+    - 'deploy'
+    - 'proploy-frontend-dev'
+    - '--image'
+    - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev'
+    - '--region'
+    - 'australia-southeast1'
+    - '--platform'
+    - 'managed'
+    - '--allow-unauthenticated'
+    - '--service-account'
+    - 'proploy-deployer@coral-polymer-484212-r3.iam.gserviceaccount.com'
+
+images:
+  - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend-dev/proploy-frontend-dev'
+
+substitutions:
+  _NEXT_PUBLIC_SUPABASE_URL: "https://eczlamdmamicyugklabj.supabase.co"
+  _NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjemxhbWRtYW1pY3l1Z2tsYWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTA3NDksImV4cCI6MjA5MTE2Njc0OX0.TC_s9UFBwAGNnwKe9qohAWOTD_J4TYY96JES_hmAi-0"
+  _NEXT_PUBLIC_APP_URL: "https://proploy.io"
+  _NEXT_PUBLIC_SERVICE_APIS_URL: "https://service-apis-731353524841.australia-southeast1.run.app"
+  _DATABASE_URL: "postgresql://postgres:PbwWIcX9t4hAguL0@db.eczlamdmamicyugklabj.supabase.co:5432/postgres"
+
+options:
+  logging: CLOUD_LOGGING_ONLY

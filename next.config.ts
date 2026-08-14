@@ -63,6 +63,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Pin workspace root to this dir (multiple lockfiles confuse inference)
   turbopack: {
     root: projectRoot,
