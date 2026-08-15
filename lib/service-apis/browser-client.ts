@@ -12,76 +12,10 @@ export interface ServiceApisBrowserFetchOptions extends RequestInit {
 }
 
 function getBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || '').replace(/\/$/, '')
+  return '/api/proxy'
 }
 
-let cachedToken: string | null = null
-let tokenExpiresAt = 0
-let inFlightTokenPromise: Promise<string | null> | null = null
 
-function parseJwtExp(token: string): number | null {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1])) as { exp?: unknown }
-    return typeof payload.exp === 'number' ? payload.exp * 1000 : null
-  } catch {
-    return null
-  }
-}
-
-async function resolveAccessToken(accessToken?: string | null): Promise<string | null> {
-  if (accessToken !== undefined) return accessToken
-
-  const now = Date.now()
-  if (cachedToken && tokenExpiresAt > now + 60000) {
-    return cachedToken
-  }
-
-  if (inFlightTokenPromise) {
-    return inFlightTokenPromise
-  }
-
-  inFlightTokenPromise = (async () => {
-    try {
-      const response = await fetch('/api/auth/session-token', {
-        cache: 'no-store',
-        credentials: 'same-origin',
-      })
-      if (!response.ok) {
-        cachedToken = null
-        tokenExpiresAt = 0
-        return null
-      }
-
-      const payload: unknown = await response.json().catch(() => null)
-      if (!payload || typeof payload !== 'object') {
-        cachedToken = null
-        tokenExpiresAt = 0
-        return null
-      }
-
-      const token = (payload as { accessToken?: unknown }).accessToken
-      if (typeof token === 'string' && token.length > 0) {
-        cachedToken = token
-        tokenExpiresAt = parseJwtExp(token) ?? (now + 5 * 60 * 1000)
-        return token
-      }
-
-      cachedToken = null
-      tokenExpiresAt = 0
-      return null
-    } catch {
-      cachedToken = null
-      tokenExpiresAt = 0
-      return null
-    } finally {
-      inFlightTokenPromise = null
-    }
-  })()
-
-  return inFlightTokenPromise
-}
 
 /** Browser transport for the FastAPI gateway; feature traffic bypasses Next.js. */
 export async function serviceApisBrowserFetch(
@@ -107,10 +41,7 @@ export async function serviceApisBrowserFetch(
   const requestHeaders = new Headers(headers)
   if (!requestHeaders.has('accept')) requestHeaders.set('accept', 'application/json')
 
-  if (requireAuth) {
-    const token = await resolveAccessToken(accessToken)
-    if (token) requestHeaders.set('Authorization', `Bearer ${token}`)
-  }
+  requestHeaders.set('x-require-auth', requireAuth ? 'true' : 'false')
 
   return fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
     ...init,

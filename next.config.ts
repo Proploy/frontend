@@ -8,37 +8,8 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
  * Security headers added per penetration-test remediation 2026-08-05.
  * See the SECURITY-FIX plan for rationale on each header.
  *
- * IMPORTANT — Content-Security-Policy trade-off:
- * The current policy uses `'unsafe-inline'` on `script-src` because Next.js
- * (App Router) and several dependencies (Tailwind v4 runtime, Sanity
- * Studio when loaded under /studio) inject inline scripts. Migrating to
- * `nonce-…` would require touching every Server Component. The risk is
- * bounded by `default-src 'self'`, the strict frame-ancestors/frame-src,
- * and the same-origin connect-src. Revisit when the Next.js 16 stable
- * nonce story lands.
  */
 const securityHeaders = [
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      // Next.js dev/runtime + Tailwind v4 + Sanity Vision need inline
-      // scripts. Locked down further is the long-term target.
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sanity.io",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      // Supabase auth/storage + Sanity CDN + Google avatar CDN + GitHub + Microsoft CDN + local & Cloud Run service-apis gateway.
-      "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co https://cdn.sanity.io https://lh3.googleusercontent.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://*.githubusercontent.com https://*.microsoft.com https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
-      "media-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
-      "connect-src 'self' http://localhost:* https://eczlamdmamicyugklabj.supabase.co https://*.supabase.co wss://*.supabase.co https://*.sanity.io https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app",
-      // Document previews, video embeds (YouTube, Vimeo, Loom), and OAuth redirects.
-      "frame-src 'self' blob: data: http://localhost:* http://127.0.0.1:* https://accounts.google.com https://github.com https://login.microsoftonline.com https://*.supabase.co https://service-apis-731353524841.australia-southeast1.run.app https://*.run.app https://www.youtube-nocookie.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://vimeo.com https://www.loom.com https://loom.com https://drive.google.com https://docs.google.com",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "base-uri 'self'",
-      "object-src 'none'",
-    ].join("; "),
-  },
   {
     key: "Strict-Transport-Security",
     value: "max-age=31536000; includeSubDomains; preload",
