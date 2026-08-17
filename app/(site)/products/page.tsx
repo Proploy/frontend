@@ -110,12 +110,32 @@ function flattenSelectableCategories(node: CategoryNode): CategoryNode[] {
 
 function pricingLabel(value: string): string | null {
   const labels: Record<string, string> = {
-    free: 'Free pricing',
-    low: 'Low pricing',
-    mid: 'Mid-market',
-    enterprise: 'Enterprise',
+    free: 'Free',
+    freemium: 'Freemium',
+    paid_tier_1: 'Paid (Tier 1)',
+    paid_tier_2: 'Paid (Tier 2)',
+    paid_tier_3: 'Paid (Tier 3)',
   }
   return labels[value] ?? null
+}
+
+function companySizeLabel(value: string): string {
+  const labels: Record<string, string> = {
+    smb: 'SMB / Startup',
+    small_team: 'Small team',
+    mid_market: 'Mid-market',
+    enterprise: 'Enterprise',
+  }
+  return labels[value] ?? value
+}
+
+function deploymentLabel(value: string): string {
+  const labels: Record<string, string> = {
+    cloud: 'Cloud (SaaS)',
+    self_hosted: 'Self-hosted / On-premise',
+    hybrid: 'Hybrid',
+  }
+  return labels[value] ?? value
 }
 
 type ActiveFilterTag = {
@@ -209,6 +229,9 @@ function ProductsPageContent() {
       pricingBucket: filters.pricingBucket,
       freePlan: filters.freePlan,
       freeTrial: filters.freeTrial,
+      companySize: filters.companySize,
+      deploymentModel: filters.deploymentModel,
+      compliance: filters.compliance,
       sort: filters.sort,
       limit: PRODUCT_PAGE_SIZE,
       offset,
@@ -319,6 +342,51 @@ function ProductsPageContent() {
       },
     })
   }
+  
+  if (filters.companySize?.length) {
+    filters.companySize.forEach(size => {
+      activeFilterTags.push({
+        label: companySizeLabel(size),
+        clear: () => {
+          setStoredFilters({
+            ...storedFilters,
+            companySize: storedFilters.companySize.filter(s => s !== size)
+          })
+          resetOffset()
+        }
+      })
+    })
+  }
+
+  if (filters.deploymentModel?.length) {
+    filters.deploymentModel.forEach(dep => {
+      activeFilterTags.push({
+        label: deploymentLabel(dep),
+        clear: () => {
+          setStoredFilters({
+            ...storedFilters,
+            deploymentModel: storedFilters.deploymentModel.filter(d => d !== dep)
+          })
+          resetOffset()
+        }
+      })
+    })
+  }
+
+  if (filters.compliance?.length) {
+    filters.compliance.forEach(comp => {
+      activeFilterTags.push({
+        label: comp,
+        clear: () => {
+          setStoredFilters({
+            ...storedFilters,
+            compliance: storedFilters.compliance.filter(c => c !== comp)
+          })
+          resetOffset()
+        }
+      })
+    })
+  }
 
   const planCount = Number(filters.freePlan) + Number(filters.freeTrial)
   const quickChipLabels = {
@@ -377,6 +445,19 @@ function ProductsPageContent() {
                   onMoreFilters={() => setDrawerOpen(true)}
                   quickChipLabels={quickChipLabels}
                   activeFilterTags={activeFilterTags}
+                  pricingValue={filters.pricingBucket || ''}
+                  onPricingChange={(val) => {
+                    setStoredFilters((prev) => ({ ...prev, pricingBucket: val || undefined }))
+                    resetOffset()
+                  }}
+                  deploymentValue={filters.deploymentModel?.[0] || ''}
+                  onDeploymentChange={(val) => {
+                    setStoredFilters((prev) => ({
+                      ...prev,
+                      deploymentModel: val ? [val] : [],
+                    }))
+                    resetOffset()
+                  }}
                 />
               </div>
             </Reveal>
@@ -516,9 +597,30 @@ function ProductsPageContent() {
               ) : products.length === 0 && !error ? (
                 <div
                   className="pp-stack"
-                  style={{ alignItems: 'center', paddingBlock: 'var(--sp-24)' }}
+                  style={{ alignItems: 'center', paddingBlock: 'var(--sp-24)', textAlign: 'center' }}
                 >
-                  <p className="pp-body">No products found.</p>
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--slate-2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 'var(--sp-4)',
+                      color: 'var(--slate-11)',
+                    }}
+                  >
+                    <SearchIcon />
+                  </div>
+                  <h3 className="pp-heading-sm">More products coming soon!</h3>
+                  <p
+                    className="pp-body"
+                    style={{ color: 'var(--slate-11)', maxWidth: '400px', marginTop: 'var(--sp-2)' }}
+                  >
+                    We're actively onboarding new software vendors for this category. Try adjusting your filters or check back later.
+                  </p>
                 </div>
               ) : (
                 <Reveal>
@@ -776,12 +878,20 @@ function ProductSearchPanel({
   onMoreFilters,
   quickChipLabels,
   activeFilterTags,
+  pricingValue,
+  onPricingChange,
+  deploymentValue,
+  onDeploymentChange,
 }: {
   initialQuery: string
   onSearch: (query: string) => void
   onMoreFilters: () => void
   quickChipLabels: { category: string; pricing: string; plans: string }
   activeFilterTags: ActiveFilterTag[]
+  pricingValue: string
+  onPricingChange: (value: string) => void
+  deploymentValue: string
+  onDeploymentChange: (value: string) => void
 }) {
   const [query, setQuery] = useState(initialQuery)
   const [resultsOpen, setResultsOpen] = useState(false)
@@ -963,14 +1073,56 @@ function ProductSearchPanel({
             <CategoryIcon />
             {quickChipLabels.category}
           </button>
-          <button type="button" className="pp-chip pp-btn--inline" onClick={onMoreFilters}>
+          <label
+            className="pp-chip pp-btn--inline"
+            style={{ position: 'relative', cursor: 'pointer', margin: 0 }}
+          >
             <PricingIcon />
             {quickChipLabels.pricing}
-          </button>
-          <button type="button" className="pp-chip pp-btn--inline" onClick={onMoreFilters}>
+            <select
+              value={pricingValue}
+              onChange={(e) => onPricingChange(e.target.value)}
+              style={{
+                position: 'absolute',
+                opacity: 0,
+                inset: 0,
+                width: '100%',
+                cursor: 'pointer',
+              }}
+              aria-label="Pricing filter"
+            >
+              <option value="">Any pricing</option>
+              <option value="free">Free</option>
+              <option value="freemium">Freemium</option>
+              <option value="paid_tier_1">Paid (Tier 1)</option>
+              <option value="paid_tier_2">Paid (Tier 2)</option>
+              <option value="paid_tier_3">Paid (Tier 3)</option>
+            </select>
+          </label>
+          <label
+            className="pp-chip pp-btn--inline"
+            style={{ position: 'relative', cursor: 'pointer', margin: 0 }}
+          >
             <FunnelIcon />
-            {quickChipLabels.plans}
-          </button>
+            Any deployment
+            <select
+              value={deploymentValue}
+              onChange={(e) => onDeploymentChange(e.target.value)}
+              style={{
+                position: 'absolute',
+                opacity: 0,
+                inset: 0,
+                width: '100%',
+                cursor: 'pointer',
+              }}
+              aria-label="Deployment filter"
+            >
+              <option value="">Any deployment</option>
+              <option value="cloud">Cloud (SaaS)</option>
+              <option value="self_hosted">Self-hosted / On-premise</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </label>
         </div>
         <button
           type="button"

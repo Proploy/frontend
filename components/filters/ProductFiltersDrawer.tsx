@@ -10,6 +10,9 @@ export interface ProductFilterValues {
   freePlan: boolean
   freeTrial: boolean
   sort: ProductSort
+  companySize: string[]
+  deploymentModel: string[]
+  compliance: string[]
 }
 
 export const DEFAULT_PRODUCT_FILTERS: ProductFilterValues = {
@@ -18,6 +21,9 @@ export const DEFAULT_PRODUCT_FILTERS: ProductFilterValues = {
   freePlan: false,
   freeTrial: false,
   sort: 'name',
+  companySize: [],
+  deploymentModel: [],
+  compliance: [],
 }
 
 export function ProductFiltersDrawer({
@@ -63,9 +69,10 @@ export function ProductFiltersDrawer({
           >
             <option value="">Any pricing</option>
             <option value="free">Free</option>
-            <option value="low">Low</option>
-            <option value="mid">Mid-market</option>
-            <option value="enterprise">Enterprise</option>
+            <option value="freemium">Freemium</option>
+            <option value="paid_tier_1">Paid (Tier 1)</option>
+            <option value="paid_tier_2">Paid (Tier 2)</option>
+            <option value="paid_tier_3">Paid (Tier 3)</option>
           </select>
         </Field>
 
@@ -85,6 +92,80 @@ export function ProductFiltersDrawer({
             <option value="market_presence">Market presence</option>
             <option value="created_at">Newest</option>
           </select>
+        </Field>
+
+        <Field label="Company size">
+          <div className="space-y-2">
+            {[
+              { value: 'smb', label: 'SMB / Startup' },
+              { value: 'small_team', label: 'Small team' },
+              { value: 'mid_market', label: 'Mid-market' },
+              { value: 'enterprise', label: 'Enterprise' },
+            ].map(({ value, label }) => (
+              <Checkbox
+                key={value}
+                label={label}
+                checked={draft.companySize.includes(value)}
+                onChange={(checked) =>
+                  setDraft({
+                    ...draft,
+                    companySize: checked
+                      ? [...draft.companySize, value]
+                      : draft.companySize.filter((v) => v !== value),
+                  })
+                }
+              />
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Deployment">
+          <div className="space-y-2">
+            {[
+              { value: 'cloud', label: 'Cloud (SaaS)' },
+              { value: 'self_hosted', label: 'Self-hosted / On-premise' },
+              { value: 'hybrid', label: 'Hybrid' },
+            ].map(({ value, label }) => (
+              <Checkbox
+                key={value}
+                label={label}
+                checked={draft.deploymentModel.includes(value)}
+                onChange={(checked) =>
+                  setDraft({
+                    ...draft,
+                    deploymentModel: checked
+                      ? [...draft.deploymentModel, value]
+                      : draft.deploymentModel.filter((v) => v !== value),
+                  })
+                }
+              />
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Compliance">
+          <div className="space-y-2">
+            {[
+              { value: 'SOC2', label: 'SOC2' },
+              { value: 'HIPAA', label: 'HIPAA' },
+              { value: 'GDPR', label: 'GDPR' },
+              { value: 'ISO27001', label: 'ISO27001' },
+            ].map(({ value, label }) => (
+              <Checkbox
+                key={value}
+                label={label}
+                checked={draft.compliance.includes(value)}
+                onChange={(checked) =>
+                  setDraft({
+                    ...draft,
+                    compliance: checked
+                      ? [...draft.compliance, value]
+                      : draft.compliance.filter((v) => v !== value),
+                  })
+                }
+              />
+            ))}
+          </div>
         </Field>
 
         <div className="flex flex-col gap-3 sm:col-span-2">

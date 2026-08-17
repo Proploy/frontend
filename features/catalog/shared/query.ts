@@ -5,7 +5,11 @@ export function buildQueryString<T extends object>(params: T): string {
 
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
-      searchParams.set(key, String(value))
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParams.append(key, String(v)))
+      } else {
+        searchParams.set(key, String(value))
+      }
     }
   }
 

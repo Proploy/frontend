@@ -14,6 +14,9 @@ export function buildProductListRequest({
   freePlan,
   freeTrial,
   sort,
+  companySize,
+  deploymentModel,
+  compliance,
   limit,
   offset,
 }: ProductListRequestInput): ProductListRequest {
@@ -24,6 +27,9 @@ export function buildProductListRequest({
     free_plan: freePlan || undefined,
     free_trial: freeTrial || undefined,
     sort,
+    company_size: companySize?.length ? companySize : undefined,
+    deployment_model: deploymentModel?.length ? deploymentModel : undefined,
+    compliance: compliance?.length ? compliance : undefined,
     limit,
     offset,
   }

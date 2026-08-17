@@ -28,6 +28,9 @@ interface UseProductListOptions {
   pricing_bucket?: string
   free_plan?: boolean
   free_trial?: boolean
+  company_size?: string[]
+  deployment_model?: string[]
+  compliance?: string[]
   search?: string
   sort?: ProductSort
   page?: number
@@ -88,6 +91,9 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
     pricing_bucket,
     free_plan,
     free_trial,
+    company_size,
+    deployment_model,
+    compliance,
     search,
     sort = 'name',
     page = 1,
@@ -118,6 +124,9 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
         pricing_bucket,
         free_plan,
         free_trial,
+        company_size,
+        deployment_model,
+        compliance,
         search,
         sort,
         limit,
@@ -147,7 +156,21 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
         setLoading(false)
       }
     }
-  }, [category, pricing_bucket, free_plan, free_trial, search, sort, page, limit, offset, append])
+  }, [
+    category,
+    pricing_bucket,
+    free_plan,
+    free_trial,
+    company_size,
+    deployment_model,
+    compliance,
+    search,
+    sort,
+    page,
+    limit,
+    offset,
+    append,
+  ])
 
   useEffect(() => {
     const requestGuard = requestGuardRef.current
@@ -183,6 +206,9 @@ export function useRecursiveCategoryProductList({
     pricing_bucket,
     free_plan,
     free_trial,
+    company_size,
+    deployment_model,
+    compliance,
     search,
     sort = 'name',
     page = 1,
@@ -211,7 +237,7 @@ export function useRecursiveCategoryProductList({
     setError(null)
     try {
       const requestOffset = offset ?? (page - 1) * limit
-      const sharedRequest = { pricing_bucket, free_plan, free_trial, search, sort }
+      const sharedRequest = { pricing_bucket, free_plan, free_trial, company_size, deployment_model, compliance, search, sort }
       const termIds = categoryTermIdsKey ? categoryTermIdsKey.split('\u0001') : []
 
       if (termIds.length <= 1) {
@@ -294,7 +320,22 @@ export function useRecursiveCategoryProductList({
         setLoading(false)
       }
     }
-  }, [append, categoryTermIdsKey, enabled, free_plan, free_trial, limit, offset, page, pricing_bucket, search, sort])
+  }, [
+    append,
+    categoryTermIdsKey,
+    enabled,
+    free_plan,
+    free_trial,
+    limit,
+    offset,
+    page,
+    pricing_bucket,
+    search,
+    sort,
+    company_size,
+    deployment_model,
+    compliance,
+  ])
 
   useEffect(() => {
     const requestGuard = requestGuardRef.current

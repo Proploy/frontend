@@ -11,6 +11,9 @@ export interface ProductListRequest {
   pricing_bucket?: string
   free_plan?: boolean
   free_trial?: boolean
+  company_size?: string[]
+  deployment_model?: string[]
+  compliance?: string[]
   search?: string
   sort?: ProductSort
   limit?: number
