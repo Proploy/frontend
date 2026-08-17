@@ -1,26 +1,53 @@
 steps:
-  # 1. Pull the previous image to use as a Docker cache (speeds up npm ci)
+  # 1. Pull the previous cache images to use as a Docker cache (speeds up npm ci)
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:builder || exit 0']
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args: ['-c', 'docker pull australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest || exit 0']
 
-  # 2. Build the Docker image using the pulled cache and Secret Manager variables
+  # 2. Build and cache the builder stage (node_modules + .next/cache)
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     secretEnv: ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_SERVICE_APIS_URL', 'DATABASE_URL']
     args:
     - '-c'
     - |
-      docker build \
-        --cache-from australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest \
-        -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest . \
+      DOCKER_BUILDKIT=1 docker build \
+        --target builder \
+        --cache-from australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:builder \
+        -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:builder \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
         --build-arg NEXT_PUBLIC_SUPABASE_URL="$$NEXT_PUBLIC_SUPABASE_URL" \
         --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
         --build-arg NEXT_PUBLIC_APP_URL="$$NEXT_PUBLIC_APP_URL" \
         --build-arg NEXT_PUBLIC_SERVICE_APIS_URL="$$NEXT_PUBLIC_SERVICE_APIS_URL" \
-        --build-arg DATABASE_URL="$$DATABASE_URL"
+        --build-arg DATABASE_URL="$$DATABASE_URL" \
+        .
 
-  # 3. Push the new image
+  # 3. Build the final image using both caches
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    secretEnv: ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_SERVICE_APIS_URL', 'DATABASE_URL']
+    args:
+    - '-c'
+    - |
+      DOCKER_BUILDKIT=1 docker build \
+        --cache-from australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:builder \
+        --cache-from australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest \
+        -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg NEXT_PUBLIC_SUPABASE_URL="$$NEXT_PUBLIC_SUPABASE_URL" \
+        --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+        --build-arg NEXT_PUBLIC_APP_URL="$$NEXT_PUBLIC_APP_URL" \
+        --build-arg NEXT_PUBLIC_SERVICE_APIS_URL="$$NEXT_PUBLIC_SERVICE_APIS_URL" \
+        --build-arg DATABASE_URL="$$DATABASE_URL" \
+        .
+
+  # 4. Push the new images (cache & final)
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:builder']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest']
 
