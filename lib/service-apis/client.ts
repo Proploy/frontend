@@ -10,7 +10,7 @@
  */
 import { createClient } from '@/lib/supabase/server'
 
-const SERVICE_APIS_BASE = (process.env.SERVICE_APIS_BASE_URL || '').replace(/\/$/, '')
+const SERVICE_APIS_BASE = (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || process.env.SERVICE_APIS_BASE_URL || '').replace(/\/$/, '')
 
 interface ServiceApisFetchOptions extends RequestInit {
   requireAuth?: boolean
