@@ -83,14 +83,17 @@ export function ProjectDocumentViewer({
     if (!canPreview || isLoadingPreview) return
     setIsLoadingPreview(true)
     setFileError(null)
-    const fileUrl = await resolveFileUrl()
-    setIsLoadingPreview(false)
-    if (!fileUrl) {
-      setFileError('This project file is temporarily unavailable.')
-      return
+    try {
+      const fileUrl = await resolveFileUrl()
+      if (!fileUrl) {
+        setFileError('This project file is temporarily unavailable.')
+        return
+      }
+      setPreviewUrl(fileUrl)
+      setIsPreviewOpen(true)
+    } finally {
+      setIsLoadingPreview(false)
     }
-    setPreviewUrl(fileUrl)
-    setIsPreviewOpen(true)
   }
 
   const openInNewTab = async () => {

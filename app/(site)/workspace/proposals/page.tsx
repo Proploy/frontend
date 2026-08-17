@@ -86,33 +86,36 @@ export default function WorkspaceProposalsPage() {
     async function load() {
       setLoading(true)
       setError(null)
-      const [proposalResult, engagementResult] = await Promise.all([
-        workspace.listProposals(),
-        workspace.listEngagements(),
-      ])
-      if (cancelled) return
+      try {
+        const [proposalResult, engagementResult] = await Promise.all([
+          workspace.listProposals(),
+          workspace.listEngagements(),
+        ])
+        if (cancelled) return
 
-      let nextError: NormalizedError | null = null
-      if (proposalResult.ok) {
-        setProposals(proposalResult.data.proposals)
-        setSelectedId(
-          (current) => current ?? requestedProposalId ?? proposalResult.data.proposals[0]?.id ?? null,
-        )
-      } else {
-        nextError = proposalResult
-      }
+        let nextError: NormalizedError | null = null
+        if (proposalResult.ok) {
+          setProposals(proposalResult.data.proposals)
+          setSelectedId(
+            (current) => current ?? requestedProposalId ?? proposalResult.data.proposals[0]?.id ?? null,
+          )
+        } else {
+          nextError = proposalResult
+        }
 
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements)
-        setForm((current) => ({
-          ...current,
-          engagementId: current.engagementId || engagementResult.data.engagements[0]?.id || '',
-        }))
-      } else {
-        nextError = nextError ?? engagementResult
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements)
+          setForm((current) => ({
+            ...current,
+            engagementId: current.engagementId || engagementResult.data.engagements[0]?.id || '',
+          }))
+        } else {
+          nextError = nextError ?? engagementResult
+        }
+        setError(nextError)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setError(nextError)
-      setLoading(false)
     }
 
     void load()

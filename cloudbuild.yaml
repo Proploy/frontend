@@ -1,20 +1,30 @@
 steps:
-
+  # 1. Pull the previous image to use as a Docker cache (speeds up npm ci)
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
+    args: ['-c', 'docker pull australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest || exit 0']
+
+  # 2. Build the Docker image using the pulled cache and Secret Manager variables
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    secretEnv: ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_SERVICE_APIS_URL', 'DATABASE_URL']
     args:
     - '-c'
     - |
-      docker build -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend . \
-        --build-arg NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL \
-        --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY \
-        --build-arg NEXT_PUBLIC_APP_URL=$_NEXT_PUBLIC_APP_URL \
-        --build-arg NEXT_PUBLIC_SERVICE_APIS_URL=$_NEXT_PUBLIC_SERVICE_APIS_URL \
-        --build-arg DATABASE_URL=$_DATABASE_URL
+      docker build \
+        --cache-from australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest \
+        -t australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest . \
+        --build-arg NEXT_PUBLIC_SUPABASE_URL="$$NEXT_PUBLIC_SUPABASE_URL" \
+        --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+        --build-arg NEXT_PUBLIC_APP_URL="$$NEXT_PUBLIC_APP_URL" \
+        --build-arg NEXT_PUBLIC_SERVICE_APIS_URL="$$NEXT_PUBLIC_SERVICE_APIS_URL" \
+        --build-arg DATABASE_URL="$$DATABASE_URL"
 
+  # 3. Push the new image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend']
+    args: ['push', 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest']
 
+  # 4. Deploy to Cloud Run, injecting secrets directly at runtime
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -22,20 +32,37 @@ steps:
     - 'deploy'
     - 'proploy-frontend'
     - '--image'
-    - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend'
+    - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest'
     - '--region'
     - 'australia-southeast1'
     - '--platform'
     - 'managed'
     - '--allow-unauthenticated'
-    - '--set-env-vars'
-    - 'NEXT_PUBLIC_SUPABASE_URL=$_NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY=$_NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_APP_URL=$_NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SERVICE_APIS_URL=$_NEXT_PUBLIC_SERVICE_APIS_URL,DATABASE_URL=$_DATABASE_URL'
     - '--service-account'
     - 'proploy-deployer@coral-polymer-484212-r3.iam.gserviceaccount.com'
+    - '--set-secrets'
+    - >-
+      NEXT_PUBLIC_SUPABASE_URL=NEXT_PUBLIC_SUPABASE_URL:latest,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY=NEXT_PUBLIC_SUPABASE_ANON_KEY:latest,
+      NEXT_PUBLIC_APP_URL=FRONTEND_ORIGIN:latest,
+      NEXT_PUBLIC_SERVICE_APIS_URL=CATALOG_SERVICE_URL:latest,
+      DATABASE_URL=DATABASE_URL:latest
 
 images:
-  - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend'
+  - 'australia-southeast1-docker.pkg.dev/$PROJECT_ID/proploy-frontend/proploy-frontend:latest'
 
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/NEXT_PUBLIC_SUPABASE_URL/versions/latest
+    env: 'NEXT_PUBLIC_SUPABASE_URL'
+  - versionName: projects/$PROJECT_ID/secrets/NEXT_PUBLIC_SUPABASE_ANON_KEY/versions/latest
+    env: 'NEXT_PUBLIC_SUPABASE_ANON_KEY'
+  - versionName: projects/$PROJECT_ID/secrets/FRONTEND_ORIGIN/versions/latest
+    env: 'NEXT_PUBLIC_APP_URL'
+  - versionName: projects/$PROJECT_ID/secrets/CATALOG_SERVICE_URL/versions/latest
+    env: 'NEXT_PUBLIC_SERVICE_APIS_URL'
+  - versionName: projects/$PROJECT_ID/secrets/DATABASE_URL/versions/latest
+    env: 'DATABASE_URL'
 
 options:
   logging: CLOUD_LOGGING_ONLY

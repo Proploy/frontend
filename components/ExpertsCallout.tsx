@@ -23,7 +23,7 @@ export default function ExpertsCallout({ className = '' }: ExpertsCalloutProps) 
           'Industry Specific Experts',
           'Guaranteed Implementation'
         ].map((item, idx) => (
-          <li key={idx} className="flex items-center gap-3 text-[13px] font-medium text-[#181D27]">
+          <li key={item} className="flex items-center gap-3 text-[13px] font-medium text-[#181D27]">
             <CheckCircle2 className="size-5 text-[#12B76A]" />
             {item}
           </li>

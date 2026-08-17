@@ -73,15 +73,18 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const { from, to } = gridBounds(reference)
-    const result = await listMeetings(from, to)
-    if (result.ok) {
-      setEvents(toCalendarEvents(result.data))
-    } else {
-      setEvents([])
-      setError(result.error?.message ?? 'Could not load meetings.')
+    try {
+      const { from, to } = gridBounds(reference)
+      const result = await listMeetings(from, to)
+      if (result.ok) {
+        setEvents(toCalendarEvents(result.data))
+      } else {
+        setEvents([])
+        setError(result.error?.message ?? 'Could not load meetings.')
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [listMeetings, reference])
 
   useEffect(() => {

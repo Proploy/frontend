@@ -93,13 +93,13 @@ export function ExpertDiscoveryCard({
 
         {platforms.length > 0 && (
           <div className="flex shrink-0 items-center -space-x-[8px]" aria-label="Related products">
-            {platforms.slice(0, 4).map((platform) => {
+            {platforms.slice(0, 4).map((platform, i) => {
               const product = relatedProducts.find(
                 (candidate) => isSameProductName(candidate.product_name, platform),
               )
               return (
                 <div
-                  key={platform}
+                  key={`${platform}-${i}`}
                   title={platform}
                   className="flex size-[38px] items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#f2f4f7] p-[7px] text-[12px] font-bold text-[#155eef] shadow-sm"
                 >

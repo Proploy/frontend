@@ -33,14 +33,17 @@ export function useLegacyFavorites(targetType?: FavoriteTargetType): LegacyFavor
     }
     setLoading(true)
     setError(null)
-    const result = await listFavorites(targetType)
-    if (result.ok) {
-      setFavorites(result.data as LegacyFavoriteRecord[])
-    } else {
-      setFavorites([])
-      setError(result.error.message)
+    try {
+      const result = await listFavorites(targetType)
+      if (result.ok) {
+        setFavorites(result.data as LegacyFavoriteRecord[])
+      } else {
+        setFavorites([])
+        setError(result.error.message)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [targetType, user])
 
   useEffect(() => {

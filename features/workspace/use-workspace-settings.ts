@@ -418,30 +418,31 @@ export function useWorkspaceSettings(): SettingsHookState {
     setSchedulingProfileError(null)
 
     let cancelled = false
-    const result: ApiResult<WorkspaceSchedulingProfile | null> =
-      await workspace.getMySchedulingProfile()
+    try {
+      const result: ApiResult<WorkspaceSchedulingProfile | null> =
+        await workspace.getMySchedulingProfile()
 
-    if (cancelled) return { ok: false, status: 0, error: { code: 'CANCELLED', message: 'Cancelled' } }
+      if (cancelled) return { ok: false, status: 0, error: { code: 'CANCELLED', message: 'Cancelled' } }
 
-    if (result.ok) {
-      setSchedulingProfile(result.data)
-      setSchedulingProfilePending(false)
+      if (result.ok) {
+        setSchedulingProfile(result.data)
+        setSchedulingProfileLoaded(true)
+        return { ok: true, data: result.data }
+      }
+
+      // 404 means no scheduling profile yet — treat as null with no error.
+      if (result.status === 404) {
+        setSchedulingProfile(null)
+        setSchedulingProfileLoaded(true)
+        return { ok: true, data: null }
+      }
+
+      setSchedulingProfileError(result)
       setSchedulingProfileLoaded(true)
-      return { ok: true, data: result.data }
-    }
-
-    // 404 means no scheduling profile yet — treat as null with no error.
-    if (result.status === 404) {
-      setSchedulingProfile(null)
+      return result
+    } finally {
       setSchedulingProfilePending(false)
-      setSchedulingProfileLoaded(true)
-      return { ok: true, data: null }
     }
-
-    setSchedulingProfileError(result)
-    setSchedulingProfilePending(false)
-    setSchedulingProfileLoaded(true)
-    return result
   }, [workspace])
 
   useEffect(() => {

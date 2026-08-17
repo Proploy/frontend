@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { motion, useReducedMotion } from 'framer-motion'
+import { m, LazyMotion, domAnimation, useReducedMotion } from 'framer-motion'
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -56,6 +56,7 @@ export default function BusinessOverviewPage() {
   const latestInvoice = d.invoices[0]
 
   return (
+    <LazyMotion features={domAnimation}>
     <BusinessPage>
       <BusinessPageHeader
         title={`Welcome back, ${firstName}`}
@@ -82,13 +83,13 @@ export default function BusinessOverviewPage() {
       {showActivation && <ActivationChecklist onDismiss={() => setShowActivation(false)} />}
 
       {/* KPI row */}
-      <motion.div
+      <m.div
         variants={container}
         initial="hidden"
         animate="show"
         className="mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 xl:grid-cols-4"
       >
-        <motion.div variants={item}>
+        <m.div variants={item}>
           <KpiCard
             icon={<Wallet size={18} />}
             label="Active engagements"
@@ -96,8 +97,8 @@ export default function BusinessOverviewPage() {
             sub={`${d.projects.filter((p) => p.status === 'At risk' || p.status === 'Blocked').length} need attention`}
             href="/business/dashboard/projects"
           />
-        </motion.div>
-        <motion.div variants={item}>
+        </m.div>
+        <m.div variants={item}>
           <KpiCard
             icon={<Wallet size={18} />}
             label="Held in escrow"
@@ -105,8 +106,8 @@ export default function BusinessOverviewPage() {
             sub="Across funded milestones"
             href="/business/dashboard/payments"
           />
-        </motion.div>
-        <motion.div variants={item}>
+        </m.div>
+        <m.div variants={item}>
           <KpiCard
             icon={<CreditCard size={18} />}
             label="Spend this month"
@@ -114,8 +115,8 @@ export default function BusinessOverviewPage() {
             sub={`${latestInvoice.period} statement`}
             href="/business/dashboard/payments"
           />
-        </motion.div>
-        <motion.div variants={item}>
+        </m.div>
+        <m.div variants={item}>
           <KpiCard
             icon={<Info size={18} />}
             label="Pending approvals"
@@ -123,8 +124,8 @@ export default function BusinessOverviewPage() {
             sub="Invoices & milestones"
             href="/business/dashboard/payments"
           />
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
 
       <div className="mt-[24px] grid grid-cols-1 gap-[24px] lg:grid-cols-[1.6fr_1fr]">
         <div className="flex flex-col gap-[24px]">
@@ -259,6 +260,7 @@ export default function BusinessOverviewPage() {
         </div>
       </div>
     </BusinessPage>
+    </LazyMotion>
   )
 }
 

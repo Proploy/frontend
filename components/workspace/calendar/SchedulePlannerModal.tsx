@@ -199,9 +199,12 @@ export function SchedulePlannerModal({
       notes: notes.trim() || null,
     }
     setSubmitting(true)
-    const result = await onSubmit(payload)
-    setSubmitting(false)
-    if (!result.ok) setError(result.message ?? 'Could not schedule the call. Try again.')
+    try {
+      const result = await onSubmit(payload)
+      if (!result.ok) setError(result.message ?? 'Could not schedule the call. Try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const stepDay = (delta: number) =>
@@ -352,10 +355,10 @@ export function SchedulePlannerModal({
                 {/* Busy blocks (visual only) */}
                 <div className="pointer-events-none absolute inset-0">
                   {youBusy.map((b, i) => (
-                    <BusyBlockView key={`you-${i}`} block={b} side="left" />
+                    <BusyBlockView key={b.id ?? `you-${String(b.start)}-${String(b.end)}`} block={b} side="left" />
                   ))}
                   {partyBusy.map((b, i) => (
-                    <BusyBlockView key={`party-${i}`} block={b} side="right" />
+                    <BusyBlockView key={b.id ?? `party-${String(b.start)}-${String(b.end)}`} block={b} side="right" />
                   ))}
                 </div>
 

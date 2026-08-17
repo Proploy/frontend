@@ -155,12 +155,12 @@ export function ExpertCard({
 
           {platforms.length > 0 && (
             <div className="xp-logos" aria-label="Platforms">
-              {platforms.map((platform) => {
+              {platforms.map((platform, i) => {
                 const product = catalogProducts.find((candidate) =>
                   isSameProductName(candidate.product_name, platform),
                 )
                 return (
-                  <span key={platform} className="xp-logo" title={platform}>
+                  <span key={`${platform}-${i}`} className="xp-logo" title={platform}>
                     {product?.product_logo ? (
                       <CatalogImage
                         src={product.product_logo}

@@ -52,3 +52,6 @@ next-env.d.ts
 
 # sanity
 /sanity/extract.json
+
+react-doctor-report.json
+build.log

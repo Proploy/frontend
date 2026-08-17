@@ -1,4 +1,5 @@
 export interface InvoiceFormLineItem {
+  id: string
   description: string
   quantity: number
   unitCents: number
@@ -96,6 +97,7 @@ export function buildInvoiceCreatePayload(input: InvoiceFormInput): InvoiceCreat
     engagementId: input.engagementId,
     title: input.title.trim(),
     lineItems: input.lineItems.map((item) => ({
+      id: item.id,
       description: item.description.trim(),
       quantity: item.quantity,
       unitCents: item.unitCents,

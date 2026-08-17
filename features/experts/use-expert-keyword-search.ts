@@ -54,30 +54,34 @@ export function useExpertKeywordSearch(
     const current = ++requestId.current
     setLoading(true)
     setError(null)
-    const result = await client.post<ExpertKeywordSearchResponse>('/api/v1/experts/search/keyword', {
-      query: trimmed,
-      limit,
-      filters: {
-        platform: options.platform || undefined,
-        industry: options.industry || undefined,
-        projectType: options.projectType || undefined,
-        location: options.location || undefined,
-        minimumYears: options.minimumYears ?? 0,
-        entityType: options.entityType || undefined,
-      },
-      sort: options.sort ?? 'relevance',
-    }, { requireAuth: false })
-    if (current !== requestId.current) return
-    if (!result.ok) {
-      setExperts([])
-      setError(result)
-      setLoading(false)
+    try {
+      const result = await client.post<ExpertKeywordSearchResponse>('/api/v1/experts/search/keyword', {
+        query: trimmed,
+        limit,
+        filters: {
+          platform: options.platform || undefined,
+          industry: options.industry || undefined,
+          projectType: options.projectType || undefined,
+          location: options.location || undefined,
+          minimumYears: options.minimumYears ?? 0,
+          entityType: options.entityType || undefined,
+        },
+        sort: options.sort ?? 'relevance',
+      }, { requireAuth: false })
+      if (current !== requestId.current) return
+      if (!result.ok) {
+        setExperts([])
+        setError(result)
+        setResolvedRequestKey(requestKey)
+        return
+      }
+      setExperts(result.data.results)
       setResolvedRequestKey(requestKey)
-      return
+    } finally {
+      if (current === requestId.current) {
+        setLoading(false)
+      }
     }
-    setExperts(result.data.results)
-    setLoading(false)
-    setResolvedRequestKey(requestKey)
   }, [
     limit,
     options.entityType,

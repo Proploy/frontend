@@ -46,18 +46,22 @@ export function useCategoryTree(): UseCategoryTreeResult {
     setLoading(true)
     setError(null)
 
-    const result = await clientCatalogApi.categories.getTree()
+    try {
+      const result = await clientCatalogApi.categories.getTree()
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+
+      setTree(result.data.tree)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    setTree(result.data.tree)
-    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -93,19 +97,23 @@ export function useCategoryFilters(): UseCategoryFiltersResult {
     setLoading(true)
     setError(null)
 
-    const result = await clientCatalogApi.categories.getTree()
+    try {
+      const result = await clientCatalogApi.categories.getTree()
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+
+      const mapped = mapCategoryTreeToFilters(result.data.tree)
+      setFilters(mapped)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    const mapped = mapCategoryTreeToFilters(result.data.tree)
-    setFilters(mapped)
-    setLoading(false)
   }, [])
 
   useEffect(() => {

@@ -712,7 +712,7 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
           <div className="flex items-center gap-[6px]">
             {message.reactions.map((r, i) => (
               <span
-                key={i}
+                key={`${r}-${i}`}
                 className="inline-flex items-center justify-center size-[28px] rounded-full bg-white border border-[#e9eaeb] text-[14px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]"
               >
                 {r}

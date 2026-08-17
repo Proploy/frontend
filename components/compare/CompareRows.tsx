@@ -59,7 +59,7 @@ export function ChipList({
   const extra = max && items.length > max ? items.length - max : 0
   return (
     <div className="flex min-w-0 max-w-full flex-wrap gap-[6px]">
-      {shown.map((it, i) => <Chip key={i} tone={tone} wrap={wrapItems}>{it}</Chip>)}
+      {shown.map((it, i) => <Chip key={String(it)} tone={tone} wrap={wrapItems}>{it}</Chip>)}
       {extra > 0 && <Chip tone="neutral">+{extra} more</Chip>}
     </div>
   )
@@ -212,7 +212,7 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Reviewer industry', cell: (e) => txt(e.reviews.reviewerIndustry) },
       { label: 'Pros', cell: (e) => <ChipList items={e.reviews.pros} tone="success" /> },
       { label: 'Cons', cell: (e) => <ChipList items={e.reviews.cons} tone="warning" /> },
-      { label: 'Verified outcomes', cell: (e) => e.reviews.outcomes ? <div className="flex flex-col gap-[6px]">{e.reviews.outcomes.map((o, i) => <span key={i} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}><Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}</span>)}</div> : <NoData /> },
+      { label: 'Verified outcomes', cell: (e) => e.reviews.outcomes ? <div className="flex flex-col gap-[6px]">{e.reviews.outcomes.map((o, i) => <span key={o} className="inline-flex items-center gap-[7px] font-medium" style={{ fontSize: 13.5, color: '#067647' }}><Icon name="check" size={14} color="#079455" strokeWidth={3} />{o}</span>)}</div> : <NoData /> },
     ],
   }
   return map[tab] || []

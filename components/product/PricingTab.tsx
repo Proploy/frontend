@@ -16,6 +16,7 @@ interface FeatureValue {
 }
 
 interface FeatureRow {
+  label: any
   name: string
   values: FeatureValue[]
   helper?: string
@@ -40,8 +41,8 @@ export default function PricingTab({ tiers, sections }: PricingTabProps) {
         style={{ gridTemplateColumns: `minmax(220px, 1fr) repeat(${tiers.length}, minmax(0, 1fr))` }}
       >
         <div />
-        {tiers.map((tier) => (
-          <div key={tier.name} className="flex flex-col items-center gap-[8px] text-center">
+        {tiers.map((tier, i) => (
+          <div key={`${tier.name}-${i}`} className="flex flex-col items-center gap-[8px] text-center">
             <div className="flex items-center gap-[6px]">
               <span className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{tier.name}</span>
               {tier.popular && (
@@ -76,9 +77,8 @@ export default function PricingTab({ tiers, sections }: PricingTabProps) {
           {section.rows.map((row, idx) => (
             <div
               key={row.name}
-              className={`grid items-center gap-x-[16px] py-[12px] ${
-                idx % 2 === 0 ? 'bg-[#fafafa]' : ''
-              } rounded-[6px]`}
+              className={`grid items-center gap-x-[16px] py-[12px] ${idx % 2 === 0 ? 'bg-[#fafafa]' : ''
+                } rounded-[6px]`}
               style={{ gridTemplateColumns: `minmax(220px, 1fr) repeat(${tiers.length}, minmax(0, 1fr))` }}
             >
               <div className="flex items-center gap-[6px] pl-[12px]">
@@ -88,7 +88,7 @@ export default function PricingTab({ tiers, sections }: PricingTabProps) {
                 )}
               </div>
               {row.values.map((v, i) => (
-                <div key={i} className="flex items-center justify-center">
+                <div key={`${row.label}-col-${i}`} className="flex items-center justify-center">
                   {v.type === 'bool' ? (
                     v.value ? (
                       <span className="size-[24px] rounded-full bg-[#dcfae6] flex items-center justify-center">

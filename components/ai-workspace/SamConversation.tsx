@@ -173,7 +173,7 @@ export function SamConversation({
                   const pdfUrl = typeof doc.pdf_url === 'string' ? doc.pdf_url : null
                   return (
                     <div
-                      key={doc.doc_id ? String(doc.doc_id) : idx}
+                      key={doc.doc_id ? String(doc.doc_id) : docTitle}
                       className="flex items-center justify-between gap-4 rounded-2xl border border-[#84adff] bg-[#f5f8ff] p-4 shadow-sm"
                     >
                       <div className="flex items-center gap-3 min-w-0">

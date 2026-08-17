@@ -136,15 +136,16 @@ export default function VendorOnboardingPage() {
     }
 
     setIsSaving(true);
-    const result = await saveApplicationDraft(mapVendorOnboardingToExpertDraft(formData));
-    setIsSaving(false);
-
-    if (!result.ok) {
-      setStepError(result.error.message);
-      return false;
+    try {
+      const result = await saveApplicationDraft(mapVendorOnboardingToExpertDraft(formData));
+      if (!result.ok) {
+        setStepError(result.error.message);
+        return false;
+      }
+      return true;
+    } finally {
+      setIsSaving(false);
     }
-
-    return true;
   };
 
   const handleContinue = async () => {
@@ -173,14 +174,17 @@ export default function VendorOnboardingPage() {
       }
 
       setIsSaving(true);
-      const result = await submitApplication(mapVendorOnboardingToExpertDraft(formData));
-      setIsSaving(false);
-      if (!result.ok) {
-        setStepError(result.error.message);
+      try {
+        const result = await submitApplication(mapVendorOnboardingToExpertDraft(formData));
+        if (!result.ok) {
+          setStepError(result.error.message);
+          return;
+        }
+        setCurrentStep(7);
         return;
+      } finally {
+        setIsSaving(false);
       }
-      setCurrentStep(7);
-      return;
     }
 
     if (currentStep > 0 && !(await persistDraft())) return;

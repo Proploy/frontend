@@ -70,7 +70,7 @@ export function LogoMarquee() {
           aria-busy={loading}
         >
           {track.map((t, i) => (
-            <li key={`${t.alt}-${i}`} className="shrink-0 flex items-center justify-center">
+            <li key={t.id ?? t.alt} className="shrink-0 flex items-center justify-center">
               {t.href ? (
                 <Link
                   href={t.href}

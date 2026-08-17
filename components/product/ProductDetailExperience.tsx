@@ -630,7 +630,7 @@ function MediaSidebarCard({
         <div className="mt-[14px] flex gap-[8px] overflow-x-auto pb-[2px]">
           {gallery.slice(0, 8).map((item, index) => (
             <button
-              key={`${item.url}-${index}`}
+              key={item.id ?? item.url}
               type="button"
               onClick={() => onOpenMedia(item)}
               className="group relative size-[76px] shrink-0 overflow-hidden rounded-[10px] bg-[#f5f8ff] transition-colors"

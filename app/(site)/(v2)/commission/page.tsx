@@ -156,7 +156,7 @@ export default function CommissionPage() {
                     <tr key={row.label}>
                       <td>{row.label}</td>
                       {row.values.map((value, i) => (
-                        <td key={i}>
+                        <td key={`${row.label}-col-${i}`}>
                           {value === true ? <CheckCell /> : value === '—' ? <span className="pp-no">—</span> : value}
                         </td>
                       ))}

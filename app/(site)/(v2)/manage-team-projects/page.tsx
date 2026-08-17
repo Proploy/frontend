@@ -142,7 +142,7 @@ export default function ManageTeamProjectsPage() {
                       <td>{row.label}</td>
                       {/* column order: viewer, expert, approver, owner — owner column highlighted */}
                       {[row.values[2], row.values[3], row.values[1], row.values[0]].map((v, i) => (
-                        <td key={i}>{v === true ? <Check /> : v === '—' ? <span className="pp-no">—</span> : v}</td>
+                        <td key={`${row.label}-col-${i}`}>{v === true ? <Check /> : v === '—' ? <span className="pp-no">—</span> : v}</td>
                       ))}
                     </tr>
                   ))}

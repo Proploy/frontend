@@ -43,18 +43,21 @@ function useResolvedWorkspaceRole(): WorkspaceRoleState {
     async function loadExpert() {
       setIsExpertLoading(true)
       setExpertError(null)
-      const result = await getApplication()
-      if (cancelled) return
+      try {
+        const result = await getApplication()
+        if (cancelled) return
 
-      if (result.ok) {
-        setExpert(result.data?.status === 'approved' ? result.data : null)
-        setExpertUserId(currentUserId)
-      } else {
-        setExpert(null)
-        setExpertUserId(currentUserId)
-        setExpertError(result)
+        if (result.ok) {
+          setExpert(result.data?.status === 'approved' ? result.data : null)
+          setExpertUserId(currentUserId)
+        } else {
+          setExpert(null)
+          setExpertUserId(currentUserId)
+          setExpertError(result)
+        }
+      } finally {
+        setIsExpertLoading(false)
       }
-      setIsExpertLoading(false)
     }
 
     void loadExpert()

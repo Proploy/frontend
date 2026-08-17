@@ -45,6 +45,15 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
     openToAssessment: formData.openToAssessment ?? false,
   };
 
+  const [localCerts, setLocalCerts] = useState(() =>
+    credentials.manualCertifications.map((value) => ({ id: crypto.randomUUID(), value }))
+  );
+
+  const updateLocalCerts = useCallback((next: { id: string; value: string }[]) => {
+    setLocalCerts(next);
+    update({ manualCertifications: next.map((c) => c.value) });
+  }, [update]);
+
   const update = useCallback(
     (patch: Partial<CredentialsFormData>) => {
       updateFormData(patch);
@@ -56,27 +65,30 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
     if (!files || files.length === 0 || isUploading) return;
     setIsUploading(true);
     setUploadError(null);
-    const uploaded: UploadedApplicationFile[] = [];
+    try {
+      const uploaded: UploadedApplicationFile[] = [];
 
-    for (const file of Array.from(files)) {
-      const result = await uploadDocument('certification', file);
-      if (!result.ok) {
-        setUploadError(result.error.message);
-        continue;
+      for (const file of Array.from(files)) {
+        const result = await uploadDocument('certification', file);
+        if (!result.ok) {
+          setUploadError(result.error.message);
+          continue;
+        }
+        uploaded.push({
+          name: result.data.fileName,
+          size: result.data.fileSizeBytes,
+          fileContentType: result.data.fileContentType,
+          storageKey: result.data.storageKey,
+          visible: true,
+        });
       }
-      uploaded.push({
-        name: result.data.fileName,
-        size: result.data.fileSizeBytes,
-        fileContentType: result.data.fileContentType,
-        storageKey: result.data.storageKey,
-        visible: true,
-      });
-    }
 
-    if (uploaded.length > 0) {
-      update({ certificationFiles: [...credentials.certificationFiles, ...uploaded] });
+      if (uploaded.length > 0) {
+        update({ certificationFiles: [...credentials.certificationFiles, ...uploaded] });
+      }
+    } finally {
+      setIsUploading(false);
     }
-    setIsUploading(false);
   }, [credentials.certificationFiles, isUploading, update, uploadDocument]);
 
   const removeFile = useCallback(
@@ -89,10 +101,8 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
   );
 
   const addManualCertification = useCallback(() => {
-    update({
-      manualCertifications: [...credentials.manualCertifications, ''],
-    });
-  }, [credentials.manualCertifications, update]);
+    updateLocalCerts([...localCerts, { id: crypto.randomUUID(), value: '' }]);
+  }, [localCerts, updateLocalCerts]);
 
   return (
     <div className="flex flex-col gap-[24px]">
@@ -145,7 +155,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
         {/* Uploaded file rows */}
         {credentials.certificationFiles.map((file, idx) => (
           <div
-            key={`${file.name}-${idx}`}
+            key={file.name}
             className="flex items-center justify-between bg-[#f5f5f6] rounded-[8px] h-[64px] px-[12px]"
           >
             <div className="flex flex-col">
@@ -190,25 +200,25 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
         </div>
 
         {/* Manual certification inputs */}
-        {credentials.manualCertifications.map((cert, idx) => (
-          <div key={idx} className="flex items-center gap-[8px]">
+        {localCerts.map((cert, idx) => (
+          <div key={cert.id} className="flex items-center gap-[8px]">
             <input
               type="text"
-              value={cert}
+              value={cert.value}
               placeholder="e.g., HubSpot Solutions Partner"
               onChange={(e) => {
-                const next = [...credentials.manualCertifications];
-                next[idx] = e.target.value;
-                update({ manualCertifications: next });
+                const next = [...localCerts];
+                next[idx] = { ...next[idx], value: e.target.value };
+                updateLocalCerts(next);
               }}
               className="flex-1 h-[44px] px-[14px] bg-white border border-[#d5d7da] rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors"
             />
             <button
               type="button"
               onClick={() => {
-                const next = [...credentials.manualCertifications];
+                const next = [...localCerts];
                 next.splice(idx, 1);
-                update({ manualCertifications: next });
+                updateLocalCerts(next);
               }}
               className="flex items-center justify-center w-[36px] h-[36px] rounded-[8px] hover:bg-[#f5f5f6] transition-colors"
               aria-label="Remove certification"

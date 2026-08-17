@@ -282,7 +282,7 @@ export default function DiscoverExpertsPage() {
                     <tr key={row.label}>
                       <td>{row.label}</td>
                       {row.values.map((v, i) => (
-                        <td key={i}>{v}</td>
+                        <td key={`${row.label}-col-${i}`}>{v}</td>
                       ))}
                     </tr>
                   ))}

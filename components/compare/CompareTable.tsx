@@ -34,7 +34,7 @@ function LiveAlternativesCell({ entity }: { entity: Entity }) {
   return (
     <div className="flex flex-col gap-[8px]">
       {shownAlternatives.map((alternative, index) => (
-        <AltCard key={alternative.id ?? `${alternative.name}-${index}`} alt={alternative} />
+        <AltCard key={`${alternative.id ?? alternative.name}-${index}`} alt={alternative} />
       ))}
     </div>
   )

@@ -739,12 +739,14 @@ function PasswordPanel() {
 
   const sessions = [
     {
+      id: 'session-1',
       device: '2024 MacBook Pro 14-inch',
       location: 'Melbourne, Australia',
       when: '22 Jan at 10:40am',
       active: true,
     },
     {
+      id: 'session-2',
       device: '2024 MacBook Pro 14-inch',
       location: 'Melbourne, Australia',
       when: '22 Jan at 4:20pm',
@@ -801,7 +803,7 @@ function PasswordPanel() {
 
       <div className="flex flex-col">
         {sessions.map((s, i) => (
-          <div key={i}>
+          <div key={s.id}>
             {i > 0 && <Divider />}
             <div className="flex items-center gap-[16px] py-[16px]">
               <div className="size-[40px] rounded-full bg-[#fafafa] border border-[#e9eaeb] flex items-center justify-center text-[#414651] shrink-0">

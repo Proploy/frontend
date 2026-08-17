@@ -160,62 +160,65 @@ export default function WorkspaceSalesPage() {
       setLoading(true)
       setError(null)
 
-      const [engagementResult, contractResult, invoiceResult, proposalResult] = await Promise.all([
-        workspace.listEngagements(),
-        client.get<WorkspaceContractListResponse>('/api/v1/workspace/me/contracts', {
-          requireAuth: true,
-        }),
-        client.get<WorkspaceInvoiceListResponse>('/api/v1/workspace/me/invoices', {
-          requireAuth: true,
-        }),
-        client.get<WorkspaceProposalListResponse>('/api/v1/workspace/me/proposals', {
-          requireAuth: true,
-        }),
-      ])
+      try {
+        const [engagementResult, contractResult, invoiceResult, proposalResult] = await Promise.all([
+          workspace.listEngagements(),
+          client.get<WorkspaceContractListResponse>('/api/v1/workspace/me/contracts', {
+            requireAuth: true,
+          }),
+          client.get<WorkspaceInvoiceListResponse>('/api/v1/workspace/me/invoices', {
+            requireAuth: true,
+          }),
+          client.get<WorkspaceProposalListResponse>('/api/v1/workspace/me/proposals', {
+            requireAuth: true,
+          }),
+        ])
 
-      if (cancelled) return
+        if (cancelled) return
 
-      let nextError: NormalizedError | null = null
+        let nextError: NormalizedError | null = null
 
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements ?? [])
-      } else {
-        setEngagements([])
-        nextError = engagementResult
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements ?? [])
+        } else {
+          setEngagements([])
+          nextError = engagementResult
+        }
+
+        if (contractResult.ok) {
+          setContracts(contractResult.data.contracts ?? [])
+        } else if (contractResult.status === 404) {
+          // W4 not yet on this branch.
+          setContracts([])
+        } else {
+          setContracts([])
+          nextError = nextError ?? contractResult
+        }
+
+        if (invoiceResult.ok) {
+          setInvoices(invoiceResult.data.invoices ?? [])
+        } else if (invoiceResult.status === 404) {
+          // W5 not yet on this branch.
+          setInvoices([])
+        } else {
+          setInvoices([])
+          nextError = nextError ?? invoiceResult
+        }
+
+        if (proposalResult.ok) {
+          setProposals(proposalResult.data.proposals ?? [])
+        } else if (proposalResult.status === 404) {
+          // W11 not yet on this branch.
+          setProposals([])
+        } else {
+          setProposals([])
+          nextError = nextError ?? proposalResult
+        }
+
+        setError(nextError)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-
-      if (contractResult.ok) {
-        setContracts(contractResult.data.contracts ?? [])
-      } else if (contractResult.status === 404) {
-        // W4 not yet on this branch.
-        setContracts([])
-      } else {
-        setContracts([])
-        nextError = nextError ?? contractResult
-      }
-
-      if (invoiceResult.ok) {
-        setInvoices(invoiceResult.data.invoices ?? [])
-      } else if (invoiceResult.status === 404) {
-        // W5 not yet on this branch.
-        setInvoices([])
-      } else {
-        setInvoices([])
-        nextError = nextError ?? invoiceResult
-      }
-
-      if (proposalResult.ok) {
-        setProposals(proposalResult.data.proposals ?? [])
-      } else if (proposalResult.status === 404) {
-        // W11 not yet on this branch.
-        setProposals([])
-      } else {
-        setProposals([])
-        nextError = nextError ?? proposalResult
-      }
-
-      setError(nextError)
-      setLoading(false)
     }
 
     void load()

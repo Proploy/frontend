@@ -144,7 +144,7 @@ export default function WorkspaceProjectsPage() {
     scope: '',
     budget: '',
     estimatedDuration: '',
-    milestones: [{ title: '', summary: '', dueAt: '' }],
+    milestones: [{ id: crypto.randomUUID(), title: '', summary: '', dueAt: '' }],
   })
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [projectEditForm, setProjectEditForm] = useState({
@@ -180,29 +180,32 @@ export default function WorkspaceProjectsPage() {
     async function loadProjects() {
       setLoading(true)
       setError(null)
-      const [projectResult, engagementResult, proposalResult] = await Promise.all([
-        workspace.listProjects(),
-        workspace.listEngagements(),
-        workspace.listProposals(),
-      ])
-      if (cancelled) return
-      if (projectResult.ok) {
-        setProjects(projectResult.data.projects)
-        setSelectedId((current) => current ?? projectResult.data.projects[0]?.id ?? null)
-      } else {
-        setError(projectResult)
+      try {
+        const [projectResult, engagementResult, proposalResult] = await Promise.all([
+          workspace.listProjects(),
+          workspace.listEngagements(),
+          workspace.listProposals(),
+        ])
+        if (cancelled) return
+        if (projectResult.ok) {
+          setProjects(projectResult.data.projects)
+          setSelectedId((current) => current ?? projectResult.data.projects[0]?.id ?? null)
+        } else {
+          setError(projectResult)
+        }
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements)
+        } else {
+          setError((current) => current ?? engagementResult)
+        }
+        if (proposalResult.ok) {
+          setProposals(proposalResult.data.proposals)
+        } else {
+          setError((current) => current ?? proposalResult)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements)
-      } else {
-        setError((current) => current ?? engagementResult)
-      }
-      if (proposalResult.ok) {
-        setProposals(proposalResult.data.proposals)
-      } else {
-        setError((current) => current ?? proposalResult)
-      }
-      setLoading(false)
     }
 
     void loadProjects()
@@ -522,16 +525,19 @@ export default function WorkspaceProjectsPage() {
   async function loadSignedDocument(projectId: string) {
     setDocumentLoading(true)
     setError(null)
-    const result = await workspace.downloadProjectSignedContract(projectId)
-    if (result.ok) {
-      setSignedDocumentUrl((current) => {
-        if (current) URL.revokeObjectURL(current)
-        return URL.createObjectURL(result.data)
-      })
-    } else {
-      setError(result)
+    try {
+      const result = await workspace.downloadProjectSignedContract(projectId)
+      if (result.ok) {
+        setSignedDocumentUrl((current) => {
+          if (current) URL.revokeObjectURL(current)
+          return URL.createObjectURL(result.data)
+        })
+      } else {
+        setError(result)
+      }
+    } finally {
+      setDocumentLoading(false)
     }
-    setDocumentLoading(false)
   }
 
   async function decideMilestone(milestoneId: string, decision: 'accept' | 'decline') {
@@ -745,7 +751,7 @@ export default function WorkspaceProjectsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setForm((current) => ({ ...current, milestones: [...current.milestones, { title: '', summary: '', dueAt: '' }] }))}
+                  onClick={() => setForm((current) => ({ ...current, milestones: [...current.milestones, { id: crypto.randomUUID(), title: '', summary: '', dueAt: '' }] }))}
                   className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#bfd4ff] bg-white px-[10px] py-[7px] text-[12px] font-semibold text-[#155eef] ${BUTTON_SKEUO}`}
                 >
                   <Plus size={14} /> Add milestone
@@ -753,7 +759,7 @@ export default function WorkspaceProjectsPage() {
               </div>
               <div className="mt-[12px] flex flex-col gap-[10px]">
                 {form.milestones.map((milestone, index) => (
-                  <div key={`project-milestone-${index}`} className="grid gap-[10px] rounded-[10px] border border-[#e4e7ec] bg-white p-[12px] md:grid-cols-[1fr_1fr_190px_auto]">
+                  <div key={milestone.id} className="grid gap-[10px] rounded-[10px] border border-[#e4e7ec] bg-white p-[12px] md:grid-cols-[1fr_1fr_190px_auto]">
                     <input
                       value={milestone.title}
                       onChange={(event) => setForm((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) }))}

@@ -19,10 +19,13 @@ export function useRecentlyViewed() {
     }
     setLoading(true)
     setError(null)
-    const result = await listRecentlyViewed()
-    if (result.ok) setItems(result.data)
-    else setError(result.error.message)
-    setLoading(false)
+    try {
+      const result = await listRecentlyViewed()
+      if (result.ok) setItems(result.data)
+      else setError(result.error.message)
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {

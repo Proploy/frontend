@@ -114,17 +114,20 @@ export function useExpertDashboardData(): DashboardLoadState {
     async function fetchDashboard() {
       setIsLoading(true)
       setDashboardError(null)
-      const result = await getDashboard()
+      try {
+        const result = await getDashboard()
 
-      if (cancelled) return
+        if (cancelled) return
 
-      if (result.ok) {
-        setDashboard(result.data)
-      } else {
-        setDashboard(null)
-        setDashboardError(result)
+        if (result.ok) {
+          setDashboard(result.data)
+        } else {
+          setDashboard(null)
+          setDashboardError(result)
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
       }
-      setIsLoading(false)
     }
 
     void fetchDashboard()

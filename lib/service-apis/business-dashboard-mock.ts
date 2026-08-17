@@ -46,6 +46,7 @@ export interface AttentionItem {
 /* ---------------------------------------------------------------- payments */
 
 export interface ConsolidatedInvoiceLine {
+  id: string
   expert: string
   country: string
   description: string
@@ -229,10 +230,10 @@ export const MOCK_BUSINESS_DASHBOARD: BusinessDashboardData = {
       dueDate: '2026-06-30',
       totalUsdCents: 5_240_000,
       lines: [
-        { expert: 'Avery Mock', country: 'Australia', description: 'CRM migration — milestone 3', amount: 9800, currency: 'AUD', usdCents: 640_000 },
-        { expert: 'Daniel Okafor', country: 'Nigeria', description: 'ERP rollout — discovery', amount: 18000, currency: 'USD', usdCents: 1_800_000 },
-        { expert: 'Mei Lin', country: 'Singapore', description: 'Analytics build — milestone 2', amount: 3200, currency: 'SGD', usdCents: 2_400_000 },
-        { expert: 'Carlos Mendez', country: 'Mexico', description: 'Integration — kickoff', amount: 8000, currency: 'USD', usdCents: 400_000 },
+        { id: 'inv1-1', expert: 'Avery Mock', country: 'Australia', description: 'CRM migration — milestone 3', amount: 9800, currency: 'AUD', usdCents: 640_000 },
+        { id: 'inv1-2', expert: 'Daniel Okafor', country: 'Nigeria', description: 'ERP rollout — discovery', amount: 18000, currency: 'USD', usdCents: 1_800_000 },
+        { id: 'inv1-3', expert: 'Mei Lin', country: 'Singapore', description: 'Analytics build — milestone 2', amount: 3200, currency: 'SGD', usdCents: 2_400_000 },
+        { id: 'inv1-4', expert: 'Carlos Mendez', country: 'Mexico', description: 'Integration — kickoff', amount: 8000, currency: 'USD', usdCents: 400_000 },
       ],
     },
     {
@@ -243,8 +244,8 @@ export const MOCK_BUSINESS_DASHBOARD: BusinessDashboardData = {
       dueDate: '2026-05-31',
       totalUsdCents: 4_120_000,
       lines: [
-        { expert: 'Avery Mock', country: 'Australia', description: 'CRM migration — milestone 2', amount: 9800, currency: 'AUD', usdCents: 640_000 },
-        { expert: 'Mei Lin', country: 'Singapore', description: 'Analytics build — milestone 1', amount: 4600, currency: 'SGD', usdCents: 3_480_000 },
+        { id: 'inv2-1', expert: 'Avery Mock', country: 'Australia', description: 'CRM migration — milestone 2', amount: 9800, currency: 'AUD', usdCents: 640_000 },
+        { id: 'inv2-2', expert: 'Mei Lin', country: 'Singapore', description: 'Analytics build — milestone 1', amount: 4600, currency: 'SGD', usdCents: 3_480_000 },
       ],
     },
   ],
