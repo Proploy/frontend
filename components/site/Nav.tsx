@@ -341,6 +341,7 @@ export function Logo({ className = "h-7" }: { className?: string }) {
       height={54}
       priority
       className={`${className} w-auto object-contain`}
+      style={{ width: 'auto' }}
     />
   );
 }
