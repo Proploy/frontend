@@ -67,8 +67,10 @@ export async function proxy(request: NextRequest) {
   // in-Studio navigation would otherwise pay for a getUser() round-trip. The
   // draft-mode routes must set their cookie before any session lookup runs.
   if (pathname.startsWith('/studio') || pathname.startsWith('/api/draft-mode')) {
+    // We intentionally do NOT apply the strict nonce-based CSP here.
+    // Sanity Studio relies on a large amount of inline scripts/eval that do not
+    // pass through the Next.js nonce injection pipeline.
     const response = NextResponse.next({ request: { headers: requestHeaders } })
-    response.headers.set('Content-Security-Policy', cspHeader)
     return response
   }
 
