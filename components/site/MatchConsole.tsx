@@ -68,7 +68,7 @@ export function MatchConsole() {
       <ul className="space-y-2 p-4">
         {MATCHES.map((m, i) => (
           <li
-            key={m.name}
+            key={`${m.name}-${i}`}
             className="rounded-xl border border-border bg-white/70 p-3.5 transition-all duration-700"
             style={{
               opacity: revealed > i ? 1 : 0,
