@@ -40,6 +40,8 @@ steps:
     - '--allow-unauthenticated'
     - '--service-account'
     - 'proploy-deployer@coral-polymer-484212-r3.iam.gserviceaccount.com'
+    - '--remove-env-vars'
+    - 'NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SERVICE_APIS_URL,DATABASE_URL'
     - '--set-secrets'
     - >-
       NEXT_PUBLIC_SUPABASE_URL=NEXT_PUBLIC_SUPABASE_URL:latest,
