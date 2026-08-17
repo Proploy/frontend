@@ -79,7 +79,7 @@ export function EvidenceDrawer({
                   {(evidence.snapshot.claims || []).map(
                     (claim, index) => (
                       <div
-                        key={`${String(claim.source_record_id)}-${index}`}
+                        key={String(claim.source_record_id ?? claim.field)}
                         className="rounded-xl border border-[#e9eaeb] bg-[#fafafa] p-3"
                       >
                         <p className="text-xs font-semibold uppercase tracking-wide text-[#717680]">
@@ -114,7 +114,7 @@ export function EvidenceDrawer({
                   {(evidence.snapshot.review_summaries || []).map(
                     (review, index) => (
                       <div
-                        key={`${String(review.source_record_id)}-${index}`}
+                        key={String(review.source_record_id ?? review.polarity)}
                         className="rounded-xl border border-[#e9eaeb] p-3"
                       >
                         <p className="text-xs font-semibold capitalize text-[#535862]">

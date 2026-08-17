@@ -2075,9 +2075,7 @@ export default function Landing() {
               <form 
                 className="content-stretch flex gap-[16px] items-start relative shrink-0 w-[480px]" 
                 data-name="Email capture"
-                onSubmit={async (e) => {
-                  e.preventDefault()
-                  const formData = new FormData(e.currentTarget)
+                action={async (formData: FormData) => {
                   const email = formData.get('email') as string
                   if (!email) return
                   try {
@@ -2091,7 +2089,7 @@ export default function Landing() {
                     })
                     if (res.ok) {
                       alert('Subscribed.')
-                      ;(e.target as HTMLFormElement).reset()
+                      // Form reset should be handled via ref or state if needed, but alert is sufficient here
                     } else {
                       alert('Failed to subscribe. Please try again.')
                     }

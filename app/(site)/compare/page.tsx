@@ -53,7 +53,7 @@ const ROW_STRIPING = true
 const SHOW_BRIEF = true
 
 function seedColumns(productIds: string[]): Column[] {
-  return productIds.map((id) => ({ type: 'product', id }))
+  return productIds.map((id) => ({ type: 'product', id, instanceId: crypto.randomUUID() }))
 }
 
 function ComparePageInner() {
@@ -139,7 +139,7 @@ function ComparePageInner() {
   const onSwap = (i: number, id: string) =>
     edit(columns.map((c, idx) => (idx === i ? { type: 'product', id } : c)))
   const onRemove = (i: number) => edit(columns.filter((_, idx) => idx !== i))
-  const onAdd = () => { if (columns.length < MAX_COLS) edit([...columns, { type: 'product', id: null }]) }
+  const onAdd = () => { if (columns.length < MAX_COLS) edit([...columns, { type: 'product', id: null, instanceId: crypto.randomUUID() }]) }
 
   const doSave = async () => {
     if (filled.length < 2) {
@@ -196,13 +196,16 @@ function ComparePageInner() {
     setMatchedLoading(true)
     setMatchedError(null)
     setMatchedExperts([])
-    const result = await compareApi.getMatchedExperts({ product_ids: selectedProductIds, limit: 12 })
-    if (result.ok) {
-      setMatchedExperts(result.data.experts)
-    } else {
-      setMatchedError(result.error.message)
+    try {
+      const result = await compareApi.getMatchedExperts({ product_ids: selectedProductIds, limit: 12 })
+      if (result.ok) {
+        setMatchedExperts(result.data.experts)
+      } else {
+        setMatchedError(result.error.message)
+      }
+    } finally {
+      setMatchedLoading(false)
     }
-    setMatchedLoading(false)
   }
 
   const onCompare = () => {

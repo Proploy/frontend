@@ -56,7 +56,7 @@ export default function IntegrationsTab({ integrations, pageSize = 22 }: Integra
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
         {visible.map((integration, i) => (
           <div
-            key={`${integration.name}-${i}`}
+            key={integration.id ?? integration.name}
             className="flex items-center gap-[12px] bg-white border border-[#e9eaeb] rounded-[12px] px-[16px] py-[12px]"
           >
             <div className="size-[40px] rounded-[8px] bg-[#155eef] flex items-center justify-center overflow-hidden shrink-0">

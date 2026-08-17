@@ -110,39 +110,43 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
     setLoading(true)
     setError(null)
 
-    const requestOffset = offset ?? (page - 1) * limit
+    try {
+      const requestOffset = offset ?? (page - 1) * limit
 
-    const result = await clientCatalogApi.products.list({
-      category,
-      pricing_bucket,
-      free_plan,
-      free_trial,
-      search,
-      sort,
-      limit,
-      offset: requestOffset,
-    })
+      const result = await clientCatalogApi.products.list({
+        category,
+        pricing_bucket,
+        free_plan,
+        free_trial,
+        search,
+        sort,
+        limit,
+        offset: requestOffset,
+      })
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+
+      const mapped = mapProductListResponseToPage(result.data, limit, requestOffset)
+      setProducts((currentProducts) => (
+        append
+          ? mergeProductListPage({
+            currentProducts,
+            incomingProducts: mapped.products,
+            offset: requestOffset,
+          })
+          : mapped.products
+      ))
+      setPagination(mapped.pagination)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    const mapped = mapProductListResponseToPage(result.data, limit, requestOffset)
-    setProducts((currentProducts) => (
-      append
-        ? mergeProductListPage({
-          currentProducts,
-          incomingProducts: mapped.products,
-          offset: requestOffset,
-        })
-        : mapped.products
-    ))
-    setPagination(mapped.pagination)
-    setLoading(false)
   }, [category, pricing_bucket, free_plan, free_trial, search, sort, page, limit, offset, append])
 
   useEffect(() => {
@@ -205,90 +209,91 @@ export function useRecursiveCategoryProductList({
 
     setLoading(true)
     setError(null)
-    const requestOffset = offset ?? (page - 1) * limit
-    const sharedRequest = { pricing_bucket, free_plan, free_trial, search, sort }
-    const termIds = categoryTermIdsKey ? categoryTermIdsKey.split('\u0001') : []
+    try {
+      const requestOffset = offset ?? (page - 1) * limit
+      const sharedRequest = { pricing_bucket, free_plan, free_trial, search, sort }
+      const termIds = categoryTermIdsKey ? categoryTermIdsKey.split('\u0001') : []
 
-    if (termIds.length <= 1) {
-      const result = await clientCatalogApi.products.list({
-        ...sharedRequest,
-        category: termIds[0],
-        limit,
-        offset: requestOffset,
-      })
-      if (!requestGuardRef.current.isLatest(requestId)) return
-      if (!result.ok) {
-        setError(result)
-        setLoading(false)
+      if (termIds.length <= 1) {
+        const result = await clientCatalogApi.products.list({
+          ...sharedRequest,
+          category: termIds[0],
+          limit,
+          offset: requestOffset,
+        })
+        if (!requestGuardRef.current.isLatest(requestId)) return
+        if (!result.ok) {
+          setError(result)
+          return
+        }
+        const mapped = mapProductListResponseToPage(result.data, limit, requestOffset)
+        setProducts((currentProducts) => append
+          ? mergeProductListPage({ currentProducts, incomingProducts: mapped.products, offset: requestOffset })
+          : mapped.products)
+        setPagination(mapped.pagination)
         return
       }
-      const mapped = mapProductListResponseToPage(result.data, limit, requestOffset)
+
+      const firstPages = await Promise.all(termIds.map((category) =>
+        clientCatalogApi.products.list({ ...sharedRequest, category, limit: 100, offset: 0 }),
+      ))
+      if (!requestGuardRef.current.isLatest(requestId)) return
+      const failed = firstPages.find((result) => !result.ok)
+      if (failed && !failed.ok) {
+        setError(failed)
+        return
+      }
+
+      const successfulFirstPages = firstPages.filter((result): result is Extract<typeof result, { ok: true }> => result.ok)
+      const remainingPages = await Promise.all(successfulFirstPages.flatMap((result, index) => {
+        const requests = []
+        for (let nextOffset = 100; nextOffset < result.data.total; nextOffset += 100) {
+          requests.push(clientCatalogApi.products.list({
+            ...sharedRequest,
+            category: termIds[index],
+            limit: 100,
+            offset: nextOffset,
+          }))
+        }
+        return requests
+      }))
+      if (!requestGuardRef.current.isLatest(requestId)) return
+      const remainingFailure = remainingPages.find((result) => !result.ok)
+      if (remainingFailure && !remainingFailure.ok) {
+        setError(remainingFailure)
+        return
+      }
+
+      const uniqueProducts = new Map<string, ProductListResult['products'][number]>()
+      for (const result of [...successfulFirstPages, ...remainingPages]) {
+        if (!result.ok) continue
+        for (const product of mapProductListResponseToPage(result.data, 100, 0).products) {
+          uniqueProducts.set(product.product_id, product)
+        }
+      }
+      const allProducts = Array.from(uniqueProducts.values())
+      if (sort === 'name') {
+        allProducts.sort((left, right) => left.product_name.localeCompare(right.product_name))
+      }
+      const incomingProducts = allProducts.slice(requestOffset, requestOffset + limit)
+      const total = allProducts.length
+      const currentPage = Math.floor(requestOffset / limit) + 1
       setProducts((currentProducts) => append
-        ? mergeProductListPage({ currentProducts, incomingProducts: mapped.products, offset: requestOffset })
-        : mapped.products)
-      setPagination(mapped.pagination)
-      setLoading(false)
-      return
-    }
-
-    const firstPages = await Promise.all(termIds.map((category) =>
-      clientCatalogApi.products.list({ ...sharedRequest, category, limit: 100, offset: 0 }),
-    ))
-    if (!requestGuardRef.current.isLatest(requestId)) return
-    const failed = firstPages.find((result) => !result.ok)
-    if (failed && !failed.ok) {
-      setError(failed)
-      setLoading(false)
-      return
-    }
-
-    const successfulFirstPages = firstPages.filter((result): result is Extract<typeof result, { ok: true }> => result.ok)
-    const remainingPages = await Promise.all(successfulFirstPages.flatMap((result, index) => {
-      const requests = []
-      for (let nextOffset = 100; nextOffset < result.data.total; nextOffset += 100) {
-        requests.push(clientCatalogApi.products.list({
-          ...sharedRequest,
-          category: termIds[index],
-          limit: 100,
-          offset: nextOffset,
-        }))
-      }
-      return requests
-    }))
-    if (!requestGuardRef.current.isLatest(requestId)) return
-    const remainingFailure = remainingPages.find((result) => !result.ok)
-    if (remainingFailure && !remainingFailure.ok) {
-      setError(remainingFailure)
-      setLoading(false)
-      return
-    }
-
-    const uniqueProducts = new Map<string, ProductListResult['products'][number]>()
-    for (const result of [...successfulFirstPages, ...remainingPages]) {
-      if (!result.ok) continue
-      for (const product of mapProductListResponseToPage(result.data, 100, 0).products) {
-        uniqueProducts.set(product.product_id, product)
+        ? mergeProductListPage({ currentProducts, incomingProducts, offset: requestOffset })
+        : incomingProducts)
+      setPagination({
+        page: currentPage,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: requestOffset + limit < total,
+        hasPreviousPage: requestOffset > 0,
+      })
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
       }
     }
-    const allProducts = Array.from(uniqueProducts.values())
-    if (sort === 'name') {
-      allProducts.sort((left, right) => left.product_name.localeCompare(right.product_name))
-    }
-    const incomingProducts = allProducts.slice(requestOffset, requestOffset + limit)
-    const total = allProducts.length
-    const currentPage = Math.floor(requestOffset / limit) + 1
-    setProducts((currentProducts) => append
-      ? mergeProductListPage({ currentProducts, incomingProducts, offset: requestOffset })
-      : incomingProducts)
-    setPagination({
-      page: currentPage,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-      hasNextPage: requestOffset + limit < total,
-      hasPreviousPage: requestOffset > 0,
-    })
-    setLoading(false)
   }, [append, categoryTermIdsKey, enabled, free_plan, free_trial, limit, offset, page, pricing_bucket, search, sort])
 
   useEffect(() => {
@@ -339,28 +344,32 @@ export function useProductDetail({ productId }: UseProductDetailOptions): UsePro
     setMediaError(null)
     setNotFound(false)
 
-    // Fetch detail and media in parallel
-    const [detailResult, mediaResult] = await Promise.all([
-      clientCatalogApi.products.getDetail(productId),
-      clientCatalogApi.products.getMedia(productId),
-    ])
+    try {
+      // Fetch detail and media in parallel
+      const [detailResult, mediaResult] = await Promise.all([
+        clientCatalogApi.products.getDetail(productId),
+        clientCatalogApi.products.getMedia(productId),
+      ])
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!detailResult.ok) {
-      setError(detailResult)
-      setLoading(false)
-      if (detailResult.status === 404) setNotFound(true)
-      return
+      if (!detailResult.ok) {
+        setError(detailResult)
+        if (detailResult.status === 404) setNotFound(true)
+        return
+      }
+
+      const detail: ProductDetail = detailResult.data
+      const media: ProductMediaAssetItem[] = mediaResult.ok ? mediaResult.data : []
+      setMediaError(mediaResult.ok ? null : mediaResult)
+
+      const mapped = mapProductDetailToPageModel(detail, media)
+      setProduct(mapped)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    const detail: ProductDetail = detailResult.data
-    const media: ProductMediaAssetItem[] = mediaResult.ok ? mediaResult.data : []
-    setMediaError(mediaResult.ok ? null : mediaResult)
-
-    const mapped = mapProductDetailToPageModel(detail, media)
-    setProduct(mapped)
-    setLoading(false)
   }, [productId])
 
   useEffect(() => {
@@ -403,18 +412,22 @@ export function useProductMedia(productId: string | null, kind?: string): UsePro
     setLoading(true)
     setError(null)
 
-    const result = await clientCatalogApi.products.getMedia(productId, kind)
+    try {
+      const result = await clientCatalogApi.products.getMedia(productId, kind)
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+
+      setMedia(result.data)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    setMedia(result.data)
-    setLoading(false)
   }, [productId, kind])
 
   useEffect(() => {
@@ -460,19 +473,23 @@ export function useProductAlternatives({
     setLoading(true)
     setError(null)
 
-    const result = await clientCatalogApi.products.getAlternatives(productId, limit)
+    try {
+      const result = await clientCatalogApi.products.getAlternatives(productId, limit)
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setAlternatives([])
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        setAlternatives([])
+        return
+      }
+
+      setAlternatives(result.data.alternatives.map(mapProductAlternative))
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    setAlternatives(result.data.alternatives.map(mapProductAlternative))
-    setLoading(false)
   }, [productId, limit])
 
   useEffect(() => {

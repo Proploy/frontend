@@ -88,7 +88,7 @@ export default function PricingTab({ tiers, sections }: PricingTabProps) {
                 )}
               </div>
               {row.values.map((v, i) => (
-                <div key={i} className="flex items-center justify-center">
+                <div key={`${row.label}-col-${i}`} className="flex items-center justify-center">
                   {v.type === 'bool' ? (
                     v.value ? (
                       <span className="size-[24px] rounded-full bg-[#dcfae6] flex items-center justify-center">

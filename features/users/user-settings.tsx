@@ -30,39 +30,43 @@ export function useUserSettings({ enabled = true }: UseUserSettingsOptions = {})
     mountedRef.current = true
     setLoading(true)
     setError(null)
-    const result = await client.get<UserProfileResponse>('/api/v1/users/me', { requireAuth: true })
+    try {
+      const result = await client.get<UserProfileResponse>('/api/v1/users/me', { requireAuth: true })
 
-    if (!mountedRef.current) return
-    if (!result.ok) {
-      setSettings(null)
-      setError(result)
-      setLoading(false)
-      return
+      if (!mountedRef.current) return
+      if (!result.ok) {
+        setSettings(null)
+        setError(result)
+        return
+      }
+
+      setSettings(mapUserProfileToAccountSettings(result.data))
+    } finally {
+      if (mountedRef.current) setLoading(false)
     }
-
-    setSettings(mapUserProfileToAccountSettings(result.data))
-    setLoading(false)
   }, [client, enabled])
 
   const updateSettings = useCallback(async (payload: UserProfileUpdateRequest): Promise<UpdateUserResult> => {
     setSaving(true)
     setError(null)
-    const result = await client.patch<UserProfileResponse>('/api/v1/users/me', payload, { requireAuth: true })
+    try {
+      const result = await client.patch<UserProfileResponse>('/api/v1/users/me', payload, { requireAuth: true })
 
-    if (!result.ok) {
-      if (mountedRef.current) {
-        setError(result)
-        setSaving(false)
+      if (!result.ok) {
+        if (mountedRef.current) {
+          setError(result)
+        }
+        return result
       }
-      return result
-    }
 
-    const mapped = mapUserProfileToAccountSettings(result.data)
-    if (mountedRef.current) {
-      setSettings(mapped)
-      setSaving(false)
+      const mapped = mapUserProfileToAccountSettings(result.data)
+      if (mountedRef.current) {
+        setSettings(mapped)
+      }
+      return { ok: true, data: mapped }
+    } finally {
+      if (mountedRef.current) setSaving(false)
     }
-    return { ok: true, data: mapped }
   }, [client])
 
   useEffect(() => {

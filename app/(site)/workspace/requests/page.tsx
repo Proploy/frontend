@@ -79,35 +79,37 @@ export default function WorkspaceRequestsPage() {
       setLoading(true)
       setError(null)
 
-      if (isExpertWorkspace) {
-        const result = await workspace.listClients()
+      try {
+        if (isExpertWorkspace) {
+          const result = await workspace.listClients()
+          if (cancelled) return
+
+          if (result.ok) {
+            const nextRequests = clientRowsToRequestRows(result.data.clients)
+            setRequests(nextRequests)
+            setSelectedId((current) => current ?? nextRequests[0]?.id ?? null)
+          } else {
+            setRequests([])
+            setError(result)
+          }
+          return
+        }
+
+        const result = await workspace.listMeetingIntents()
+
         if (cancelled) return
 
         if (result.ok) {
-          const nextRequests = clientRowsToRequestRows(result.data.clients)
+          const nextRequests = result.data.meetingIntents.map(meetingIntentToRequestRow)
           setRequests(nextRequests)
           setSelectedId((current) => current ?? nextRequests[0]?.id ?? null)
         } else {
           setRequests([])
           setError(result)
         }
-        setLoading(false)
-        return
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-
-      const result = await workspace.listMeetingIntents()
-
-      if (cancelled) return
-
-      if (result.ok) {
-        const nextRequests = result.data.meetingIntents.map(meetingIntentToRequestRow)
-        setRequests(nextRequests)
-        setSelectedId((current) => current ?? nextRequests[0]?.id ?? null)
-      } else {
-        setRequests([])
-        setError(result)
-      }
-      setLoading(false)
     }
 
     void loadRequests()

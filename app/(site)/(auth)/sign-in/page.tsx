@@ -9,9 +9,11 @@ import { AuthError, AuthField, OAuthButtons, OrDivider, type OAuthProvider } fro
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="pp-scope min-h-dvh" style={{ background: 'var(--paper)' }} />}>
-      <SignInPageContent />
-    </Suspense>
+    <AuthShell>
+      <Suspense fallback={<div className="pp-stack pp-gap-8 animate-pulse"><div className="h-[400px] w-full bg-gray-200 rounded-lg" /></div>}>
+        <SignInPageContent />
+      </Suspense>
+    </AuthShell>
   )
 }
 
@@ -69,7 +71,6 @@ function SignInPageContent() {
   }
 
   return (
-    <AuthShell>
       <div className="pp-stack pp-gap-8">
         <div className="pp-stack pp-gap-3">
           <p className="pp-label">Welcome back</p>
@@ -148,6 +149,5 @@ function SignInPageContent() {
           </Link>
         </p>
       </div>
-    </AuthShell>
   )
 }

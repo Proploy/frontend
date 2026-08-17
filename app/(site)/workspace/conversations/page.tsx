@@ -48,23 +48,25 @@ export default function WorkspaceConversationsPage() {
     async function loadConversations() {
       setLoadingConversations(true)
       setError(null)
-      const [result, engagementResult] = await Promise.all([
-        workspace.listConversations(),
-        workspace.listEngagements(),
-      ])
-      if (cancelled) return
-      if (result.ok) {
-        setConversations(result.data.conversations)
-        setSelectedId((current) => current ?? requestedConversationId ?? result.data.conversations[0]?.id ?? null)
-      } else {
-        setError(result)
+      try {
+        const result = await workspace.listConversations()
+        if (cancelled) return
+        const engagementResult = await workspace.listEngagements()
+        if (cancelled) return
+        if (result.ok) {
+          setConversations(result.data.conversations)
+          setSelectedId((current) => current ?? requestedConversationId ?? result.data.conversations[0]?.id ?? null)
+        } else {
+          setError(result)
+        }
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements)
+        } else {
+          setError((current) => current ?? engagementResult)
+        }
+      } finally {
+        if (!cancelled) setLoadingConversations(false)
       }
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements)
-      } else {
-        setError((current) => current ?? engagementResult)
-      }
-      setLoadingConversations(false)
     }
 
     void loadConversations()
@@ -92,15 +94,18 @@ export default function WorkspaceConversationsPage() {
     async function loadMessages() {
       setLoadingMessages(true)
       setError(null)
-      const result = await workspace.listMessages(conversationId)
-      if (cancelled) return
-      if (result.ok) {
-        setMessages(result.data.messages)
-        void workspace.markConversationRead(conversationId)
-      } else {
-        setError(result)
+      try {
+        const result = await workspace.listMessages(conversationId)
+        if (cancelled) return
+        if (result.ok) {
+          setMessages(result.data.messages)
+          void workspace.markConversationRead(conversationId)
+        } else {
+          setError(result)
+        }
+      } finally {
+        if (!cancelled) setLoadingMessages(false)
       }
-      setLoadingMessages(false)
     }
 
     void loadMessages()
@@ -132,15 +137,18 @@ export default function WorkspaceConversationsPage() {
     const nonce = typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const result = await workspace.postMessage(selected.id, body, nonce)
-    if (result.ok) {
-      setMessages((current) => [...current, result.data])
-      setDraft('')
-      setError(null)
-    } else {
-      setError(result)
+    try {
+      const result = await workspace.postMessage(selected.id, body, nonce)
+      if (result.ok) {
+        setMessages((current) => [...current, result.data])
+        setDraft('')
+        setError(null)
+      } else {
+        setError(result)
+      }
+    } finally {
+      setSending(false)
     }
-    setSending(false)
   }
 
   if (state.isPending) return <WorkspaceLoading role={state.role} />

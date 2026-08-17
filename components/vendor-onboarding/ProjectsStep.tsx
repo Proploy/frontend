@@ -181,7 +181,7 @@ export default function ProjectsStep({
       {/* ─── Project cards ─── */}
       {projects.featuredProjects.map((project, idx) => (
         <div
-          key={idx}
+          key={project.clientProjectId}
           className="bg-[#f5f5f6] rounded-[12px] p-[20px] flex flex-col gap-[16px]"
         >
           {/* Card header */}

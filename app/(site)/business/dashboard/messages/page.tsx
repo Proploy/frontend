@@ -7,20 +7,20 @@ import { Avatar, SectionCard } from '@/components/business/dashboard/ui'
 import { MOCK_BUSINESS_DASHBOARD } from '@/lib/service-apis/business-dashboard-mock'
 import { useDemo, addMessage, notify, DEMO_EXPERT } from '@/lib/demo/demo-store'
 
-type Bubble = { from: 'them' | 'me'; text: string; when: string }
+type Bubble = { id: string; from: 'them' | 'me'; text: string; when: string }
 
 const THREADS: Record<string, Bubble[]> = {
   m1: [
-    { from: 'them', text: 'UAT environment is ready for your team to test.', when: '18m' },
-    { from: 'me', text: 'Great — I’ll get Priya’s team to run through the test scripts today.', when: '12m' },
-    { from: 'them', text: 'Perfect. I’ll be on standby for any blockers.', when: '9m' },
+    { id: 'm1-1', from: 'them', text: 'UAT environment is ready for your team to test.', when: '18m' },
+    { id: 'm1-2', from: 'me', text: 'Great — I’ll get Priya’s team to run through the test scripts today.', when: '12m' },
+    { id: 'm1-3', from: 'them', text: 'Perfect. I’ll be on standby for any blockers.', when: '9m' },
   ],
   m2: [
-    { from: 'them', text: 'Need a call to unblock the data mapping decisions.', when: '2h' },
-    { from: 'me', text: 'Can do 3pm AEST — sending an invite now.', when: '1h' },
+    { id: 'm2-1', from: 'them', text: 'Need a call to unblock the data mapping decisions.', when: '2h' },
+    { id: 'm2-2', from: 'me', text: 'Can do 3pm AEST — sending an invite now.', when: '1h' },
   ],
   m3: [
-    { from: 'them', text: 'Dashboards shipped — sharing the walkthrough recording.', when: 'Yesterday' },
+    { id: 'm3-1', from: 'them', text: 'Dashboards shipped — sharing the walkthrough recording.', when: 'Yesterday' },
   ],
 }
 
@@ -99,8 +99,8 @@ export default function BusinessMessagesPage() {
               </div>
 
               <div className="flex flex-1 flex-col gap-[12px] overflow-y-auto bg-[#fafafa] p-[20px]">
-                {thread.map((b, i) => (
-                  <div key={i} className={`flex ${b.from === 'me' ? 'justify-end' : 'justify-start'}`}>
+                {thread.map((b) => (
+                  <div key={b.id} className={`flex ${b.from === 'me' ? 'justify-end' : 'justify-start'}`}>
                     <div
                       className={`max-w-[78%] rounded-[12px] px-[14px] py-[10px] text-[14px] leading-[20px] ${
                         b.from === 'me'

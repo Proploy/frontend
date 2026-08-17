@@ -31,9 +31,12 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       return
     }
     setLoading(true)
-    const result = await listFavorites()
-    if (result.ok) setFavorites(result.data)
-    setLoading(false)
+    try {
+      const result = await listFavorites()
+      if (result.ok) setFavorites(result.data)
+    } finally {
+      setLoading(false)
+    }
   }, [personalizationEnabled, user])
 
   useEffect(() => {

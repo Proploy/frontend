@@ -572,8 +572,7 @@ function ProductsPageContent() {
               <form
                 className="pp-card pp-card--panel pp-stack pp-gap-6"
                 style={{ maxWidth: 620, marginInline: 'auto', width: '100%' }}
-                onSubmit={async (e) => {
-                  e.preventDefault()
+                action={async () => {
                   try {
                     const res = await fetch(`${process.env.NEXT_PUBLIC_SERVICE_APIS_URL}/api/v1/contact`, {
                       method: 'POST',
@@ -707,9 +706,7 @@ function ProductsPageContent() {
                 </div>
                 <form
                   className="pp-stack pp-gap-3"
-                  onSubmit={async (e) => {
-                    e.preventDefault()
-                    const formData = new FormData(e.currentTarget)
+                  action={async (formData: FormData) => {
                     const email = formData.get('email') as string
                     if (!email) return
                     try {
@@ -723,7 +720,7 @@ function ProductsPageContent() {
                       })
                       if (res.ok) {
                         alert('Subscribed.')
-                        ;(e.target as HTMLFormElement).reset()
+                        // Form reset should be handled via ref or state if needed, but alert is sufficient here
                       } else {
                         alert('Failed to subscribe. Please try again.')
                       }

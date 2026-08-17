@@ -116,46 +116,50 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     setLoading(true)
     setError(null)
 
-    // Search with exact query or corrected query if exact is severe typo
-    const targetSearchQuery = localCorrection && localCorrection.distance === 1 ? localCorrection.suggestion : trimmed
-    const result = await clientCatalogApi.search.keyword(targetSearchQuery, limit)
+    try {
+      // Search with exact query or corrected query if exact is severe typo
+      const targetSearchQuery = localCorrection && localCorrection.distance === 1 ? localCorrection.suggestion : trimmed
+      const result = await clientCatalogApi.search.keyword(targetSearchQuery, limit)
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setProducts([])
-      setLoading(false)
-      setGhostSuffix(null)
-      setFullCompletion(null)
-      return
+      if (!result.ok) {
+        setError(result)
+        setProducts([])
+        setGhostSuffix(null)
+        setFullCompletion(null)
+        return
+      }
+
+      const mapped = mapKeywordSearchResponseToResults(result.data, limit, 0)
+      setProducts(mapped.products)
+
+      // Compute ghost completion suffix from product candidates & dictionary
+      const candidates = Array.from(new Set([
+        ...mapped.products.map((p) => p.product_name),
+        ...mapped.products.map((p) => p.primary_category).filter(Boolean) as string[],
+      ]))
+
+      const inline = findInlineCompletion(trimmed, candidates)
+      if (inline) {
+        setGhostSuffix(inline.ghostSuffix)
+        setFullCompletion(inline.fullMatch)
+      } else {
+        setGhostSuffix(null)
+        setFullCompletion(null)
+      }
+
+      // Dynamic correction calculation including returned product names
+      const refinedCorrection = findSpellingCorrection(
+        trimmed,
+        mapped.products.map((p) => p.product_name),
+      )
+      setSuggestedCorrection(refinedCorrection)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    const mapped = mapKeywordSearchResponseToResults(result.data, limit, 0)
-    setProducts(mapped.products)
-    setLoading(false)
-
-    // Compute ghost completion suffix from product candidates & dictionary
-    const candidates = Array.from(new Set([
-      ...mapped.products.map((p) => p.product_name),
-      ...mapped.products.map((p) => p.primary_category).filter(Boolean) as string[],
-    ]))
-
-    const inline = findInlineCompletion(trimmed, candidates)
-    if (inline) {
-      setGhostSuffix(inline.ghostSuffix)
-      setFullCompletion(inline.fullMatch)
-    } else {
-      setGhostSuffix(null)
-      setFullCompletion(null)
-    }
-
-    // Dynamic correction calculation including returned product names
-    const refinedCorrection = findSpellingCorrection(
-      trimmed,
-      mapped.products.map((p) => p.product_name),
-    )
-    setSuggestedCorrection(refinedCorrection)
   }, [cancelDebounce])
 
   const clear = useCallback(() => {
@@ -218,28 +222,32 @@ export function useCatalogSearch(options: UseCatalogSearchOptions = {}): UseCata
     setLoading(true)
     setError(null)
 
-    const request = JSON.parse(requestKey) as UseCatalogSearchOptions
-    delete request.enabled
-    const { limit = 20, offset = 0, ...filters } = request
+    try {
+      const request = JSON.parse(requestKey) as UseCatalogSearchOptions
+      delete request.enabled
+      const { limit = 20, offset = 0, ...filters } = request
 
-    const result = await clientCatalogApi.search.hybrid({
-      ...filters,
-      limit,
-      offset,
-    })
+      const result = await clientCatalogApi.search.hybrid({
+        ...filters,
+        limit,
+        offset,
+      })
 
-    if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!requestGuardRef.current.isLatest(requestId)) return
 
-    if (!result.ok) {
-      setError(result)
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+
+      const mapped = mapCatalogSearchResponseToResults(result.data, limit, offset)
+      setProducts(mapped.products)
+      setPagination(mapped.pagination)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
     }
-
-    const mapped = mapCatalogSearchResponseToResults(result.data, limit, offset)
-    setProducts(mapped.products)
-    setPagination(mapped.pagination)
-    setLoading(false)
   }, [enabled, requestKey])
 
   useEffect(() => {
@@ -280,27 +288,32 @@ export function useCatalogProductMatches(queries: string[]): UseCatalogProductMa
     }
 
     setLoading(true)
-    const results = await Promise.all(
-      normalizedQueries.map(async (query) => ({
-        query,
-        result: await clientCatalogApi.search.keyword(query, 5),
-      })),
-    )
-
-    if (!requestGuardRef.current.isLatest(requestId)) return
-
-    const matches = results.flatMap(({ query, result }) => {
-      if (!result.ok) return []
-      const visibleCandidates = result.data.results.filter(
-        (candidate) => !isUnpublishedValue(candidate.product_name),
+    try {
+      const results = await Promise.all(
+        normalizedQueries.map(async (query) => ({
+          query,
+          result: await clientCatalogApi.search.keyword(query, 5),
+        })),
       )
-      const match = visibleCandidates.find((candidate) => namesMatch(candidate.product_name, query))
-        ?? visibleCandidates[0]
-      return match ? [mapKeywordSearchResponseToResults({ results: [match], count: 1 }, 1, 0).products[0]] : []
-    })
 
-    setProducts(Array.from(new Map(matches.map((product) => [product.product_id, product])).values()))
-    setLoading(false)
+      if (!requestGuardRef.current.isLatest(requestId)) return
+
+      const matches = results.flatMap(({ query, result }) => {
+        if (!result.ok) return []
+        const visibleCandidates = result.data.results.filter(
+          (candidate) => !isUnpublishedValue(candidate.product_name),
+        )
+        const match = visibleCandidates.find((candidate) => namesMatch(candidate.product_name, query))
+          ?? visibleCandidates[0]
+        return match ? [mapKeywordSearchResponseToResults({ results: [match], count: 1 }, 1, 0).products[0]] : []
+      })
+
+      setProducts(Array.from(new Map(matches.map((product) => [product.product_id, product])).values()))
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
+    }
   }, [queryKey])
 
   useEffect(() => {

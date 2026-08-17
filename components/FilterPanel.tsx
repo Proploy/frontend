@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, LazyMotion, domAnimation, AnimatePresence } from 'framer-motion'
 import { X, Search } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Checkbox from '@/components/ui/Checkbox'
@@ -48,11 +48,12 @@ export default function FilterPanel({ isOpen, onClose }: FilterPanelProps) {
   }, [isOpen, onClose])
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
+        {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -62,7 +63,7 @@ export default function FilterPanel({ isOpen, onClose }: FilterPanelProps) {
           />
 
           {/* Panel */}
-          <motion.div
+          <m.div
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
@@ -211,9 +212,10 @@ export default function FilterPanel({ isOpen, onClose }: FilterPanelProps) {
                 </Button>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>
+    </LazyMotion>
   )
 }

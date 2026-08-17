@@ -31,7 +31,7 @@ export default function ProgressSteps({
           const Icon = step.icon;
 
           return (
-            <React.Fragment key={index}>
+            <React.Fragment key={step.title}>
               {/* Step */}
               <div
                 className={`flex-1 flex flex-col gap-[12px] items-center relative ${

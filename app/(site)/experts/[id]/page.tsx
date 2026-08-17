@@ -90,15 +90,18 @@ export default function ExpertProfilePage() {
     async function fetchExpert() {
       setLoading(true)
       setError(null)
-      const result = await getExpertProfile(id)
-      if (cancelled) return
-      if (result.ok) {
-        setProfile(result.data)
-      } else {
-        setProfile(null)
-        setError(result.error.message)
+      try {
+        const result = await getExpertProfile(id)
+        if (cancelled) return
+        if (result.ok) {
+          setProfile(result.data)
+        } else {
+          setProfile(null)
+          setError(result.error.message)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
     }
 
     if (id) void fetchExpert()
@@ -136,18 +139,21 @@ export default function ExpertProfilePage() {
     if (!scope || requestBusy || !profile) return
     setRequestBusy(true)
     setRequestError(null)
-    const result = await workspace.createMeetingIntent(profile.id, {
-      projectScope: scope,
-      preferredTimes: preferredTimes.trim() || undefined,
-    })
-    if (result.ok) {
-      setRequestSent(true)
-      setRequestScope('')
-      setPreferredTimes('')
-    } else {
-      setRequestError(result)
+    try {
+      const result = await workspace.createMeetingIntent(profile.id, {
+        projectScope: scope,
+        preferredTimes: preferredTimes.trim() || undefined,
+      })
+      if (result.ok) {
+        setRequestSent(true)
+        setRequestScope('')
+        setPreferredTimes('')
+      } else {
+        setRequestError(result)
+      }
+    } finally {
+      setRequestBusy(false)
     }
-    setRequestBusy(false)
   }
 
   if (loading) {

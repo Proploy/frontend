@@ -345,7 +345,7 @@ export default function ProployResearchPanel() {
                   <p className="text-sm-semibold text-gray-700">Shortlist</p>
                   {recommendations.map((item, index) => (
                     <div
-                      key={String(item.product_id ?? index)}
+                      key={String(item.product_id ?? item.product_name)}
                       className="rounded-md border border-gray-200 bg-white p-3"
                     >
                       <div className="flex items-start justify-between gap-3">

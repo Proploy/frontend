@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 
-export default function EmailVerifiedPage() {
+function EmailVerifiedContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? '/'
@@ -21,6 +21,59 @@ export default function EmailVerifiedPage() {
     }
   }
 
+  return (
+    <>
+      <div className="mb-8">
+          <h2 className="font-dm-sans font-semibold text-[30px] leading-[38px] text-[#181d27] mb-2">
+            Email verified
+          </h2>
+          <p className="font-inter text-[16px] text-[#535862]">
+            Your email has been successfully verified. Click below to log in.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={isLoading}
+            className="w-full bg-[#155eef] text-white font-inter font-semibold text-[16px] py-2.5 rounded-lg hover:bg-[#1248d4] disabled:opacity-50 transition"
+          >
+            {isLoading ? 'Continuing...' : 'Continue'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push('/sign-in')}
+            className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
+          >
+            <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to log in
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function EmailVerifiedSkeleton() {
+  return (
+    <div className="w-full animate-pulse">
+      <div className="mb-8">
+        <div className="h-8 w-64 bg-gray-200 rounded-lg mb-4" />
+        <div className="h-5 w-full max-w-sm bg-gray-200 rounded-lg" />
+      </div>
+      <div className="space-y-4">
+        <div className="h-11 w-full bg-gray-200 rounded-lg" />
+        <div className="h-11 w-full bg-gray-200 rounded-lg" />
+      </div>
+    </div>
+  )
+}
+
+export default function EmailVerifiedPage() {
   return (
     <div className="flex h-[calc(100vh-80px)] w-full">
       {/* Left Section - Hero */}
@@ -63,37 +116,9 @@ export default function EmailVerifiedPage() {
       <div className="w-full flex flex-col items-center justify-center bg-white px-6 py-12 h-full sm:px-10 lg:flex-[2] lg:px-[100px] overflow-auto">
         <div className="w-full">
           <Image alt="Proploy" src="/proploy-logomark.png" width={48} height={48} className="mb-8" />
-
-          <div className="mb-8">
-            <h2 className="font-dm-sans font-semibold text-[30px] leading-[38px] text-[#181d27] mb-2">
-              Email verified
-            </h2>
-            <p className="font-inter text-[16px] text-[#535862]">
-              Your email has been successfully verified. Click below to log in.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={handleContinue}
-              disabled={isLoading}
-              className="w-full bg-[#155eef] text-white font-inter font-semibold text-[16px] py-2.5 rounded-lg hover:bg-[#1248d4] disabled:opacity-50 transition"
-            >
-              {isLoading ? 'Continuing...' : 'Continue'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push('/sign-in')}
-              className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
-            >
-              <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to log in
-            </button>
-          </div>
+          <Suspense fallback={<EmailVerifiedSkeleton />}>
+            <EmailVerifiedContent />
+          </Suspense>
         </div>
       </div>
     </div>

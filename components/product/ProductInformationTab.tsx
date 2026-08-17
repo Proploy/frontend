@@ -152,7 +152,7 @@ export default function ProductInformationTab({
           <div className="grid grid-cols-6 gap-[12px]">
             {visibleIntegrations.map((integration, i) => (
               <div
-                key={`${integration.name}-${i}`}
+                key={integration.id ?? integration.name}
                 className="flex items-center gap-[6px] border border-[#e9eaeb] rounded-[8px] px-[8px] py-[6px]"
               >
                 <div className="size-[22px] rounded bg-[#155eef]/10 flex items-center justify-center text-[#155eef] text-[10px] font-bold">

@@ -84,20 +84,23 @@ export function WorkspaceExperienceProvider({ children }: { children: ReactNode 
   const loadNotifications = useCallback(async () => {
     if (!user) return
     setLoading(true)
-    const result = await client.get<{ notifications: WorkspaceNotification[] }>(
-      `${NOTIFICATIONS_PATH}/me`,
-      { requireAuth: true },
-    )
-    if (result.ok) {
-      setNotificationOwnerId(user.id)
-      setNotifications((current) =>
-        mergeWorkspaceNotifications(current, result.data.notifications),
+    try {
+      const result = await client.get<{ notifications: WorkspaceNotification[] }>(
+        `${NOTIFICATIONS_PATH}/me`,
+        { requireAuth: true },
       )
-      setLoadError(null)
-    } else {
-      setLoadError(result.error.message || 'Could not load notifications.')
+      if (result.ok) {
+        setNotificationOwnerId(user.id)
+        setNotifications((current) =>
+          mergeWorkspaceNotifications(current, result.data.notifications),
+        )
+        setLoadError(null)
+      } else {
+        setLoadError(result.error.message || 'Could not load notifications.')
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [user])
 
   useEffect(() => {

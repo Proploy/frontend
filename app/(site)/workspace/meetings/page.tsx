@@ -91,23 +91,26 @@ function WorkspaceMeetingsContent() {
     async function loadMeetings() {
       setLoading(true)
       setError(null)
-      const [result, engagementResult] = await Promise.all([
-        workspace.listMeetings(),
-        workspace.listEngagements(),
-      ])
-      if (cancelled) return
-      if (result.ok) {
-        setMeetings(result.data.meetings)
-        setSelectedId((current) => current ?? result.data.meetings[0]?.id ?? null)
-      } else {
-        setError(result)
+      try {
+        const [result, engagementResult] = await Promise.all([
+          workspace.listMeetings(),
+          workspace.listEngagements(),
+        ])
+        if (cancelled) return
+        if (result.ok) {
+          setMeetings(result.data.meetings)
+          setSelectedId((current) => current ?? result.data.meetings[0]?.id ?? null)
+        } else {
+          setError(result)
+        }
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements)
+        } else {
+          setError((current) => current ?? engagementResult)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements)
-      } else {
-        setError((current) => current ?? engagementResult)
-      }
-      setLoading(false)
     }
 
     void loadMeetings()

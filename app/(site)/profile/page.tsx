@@ -48,14 +48,17 @@ export default function ProfilePage() {
     }
     setLoading(true)
     setError(null)
-    const result = await getPersonalizationProfile()
-    if (result.ok) {
-      setProfile(result.data)
-      setError(null)
-    } else {
-      setError(result.error.message)
+    try {
+      const result = await getPersonalizationProfile()
+      if (result.ok) {
+        setProfile(result.data)
+        setError(null)
+      } else {
+        setError(result.error.message)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [canAccessProfile, user])
 
   useEffect(() => {
@@ -101,14 +104,17 @@ export default function ProfilePage() {
     setSaving(true)
     setMessage(null)
     setError(null)
-    const result = await updateUserProfile({ name: name.trim() || null })
-    if (result.ok) {
-      setProfile((current) => current ? { ...current, ...result.data } : current)
-      setMessage('Profile saved.')
-    } else {
-      setError(result.error.message)
+    try {
+      const result = await updateUserProfile({ name: name.trim() || null })
+      if (result.ok) {
+        setProfile((current) => current ? { ...current, ...result.data } : current)
+        setMessage('Profile saved.')
+      } else {
+        setError(result.error.message)
+      }
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const handleProfilePictureUpload = async (file: File): Promise<boolean> => {

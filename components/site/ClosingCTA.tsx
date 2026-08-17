@@ -41,8 +41,7 @@ export function ClosingCTA() {
               </p>
 
               <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
+                action={async () => {
                   if (!email.trim() || submitting) return;
                   setSubmitting(true);
                   try {

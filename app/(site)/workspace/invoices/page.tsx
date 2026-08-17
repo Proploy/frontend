@@ -91,7 +91,7 @@ function emptyInvoiceForm(engagementId = ''): InvoiceFormInput {
     title: '',
     currency: 'USD',
     dueAt: defaultDueAt(),
-    lineItems: [{ description: '', quantity: 1, unitCents: 0 }],
+    lineItems: [{ id: crypto.randomUUID(), description: '', quantity: 1, unitCents: 0 }],
   }
 }
 
@@ -118,26 +118,29 @@ export default function WorkspaceInvoicesPage() {
     async function load() {
       setLoading(true)
       setError(null)
-      const [invoiceResult, engagementResult] = await Promise.all([
-        workspace.listInvoices(),
-        workspace.listEngagements(),
-      ])
-      if (cancelled) return
+      try {
+        const [invoiceResult, engagementResult] = await Promise.all([
+          workspace.listInvoices(),
+          workspace.listEngagements(),
+        ])
+        if (cancelled) return
 
-      if (invoiceResult.ok) {
-        setInvoices(invoiceResult.data.invoices ?? [])
-      } else if (invoiceResult.status !== 404) {
-        setInvoices([])
-        setError(invoiceResult)
-      } else {
-        setInvoices([])
+        if (invoiceResult.ok) {
+          setInvoices(invoiceResult.data.invoices ?? [])
+        } else if (invoiceResult.status !== 404) {
+          setInvoices([])
+          setError(invoiceResult)
+        } else {
+          setInvoices([])
+        }
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements)
+        } else {
+          setError((current) => current ?? engagementResult)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements)
-      } else {
-        setError((current) => current ?? engagementResult)
-      }
-      setLoading(false)
     }
 
     void load()
@@ -202,26 +205,29 @@ export default function WorkspaceInvoicesPage() {
     }
 
     setSaving(true)
-    const payload = buildInvoiceCreatePayload({ ...form, dueAt: asDueAtIso(form.dueAt) })
-    const result = form.id
-      ? await workspace.updateInvoice(form.id, {
-          title: payload.title,
-          lineItems: payload.lineItems,
-          currency: payload.currency,
-          dueAt: payload.dueAt,
-        })
-      : await workspace.createInvoice(payload)
-    setSaving(false)
+    try {
+      const payload = buildInvoiceCreatePayload({ ...form, dueAt: asDueAtIso(form.dueAt) })
+      const result = form.id
+        ? await workspace.updateInvoice(form.id, {
+            title: payload.title,
+            lineItems: payload.lineItems,
+            currency: payload.currency,
+            dueAt: payload.dueAt,
+          })
+        : await workspace.createInvoice(payload)
 
-    if (!result.ok) {
-      setError(result)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+      setInvoices((current) => {
+        const withoutCurrent = current.filter((invoice) => invoice.id !== result.data.id)
+        return [result.data, ...withoutCurrent]
+      })
+      setEditorOpen(false)
+    } finally {
+      setSaving(false)
     }
-    setInvoices((current) => {
-      const withoutCurrent = current.filter((invoice) => invoice.id !== result.data.id)
-      return [result.data, ...withoutCurrent]
-    })
-    setEditorOpen(false)
   }
 
   async function sendInvoice(invoiceId: string) {
@@ -491,7 +497,7 @@ function InvoiceEditor({
           </div>
           <div className="mt-[8px] flex flex-col gap-[10px]">
             {form.lineItems.map((item, index) => (
-              <div key={index} className="grid gap-[8px] rounded-[8px] border border-[#f0f1f1] p-[8px] sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px] sm:border-0 sm:p-0">
+              <div key={item.id} className="grid gap-[8px] rounded-[8px] border border-[#f0f1f1] p-[8px] sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px] sm:border-0 sm:p-0">
                 <input value={item.description} onChange={(event) => updateLineItem(index, { description: event.target.value })} placeholder="Description" aria-label={`Line item ${index + 1} description`} className="h-[40px] rounded-[8px] border border-[#d5d7da] px-[10px] text-[13px] text-[#181d27] placeholder:text-[#98a2b3]" />
                 <input type="number" min={1} step={1} value={item.quantity} onChange={(event) => updateLineItem(index, { quantity: Number(event.target.value) })} aria-label={`Line item ${index + 1} quantity`} className="h-[40px] rounded-[8px] border border-[#d5d7da] px-[10px] text-[13px] text-[#181d27]" />
                 <input type="number" min={0} step="0.01" value={item.unitCents === 0 ? '' : String(item.unitCents / 100)} onChange={(event) => updateLineItem(index, { unitCents: Math.round(Number(event.target.value || 0) * 100) })} placeholder="0.00" aria-label={`Line item ${index + 1} unit price`} className="h-[40px] rounded-[8px] border border-[#d5d7da] px-[10px] text-[13px] text-[#181d27] placeholder:text-[#98a2b3]" />
@@ -500,7 +506,7 @@ function InvoiceEditor({
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => onChange({ ...form, lineItems: [...form.lineItems, { description: '', quantity: 1, unitCents: 0 }] })} className="mt-[12px] inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold text-[#414651] hover:bg-[#fafafa]"><Plus size={14} /> Add line item</button>
+          <button type="button" onClick={() => onChange({ ...form, lineItems: [...form.lineItems, { id: crypto.randomUUID(), description: '', quantity: 1, unitCents: 0 }] })} className="mt-[12px] inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold text-[#414651] hover:bg-[#fafafa]"><Plus size={14} /> Add line item</button>
         </div>
 
         {error && <p className="mt-[12px] rounded-[8px] bg-[#fef3f2] px-[12px] py-[10px] text-[13px] leading-[18px] text-[#b42318]">{error}</p>}

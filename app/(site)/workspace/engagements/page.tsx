@@ -64,17 +64,20 @@ export default function WorkspaceEngagementsPage() {
     async function loadEngagements() {
       setLoading(true)
       setError(null)
-      const result = await workspace.listEngagements()
-      if (cancelled) return
-      if (result.ok) {
-        setEngagements(result.data.engagements)
-        setSelectedId(
-          (current) => current ?? requestedEngagementId ?? result.data.engagements[0]?.id ?? null,
-        )
-      } else {
-        setError(result)
+      try {
+        const result = await workspace.listEngagements()
+        if (cancelled) return
+        if (result.ok) {
+          setEngagements(result.data.engagements)
+          setSelectedId(
+            (current) => current ?? requestedEngagementId ?? result.data.engagements[0]?.id ?? null,
+          )
+        } else {
+          setError(result)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
     }
 
     void loadEngagements()

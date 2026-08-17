@@ -60,7 +60,7 @@ export default function MethodologyStep({
       {bulletPoints.length > 0 && (
         <ul className="space-y-3">
           {bulletPoints.map((point, idx) => (
-            <li key={idx} className="text-[16px] text-gray-600 font-inter flex items-start gap-3">
+            <li key={point} className="text-[16px] text-gray-600 font-inter flex items-start gap-3">
               <span className="text-[#197CFF] mt-1">•</span>
               <span>{point}</span>
             </li>

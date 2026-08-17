@@ -38,21 +38,26 @@ export function useCompareEntities(ids: string[]): UseCompareEntitiesResult {
     setLoading(true)
     setError(null)
 
-    const result = await compareApi.compareProducts({
-      product_ids: list,
-    })
-    if (requestRef.current !== requestId) return // a newer request superseded this one
-
-    const map: Record<string, Entity> = {}
-    if (result.ok) {
-      result.data.results.forEach((entry) => {
-        map[entry.product_id] = compareEntryToEntity(entry)
+    try {
+      const result = await compareApi.compareProducts({
+        product_ids: list,
       })
-    }
+      if (requestRef.current !== requestId) return // a newer request superseded this one
 
-    setById(map)
-    setError(!result.ok ? result.error.message : Object.keys(map).length === 0 ? 'Could not load the selected products.' : null)
-    setLoading(false)
+      const map: Record<string, Entity> = {}
+      if (result.ok) {
+        result.data.results.forEach((entry) => {
+          map[entry.product_id] = compareEntryToEntity(entry)
+        })
+      }
+
+      setById(map)
+      setError(!result.ok ? result.error.message : Object.keys(map).length === 0 ? 'Could not load the selected products.' : null)
+    } finally {
+      if (requestRef.current === requestId) {
+        setLoading(false)
+      }
+    }
   }, [idsKey])
 
   useEffect(() => {

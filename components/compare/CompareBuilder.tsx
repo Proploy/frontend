@@ -18,6 +18,7 @@ export interface Column {
   // downstream selectors that still switch on `column.type`.
   type: 'product'
   id: string | null
+  instanceId?: string
   entity?: Entity | null
 }
 
@@ -202,7 +203,7 @@ export function Builder({
         >
           {columns.map((c, i) => (
             <SelectorColumn
-              key={i}
+              key={c.instanceId ?? c.id ?? c.entity?.id ?? `col-${i}`}
               entity={c.entity}
               onSwap={(id) => onSwap(i, id)}
               onRemove={() => onRemove(i)}

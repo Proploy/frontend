@@ -77,7 +77,7 @@ function Ring({
         const logo = lookupLogo(entry.productId, entry.label)
         return (
           <div
-            key={`${entry.label}-${i}`}
+            key={entry.productId ?? entry.label}
             className={`absolute grid place-items-center rounded-2xl border border-border bg-white shadow-[0_10px_28px_-20px_rgba(21,94,239,0.7)] ${
               reverse ? "spin-slower" : "spin-slow-rev"
             }`}

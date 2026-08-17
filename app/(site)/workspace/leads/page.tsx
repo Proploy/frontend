@@ -54,20 +54,23 @@ export default function WorkspaceLeadsPage() {
       setError(null)
       // Prefer the expert-scoped read when we have an expert id; falls back
       // to the user-scoped read otherwise (e.g. admins viewing as themselves).
-      const result = expertId
-        ? await workspace.listExpertMeetingIntents(expertId)
-        : await workspace.listMeetingIntents()
+      try {
+        const result = expertId
+          ? await workspace.listExpertMeetingIntents(expertId)
+          : await workspace.listMeetingIntents()
 
-      if (cancelled) return
+        if (cancelled) return
 
-      if (result.ok) {
-        setIntents(result.data.meetingIntents ?? [])
-        setError(null)
-      } else {
-        setIntents([])
-        setError(result)
+        if (result.ok) {
+          setIntents(result.data.meetingIntents ?? [])
+          setError(null)
+        } else {
+          setIntents([])
+          setError(result)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
     }
 
     void load()

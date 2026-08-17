@@ -314,18 +314,20 @@ function ProfileTab({
   const handleSave = async (): Promise<void> => {
     if (isDisplayNameInvalid) return
     setSaving(true)
-    if (trimmed !== profile?.displayName.trim()) {
-      const result = await settings.updateProfile({ displayName: trimmed })
-      if (!result.ok) {
-        setSaving(false)
-        return
+    try {
+      if (trimmed !== profile?.displayName.trim()) {
+        const result = await settings.updateProfile({ displayName: trimmed })
+        if (!result.ok) {
+          return
+        }
       }
+      if (profile && timezone !== profile.timezone) {
+        await settings.updateProfile({ timezone })
+      }
+      await onSave()
+    } finally {
+      setSaving(false)
     }
-    if (profile && timezone !== profile.timezone) {
-      await settings.updateProfile({ timezone })
-    }
-    setSaving(false)
-    await onSave()
   }
 
   if (settings.profilePending && !profile) {

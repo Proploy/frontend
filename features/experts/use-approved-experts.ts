@@ -50,21 +50,23 @@ export function useApprovedExperts(
     if (limit) params.set('limit', String(limit))
     const query = params.toString()
 
-    const result = await client.get<ExpertListResponse>(`/api/v1/experts${query ? `?${query}` : ''}`, {
-      requireAuth: false,
-    })
+    try {
+      const result = await client.get<ExpertListResponse>(`/api/v1/experts${query ? `?${query}` : ''}`, {
+        requireAuth: false,
+      })
 
-    if (!mountedRef.current) return
+      if (!mountedRef.current) return
 
-    if (!result.ok) {
-      setError(result)
-      setLoading(false)
-      return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+
+      setExperts(result.data.experts)
+    } finally {
+      if (mountedRef.current) setLoading(false)
     }
-
-    setExperts(result.data.experts)
-    setLoading(false)
-  }, [country, industry, limit, platform, projectType, timezone])
+  }, [platform, industry, projectType, country, timezone, limit, client])
 
   useEffect(() => {
     mountedRef.current = true

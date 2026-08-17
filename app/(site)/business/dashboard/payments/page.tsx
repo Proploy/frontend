@@ -124,8 +124,8 @@ export default function BusinessPaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {current.lines.map((l, i) => (
-                  <tr key={i} className="border-b border-[#f0f0f1] hover:bg-[#fafafa]">
+                {current.lines.map((l) => (
+                  <tr key={l.id} className="border-b border-[#f0f0f1] hover:bg-[#fafafa]">
                     <td className="px-[20px] py-[14px]">
                       <p className="font-semibold text-[14px] leading-[20px] text-[#181d27]">{l.expert}</p>
                       <p className="text-[12px] leading-[18px] text-[#717680]">{l.country}</p>

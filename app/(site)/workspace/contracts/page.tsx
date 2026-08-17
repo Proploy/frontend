@@ -75,26 +75,28 @@ export default function WorkspaceContractsPage() {
       setLoading(true)
       setError(null)
       setErrorMessage(null)
-      const [result, engagementResult] = await Promise.all([
-        workspace.listContracts(),
-        workspace.listEngagements(),
-      ])
-      if (cancelled) return
-      if (result.ok) {
-        setContracts(result.data.contracts ?? [])
-        setSelectedId(
-          (current) => current ?? requestedContractId ?? result.data.contracts[0]?.id ?? null,
-        )
-      } else {
-        setContracts([])
-        setError(result)
+      try {
+        const result = await workspace.listContracts()
+        if (cancelled) return
+        const engagementResult = await workspace.listEngagements()
+        if (cancelled) return
+        if (result.ok) {
+          setContracts(result.data.contracts ?? [])
+          setSelectedId(
+            (current) => current ?? requestedContractId ?? result.data.contracts[0]?.id ?? null,
+          )
+        } else {
+          setContracts([])
+          setError(result)
+        }
+        if (engagementResult.ok) {
+          setEngagements(engagementResult.data.engagements)
+        } else {
+          setError((current) => current ?? engagementResult)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      if (engagementResult.ok) {
-        setEngagements(engagementResult.data.engagements)
-      } else {
-        setError((current) => current ?? engagementResult)
-      }
-      setLoading(false)
     }
 
     void load()
@@ -218,16 +220,19 @@ export default function WorkspaceContractsPage() {
   async function loadSignedDocument(contract: WorkspaceContract) {
     setDocumentLoading(true)
     setError(null)
-    const result = await workspace.downloadSignedContractDocument(contract.id)
-    if (result.ok) {
-      setSignedDocumentUrl((current) => {
-        if (current) URL.revokeObjectURL(current)
-        return URL.createObjectURL(result.data)
-      })
-    } else {
-      setError(result)
+    try {
+      const result = await workspace.downloadSignedContractDocument(contract.id)
+      if (result.ok) {
+        setSignedDocumentUrl((current) => {
+          if (current) URL.revokeObjectURL(current)
+          return URL.createObjectURL(result.data)
+        })
+      } else {
+        setError(result)
+      }
+    } finally {
+      setDocumentLoading(false)
     }
-    setDocumentLoading(false)
   }
 
   if (state.isPending) return <WorkspaceLoading role={state.role} />

@@ -49,8 +49,7 @@ export function ContactForm() {
   return (
     <form
       className="pp-stack pp-gap-4"
-      onSubmit={(e) => {
-        e.preventDefault()
+      action={() => {
         setSent(true)
       }}
     >

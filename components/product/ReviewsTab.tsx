@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { Star, BadgeCheck, ChevronDown, ChevronUp } from 'lucide-react'
 
 export interface ProductReview {
+  id: string
+  author: string
   authorName: string
   authorHandle?: string
   authorAvatar?: string
@@ -21,8 +23,8 @@ interface ReviewsTabProps {
 export default function ReviewsTab({ reviews }: ReviewsTabProps) {
   return (
     <section className="flex flex-col gap-[16px] px-[32px] w-full font-[family-name:var(--font-dm-sans)]">
-      {reviews.map((review, i) => (
-        <ReviewCard key={i} review={review} />
+      {reviews.map((review) => (
+        <ReviewCard key={review.id} review={review} />
       ))}
     </section>
   )
@@ -74,9 +76,8 @@ function ReviewCard({ review }: { review: ProductReview }) {
       </div>
 
       <p
-        className={`font-normal text-[14px] leading-[22px] text-[#414651] ${
-          expanded ? '' : 'line-clamp-4'
-        }`}
+        className={`font-normal text-[14px] leading-[22px] text-[#414651] ${expanded ? '' : 'line-clamp-4'
+          }`}
       >
         {review.content}
       </p>
