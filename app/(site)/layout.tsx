@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { DM_Sans, Inter, IBM_Plex_Mono } from 'next/font/google'
 import NextTopLoader from 'nextjs-toploader'
 import Navbar from '@/components/Navbar'
@@ -41,14 +40,13 @@ export const metadata: Metadata = {
   description: 'Smart procurement platform for your business needs',
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // Calling headers() forces dynamic rendering so the middleware nonce is injected into <script> tags
-  const nonce = headers().get('x-nonce') || undefined;
-
   return (
     <html lang="en" className={`${dmSans.variable} ${inter.variable} ${ibmPlexMono.variable}`}>
       <body className="antialiased font-inter flex flex-col min-h-screen">
