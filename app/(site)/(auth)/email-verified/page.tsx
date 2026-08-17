@@ -53,7 +53,6 @@ function EmailVerifiedContent() {
             Back to log in
           </button>
         </div>
-      </div>
     </>
   )
 }

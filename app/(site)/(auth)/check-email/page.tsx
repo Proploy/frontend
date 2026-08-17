@@ -80,7 +80,12 @@ function CheckEmailForm() {
 
           <button
             type="button"
-            onClick={() => router.push('/sign-in')}
+            onClick={() => {
+              const params = new URLSearchParams()
+              if (redirectTo) params.set('redirectTo', redirectTo)
+              const q = params.toString()
+              router.push(`/sign-in${q ? `?${q}` : ''}`)
+            }}
             className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
           >
             <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +94,6 @@ function CheckEmailForm() {
             Back to log in
           </button>
         </div>
-      </div>
     </>
   )
 }
@@ -110,54 +114,16 @@ function CheckEmailFormSkeleton() {
   )
 }
 
+import { AuthShell } from '../auth-shell'
+
 export default function CheckEmailPage() {
   return (
-    <div className="flex h-[calc(100vh-80px)] w-full">
-      {/* Left Section - Hero */}
-      <div className="hidden lg:flex flex-[3] relative flex-col items-center justify-center overflow-hidden">
-        <Image alt="" src="/login-backdrop.png" fill sizes="(max-width: 1023px) 0px, 60vw" className="absolute inset-0 object-cover" />
-        <div className="absolute inset-0 bg-[#0040c1] opacity-80" />
-
-        <div className="relative z-10 flex flex-col gap-12 w-[640px] px-8">
-          <Image alt="Proploy" src="/proploy-logomark-white.png" width={48} height={48} />
-
-          <div className="flex flex-col gap-6">
-            <h1 className="font-dm-sans font-semibold text-[72px] leading-[90px] text-white" style={{ letterSpacing: '-1.44px' }}>
-              Discover, Decide, Deploy, Done.
-            </h1>
-            <p className="font-inter font-medium text-[20px] leading-[30px] text-[#b2ccff]">
-              AI-powered marketplace that matches businesses with the right software solutions and the vetted experts to implement them successfully.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="size-10 rounded-full bg-gray-300 border-2 border-white" />
-              ))}
-            </div>
-            <div>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400">★</span>
-                ))}
-                <span className="text-white font-semibold ml-2">5.0</span>
-              </div>
-              <p className="text-[#b2ccff] text-sm">from 200+ reviews</p>
-            </div>
-          </div>
-        </div>
+    <AuthShell>
+      <div className="pp-stack pp-gap-8" style={{ width: '100%', maxWidth: 400 }}>
+        <Suspense fallback={<CheckEmailFormSkeleton />}>
+          <CheckEmailForm />
+        </Suspense>
       </div>
-
-      {/* Right Section */}
-      <div className="w-full flex flex-col items-center justify-center bg-white px-6 py-12 h-full sm:px-10 lg:flex-[2] lg:px-[100px] overflow-auto">
-        <div className="w-full">
-          <Image alt="Proploy" src="/proploy-logomark.png" width={48} height={48} className="mb-8" />
-          <Suspense fallback={<CheckEmailFormSkeleton />}>
-            <CheckEmailForm />
-          </Suspense>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   )
 }
