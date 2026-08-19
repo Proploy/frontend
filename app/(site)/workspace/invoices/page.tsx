@@ -180,7 +180,7 @@ export default function WorkspaceInvoicesPage() {
       title: invoice.title,
       currency: normalizeInvoiceCurrency(invoice.currency),
       dueAt: toDateTimeLocal(invoice.dueAt),
-      lineItems: invoice.lineItems.map((item) => ({ ...item })),
+      lineItems: invoice.lineItems.map((item) => ({ ...item, id: crypto.randomUUID() })),
       ...(invoice.contractId ? { contractId: invoice.contractId } : {}),
       ...(invoice.proposalId ? { proposalId: invoice.proposalId } : {}),
       ...(invoice.templateId ? { templateId: invoice.templateId } : {}),

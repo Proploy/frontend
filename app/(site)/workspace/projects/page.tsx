@@ -439,7 +439,7 @@ export default function WorkspaceProjectsPage() {
     if (result.ok) {
       setProjects((current) => [result.data, ...current])
       selectProject(result.data.id)
-      setForm({ engagementId: form.engagementId, title: '', summary: '', scope: '', budget: '', estimatedDuration: '', milestones: [{ title: '', summary: '', dueAt: '' }] })
+      setForm({ engagementId: form.engagementId, title: '', summary: '', scope: '', budget: '', estimatedDuration: '', milestones: [{ id: crypto.randomUUID(), title: '', summary: '', dueAt: '' }] })
       setShowCreate(false)
       setError(null)
     } else {
@@ -781,7 +781,7 @@ export default function WorkspaceProjectsPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setForm((current) => ({ ...current, milestones: current.milestones.length === 1 ? [{ title: '', summary: '', dueAt: '' }] : current.milestones.filter((_, itemIndex) => itemIndex !== index) }))}
+                      onClick={() => setForm((current) => ({ ...current, milestones: current.milestones.length === 1 ? [{ id: crypto.randomUUID(), title: '', summary: '', dueAt: '' }] : current.milestones.filter((_, itemIndex) => itemIndex !== index) }))}
                       aria-label={`Remove milestone ${index + 1}`}
                       className={`inline-flex items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white px-[9px] py-[8px] text-[#b42318] ${BUTTON_SKEUO}`}
                     >

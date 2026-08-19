@@ -355,10 +355,10 @@ export function SchedulePlannerModal({
                 {/* Busy blocks (visual only) */}
                 <div className="pointer-events-none absolute inset-0">
                   {youBusy.map((b, i) => (
-                    <BusyBlockView key={b.id ?? `you-${String(b.start)}-${String(b.end)}`} block={b} side="left" />
+                    <BusyBlockView key={`you-${b.startMin}-${b.endMin}`} block={b} side="left" />
                   ))}
                   {partyBusy.map((b, i) => (
-                    <BusyBlockView key={b.id ?? `party-${String(b.start)}-${String(b.end)}`} block={b} side="right" />
+                    <BusyBlockView key={`party-${b.startMin}-${b.endMin}`} block={b} side="right" />
                   ))}
                 </div>
 

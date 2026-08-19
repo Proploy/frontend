@@ -447,7 +447,7 @@ function ProductsPageContent() {
                   activeFilterTags={activeFilterTags}
                   pricingValue={filters.pricingBucket || ''}
                   onPricingChange={(val) => {
-                    setStoredFilters((prev) => ({ ...prev, pricingBucket: val || undefined }))
+                    setStoredFilters((prev) => ({ ...prev, pricingBucket: val || '' }))
                     resetOffset()
                   }}
                   deploymentValue={filters.deploymentModel?.[0] || ''}

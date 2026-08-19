@@ -2099,7 +2099,7 @@ export default function Landing() {
                 }}
               >
                 <div className="flex flex-[1_0_0] flex-col gap-[6px] items-start min-h-px min-w-px relative">
-                  <InputField name="email" type="email" placeholder="Enter your email" required />
+                  <InputField name="email" inputType="email" placeholder="Enter your email" required />
                   <p className="font-[family-name:var(--font-dm-sans)] font-normal leading-[20px] relative shrink-0 text-[#b2ccff] text-[14px] text-left w-full" style={{ fontVariationSettings: "'opsz' 14" }}>
                     <span>{`We care about your data in our `}</span>
                     <span className="[text-decoration-skip-ink:none] decoration-solid underline">

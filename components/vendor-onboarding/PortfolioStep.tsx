@@ -284,7 +284,7 @@ export default function PortfolioStep({ formData, setFormData, uploadDocument }:
           {links.length > 0 ? (
             <div className="mt-[8px] flex flex-col gap-[8px]">
               {links.map((link, index) => (
-                <div key={link.id ?? link.url} className="flex items-center justify-between rounded-[8px] bg-[#f5f5f6] px-[12px] py-[8px]">
+                <div key={`${link.url}-${index}`} className="flex items-center justify-between rounded-[8px] bg-[#f5f5f6] px-[12px] py-[8px]">
                   <div className="flex min-w-0 flex-1 items-center gap-[8px]">
                     <LinkIcon className="h-[16px] w-[16px] shrink-0 text-[#155eef]" />
                     <span className="truncate font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#155eef]">{link.url}</span>
