@@ -85,14 +85,24 @@ async function saveApplicationDraft(
 async function submitApplication(
   payload: ExpertDraftRequest,
 ): Promise<SubmitApplicationResult> {
-  const result = await client.post<ExpertMe>(
+  // First, save the draft with the agreements checked on the review step
+  const saveResult = await client.post<ExpertMe>(
     '/api/v1/experts/apply',
     payload,
     { requireAuth: true },
   )
 
-  if (!result.ok) return result
-  return { ok: true, data: result.data }
+  if (!saveResult.ok) return saveResult
+
+  // Then, actually submit the application for review
+  const submitResult = await client.post<ExpertMe>(
+    '/api/v1/experts/me/application/submit',
+    undefined,
+    { requireAuth: true },
+  )
+
+  if (!submitResult.ok) return submitResult
+  return { ok: true, data: submitResult.data }
 }
 
 function fileTooLarge(message: string): NormalizedError {
