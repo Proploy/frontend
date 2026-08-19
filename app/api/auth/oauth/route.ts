@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unsupported OAuth provider' }, { status: 400 })
   }
 
-  const origin = request.headers.get('origin') ?? request.nextUrl.origin
+  // Use explicit environment variable first, then fallback to headers/nextUrl
+  const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || request.nextUrl.origin
   const callbackUrl = new URL('/auth/callback', origin)
   callbackUrl.searchParams.set('redirectTo', typeof redirectTo === 'string' && redirectTo ? redirectTo : '/')
 

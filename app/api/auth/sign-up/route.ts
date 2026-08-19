@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
 
   const [firstName, ...rest] = name.trim().split(/\s+/)
   const lastName = rest.join(' ')
-  const origin = request.headers.get('origin') ?? request.nextUrl.origin
+  // Use explicit environment variable first, then fallback to headers/nextUrl
+  const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || request.nextUrl.origin
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
