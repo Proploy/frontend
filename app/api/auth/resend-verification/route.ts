@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const origin = request.headers.get('origin') ?? request.nextUrl.origin
+  // Use explicit environment variable first, then fallback to headers/nextUrl
+  const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || request.nextUrl.origin
   const supabase = await createClient()
   const { error } = await supabase.auth.resend({
     type: 'signup',
