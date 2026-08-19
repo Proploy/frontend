@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unsupported OAuth provider' }, { status: 400 })
   }
 
-  // Use explicit environment variable first, then fallback to headers/nextUrl
-  const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || request.nextUrl.origin
+  // Strictly use explicit environment variable to prevent proxy header issues in production
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const callbackUrl = new URL('/auth/callback', origin)
-  callbackUrl.searchParams.set('redirectTo', typeof redirectTo === 'string' && redirectTo ? redirectTo : '/')
+  callbackUrl.searchParams.set('redirectTo', typeof redirectTo === 'string' && redirectTo ? redirectTo : '/workspace')
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
