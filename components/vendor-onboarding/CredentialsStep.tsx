@@ -49,17 +49,17 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
     credentials.manualCertifications.map((value) => ({ id: crypto.randomUUID(), value }))
   );
 
-  const updateLocalCerts = useCallback((next: { id: string; value: string }[]) => {
-    setLocalCerts(next);
-    update({ manualCertifications: next.map((c) => c.value) });
-  }, [update]);
-
   const update = useCallback(
     (patch: Partial<CredentialsFormData>) => {
       updateFormData(patch);
     },
     [updateFormData],
   );
+
+  const updateLocalCerts = useCallback((next: { id: string; value: string }[]) => {
+    setLocalCerts(next);
+    update({ manualCertifications: next.map((c) => c.value) });
+  }, [update]);
 
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0 || isUploading) return;

@@ -165,7 +165,7 @@ export default function WorkspaceHomePage() {
 
         {/* Main two-column area: activity + side cards */}
         <div className="mt-[24px] grid grid-cols-1 gap-[24px] lg:grid-cols-[1.6fr_1fr]">
-          <div className="flex flex-col gap-[24px]">
+          <div className="flex min-w-0 flex-col gap-[24px]">
             <RecentActivity
               items={home.recentActivity}
               isLoading={home.isLoading}
@@ -173,7 +173,7 @@ export default function WorkspaceHomePage() {
             />
             <ActiveProjects projects={home.projects} engagements={home.engagements} viewerRole={state.role} />
           </div>
-          <div className="flex flex-col gap-[24px]">
+          <div className="flex min-w-0 flex-col gap-[24px]">
             <MessagesCard conversations={home.conversations} engagements={home.engagements} viewerRole={state.role} />
             <UpcomingMeetingsCard meetings={upcomingMeetings(home.meetings)} />
           </div>

@@ -7,11 +7,14 @@ import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options'
 import { type EmailOtpType } from '@supabase/supabase-js'
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const reqUrl = new URL(request.url)
+  const searchParams = reqUrl.searchParams
+  // Strictly use explicit environment variable to prevent proxy header issues in production
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const redirectParam = searchParams.get('next') ?? searchParams.get('redirectTo') ?? '/'
+  const redirectParam = searchParams.get('next') ?? searchParams.get('redirectTo') ?? '/workspace'
 
   const supabase = await createClient()
   let sessionData = null
