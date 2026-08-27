@@ -211,6 +211,9 @@
 .pp-search svg{flex-shrink:0;color:var(--color-gray-500)}
 .pp-search input{flex:1;min-width:0;border:0;background:none;padding:0;font-size:15px;color:var(--ink)}
 .pp-search input:focus{outline:none}
+/* The shell renders focus (border + ring); the inner control must not draw
+   its own or the generic .pp-scope :focus-visible ring doubles the box. */
+.pp-scope .pp-search :focus-visible{box-shadow:none}
 .pp-search input::placeholder{color:var(--color-gray-500)}
 
 /* ---------- metrics ---------- */

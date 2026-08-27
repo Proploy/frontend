@@ -7,7 +7,7 @@ import Image from 'next/image'
 // shell owns the full viewport.
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pp-scope flex min-h-dvh" style={{ background: 'var(--paper)' }}>
+    <div className="pp-scope flex min-h-dvh lg:h-dvh" style={{ background: 'var(--paper)' }}>
       <div
         className="pp-dark hidden lg:flex"
         style={{
@@ -55,9 +55,12 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 
       <div
         className="flex w-full flex-col"
-        style={{ flex: 2, padding: 'var(--sp-8) var(--sp-6)', overflowY: 'auto' }}
+        style={{ flex: 2, padding: 'var(--sp-8) var(--sp-6)', overflowY: 'auto', minHeight: 0 }}
       >
-        <div style={{ maxWidth: 420, width: '100%', marginInline: 'auto' }}>
+        {/* `margin: auto` (rather than justify-content) centres the form against
+            the brand panel when there is room, and degrades to normal flow —
+            no clipped top edge — once the form is taller than the column. */}
+        <div style={{ maxWidth: 420, width: '100%', margin: 'auto' }}>
           {/* Only shown on small screens, where the brand panel (with its own
               logo) is hidden — on lg+ the left panel already carries the mark. */}
           <Link href="/" aria-label="Proploy home" className="inline-flex lg:hidden" style={{ marginBottom: 'var(--sp-12)' }}>

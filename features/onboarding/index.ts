@@ -1,0 +1,6 @@
+export { getInterests, saveInterests } from './client'
+export type { InterestsPayload, InterestsRecord } from './client'
+export { hasCapturedInterests, isOnboarded } from './status'
+export type { OnboardingInterests, OnboardingSignals } from './status'
+export { useOnboardingStatus } from './use-onboarding-status'
+export type { OnboardingStatusState } from './use-onboarding-status'

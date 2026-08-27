@@ -169,7 +169,7 @@ export function Nav() {
                   onClick={() => setProfileOpen((v) => !v)}
                   aria-expanded={profileOpen}
                   aria-haspopup="menu"
-                  className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[0.7rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-cobalt text-[0.7rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5"
                 >
                   {(user.email ?? "?").charAt(0).toUpperCase()}
                 </button>

@@ -4,6 +4,8 @@
 // never disagree about where marketing chrome should appear.
 export const PORTAL_PREFIXES = [
   '/workspace',
+  // First-run onboarding renders as a full-viewport overlay of its own.
+  '/onboarding',
   '/AI_workspace',
   '/ai_workspace',
   '/experts/dashboard',
