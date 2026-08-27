@@ -38,6 +38,9 @@ export const V2_CHROME_EXACT = [
 ] as const
 export const V2_CHROME_PREFIXES = [
   '/products',
+  // Expert application flow — ships the v2 Nav inside its own .pp-scope.
+  '/become-expert',
+  '/vendor-onboarding',
   '/product/',
   // Footer-linked v2 pages (app/(site)/(v2)/**)
   '/find-work',
