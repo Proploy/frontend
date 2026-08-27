@@ -95,17 +95,19 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
   }, [credentials.manualCertifications, update]);
 
   return (
-    <div className="flex flex-col gap-[24px]">
+    <div className="vo-step">
       {/* ─── Section 1: Badges / Certifications ─── */}
-      <div className="flex flex-col gap-[16px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] font-medium text-[20px] leading-[28px] text-[#181d27]">
-          Partner badges or certifications
-        </h3>
+      <div className="vo-group">
+        <div className="pp-stack" style={{ gap: 4 }}>
+          <p className="pp-label">Credentials</p>
+          <p className="pp-h6">Partner badges or certifications</p>
+        </div>
 
         {/* File upload drop zone */}
         <div
           role="button"
           tabIndex={0}
+          aria-disabled={isUploading}
           onClick={() => fileInputRef.current?.click()}
           onDrop={(event) => {
             event.preventDefault();
@@ -115,17 +117,15 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
           }}
-          className="flex flex-col items-center justify-center gap-[8px] h-[176px] bg-white border-2 border-dashed border-[#d5d7da] rounded-[8px] cursor-pointer hover:border-[#155eef] transition-colors"
+          className="vo-drop"
         >
-          <div className="flex items-center justify-center w-[48px] h-[48px] rounded-full bg-[#f5f5f6]">
-            <Upload size={20} className="text-[#535862]" />
-          </div>
-          <p className="font-[family-name:var(--font-inter)] font-normal text-[16px] leading-[24px] text-[#414651]">
-            {isUploading ? 'Uploading…' : <>Drag and drop files here, or <span className="text-[#155eef] font-medium">browse</span></>}
+          <span className="pp-tile pp-tile--soft" aria-hidden>
+            <Upload size={18} />
+          </span>
+          <p className="pp-body" style={{ color: 'var(--ink)' }}>
+            {isUploading ? 'Uploading…' : <>Drag and drop files here, or <span className="pp-accent">browse</span></>}
           </p>
-          <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-            PDF, PNG, or JPG. Max 25 MB each.
-          </p>
+          <p className="pp-small">PDF, PNG, or JPG. Max 25 MB each.</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -136,62 +136,46 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
           />
         </div>
 
-        {uploadError ? (
-          <p className="rounded-[8px] border border-[#fda29b] bg-[#fef3f2] px-[12px] py-[10px] text-[14px] text-[#b42318]">
-            {uploadError}
-          </p>
-        ) : null}
+        {uploadError ? <p className="vo-error">{uploadError}</p> : null}
 
         {/* Uploaded file rows */}
         {credentials.certificationFiles.map((file, idx) => (
-          <div
-            key={`${file.name}-${idx}`}
-            className="flex items-center justify-between bg-[#f5f5f6] rounded-[8px] h-[64px] px-[12px]"
-          >
-            <div className="flex flex-col">
-              <span className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#181d27]">
-                {file.name}
-              </span>
-              <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[12px] leading-[18px] text-[#535862]">
-                {formatFileSize(file.size)}
-              </span>
+          <div key={`${file.name}-${idx}`} className="vo-row">
+            <div className="pp-stack" style={{ gap: 2, minWidth: 0 }}>
+              <span className="vo-row-name">{file.name}</span>
+              <span className="vo-row-meta">{formatFileSize(file.size)}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => removeFile(idx)}
-              className="flex items-center justify-center w-[36px] h-[36px] rounded-[8px] hover:bg-[#e9eaeb] transition-colors"
-              aria-label={`Remove ${file.name}`}
-            >
-              <Trash2 size={18} className="text-[#717680]" />
-            </button>
-            <label className="flex items-center gap-[6px] text-[12px] text-[#535862]">
-              <input
-                type="checkbox"
-                checked={file.visible}
-                onChange={() => {
-                  const next = [...credentials.certificationFiles];
-                  next[idx] = { ...next[idx], visible: !next[idx].visible };
-                  update({ certificationFiles: next });
-                }}
-                className="size-[16px] accent-[#155eef]"
-              />
-              Visible
-            </label>
+            <div className="pp-row pp-gap-3" style={{ flexShrink: 0 }}>
+              <label className="pp-check" style={{ alignItems: 'center', fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  style={{ marginTop: 0 }}
+                  checked={file.visible}
+                  onChange={() => {
+                    const next = [...credentials.certificationFiles];
+                    next[idx] = { ...next[idx], visible: !next[idx].visible };
+                    update({ certificationFiles: next });
+                  }}
+                />
+                Visible
+              </label>
+              <button
+                type="button"
+                onClick={() => removeFile(idx)}
+                className="vo-icon-btn vo-icon-btn--danger"
+                aria-label={`Remove ${file.name}`}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
         ))}
 
-        {/* Divider with "or" */}
-        <div className="flex items-center gap-[12px]">
-          <div className="flex-1 h-px bg-[#e9eaeb]" />
-          <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#717680]">
-            or
-          </span>
-          <div className="flex-1 h-px bg-[#e9eaeb]" />
-        </div>
+        <div className="vo-divider">or</div>
 
         {/* Manual certification inputs */}
         {credentials.manualCertifications.map((cert, idx) => (
-          <div key={idx} className="flex items-center gap-[8px]">
+          <div key={idx} className="pp-row pp-gap-2">
             <input
               type="text"
               value={cert}
@@ -201,7 +185,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
                 next[idx] = e.target.value;
                 update({ manualCertifications: next });
               }}
-              className="flex-1 h-[44px] px-[14px] bg-white border border-[#d5d7da] rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors"
+              className="pp-input"
             />
             <button
               type="button"
@@ -210,21 +194,17 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
                 next.splice(idx, 1);
                 update({ manualCertifications: next });
               }}
-              className="flex items-center justify-center w-[36px] h-[36px] rounded-[8px] hover:bg-[#f5f5f6] transition-colors"
+              className="vo-icon-btn vo-icon-btn--danger"
               aria-label="Remove certification"
             >
-              <Trash2 size={18} className="text-[#717680]" />
+              <Trash2 size={16} />
             </button>
           </div>
         ))}
 
         {/* Add certification manually link */}
-        <button
-          type="button"
-          onClick={addManualCertification}
-          className="flex items-center gap-[6px] self-start font-[family-name:var(--font-dm-sans)] font-medium text-[16px] leading-[24px] text-[#155eef] hover:text-[#1249c4] transition-colors"
-        >
-          <Plus size={18} />
+        <button type="button" onClick={addManualCertification} className="pp-link-arrow" style={{ alignSelf: 'flex-start' }}>
+          <Plus size={16} />
           Add certification manually
         </button>
       </div>
@@ -240,26 +220,22 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
       />
 
       {/* ─── Section 3: Skills assessment ─── */}
-      <div className="flex flex-col gap-[8px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] font-medium text-[20px] leading-[28px] text-[#181d27]">
-          Optional skills assessment
-        </h3>
+      <div className="vo-group" style={{ gap: 'var(--sp-3)' }}>
+        <div className="pp-stack" style={{ gap: 4 }}>
+          <p className="pp-label">Optional</p>
+          <p className="pp-h6">Skills assessment</p>
+        </div>
 
-        <label className="flex items-start gap-[10px] cursor-pointer">
+        <label className="pp-check" style={{ cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={credentials.openToAssessment}
             onChange={(e) => update({ openToAssessment: e.target.checked })}
-            className="mt-[3px] w-[18px] h-[18px] rounded-[4px] border border-[#d5d7da] accent-[#155eef] cursor-pointer"
           />
-          <div className="flex flex-col gap-[2px]">
-            <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#414651]">
-              I am open to a quick skills assessment
-            </span>
-            <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-              This may speed up approval.
-            </span>
-          </div>
+          <span className="pp-stack" style={{ gap: 2 }}>
+            <span style={{ color: 'var(--ink)' }}>I am open to a quick skills assessment</span>
+            <span className="pp-small">This may speed up approval.</span>
+          </span>
         </label>
       </div>
     </div>

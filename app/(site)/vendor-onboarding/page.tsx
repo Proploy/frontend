@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import OverviewStep from '@/components/vendor-onboarding/OverviewStep';
 import ExpertiseStep from '@/components/vendor-onboarding/ExpertiseStep';
@@ -10,7 +11,7 @@ import PreferencesStep from '@/components/vendor-onboarding/PreferencesStep';
 import ReviewStep from '@/components/vendor-onboarding/ReviewStep';
 import SubmittedStep from '@/components/vendor-onboarding/SubmittedStep';
 import ProgressStepper from '@/components/vendor-onboarding/ProgressStepper';
-import Button from '@/components/ui/Button';
+import { Nav } from '@/components/site/Nav';
 import { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 import { vendorStepSchemas } from '@/lib/validations/vendor';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -22,39 +23,47 @@ import {
 
 const STEP_CONFIG = [
   {
-    title: "Complete your vendor profile",
+    eyebrow: "Expert application",
+    title: "Complete your expert profile",
     subtitle:
       "This helps us verify expertise and match you with the right projects.",
   },
   {
-    title: "Your expertise",
+    eyebrow: "Expertise",
+    title: "What you work on",
     subtitle: "Tell us what you work on so we can match you accurately.",
   },
   {
+    eyebrow: "Credentials",
     title: "Credentials and experience",
     subtitle:
       "Add certifications and a quick overview of your background.",
   },
   {
+    eyebrow: "Projects",
     title: "Project experience",
     subtitle: "Share the scope of your client work.",
   },
   {
+    eyebrow: "Portfolio",
     title: "Portfolio and evidence",
     subtitle:
       "Upload materials that show your expertise. Choose what clients can see.",
   },
   {
+    eyebrow: "Preferences",
     title: "Availability and preferences",
     subtitle: "Tell us how you want to work so we can match you well.",
   },
   {
+    eyebrow: "Review",
     title: "Review and submit",
     subtitle:
       "Confirm everything is accurate before submitting for review.",
   },
   {
-    title: "Submitted \u{1F389}",
+    eyebrow: "Submitted",
+    title: "You're in review",
     subtitle:
       "Your profile is in review. You can still update details while we review it.",
   },
@@ -255,75 +264,106 @@ export default function VendorOnboardingPage() {
     }
   };
 
+  const step = STEP_CONFIG[currentStep];
+
   return (
-    <div className="min-h-screen bg-white pt-[120px]">
-      <div className="mx-auto max-w-[1280px] px-8">
-        <div className="flex flex-col items-center">
-          {/* Proploy Logomark */}
-          <img src="/proploy-logomark.png" alt="Proploy" className="mb-6 h-12 w-12" />
+    <div className="pp-scope overflow-x-clip">
+      <Nav />
 
-          {/* Title */}
-          <h1 className="mb-2 text-center font-[family-name:var(--font-dm-sans)] text-[30px] font-semibold leading-tight text-[#181d27]">
-            {STEP_CONFIG[currentStep].title}
-          </h1>
+      <main className="pp-page">
+        <section className="pp-blueprint" style={{ paddingBlock: 'var(--sp-16) var(--sp-24)' }}>
+          <div className="pp-glow" style={{ top: -180, left: '50%', marginLeft: -210 }} />
 
-          {/* Subtitle */}
-          <p className="mb-8 text-center font-[family-name:var(--font-dm-sans)] text-[16px] font-normal leading-relaxed text-[#535862]">
-            {STEP_CONFIG[currentStep].subtitle}
-          </p>
-
-          {/* Form Content Area */}
-          <div className="w-full max-w-[840px]">
-            {onboardingLoading ? (
-              <div className="py-[96px] text-center text-[16px] text-[#717680]">
-                Loading your application…
-              </div>
-            ) : renderStepContent()}
-
-            {/* Step error message */}
-            {stepError && (
-              <p className="mt-4 text-center font-[family-name:var(--font-dm-sans)] text-[14px] font-normal text-[#dc2626]">
-                {stepError}
-              </p>
-            )}
-
-            {/* Continue Button */}
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleContinue}
-              disabled={onboardingLoading || isSaving}
-              className="w-full mt-8"
+          <div className="pp-container-app">
+            {/* ── Header ─────────────────────────────────────────── */}
+            <div
+              className="pp-stack pp-gap-4 pp-center pp-soften"
+              style={{ alignItems: 'center', marginBottom: 'var(--sp-12)' }}
             >
-              {isSaving ? 'Saving…' : getContinueLabel()}
-            </Button>
-
-            {/* Review step note */}
-            {currentStep === 6 && (
-              <p className="mt-3 text-center font-[family-name:var(--font-dm-sans)] text-[14px] font-normal text-[#535862]">
-                We will email you if we need more information.
+              <p className="pp-label">
+                {step.eyebrow}
+                {currentStep < 7 ? ` — Step ${currentStep + 1} of 7` : ''}
               </p>
-            )}
+              <h1 className="pp-display pp-d2" style={{ maxWidth: '18ch' }}>
+                {step.title}
+              </h1>
+              <p className="pp-lede" style={{ maxWidth: '54ch' }}>
+                {step.subtitle}
+              </p>
+            </div>
 
-            {/* Back Link */}
-            {(currentStep > 0 || currentStep === 7) && (
-              <Button
-                variant="link-color"
-                size="lg"
-                onClick={handleBackAction}
-                className="w-full mt-3"
-              >
-                {getBackLabel()}
-              </Button>
-            )}
-
-            {/* Progress Stepper */}
-            <div className="mt-10 mb-10">
+            {/* ── Progress rail ──────────────────────────────────── */}
+            <div style={{ maxWidth: 960, margin: '0 auto var(--sp-10)' }}>
               <ProgressStepper currentStep={currentStep} />
             </div>
+
+            {/* ── Form panel ─────────────────────────────────────── */}
+            <div style={{ maxWidth: 840, margin: '0 auto' }}>
+              <div className="pp-glass" style={{ padding: 'var(--sp-8)' }}>
+                {onboardingLoading ? (
+                  <p className="pp-body pp-center" style={{ paddingBlock: 'var(--sp-24)' }}>
+                    Loading your application…
+                  </p>
+                ) : (
+                  renderStepContent()
+                )}
+
+                {stepError && (
+                  <p
+                    role="alert"
+                    className="pp-body"
+                    style={{
+                      marginTop: 'var(--sp-4)',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--r-control)',
+                      border: 'var(--bw) solid var(--color-error-200)',
+                      background: 'var(--color-error-50)',
+                      color: 'var(--color-error-700)',
+                    }}
+                  >
+                    {stepError}
+                  </p>
+                )}
+
+                <div
+                  className="pp-stack pp-gap-3"
+                  style={{ marginTop: 'var(--sp-8)' }}
+                >
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--cobalt pp-btn--block"
+                    onClick={handleContinue}
+                    disabled={onboardingLoading || isSaving}
+                  >
+                    {isSaving ? 'Saving…' : getContinueLabel()}
+                  </button>
+
+                  {(currentStep > 0 || currentStep === 7) && (
+                    <button
+                      type="button"
+                      className="pp-btn pp-btn--ghost pp-btn--block"
+                      onClick={handleBackAction}
+                      disabled={isSaving}
+                    >
+                      {getBackLabel()}
+                    </button>
+                  )}
+                </div>
+
+                {currentStep === 6 && (
+                  <p className="pp-small pp-center" style={{ marginTop: 'var(--sp-3)' }}>
+                    We will email you if we need more information.
+                  </p>
+                )}
+              </div>
+
+              <p className="pp-small pp-center" style={{ marginTop: 'var(--sp-6)' }}>
+                Your draft saves as you go. Questions? <Link href="/contact">Talk to the team</Link>.
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

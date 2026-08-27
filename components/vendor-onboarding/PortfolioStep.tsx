@@ -56,17 +56,15 @@ function FileUploadArea({
       onKeyDown={(event) => {
         if (!disabled && (event.key === 'Enter' || event.key === ' ')) inputRef.current?.click()
       }}
-      className={`flex h-[176px] flex-col items-center justify-center rounded-[8px] border-2 border-dashed border-[#d5d7da] bg-white transition-colors ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#155eef]'}`}
+      className="vo-drop"
     >
-      <div className="mb-[12px] flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#f5f5f6]">
-        <Upload className="h-[20px] w-[20px] text-[#535862]" />
-      </div>
-      <p className="font-[family-name:var(--font-inter)] text-[16px] font-normal leading-[24px] text-[#414651]">
-        {disabled ? 'Uploading…' : <>Drag and drop files here, or <span className="font-medium text-[#155eef]">browse</span></>}
+      <span className="pp-tile pp-tile--soft" aria-hidden>
+        <Upload size={18} />
+      </span>
+      <p className="pp-body" style={{ color: 'var(--ink)' }}>
+        {disabled ? 'Uploading…' : <>Drag and drop files here, or <span className="pp-accent">browse</span></>}
       </p>
-      <p className="mt-[4px] font-[family-name:var(--font-dm-sans)] text-[14px] font-normal leading-[20px] text-[#535862]">
-        {helperText}
-      </p>
+      <p className="pp-small">{helperText}</p>
       <input
         ref={inputRef}
         type="file"
@@ -93,32 +91,25 @@ function UploadedFileRow({
   onToggleVisibility: () => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-[12px] rounded-[8px] bg-[#f5f5f6] px-[12px] py-[10px]">
-      <div className="min-w-0">
-        <p className="truncate font-[family-name:var(--font-dm-sans)] text-[14px] font-medium leading-[20px] text-[#181d27]">
+    <div className="vo-row">
+      <div className="pp-stack" style={{ gap: 2, minWidth: 0 }}>
+        <p className="vo-row-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {file.name}
         </p>
-        <p className="font-[family-name:var(--font-dm-sans)] text-[12px] font-normal leading-[18px] text-[#535862]">
-          {formatFileSize(file.size)}
-        </p>
+        <p className="vo-row-meta">{formatFileSize(file.size)}</p>
       </div>
-      <div className="flex shrink-0 items-center gap-[10px]">
-        <label className="flex items-center gap-[6px] text-[12px] text-[#535862]">
-          <input
-            type="checkbox"
-            checked={file.visible}
-            onChange={onToggleVisibility}
-            className="size-[16px] accent-[#155eef]"
-          />
+      <div className="pp-row pp-gap-3" style={{ flexShrink: 0 }}>
+        <label className="pp-check" style={{ alignItems: 'center', fontSize: 13 }}>
+          <input type="checkbox" style={{ marginTop: 0 }} checked={file.visible} onChange={onToggleVisibility} />
           Visible
         </label>
         <button
           type="button"
           onClick={onRemove}
-          className="flex h-[36px] w-[36px] items-center justify-center rounded-[8px] hover:bg-[#e9eaeb]"
+          className="vo-icon-btn vo-icon-btn--danger"
           aria-label={`Remove ${file.name}`}
         >
-          <Trash2 size={18} className="text-[#717680]" />
+          <Trash2 size={16} />
         </button>
       </div>
     </div>
@@ -192,59 +183,62 @@ export default function PortfolioStep({ formData, setFormData, uploadDocument }:
   }
 
   return (
-    <div className="flex flex-col gap-[32px]">
-      <div className="flex flex-col gap-[6px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] text-[20px] font-medium leading-[30px] text-[#181d27]">
-          Video introduction
-        </h3>
-        <p className="mb-[10px] font-[family-name:var(--font-dm-sans)] text-[14px] font-normal leading-[20px] text-[#535862]">
-          Suggested length: 30 to 90 seconds.
-        </p>
-        <div className="flex flex-col gap-[12px]">
-          <FileUploadArea
-            accept="video/mp4,video/quicktime,video/webm"
-            helperText="MP4, MOV, or WebM. Max 200 MB."
-            disabled={uploadingType === 'intro_video'}
-            onFiles={(files) => {
-              const file = files?.[0]
-              if (file) void uploadFile('intro_video', file)
-            }}
+    <div className="vo-step" style={{ gap: 'var(--sp-8)' }}>
+      <div className="vo-group">
+        <div className="pp-stack" style={{ gap: 4 }}>
+          <p className="pp-label">Introduction</p>
+          <p className="pp-h6">Video introduction</p>
+          <p className="pp-small">Suggested length: 30 to 90 seconds.</p>
+        </div>
+
+        <FileUploadArea
+          accept="video/mp4,video/quicktime,video/webm"
+          helperText="MP4, MOV, or WebM. Max 200 MB."
+          disabled={uploadingType === 'intro_video'}
+          onFiles={(files) => {
+            const file = files?.[0]
+            if (file) void uploadFile('intro_video', file)
+          }}
+        />
+        {introVideoFile ? (
+          <UploadedFileRow
+            file={introVideoFile}
+            onRemove={() => setFormData({ ...formData, introVideoLink: '', introVideoFile: null })}
+            onToggleVisibility={() => setFormData({ ...formData, introVideoFile: { ...introVideoFile, visible: !introVideoFile.visible } })}
           />
-          {introVideoFile ? (
-            <UploadedFileRow
-              file={introVideoFile}
-              onRemove={() => setFormData({ ...formData, introVideoLink: '', introVideoFile: null })}
-              onToggleVisibility={() => setFormData({ ...formData, introVideoFile: { ...introVideoFile, visible: !introVideoFile.visible } })}
-            />
-          ) : null}
-          <input
-            type="url"
-            value={isBlockedStorageUrl(introVideoLink) ? '' : introVideoLink}
-            onChange={(event) => {
-              const value = event.target.value
-              if (!isBlockedStorageUrl(value)) setFormData({ ...formData, introVideoLink: value })
-            }}
-            placeholder="Paste a public video link"
-            className="h-[44px] flex-1 rounded-[8px] border border-[#d5d7da] bg-white px-[14px] font-[family-name:var(--font-dm-sans)] text-[16px] font-normal leading-[24px] text-[#181d27] shadow-xs outline-none transition-colors placeholder:text-[#717680] focus:border-[#155eef]"
-          />
-          {introVideoLink && !introVideoFile && !isBlockedStorageUrl(introVideoLink) ? (
-            <div className="rounded-[8px] border border-[#e9eaeb] bg-[#fafafa] px-[12px] py-[10px]">
-              <p className="font-[family-name:var(--font-dm-sans)] text-[12px] font-medium leading-[18px] text-[#181d27]">Video link saved</p>
-              <a href={introVideoLink} target="_blank" rel="noreferrer" className="break-all font-[family-name:var(--font-dm-sans)] text-[12px] leading-[18px] text-[#155eef]">
+        ) : null}
+
+        <div className="vo-divider">or paste a link</div>
+
+        <input
+          type="url"
+          value={isBlockedStorageUrl(introVideoLink) ? '' : introVideoLink}
+          onChange={(event) => {
+            const value = event.target.value
+            if (!isBlockedStorageUrl(value)) setFormData({ ...formData, introVideoLink: value })
+          }}
+          placeholder="Paste a public video link"
+          className="pp-input"
+        />
+        {introVideoLink && !introVideoFile && !isBlockedStorageUrl(introVideoLink) ? (
+          <div className="vo-row">
+            <div className="pp-stack" style={{ gap: 2, minWidth: 0 }}>
+              <p className="vo-row-name">Video link saved</p>
+              <a href={introVideoLink} target="_blank" rel="noreferrer" className="vo-row-meta" style={{ wordBreak: 'break-all' }}>
                 {introVideoLink}
               </a>
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-col gap-[6px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] text-[20px] font-medium leading-[30px] text-[#181d27]">
-          Portfolio and certificates
-        </h3>
-        <p className="mb-[10px] font-[family-name:var(--font-dm-sans)] text-[14px] font-normal leading-[20px] text-[#535862]">
-          PDF, PNG, JPG. Max 25 MB each.
-        </p>
+      <div className="vo-group">
+        <div className="pp-stack" style={{ gap: 4 }}>
+          <p className="pp-label">Evidence</p>
+          <p className="pp-h6">Portfolio and certificates</p>
+          <p className="pp-small">PDF, PNG, JPG. Max 25 MB each.</p>
+        </div>
+
         <FileUploadArea
           accept=".pdf,.png,.jpg,.jpeg"
           helperText="PDF, PNG, or JPG. Max 25 MB each."
@@ -263,10 +257,11 @@ export default function PortfolioStep({ formData, setFormData, uploadDocument }:
           />
         ))}
 
-        <div className="mt-[16px] flex flex-col gap-[6px]">
-          <label className="font-[family-name:var(--font-inter)] text-[14px] font-medium leading-[20px] text-[#414651]">Add a link</label>
-          <div className="flex gap-[8px]">
+        <div className="pp-field">
+          <label htmlFor="vo-portfolio-link">Add a link</label>
+          <div className="pp-row pp-gap-2">
             <input
+              id="vo-portfolio-link"
               type="url"
               value={linkInput}
               onChange={(event) => setLinkInput(event.target.value)}
@@ -277,37 +272,49 @@ export default function PortfolioStep({ formData, setFormData, uploadDocument }:
                 }
               }}
               placeholder="Website, Notion, Drive folder, public case study"
-              className="h-[44px] flex-1 rounded-[8px] border border-[#d5d7da] bg-white px-[14px] font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#181d27] shadow-xs outline-none transition-colors placeholder:text-[#717680] focus:border-[#155eef]"
+              className="pp-input"
             />
-            <button type="button" onClick={handleAddLink} className="h-[44px] w-[63px] rounded-[8px] bg-[#155eef] font-[family-name:var(--font-dm-sans)] text-[14px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#1249c4]">Add</button>
+            <button type="button" onClick={handleAddLink} className="pp-btn pp-btn--secondary">
+              Add
+            </button>
           </div>
-          {links.length > 0 ? (
-            <div className="mt-[8px] flex flex-col gap-[8px]">
-              {links.map((link, index) => (
-                <div key={`${link.url}-${index}`} className="flex items-center justify-between rounded-[8px] bg-[#f5f5f6] px-[12px] py-[8px]">
-                  <div className="flex min-w-0 flex-1 items-center gap-[8px]">
-                    <LinkIcon className="h-[16px] w-[16px] shrink-0 text-[#155eef]" />
-                    <span className="truncate font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#155eef]">{link.url}</span>
-                  </div>
-                  <div className="ml-[12px] flex shrink-0 items-center gap-[12px]">
-                    <label className="flex items-center gap-[6px] text-[12px] text-[#535862]">
-                      <input type="checkbox" checked={link.visible} onChange={() => updateLinkVisibility(index)} className="size-[16px] accent-[#155eef]" />
-                      Visible
-                    </label>
-                    <button type="button" onClick={() => removeLink(index)} className="font-[family-name:var(--font-dm-sans)] text-[14px] font-medium leading-[20px] text-[#dc2626]">Remove</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
         </div>
+
+        {links.length > 0 ? (
+          <div className="pp-stack pp-gap-2">
+            {links.map((link, index) => (
+              <div key={`${link.url}-${index}`} className="vo-row">
+                <div className="pp-row pp-gap-2" style={{ minWidth: 0, flex: 1 }}>
+                  <LinkIcon size={15} style={{ flexShrink: 0, color: 'var(--cobalt)' }} />
+                  <span className="vo-row-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {link.url}
+                  </span>
+                </div>
+                <div className="pp-row pp-gap-3" style={{ flexShrink: 0 }}>
+                  <label className="pp-check" style={{ alignItems: 'center', fontSize: 13 }}>
+                    <input type="checkbox" style={{ marginTop: 0 }} checked={link.visible} onChange={() => updateLinkVisibility(index)} />
+                    Visible
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeLink(index)}
+                    className="vo-icon-btn vo-icon-btn--danger"
+                    aria-label={`Remove ${link.url}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      {uploadError ? <p className="rounded-[8px] border border-[#fda29b] bg-[#fef3f2] px-[12px] py-[10px] text-[14px] text-[#b42318]">{uploadError}</p> : null}
+      {uploadError ? <p className="vo-error">{uploadError}</p> : null}
 
-      <div className="flex flex-col gap-[6px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] text-[20px] font-medium leading-[30px] text-[#181d27]">Visibility settings</h3>
-        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] font-normal leading-[20px] text-[#535862]">
+      <div className="pp-stack" style={{ gap: 4 }}>
+        <p className="pp-label">Visibility</p>
+        <p className="pp-small">
           Visible items appear on your public profile. Private items are used for verification only.
         </p>
       </div>
