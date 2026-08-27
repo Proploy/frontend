@@ -47,15 +47,6 @@ const emptyProject: FeaturedProject = {
   ndaSafe: false,
 };
 
-const inputClasses =
-  'w-full h-[44px] px-[14px] bg-white border border-[#d5d7da] rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors';
-
-const labelClasses =
-  'font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]';
-
-const textareaBase =
-  'w-full px-[14px] py-[10px] bg-white border border-[#d5d7da] rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors resize-none';
-
 function createClientProjectId() {
   return `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -149,146 +140,131 @@ export default function ProjectsStep({
   };
 
   return (
-    <div className="flex flex-col gap-[24px]">
+    <div className="vo-step">
       {/* ─── Total client projects ─── */}
-      <div className="flex flex-col gap-[6px]">
-        <label className={labelClasses}>
-          Total client projects completed <span className="text-red-500">*</span>
+      <div className="pp-field">
+        <label htmlFor="vo-total-projects">
+          Total client projects completed <span className="vo-req">*</span>
         </label>
         <input
+          id="vo-total-projects"
           type="text"
           inputMode="numeric"
           value={projects.totalProjects}
           onChange={(e) => update({ totalProjects: e.target.value })}
           placeholder="e.g. 12"
-          className={inputClasses}
+          className="pp-input"
         />
-        <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-          Count paid client work, not personal practice projects.
-        </p>
+        <p className="pp-small">Count paid client work, not personal practice projects.</p>
       </div>
 
       {/* ─── Featured projects heading ─── */}
-      <div className="flex flex-col gap-[4px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] font-medium text-[20px] leading-[28px] text-[#181d27]">
-          Featured projects (optional, up to 3)
-        </h3>
-        <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-          Add your strongest freelance projects.
-        </p>
+      <div className="pp-stack" style={{ gap: 4 }}>
+        <p className="pp-label">Optional — up to 3</p>
+        <p className="pp-h6">Featured projects</p>
+        <p className="pp-small">Add your strongest client projects.</p>
       </div>
 
       {/* ─── Project cards ─── */}
       {projects.featuredProjects.map((project, idx) => (
-        <div
-          key={project.clientProjectId}
-          className="bg-[#f5f5f6] rounded-[12px] p-[20px] flex flex-col gap-[16px]"
-        >
+        <div key={project.clientProjectId} className="vo-subcard">
           {/* Card header */}
-          <div className="flex items-center justify-between">
-            <h4 className="font-[family-name:var(--font-dm-sans)] font-medium text-[18px] leading-[26px] text-[#181d27]">
-              Project {idx + 1}
-            </h4>
-            <button
-              type="button"
-              onClick={() => removeProject(idx)}
-              className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#717680] hover:text-[#414651] transition-colors"
-            >
+          <div className="vo-subcard-head">
+            <p className="pp-h6">
+              <span className="pp-mono-num pp-accent">{String(idx + 1).padStart(2, '0')}</span>
+              {'  '}Project
+            </p>
+            <button type="button" onClick={() => removeProject(idx)} className="pp-btn pp-btn--ghost pp-btn--sm">
               Remove
             </button>
           </div>
 
           {/* Project title */}
-          <div className="flex flex-col gap-[6px]">
-            <label className={labelClasses}>
-              Project title <span className="text-red-500">*</span>
+          <div className="pp-field">
+            <label>
+              Project title <span className="vo-req">*</span>
             </label>
             <input
               type="text"
               value={project.title}
               onChange={(e) => updateProject(idx, { title: e.target.value })}
               placeholder="e.g., CRM Migration for SaaS Company"
-              className={inputClasses}
+              className="pp-input"
             />
           </div>
 
           {/* Client industry */}
-          <div className="flex flex-col gap-[6px]">
-            <label className={labelClasses}>Client industry</label>
-            <Select
-              options={industryOptions.map((industry) => ({ value: industry, label: industry }))}
-              value={project.clientIndustry}
-              onChange={(value) => updateProject(idx, { clientIndustry: value })}
-              placeholder="Select industry..."
-              disabled={loading}
-            />
-          </div>
+          <Select
+            label="Client industry"
+            options={industryOptions.map((industry) => ({ value: industry, label: industry }))}
+            value={project.clientIndustry}
+            onChange={(value) => updateProject(idx, { clientIndustry: value })}
+            placeholder="Select industry..."
+            disabled={loading}
+          />
 
           {/* Platform used */}
-          <div className="flex flex-col gap-[6px]">
-            <label className={labelClasses}>
-              Platform used <span className="text-red-500">*</span>
-            </label>
-            <Select
-              options={platformOptions.map((platform) => ({ value: platform, label: platform }))}
-              value={project.platform}
-              onChange={(value) => updateProject(idx, { platform: value })}
-              placeholder={loading ? 'Loading catalog...' : 'Select platform...'}
-              disabled={loading}
-            />
-          </div>
+          <Select
+            label="Platform used"
+            required
+            options={platformOptions.map((platform) => ({ value: platform, label: platform }))}
+            value={project.platform}
+            onChange={(value) => updateProject(idx, { platform: value })}
+            placeholder={loading ? 'Loading catalog...' : 'Select platform...'}
+            disabled={loading}
+          />
 
           {/* What you delivered */}
-          <div className="flex flex-col gap-[6px]">
-            <label className={labelClasses}>
-              What you delivered <span className="text-red-500">*</span>
+          <div className="pp-field">
+            <label>
+              What you delivered <span className="vo-req">*</span>
             </label>
             <textarea
               value={project.delivered}
               onChange={(e) => updateProject(idx, { delivered: e.target.value })}
               placeholder="Describe what you built or delivered"
-              className={textareaBase}
-              style={{ height: 98 }}
+              className="pp-textarea"
+              style={{ minHeight: 98 }}
             />
           </div>
 
           {/* Outcome or impact */}
-          <div className="flex flex-col gap-[6px]">
-            <label className={labelClasses}>Outcome or impact (optional)</label>
+          <div className="pp-field">
+            <label>Outcome or impact (optional)</label>
             <textarea
               value={project.outcome}
               onChange={(e) => updateProject(idx, { outcome: e.target.value })}
               placeholder="Share the results or impact"
-              className={textareaBase}
-              style={{ height: 74 }}
+              className="pp-textarea"
+              style={{ minHeight: 78 }}
             />
           </div>
 
           {/* Link */}
-          <div className="flex flex-col gap-[6px]">
-            <label className={labelClasses}>Link (optional)</label>
+          <div className="pp-field">
+            <label>Link (optional)</label>
             <input
               type="url"
               value={project.link}
               onChange={(e) => updateProject(idx, { link: e.target.value })}
               placeholder="https://..."
-              className={inputClasses}
+              className="pp-input"
             />
           </div>
 
           {uploadFile && (
-            <div className="flex flex-col gap-[8px]">
-              <label className={labelClasses}>Project evidence (optional)</label>
-              <p className="text-[12px] leading-[18px] text-[#535862]">
-                PDF, DOC, DOCX, TXT, PNG, or JPG. Max 5 MB per file.
-              </p>
-              <label className="flex cursor-pointer items-center justify-center gap-[8px] rounded-[8px] border border-dashed border-[#b2ccff] bg-white px-[14px] py-[12px] text-[14px] font-semibold text-[#004eeb]">
-                {uploadingIndex === idx ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                {uploadingIndex === idx
-                  ? 'Uploading…'
-                  : project.fileName
-                    ? `Replace ${project.fileName}`
-                    : 'Upload project file'}
+            <div className="pp-field">
+              <label>Project evidence (optional)</label>
+              <p className="pp-small">PDF, DOC, DOCX, TXT, PNG, or JPG. Max 5 MB per file.</p>
+              <label className="vo-drop" style={{ paddingBlock: 'var(--sp-5)' }}>
+                <span className="pp-link-arrow" style={{ pointerEvents: 'none' }}>
+                  {uploadingIndex === idx ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  {uploadingIndex === idx
+                    ? 'Uploading…'
+                    : project.fileName
+                      ? `Replace ${project.fileName}`
+                      : 'Upload project file'}
+                </span>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
@@ -298,57 +274,42 @@ export default function ProjectsStep({
                 />
               </label>
               {project.fileName && (
-                <div className="mt-[4px] rounded-[8px] border border-[#e9eaeb] bg-[#fafafa] px-[12px] py-[10px]">
-                  <p className="text-[12px] font-medium leading-[18px] text-[#181d27]">
-                    Uploaded document
-                  </p>
-                  <p className="text-[12px] leading-[18px] text-[#535862]">
-                    {project.fileName}
-                    {project.fileSizeBytes ? ` · ${Math.round(project.fileSizeBytes / 1024)} KB` : ''}
-                  </p>
+                <div className="vo-row">
+                  <div className="pp-stack" style={{ gap: 2, minWidth: 0 }}>
+                    <span className="vo-row-name">{project.fileName}</span>
+                    <span className="vo-row-meta">
+                      Uploaded
+                      {project.fileSizeBytes ? ` · ${Math.round(project.fileSizeBytes / 1024)} KB` : ''}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
           {/* NDA-safe toggle */}
-          <label className="flex items-center gap-[10px] cursor-pointer">
+          <div className="pp-row pp-gap-3">
             <button
               type="button"
               role="switch"
               aria-checked={project.ndaSafe}
               onClick={() => updateProject(idx, { ndaSafe: !project.ndaSafe })}
-              className={`relative inline-flex h-[24px] w-[44px] shrink-0 items-center rounded-full transition-colors ${
-                project.ndaSafe ? 'bg-[#155eef]' : 'bg-[#d5d7da]'
-              }`}
+              className="vo-switch"
+              aria-label="This description is NDA safe"
             >
-              <span
-                className={`inline-block h-[20px] w-[20px] rounded-full bg-white shadow-sm transition-transform ${
-                  project.ndaSafe ? 'translate-x-[22px]' : 'translate-x-[2px]'
-                }`}
-              />
+              <span />
             </button>
-            <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#414651]">
-              This description is NDA safe
-            </span>
-          </label>
+            <span className="pp-body" style={{ color: 'var(--ink)' }}>This description is NDA safe</span>
+          </div>
         </div>
       ))}
 
-      {uploadError && (
-        <p className="rounded-[8px] border border-[#fda29b] bg-[#fef3f2] px-[12px] py-[10px] text-[14px] text-[#b42318]">
-          {uploadError}
-        </p>
-      )}
+      {uploadError && <p className="vo-error">{uploadError}</p>}
 
       {/* Add featured project link */}
       {projects.featuredProjects.length < 3 && (
-        <button
-          type="button"
-          onClick={addProject}
-          className="flex items-center gap-[6px] self-start font-[family-name:var(--font-dm-sans)] font-medium text-[16px] leading-[24px] text-[#155eef] hover:text-[#1249c4] transition-colors"
-        >
-          <Plus size={18} />
+        <button type="button" onClick={addProject} className="pp-link-arrow" style={{ alignSelf: 'flex-start' }}>
+          <Plus size={16} />
           Add featured project
         </button>
       )}

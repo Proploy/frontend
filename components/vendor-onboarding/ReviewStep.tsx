@@ -83,38 +83,28 @@ export default function ReviewStep({ formData, setFormData, onEditStep }: Review
   };
 
   return (
-    <div className="flex flex-col gap-[32px]">
+    <div className="vo-step" style={{ gap: 'var(--sp-8)' }}>
       {/* Summary Section */}
-      <div className="flex flex-col gap-[12px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] font-medium text-[20px] leading-[28px] text-[#181d27]">
-          Summary
-        </h3>
+      <div className="vo-group">
+        <p className="pp-label">Summary</p>
 
-        <div className="rounded-[8px] border border-[#e9eaeb] overflow-hidden">
-          {summaryRows.map((row, index) => (
-            <div
-              key={row.title}
-              className={`flex items-center justify-between px-[16px] py-[16px] ${
-                index < summaryRows.length - 1 ? 'border-b border-[#e9eaeb]' : ''
-              }`}
-            >
-              {/* Left side */}
-              <div className="flex flex-col">
-                <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#181d27]">
-                  {row.title}
-                </span>
-                <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-                  {row.getValue(formData)}
-                </span>
+        <div className="vo-summary">
+          {summaryRows.map((row) => (
+            <div key={row.title} className="vo-summary-row">
+              <div className="pp-stack" style={{ gap: 2, minWidth: 0 }}>
+                <span className="pp-h6">{row.title}</span>
+                <span className="pp-small">{row.getValue(formData)}</span>
               </div>
 
-              {/* Edit link */}
               <button
                 type="button"
                 onClick={() => onEditStep(row.step)}
-                className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#155eef] cursor-pointer bg-transparent border-none hover:underline"
+                className="pp-link-arrow"
               >
-                Edit &gt;
+                Edit
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </button>
             </div>
           ))}
@@ -122,47 +112,18 @@ export default function ReviewStep({ formData, setFormData, onEditStep }: Review
       </div>
 
       {/* Agreements Section */}
-      <div className="flex flex-col gap-[12px]">
-        <h3 className="font-[family-name:var(--font-dm-sans)] font-medium text-[20px] leading-[28px] text-[#181d27]">
-          Agreements
-        </h3>
+      <div className="vo-group">
+        <p className="pp-label">Agreements</p>
 
-        <div className="flex flex-col gap-[16px]">
+        <div className="pp-stack pp-gap-3">
           {agreementItems.map((item, index) => (
-            <label
-              key={item}
-              className="flex items-start gap-[12px] cursor-pointer"
-            >
-              <div className="relative flex-shrink-0">
-                <input
-                  type="checkbox"
-                  checked={agreements[index] ?? false}
-                  onChange={() => handleAgreementToggle(index)}
-                  className="peer sr-only"
-                />
-                <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d5d7da] bg-white peer-checked:bg-[#155eef] peer-checked:border-[#155eef] transition-colors flex items-center justify-center">
-                  {agreements[index] && (
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M10 3L4.5 8.5L2 6"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#414651]">
-                {item}
-              </span>
+            <label key={item} className="pp-check" style={{ cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={agreements[index] ?? false}
+                onChange={() => handleAgreementToggle(index)}
+              />
+              <span>{item}</span>
             </label>
           ))}
         </div>
