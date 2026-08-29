@@ -1,11 +1,3 @@
-/**
- * Expert onboarding application hook.
- * Calls service-apis directly from the browser.
- *
- * Uses ServiceApisBrowserClient with requireAuth: true for all calls.
- * Discriminated union result style: { ok: true, data: T } | NormalizedError
- */
-
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type {
@@ -20,8 +12,7 @@ import type {
 const client = new ServiceApisBrowserClient()
 let inFlightApplicationRequest: Promise<GetApplicationResult> | null = null
 
-// Keep project evidence uploads aligned with the onboarding UI and the
-// service-apis validation contract.
+
 export const MAX_PROJECT_FILE_SIZE_BYTES = 5 * 1024 * 1024
 export const MAX_PORTFOLIO_FILE_SIZE_BYTES = 25 * 1024 * 1024
 export const MAX_CERTIFICATION_FILE_SIZE_BYTES = 25 * 1024 * 1024
@@ -34,10 +25,7 @@ export type UploadProjectFileResult = { ok: true; data: ExpertProjectFileUploadR
 export type UploadApplicationDocumentResult = { ok: true; data: ApplicationDocumentUploadResponse } | NormalizedError
 export type GetDownloadUrlResult = { ok: true; data: ExpertProjectDownloadUrlResponse } | NormalizedError
 
-/**
- * GET /api/v1/experts/me/application
- * 404 → no draft exists yet → return null data (not a fatal error).
- */
+
 async function getApplication(): Promise<GetApplicationResult> {
   if (inFlightApplicationRequest) return inFlightApplicationRequest
 
@@ -77,15 +65,10 @@ async function saveApplicationDraft(
   return { ok: true, data: result.data }
 }
 
-/**
- * POST /api/v1/experts/apply
- * Submit the application. On validation error, result.error.fields contains
- * field-level error messages keyed by field name.
- */
+
 async function submitApplication(
   payload: ExpertDraftRequest,
 ): Promise<SubmitApplicationResult> {
-  // First, save the draft with the agreements checked on the review step
   const saveResult = await client.post<ExpertMe>(
     '/api/v1/experts/apply',
     payload,
@@ -116,11 +99,6 @@ function fileTooLarge(message: string): NormalizedError {
   }
 }
 
-/**
- * POST /api/v1/experts/me/application/project-file
- * The service API owns the storage upload; the browser only receives a
- * non-public storage reference and file metadata.
- */
 async function uploadProjectFile(
   clientProjectId: string,
   file: File,
@@ -139,11 +117,7 @@ async function uploadProjectFile(
   return { ok: true, data: result.data }
 }
 
-/**
- * POST /api/v1/experts/me/application/document-upload
- * Upload intro videos, portfolio files, and certificates to the same
- * private expert-document bucket used by project evidence.
- */
+
 async function uploadApplicationDocument(
   documentType: ApplicationDocumentType,
   file: File,
@@ -166,10 +140,6 @@ async function uploadApplicationDocument(
   return { ok: true, data: result.data }
 }
 
-/**
- * POST /api/v1/experts/me/projects/{projectId}/file-download-url
- * Get a signed URL to download a project document file.
- */
 async function getProjectFileDownloadUrl(
   projectId: string,
 ): Promise<GetDownloadUrlResult> {

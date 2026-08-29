@@ -32,6 +32,9 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
+import { Nav } from '@/components/site/Nav'
+import { Footer } from '@/components/site/Footer'
+
 export default function ProfilePage() {
   const { user, isLoading: authLoading } = useAuth()
   const [profile, setProfile] = useState<PersonalizationProfile | null>(null)
@@ -73,25 +76,37 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#fafafa] px-6 pt-[132px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
-        <EmptyState title="Sign in required" body="Sign in to manage saved products and research reports." actionHref="/sign-in?redirect=/profile" actionLabel="Sign in" />
-      </main>
+      <div className="font-inter overflow-x-clip bg-paper text-ink">
+        <Nav />
+        <main className="min-h-[calc(100vh-200px)] px-6 pt-[132px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+          <EmptyState title="Sign in required" body="Sign in to manage saved products and research reports." actionHref="/sign-in?redirect=/profile" actionLabel="Sign in" />
+        </main>
+        <Footer />
+      </div>
     )
   }
 
   if (!canAccessProfile) {
     return (
-      <main className="min-h-screen bg-[#fafafa] px-6 pt-[132px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
-        <EmptyState title="Profile unavailable" body="Personalization profiles are available to user and expert accounts." actionHref="/" actionLabel="Go home" />
-      </main>
+      <div className="font-inter overflow-x-clip bg-paper text-ink">
+        <Nav />
+        <main className="min-h-[calc(100vh-200px)] px-6 pt-[132px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+          <EmptyState title="Profile unavailable" body="Personalization profiles are available to user and expert accounts." actionHref="/" actionLabel="Go home" />
+        </main>
+        <Footer />
+      </div>
     )
   }
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-[#fafafa] px-6 pt-[132px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
-        <EmptyState title="Profile unavailable" body={error ?? 'Your profile could not be loaded.'} actionHref="/" actionLabel="Go home" />
-      </main>
+      <div className="font-inter overflow-x-clip bg-paper text-ink">
+        <Nav />
+        <main className="min-h-[calc(100vh-200px)] px-6 pt-[132px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+          <EmptyState title="Profile unavailable" body={error ?? 'Your profile could not be loaded.'} actionHref="/" actionLabel="Go home" />
+        </main>
+        <Footer />
+      </div>
     )
   }
 
@@ -168,92 +183,96 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f9fc] px-6 pb-20 pt-[120px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
-      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[14px] font-semibold uppercase tracking-[0.12em] text-[#155eef]">Your account</p>
-            <h1 className="mt-2 text-[34px] font-semibold leading-[42px] tracking-[-0.5px]">Profile</h1>
-            <p className="mt-2 max-w-[640px] text-[16px] leading-[24px] text-[#535862]">
-              Saved products and AI research are kept together to personalize your Proploy experience.
-            </p>
-          </div>
-          <Link href="/AI_workspace" className={`inline-flex h-[42px] items-center gap-2 rounded-[8px] bg-[#155eef] px-4 text-[14px] font-semibold text-white ${BUTTON_SHADOW}`}>
-            Open AI_workspace
-            <ArrowRight size={16} />
-          </Link>
-        </header>
-
-        {error ? <p className="rounded-[8px] border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[14px] text-[#b42318]">{error}</p> : null}
-        {message ? <p className="rounded-[8px] border border-[#abefc6] bg-[#ecfdf3] px-3 py-2 text-[14px] text-[#067647]">{message}</p> : null}
-
-        <ProfileIdentityCard
-          key={profile.name ?? profile.email}
-          profile={profile}
-          saving={saving}
-          onSave={handleSave}
-          onUploadPicture={handleProfilePictureUpload}
-          onRemovePicture={handleProfilePictureRemove}
-        />
-
-        <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
-          <SectionHeader icon={<Heart size={18} />} title="Saved products" body="Products you want to revisit." />
-          {savedProducts.length === 0 ? (
-            <EmptyPanel body="Use the heart on a product card or product page to save it here." actionHref="/products" actionLabel="Explore products" />
-          ) : (
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
-              {savedProducts.map((favorite) => (
-                <SavedProductCard
-                  key={favorite.id}
-                  productId={favorite.targetId}
-                  savedAt={favorite.createdAt}
-                  onRemove={() => void handleRemoveFavorite(favorite.id)}
-                />
-              ))}
+    <div className="font-inter overflow-x-clip bg-[#f7f9fc] text-[#181d27]">
+      <Nav />
+      <main className="min-h-screen px-6 pb-20 pt-[120px] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+        <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6">
+          <header className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[14px] font-semibold uppercase tracking-[0.12em] text-[#155eef]">Your account</p>
+              <h1 className="mt-2 text-[34px] font-semibold leading-[42px] tracking-[-0.5px]">Profile</h1>
+              <p className="mt-2 max-w-[640px] text-[16px] leading-[24px] text-[#535862]">
+                Saved products and AI research are kept together to personalize your Proploy experience.
+              </p>
             </div>
-          )}
-        </section>
+            <Link href="/AI_workspace" className={`inline-flex h-[42px] items-center gap-2 rounded-[8px] bg-[#155eef] px-4 text-[14px] font-semibold text-white ${BUTTON_SHADOW}`}>
+              Open AI_workspace
+              <ArrowRight size={16} />
+            </Link>
+          </header>
 
-        <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
-          <SectionHeader icon={<GitCompareArrows size={18} />} title="Saved comparisons" body="Product comparison views you saved." />
-          {savedComparisons.length === 0 ? (
-            <EmptyPanel body="Save a product comparison and it will appear here." actionHref="/compare" actionLabel="Compare products" />
-          ) : (
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
-              {savedComparisons.map((report) => (
-                <SavedComparisonCard key={report.id} report={report} onDelete={handleDeleteReport} />
-              ))}
-            </div>
-          )}
-        </section>
+          {error ? <p className="rounded-[8px] border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[14px] text-[#b42318]">{error}</p> : null}
+          {message ? <p className="rounded-[8px] border border-[#abefc6] bg-[#ecfdf3] px-3 py-2 text-[14px] text-[#067647]">{message}</p> : null}
 
-        <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
-          <SectionHeader icon={<Eye size={18} />} title="Recently viewed" body="Your recent product and expert activity." />
-          {recentlyViewed.length === 0 ? (
-            <EmptyPanel body="Products and experts you open will appear here." actionHref="/products" actionLabel="Explore products" />
-          ) : (
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
-              {recentlyViewed.map((item) => (
-                <RecentlyViewedCard key={item.id} item={item} />
-              ))}
-            </div>
-          )}
-        </section>
+          <ProfileIdentityCard
+            key={profile.name ?? profile.email}
+            profile={profile}
+            saving={saving}
+            onSave={handleSave}
+            onUploadPicture={handleProfilePictureUpload}
+            onRemovePicture={handleProfilePictureRemove}
+          />
 
-        <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
-          <SectionHeader icon={<Download size={18} />} title="Reports & exports" body="AI research saved to your profile." />
-          {researchReports.length === 0 ? (
-            <EmptyPanel body="Save a report from AI_workspace and it will appear here for export." actionHref="/AI_workspace" actionLabel="Start research" />
-          ) : (
-            <div className="flex flex-col gap-3 p-5">
-              {researchReports.map((report) => (
-                <ReportRow key={report.id} report={report} onDelete={handleDeleteReport} />
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
+          <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
+            <SectionHeader icon={<Heart size={18} />} title="Saved products" body="Products you want to revisit." />
+            {savedProducts.length === 0 ? (
+              <EmptyPanel body="Use the heart on a product card or product page to save it here." actionHref="/products" actionLabel="Explore products" />
+            ) : (
+              <div className="grid gap-3 p-5 sm:grid-cols-2">
+                {savedProducts.map((favorite) => (
+                  <SavedProductCard
+                    key={favorite.id}
+                    productId={favorite.targetId}
+                    savedAt={favorite.createdAt}
+                    onRemove={() => void handleRemoveFavorite(favorite.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
+            <SectionHeader icon={<GitCompareArrows size={18} />} title="Saved comparisons" body="Product comparison views you saved." />
+            {savedComparisons.length === 0 ? (
+              <EmptyPanel body="Save a product comparison and it will appear here." actionHref="/compare" actionLabel="Compare products" />
+            ) : (
+              <div className="grid gap-3 p-5 sm:grid-cols-2">
+                {savedComparisons.map((report) => (
+                  <SavedComparisonCard key={report.id} report={report} onDelete={handleDeleteReport} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
+            <SectionHeader icon={<Eye size={18} />} title="Recently viewed" body="Your recent product and expert activity." />
+            {recentlyViewed.length === 0 ? (
+              <EmptyPanel body="Products and experts you open will appear here." actionHref="/products" actionLabel="Explore products" />
+            ) : (
+              <div className="grid gap-3 p-5 sm:grid-cols-2">
+                {recentlyViewed.map((item) => (
+                  <RecentlyViewedCard key={item.id} item={item} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
+            <SectionHeader icon={<Download size={18} />} title="Reports & exports" body="AI research saved to your profile." />
+            {researchReports.length === 0 ? (
+              <EmptyPanel body="Save a report from AI_workspace and it will appear here for export." actionHref="/AI_workspace" actionLabel="Start research" />
+            ) : (
+              <div className="flex flex-col gap-3 p-5">
+                {researchReports.map((report) => (
+                  <ReportRow key={report.id} report={report} onDelete={handleDeleteReport} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+      <Footer />
+    </div>
   )
 }
 

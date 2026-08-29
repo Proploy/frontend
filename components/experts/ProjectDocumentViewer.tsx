@@ -46,6 +46,7 @@ export function ProjectDocumentViewer({
   compact = false,
 }: ProjectDocumentViewerProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [displayUrl, setDisplayUrl] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [isOpeningFile, setIsOpeningFile] = useState(false)
@@ -89,7 +90,9 @@ export function ProjectDocumentViewer({
         setFileError('This project file is temporarily unavailable.')
         return
       }
+      
       setPreviewUrl(fileUrl)
+      setDisplayUrl(fileUrl)
       setIsPreviewOpen(true)
     } finally {
       setIsLoadingPreview(false)
@@ -107,6 +110,11 @@ export function ProjectDocumentViewer({
       return
     }
     window.open(fileUrl, '_blank', 'noopener,noreferrer')
+  }
+  
+  const closePreview = () => {
+    setIsPreviewOpen(false)
+    setDisplayUrl(null)
   }
 
   return (
@@ -154,7 +162,7 @@ export function ProjectDocumentViewer({
         ) : null}
       </div>
 
-      {isPreviewOpen && previewUrl ? (
+      {isPreviewOpen && displayUrl ? (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0d12]/70 p-[16px]"
           role="dialog"
@@ -180,7 +188,7 @@ export function ProjectDocumentViewer({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsPreviewOpen(false)}
+                  onClick={closePreview}
                   className="flex size-[36px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#f5f5f5] hover:text-[#181d27]"
                   aria-label="Close preview"
                 >
@@ -192,17 +200,16 @@ export function ProjectDocumentViewer({
             <div className="min-h-0 flex-1 bg-[#f5f5f5]">
               {previewKind === 'image' ? (
                 <div className="flex size-full items-center justify-center overflow-auto p-[16px]">
-                  {/* Signed storage URLs are short-lived and may not be configured for next/image remote optimization. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={previewUrl}
+                    src={displayUrl}
                     alt={project.fileName || `${project.title} document preview`}
                     className="max-h-full max-w-full rounded-[8px] object-contain"
                   />
                 </div>
               ) : (
                 <iframe
-                  src={previewUrl}
+                  src={displayUrl}
                   title={project.fileName || `${project.title} document preview`}
                   className="size-full border-0 bg-white"
                 />

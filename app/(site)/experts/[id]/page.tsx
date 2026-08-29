@@ -21,6 +21,7 @@ import {
 import { useAuth } from '@/components/providers/auth-provider'
 import { ProjectDocumentViewer } from '@/components/experts/ProjectDocumentViewer'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
+import { Nav } from '@/components/site/Nav'
 import { InlineVideo } from '@/components/media/InlineVideo'
 import { useExpertProfile } from '@/features/experts/use-expert-profile'
 import type { ExpertLinkResponse, ExpertProjectResponse, ExpertPublic } from '@/features/experts/types'
@@ -186,8 +187,9 @@ export default function ExpertProfilePage() {
   const schedulingUrl = resolveExpertPublicResourceUrl(currentProfile.schedulingLink)
 
   return (
-    <div className="min-h-screen bg-white pt-[120px] flex flex-col font-[family-name:var(--font-dm-sans)]">
-      <main className="max-w-[1180px] mx-auto w-full px-[24px] md:px-[48px] py-[40px] flex flex-col gap-[40px]">
+    <div className="min-h-screen bg-white flex flex-col font-[family-name:var(--font-dm-sans)]">
+      <Nav />
+      <main className="max-w-[1180px] mx-auto w-full px-[24px] md:px-[48px] pt-[120px] pb-[40px] flex flex-col gap-[40px]">
         <header className="flex flex-col gap-[24px] md:flex-row md:items-center">
           <div className="size-[144px] rounded-full bg-[#e9eaeb] overflow-hidden relative shrink-0">
             {profilePictureUrl ? (
@@ -270,6 +272,7 @@ export default function ExpertProfilePage() {
                   <InlineVideo
                     url={introVideoUrl}
                     title={`${profile.displayName} intro video`}
+                    mode="direct"
                   />
                 </div>
               </ProfileSection>
