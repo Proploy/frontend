@@ -64,104 +64,82 @@ export default function Select({
     setIsOpen(false);
   };
 
-  const sizeClasses = size === 'sm'
-    ? 'px-[12px] py-[8px]'
-    : 'px-[14px] py-[10px]';
-
-  const chevronSize = size === 'sm' ? 16 : 20;
-
-  const borderClasses = error
-    ? 'border border-[#fda29b]'
-    : isOpen
-      ? 'border border-[#2970ff] ring-1 ring-[#2970ff]'
-      : 'border border-[#d5d7da]';
-
-  const bgClasses = disabled ? 'bg-[#fafafa]' : 'bg-white';
-
-  const showError = error && errorMessage;
-  const bottomText = showError ? errorMessage : hintText;
-  const bottomTextColor = showError ? 'text-[#d92d20]' : 'text-[#535862]';
+  const bottomText = error && errorMessage ? errorMessage : hintText;
 
   return (
-    <div ref={containerRef} className={`flex flex-col gap-[6px] items-start w-full ${className}`}>
+    <div ref={containerRef} className={`pp-field ${className}`} style={{ width: '100%' }}>
       {label && (
-        <label
-          htmlFor={selectId}
-          className="flex gap-[2px] items-start font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]"
-          style={{ fontVariationSettings: "'opsz' 14" }}
-        >
+        <label htmlFor={selectId}>
           {label}
-          {required && <span className="text-[#155eef]">*</span>}
+          {required && <span className="vo-req"> *</span>}
         </label>
       )}
 
       {/* Trigger + Dropdown wrapper */}
-      <div className="relative w-full">
+      <div style={{ position: 'relative', width: '100%' }}>
         <button
           id={selectId}
           type="button"
           disabled={disabled}
+          aria-expanded={isOpen}
           onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={`${bgClasses} ${borderClasses} flex gap-[8px] items-center ${sizeClasses} rounded-[8px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] w-full transition-colors text-left ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          className="vo-multi"
+          style={{
+            minHeight: size === 'sm' ? 40 : 46,
+            ...(error ? { borderColor: 'var(--color-error-300)' } : null),
+            ...(disabled ? { cursor: 'not-allowed', background: 'var(--paper-deep)' } : null),
+          }}
         >
           {leadingIcon && (
-            <span className="shrink-0 size-[20px] flex items-center justify-center text-[#717680]">
+            <span className="pp-row" style={{ flexShrink: 0, color: 'var(--ink-soft)' }}>
               {leadingIcon}
             </span>
           )}
           <span
-            className={`flex-1 font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] truncate ${
-              selectedOption
-                ? 'font-medium text-[#181d27]'
-                : 'font-normal text-[#717680]'
-            } ${disabled ? 'text-[#a4a7ae]' : ''}`}
-            style={{ fontVariationSettings: "'opsz' 14" }}
+            className="pp-body"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: selectedOption ? 'var(--ink)' : 'var(--color-gray-500)',
+            }}
           >
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <ChevronDown
-            size={chevronSize}
-            className={`shrink-0 text-[#535862] transition-transform ${isOpen ? 'rotate-180' : ''} ${disabled ? 'text-[#a4a7ae]' : ''}`}
+            size={size === 'sm' ? 16 : 18}
+            style={{
+              flexShrink: 0,
+              color: 'var(--ink-soft)',
+              transition: 'transform var(--d-base) var(--ease)',
+              transform: isOpen ? 'rotate(180deg)' : undefined,
+            }}
           />
         </button>
 
         {/* Dropdown menu */}
         {isOpen && (
-          <div className="absolute left-0 right-0 top-full mt-[4px] z-50 bg-white border border-black/8 rounded-[8px] shadow-[0px_12px_16px_-4px_rgba(10,13,18,0.08),0px_4px_6px_-2px_rgba(10,13,18,0.03),0px_2px_2px_-1px_rgba(10,13,18,0.04)] py-[4px] max-h-[320px] overflow-auto">
+          <div className="vo-menu" style={{ maxHeight: 320 }}>
             {options.map((option) => {
               const isSelected = option.value === value;
               return (
-                <div
+                <button
                   key={option.value}
+                  type="button"
+                  aria-pressed={isSelected}
                   onClick={() => handleSelect(option.value)}
-                  className="flex items-center gap-[8px] px-[6px] py-px cursor-pointer"
+                  className="vo-opt"
                 >
-                  <div
-                    className={`flex-1 flex items-center gap-[8px] px-[8px] py-[10px] rounded-[6px] ${
-                      isSelected ? 'bg-[#fafafa]' : 'hover:bg-[#fafafa]'
-                    }`}
-                  >
-                    <div className="flex-1 flex items-center gap-[8px]">
-                      <span
-                        className="font-[family-name:var(--font-dm-sans)] font-medium text-[16px] leading-[24px] text-[#181d27]"
-                        style={{ fontVariationSettings: "'opsz' 14" }}
-                      >
-                        {option.label}
-                      </span>
-                      {option.description && (
-                        <span
-                          className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#535862]"
-                          style={{ fontVariationSettings: "'opsz' 14" }}
-                        >
-                          {option.description}
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <Check size={20} className="shrink-0 text-[#155eef]" />
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {option.label}
+                    {option.description && (
+                      <span style={{ color: 'var(--ink-soft)' }}> — {option.description}</span>
                     )}
-                  </div>
-                </div>
+                  </span>
+                  {isSelected && <Check size={16} style={{ flexShrink: 0 }} />}
+                </button>
               );
             })}
           </div>
@@ -170,8 +148,8 @@ export default function Select({
 
       {bottomText && (
         <p
-          className={`font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] ${bottomTextColor} w-full`}
-          style={{ fontVariationSettings: "'opsz' 14" }}
+          className="pp-small"
+          style={error && errorMessage ? { color: 'var(--color-error-700)' } : undefined}
         >
           {bottomText}
         </p>

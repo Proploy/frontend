@@ -427,6 +427,12 @@ body {
     100% { transform: translateY(320%); opacity: 0; }
 }
 
+/* Live match rows: the bar grows from its left edge as a result lands. */
+@keyframes bar-fill {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .reveal {
         opacity: 1 !important;

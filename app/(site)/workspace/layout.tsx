@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { OnboardingGate } from '@/components/onboarding/OnboardingGate'
 import { WorkspaceRoleProvider } from '@/features/workspace'
 import { WorkspaceExperienceProvider } from '@/features/workspace/workspace-experience'
 
@@ -9,7 +10,9 @@ import { WorkspaceExperienceProvider } from '@/features/workspace/workspace-expe
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   return (
     <WorkspaceRoleProvider>
-      <WorkspaceExperienceProvider>{children}</WorkspaceExperienceProvider>
+      <WorkspaceExperienceProvider>
+        <OnboardingGate>{children}</OnboardingGate>
+      </WorkspaceExperienceProvider>
     </WorkspaceRoleProvider>
   )
 }

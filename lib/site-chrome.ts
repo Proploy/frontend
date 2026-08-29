@@ -4,6 +4,8 @@
 // never disagree about where marketing chrome should appear.
 export const PORTAL_PREFIXES = [
   '/workspace',
+  // First-run onboarding renders as a full-viewport overlay of its own.
+  '/onboarding',
   '/AI_workspace',
   '/ai_workspace',
   '/experts/dashboard',
@@ -40,6 +42,9 @@ export const V2_CHROME_EXACT = [
 ] as const
 export const V2_CHROME_PREFIXES = [
   '/products',
+  // Expert application flow — ships the v2 Nav inside its own .pp-scope.
+  '/become-expert',
+  '/vendor-onboarding',
   '/product/',
   '/compare',
   '/experts/',

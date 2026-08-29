@@ -1,9 +1,8 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import InputField from '@/components/ui/InputField';
+import { ChevronDown, X } from 'lucide-react';
 import Select from '@/components/ui/Select';
-import Tag from '@/components/ui/Tag';
 import { useProductList } from '@/features/catalog';
 import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
 
@@ -35,7 +34,7 @@ const industryOptions = [
   'Consulting',
 ];
 
-function MultiSelectDropdown({
+export function MultiSelectDropdown({
   label,
   required,
   helperText,
@@ -75,74 +74,76 @@ function MultiSelectDropdown({
   };
 
   return (
-    <div className="flex flex-col gap-[6px]" ref={containerRef}>
-      <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
-        {label} {required && <span className="text-[#dc2626]">*</span>}
+    <div className="pp-field" ref={containerRef}>
+      <label>
+        {label} {required && <span className="vo-req">*</span>}
       </label>
-      {helperText && (
-        <p className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px] text-[#535862]">
-          {helperText}
-        </p>
-      )}
+      {helperText && <p className="pp-small">{helperText}</p>}
 
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            setIsOpen((current) => !current)
-          }
-        }}
-        className="flex min-h-[48px] w-full items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[8px] text-left shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] transition-colors focus-within:border-[#155eef]"
+        className="vo-multi"
       >
-        <div className="flex flex-1 flex-wrap gap-[6px]">
+        <span className="vo-multi-values">
           {selectedValues.length > 0 ? (
             selectedValues.map((value) => (
-              <Tag
-                key={value}
-                size="md"
-                action="x-close"
-                onClose={(event) => {
-                  event.stopPropagation()
-                  toggleValue(value)
-                }}
-                className="bg-[#eff4ff] border-[#b2ccff] text-[#004eeb]"
-              >
+              <span key={value} className="pp-tag pp-tag--cobalt">
                 {value}
-              </Tag>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Remove ${value}`}
+                  className="pp-tag-x"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    toggleValue(value);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      toggleValue(value);
+                    }
+                  }}
+                >
+                  <X size={12} />
+                </span>
+              </span>
             ))
           ) : (
-            <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#717680]">
-              {placeholder}
-            </span>
+            <span className="vo-multi-ph">{placeholder}</span>
           )}
-        </div>
-
-        <span className="shrink-0 text-[#717680]">
-          ▾
         </span>
-      </div>
+
+        <ChevronDown
+          size={18}
+          style={{
+            flexShrink: 0,
+            color: 'var(--ink-soft)',
+            transition: 'transform var(--d-base) var(--ease)',
+            transform: isOpen ? 'rotate(180deg)' : undefined,
+          }}
+        />
+      </button>
 
       {isOpen && (
-        <div className="relative">
-          <div className="absolute left-0 right-0 top-[4px] z-20 max-h-[280px] overflow-auto rounded-[8px] border border-[#d5d7da] bg-white p-[4px] shadow-[0px_12px_16px_-4px_rgba(10,13,18,0.08),0px_4px_6px_-2px_rgba(10,13,18,0.03),0px_2px_2px_-1px_rgba(10,13,18,0.04)]">
+        <div className="vo-menu-wrap">
+          <div className="vo-menu">
+            {options.length === 0 && <p className="pp-small" style={{ padding: 10 }}>No options yet.</p>}
             {options.map((option) => {
               const selected = selectedValues.includes(option)
               return (
                 <button
                   key={option}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() => toggleValue(option)}
-                  className={`flex w-full items-center justify-between rounded-[6px] px-[10px] py-[10px] text-left transition-colors ${
-                    selected ? 'bg-[#f0f7ff] text-[#155eef]' : 'text-[#414651] hover:bg-[#fafafa]'
-                  }`}
+                  className="vo-opt"
                 >
-                  <span className="font-[family-name:var(--font-dm-sans)] text-[14px] leading-[20px]">
-                    {option}
-                  </span>
-                  {selected && <span className="text-[12px] font-semibold">Selected</span>}
+                  <span>{option}</span>
+                  {selected && <span className="pp-label">Selected</span>}
                 </button>
               )
             })}
@@ -166,55 +167,56 @@ export default function ExpertiseStep({ formData, setFormData }: ExpertiseStepPr
   };
 
   return (
-    <div className="flex flex-col gap-[24px]">
+    <div className="vo-step">
       {/* Account type selector */}
-      <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-dm-sans)] font-medium text-[14px] leading-[20px] text-[#414651]">
-          Account type <span className="text-[#dc2626]">*</span>
+      <div className="pp-field">
+        <label>
+          Account type <span className="vo-req">*</span>
         </label>
 
-        <div className="flex gap-[12px]">
-          {accountTypes.map((type) => {
-            const isSelected = selectedType === type.value;
-
-            return (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => handleAccountTypeSelect(type.value)}
-                className={`flex-1 flex flex-col justify-center h-[84px] p-[18px] rounded-[8px] border-2 text-left transition-colors ${
-                  isSelected
-                    ? 'bg-[#f0f7ff] border-[#155eef]'
-                    : 'bg-white border-[#e9eaeb]'
-                }`}
-              >
-                <span className="font-[family-name:var(--font-dm-sans)] font-medium text-[16px] leading-[24px] text-[#414651]">
-                  {type.title}
-                </span>
-                <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-                  {type.subtitle}
-                </span>
-              </button>
-            );
-          })}
+        <div className="pp-flex pp-gap-3 vo-choice-row">
+          {accountTypes.map((type) => (
+            <button
+              key={type.value}
+              type="button"
+              aria-pressed={selectedType === type.value}
+              onClick={() => handleAccountTypeSelect(type.value)}
+              className="vo-choice"
+            >
+              <span className="vo-choice-title">{type.title}</span>
+              <span className="vo-choice-sub">{type.subtitle}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      <InputField
-        label="Public display name"
-        required
-        value={formData.displayName}
-        onChange={(event) => setFormData({ ...formData, displayName: event.target.value })}
-        placeholder="e.g., Alex Tan or Acme Consulting"
-      />
+      <div className="pp-field">
+        <label htmlFor="vo-display-name">
+          Public display name <span className="vo-req">*</span>
+        </label>
+        <input
+          id="vo-display-name"
+          className="pp-input"
+          type="text"
+          value={formData.displayName}
+          onChange={(event) => setFormData({ ...formData, displayName: event.target.value })}
+          placeholder="e.g., Alex Tan or Acme Consulting"
+        />
+      </div>
 
-      <InputField
-        label="Professional headline"
-        required
-        value={formData.headline}
-        onChange={(event) => setFormData({ ...formData, headline: event.target.value })}
-        placeholder="e.g., HubSpot and Salesforce implementation specialist"
-      />
+      <div className="pp-field">
+        <label htmlFor="vo-headline">
+          Professional headline <span className="vo-req">*</span>
+        </label>
+        <input
+          id="vo-headline"
+          className="pp-input"
+          type="text"
+          value={formData.headline}
+          onChange={(event) => setFormData({ ...formData, headline: event.target.value })}
+          placeholder="e.g., HubSpot and Salesforce implementation specialist"
+        />
+      </div>
 
       {/* Platforms field */}
       <MultiSelectDropdown

@@ -107,6 +107,7 @@ export async function proxy(request: NextRequest) {
                           isProtectedExpertRoute(pathname) ||
                           pathname.startsWith('/dashboard') ||
                           pathname.startsWith('/workspace') ||
+                          pathname.startsWith('/onboarding') ||
                           pathname.startsWith('/favorites') ||
                           pathname.startsWith('/profile') ||
                           pathname.startsWith('/AI_workspace')

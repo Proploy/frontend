@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import Select from '@/components/ui/Select';
 import type { VendorOnboardingData } from '@/hooks/types/vendor-contracts';
@@ -86,6 +86,17 @@ function MultiSelectTagInput({
   onChange: (values: string[]) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSelect = (option: string) => {
     if (selectedValues.includes(option)) {
@@ -100,73 +111,82 @@ function MultiSelectTagInput({
   };
 
   return (
-    <div className="flex flex-col gap-[6px]">
-      <label className="font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]">
+    <div className="pp-field" ref={containerRef}>
+      <label>
         {label}
-        {required && <span className="text-[#dc2626]"> *</span>}
+        {required && <span className="vo-req"> *</span>}
       </label>
-      {helperText && (
-        <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#535862]">
-          {helperText}
-        </p>
-      )}
+      {helperText && <p className="pp-small">{helperText}</p>}
 
-      <div className="relative">
-        {/* Input area with tags */}
-        <div
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex flex-wrap items-center gap-[6px] min-h-[48px] w-full bg-white border border-[#d5d7da] rounded-[8px] px-[12px] py-[8px] shadow-xs cursor-pointer focus-within:border-[#155eef] transition-colors"
-        >
-          {selectedValues.map((value) => (
-            <span
-              key={value}
-              className="inline-flex items-center gap-[4px] bg-[#f5f5f6] rounded-[6px] px-[8px] py-[4px] font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#414651]"
-            >
-              {value}
-	              <button
-	                type="button"
-	                aria-label={`Remove ${value}`}
-	                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemove(value);
-                }}
-                className="flex items-center justify-center w-[16px] h-[16px] rounded-full hover:bg-[#e9eaeb] transition-colors cursor-pointer"
-              >
-                <X className="w-[12px] h-[12px] text-[#535862]" />
-              </button>
-            </span>
-          ))}
-
-          {selectedValues.length === 0 && (
-            <span className="font-[family-name:var(--font-dm-sans)] font-normal text-[16px] leading-[24px] text-[#717680]">
-              Select...
-            </span>
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen(!isOpen)}
+        className="vo-multi"
+      >
+        <span className="vo-multi-values">
+          {selectedValues.length > 0 ? (
+            selectedValues.map((value) => (
+              <span key={value} className="pp-tag pp-tag--cobalt">
+                {value}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Remove ${value}`}
+                  className="pp-tag-x"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemove(value);
+                    }
+                  }}
+                >
+                  <X size={12} />
+                </span>
+              </span>
+            ))
+          ) : (
+            <span className="vo-multi-ph">Select…</span>
           )}
+        </span>
 
-          <ChevronDown className="w-[16px] h-[16px] text-[#717680] ml-auto flex-shrink-0" />
-        </div>
+        <ChevronDown
+          size={18}
+          style={{
+            flexShrink: 0,
+            color: 'var(--ink-soft)',
+            transition: 'transform var(--d-base) var(--ease)',
+            transform: isOpen ? 'rotate(180deg)' : undefined,
+          }}
+        />
+      </button>
 
-        {/* Dropdown */}
-        {isOpen && (
-          <div className="absolute z-10 top-full left-0 right-0 mt-[4px] bg-white border border-[#d5d7da] rounded-[8px] shadow-lg max-h-[200px] overflow-y-auto">
+      {isOpen && (
+        <div className="vo-menu-wrap">
+          <div className="vo-menu">
             {options.map((option) => {
               const isSelected = selectedValues.includes(option);
               return (
                 <button
                   key={option}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => handleSelect(option)}
-                  className={`w-full text-left px-[14px] py-[10px] font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] hover:bg-[#f5f5f6] transition-colors cursor-pointer ${
-                    isSelected ? 'text-[#155eef] bg-[#f0f7ff]' : 'text-[#414651]'
-                  }`}
+                  className="vo-opt"
                 >
-                  {option}
+                  <span>{option}</span>
+                  {isSelected && <span className="pp-label">Selected</span>}
                 </button>
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -184,7 +204,7 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
   };
 
   return (
-    <div className="flex flex-col gap-[24px]">
+    <div className="vo-step">
       {/* Field 1: Timezone */}
       <Select
         label="Timezone"
@@ -205,26 +225,16 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
       />
 
       {/* Field 3: Weekly availability */}
-      <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]">
+      <fieldset className="pp-field" style={{ border: 0, padding: 0, margin: 0 }}>
+        <legend style={{ padding: 0, fontSize: 13, fontWeight: 'var(--weight-medium)', color: 'var(--ink)' }}>
           Weekly availability
-        </label>
+        </legend>
 
-        <div className="flex flex-col gap-[12px] mt-[4px]">
+        <div className="pp-stack pp-gap-3" style={{ marginTop: 6 }}>
           {availabilityOptions.map((option) => {
             const isSelected = weeklyAvailability === option;
             return (
-              <label key={option} className="flex items-center gap-[10px] cursor-pointer">
-                <div
-                  className={`w-[20px] h-[20px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    isSelected ? 'border-[#155eef]' : 'border-[#d5d7da]'
-                  }`}
-                  onClick={() => updateField('weeklyAvailability', option)}
-                >
-                  {isSelected && (
-                    <div className="w-[10px] h-[10px] rounded-full bg-[#155eef]" />
-                  )}
-                </div>
+              <label key={option} className="vo-radio" data-on={isSelected}>
                 <input
                   type="radio"
                   name="weeklyAvailability"
@@ -233,26 +243,24 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
                   onChange={() => updateField('weeklyAvailability', option)}
                   className="sr-only"
                 />
-                <span className="font-[family-name:var(--font-inter)] font-medium text-[16px] leading-[24px] text-[#414651]">
-                  {option}
-                </span>
+                <span className="vo-radio-dot" aria-hidden />
+                {option}
               </label>
             );
           })}
         </div>
-      </div>
+      </fieldset>
 
       {/* Field 4: Earliest start date */}
-      <div className="flex flex-col gap-[6px]">
-        <label htmlFor="earliest-start-date" className="font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]">
-          Earliest start date
-        </label>
+      <div className="pp-field">
+        <label htmlFor="earliest-start-date">Earliest start date</label>
         <input
           id="earliest-start-date"
           type="date"
           value={earliestStartDate}
           onChange={(e) => updateField('earliestStartDate', e.target.value)}
-          className="h-[44px] w-full bg-white border border-[#d5d7da] rounded-[8px] px-[14px] shadow-xs font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#181d27] outline-none focus:border-[#155eef] transition-colors cursor-pointer"
+          className="pp-input"
+          style={{ cursor: 'pointer' }}
         />
       </div>
 
@@ -266,12 +274,11 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
         onChange={(values) => updateField('preferredProjectTypes', values)}
       />
 
-      {/* Field 6: Why did you choose these platforms or services? */}
-      <div className="flex flex-col gap-[6px]">
-        <label className="font-[family-name:var(--font-inter)] font-medium text-[14px] leading-[20px] text-[#414651]">
-          Why did you choose these platforms or services?
-        </label>
+      {/* Field 6: Why these platforms */}
+      <div className="pp-field">
+        <label htmlFor="vo-why-platforms">Why did you choose these platforms or services?</label>
         <textarea
+          id="vo-why-platforms"
           value={whyPlatforms}
           onChange={(e) => {
             if (e.target.value.length <= 500) {
@@ -279,9 +286,10 @@ export default function PreferencesStep({ formData, setFormData }: PreferencesSt
             }
           }}
           placeholder="Share what you enjoy and what you are best at."
-          className="h-[122px] w-full bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] shadow-xs font-[family-name:var(--font-dm-sans)] text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] outline-none focus:border-[#155eef] transition-colors resize-none"
+          className="pp-textarea"
+          style={{ minHeight: 122 }}
         />
-        <p className="font-[family-name:var(--font-dm-sans)] font-normal text-[14px] leading-[20px] text-[#717680] text-right">
+        <p className="pp-small pp-mono-num" style={{ textAlign: 'right' }}>
           {whyPlatforms.length}/500
         </p>
       </div>
