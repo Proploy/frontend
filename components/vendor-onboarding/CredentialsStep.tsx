@@ -150,7 +150,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
 
         {/* Uploaded file rows */}
         {credentials.certificationFiles.map((file, idx) => (
-          <div key={`${file.name}-${idx}`} className="vo-row">
+          <div key={file.storageKey ?? file.name} className="vo-row">
             <div className="pp-stack" style={{ gap: 2, minWidth: 0 }}>
               <span className="vo-row-name">{file.name}</span>
               <span className="vo-row-meta">{formatFileSize(file.size)}</span>
@@ -183,7 +183,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
 
         <div className="vo-divider">or</div>
 
-        {/* Manual certification inputs */}
+        {/* Manual certification inputs — keyed by cert.id (see 3808a81) */}
         {localCerts.map((cert, idx) => (
           <div key={cert.id} className="pp-row pp-gap-2">
             <input
@@ -199,11 +199,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
             />
             <button
               type="button"
-              onClick={() => {
-                const next = [...localCerts];
-                next.splice(idx, 1);
-                updateLocalCerts(next);
-              }}
+              onClick={() => updateLocalCerts(localCerts.filter((_, i) => i !== idx))}
               className="vo-icon-btn vo-icon-btn--danger"
               aria-label="Remove certification"
             >
@@ -212,7 +208,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
           </div>
         ))}
 
-        {/* Add certification manually link */}
+
         <button type="button" onClick={addManualCertification} className="pp-link-arrow" style={{ alignSelf: 'flex-start' }}>
           <Plus size={16} />
           Add certification manually

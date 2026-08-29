@@ -448,7 +448,7 @@
 .vo-menu{position:absolute;z-index:30;left:0;right:0;top:4px;max-height:280px;overflow:auto;padding:4px;background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-control);box-shadow:var(--shadow-lift)}
 .vo-opt{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);width:100%;padding:9px 10px;text-align:left;border:0;border-radius:var(--r-sm);background:none;font-size:14px;line-height:20px;color:var(--ink);cursor:pointer;transition:background-color var(--d-fast) ease}
 .vo-opt:hover{background:color-mix(in oklab,var(--paper-deep) 70%,white)}
-.vo-opt[aria-pressed="true"]{background:var(--cobalt-soft);color:var(--cobalt-deep);font-weight:var(--weight-medium)}
+.vo-opt[aria-selected="true"]{background:var(--cobalt-soft);color:var(--cobalt-deep);font-weight:var(--weight-medium)}
 
 /* Switch */
 .vo-switch{position:relative;display:inline-flex;align-items:center;width:44px;height:24px;flex-shrink:0;padding:0;border:0;border-radius:var(--r-full);background:var(--line);cursor:pointer;transition:background-color var(--d-base) ease}

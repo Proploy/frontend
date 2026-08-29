@@ -36,8 +36,7 @@ const STEP_CONFIG = [
   {
     eyebrow: "Credentials",
     title: "Credentials and experience",
-    subtitle:
-      "Add certifications and a quick overview of your background.",
+    subtitle: "Add certifications and a quick overview of your background.",
   },
   {
     eyebrow: "Projects",
@@ -58,8 +57,7 @@ const STEP_CONFIG = [
   {
     eyebrow: "Review",
     title: "Review and submit",
-    subtitle:
-      "Confirm everything is accurate before submitting for review.",
+    subtitle: "Confirm everything is accurate before submitting for review.",
   },
   {
     eyebrow: "Submitted",
@@ -313,26 +311,12 @@ export default function VendorOnboardingPage() {
                 )}
 
                 {stepError && (
-                  <p
-                    role="alert"
-                    className="pp-body"
-                    style={{
-                      marginTop: 'var(--sp-4)',
-                      padding: '10px 14px',
-                      borderRadius: 'var(--r-control)',
-                      border: 'var(--bw) solid var(--color-error-200)',
-                      background: 'var(--color-error-50)',
-                      color: 'var(--color-error-700)',
-                    }}
-                  >
+                  <p role="alert" className="vo-error" style={{ marginTop: 'var(--sp-4)' }}>
                     {stepError}
                   </p>
                 )}
 
-                <div
-                  className="pp-stack pp-gap-3"
-                  style={{ marginTop: 'var(--sp-8)' }}
-                >
+                <div className="pp-stack pp-gap-3" style={{ marginTop: 'var(--sp-8)' }}>
                   <button
                     type="button"
                     className="pp-btn pp-btn--cobalt pp-btn--block"
