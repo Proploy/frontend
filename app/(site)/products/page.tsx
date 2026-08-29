@@ -1162,9 +1162,14 @@ function ProductCard({ product }: { product: CardProduct }) {
   return (
     <article
       className="pp-card pp-lift"
-      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-8)', height: '100%' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-8)', height: '100%', position: 'relative' }}
     >
-      <div className="pp-stack pp-gap-3">
+      <Link 
+        href={getProductDetailHref(product.product_id)} 
+        style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+        aria-label={`View ${product.product_name}`}
+      />
+      <div className="pp-stack pp-gap-3" style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
         <div
           className="pp-flex"
           style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--sp-3)' }}
@@ -1182,9 +1187,9 @@ function ProductCard({ product }: { product: CardProduct }) {
             )}
           </span>
         </div>
-        <Link className="pp-h6" href={getProductDetailHref(product.product_id)}>
+        <div className="pp-h6">
           {product.product_name}
-        </Link>
+        </div>
         <p className="pp-body pp-clamp-3" style={{ minHeight: 72 }}>
           {product.product_description ||
             'Proploy-matched implementation experts have shipped this rollout for teams just like yours — from procurement to go-live.'}
@@ -1193,19 +1198,18 @@ function ProductCard({ product }: { product: CardProduct }) {
 
       <div
         className="pp-flex pp-wrap pp-gap-3"
-        style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}
+        style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', position: 'relative', zIndex: 1 }}
       >
-        <Link
-          href={getProductDetailHref(product.product_id)}
-          onClick={(event) => event.stopPropagation()}
+        <span
           className="pp-link-arrow"
+          style={{ pointerEvents: 'none' }}
         >
           Learn more
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
-        </Link>
-        <div className="pp-flex pp-gap-2" style={{ alignItems: 'center' }}>
+        </span>
+        <div className="pp-flex pp-gap-2" style={{ alignItems: 'center', pointerEvents: 'auto' }}>
           <FavoriteToggle targetId={product.product_id} label={product.product_name} />
           <CompareToggle
             product={{

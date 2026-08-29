@@ -14,6 +14,7 @@ import React, { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Builder, MAX_COLS, type CatalogOption, type Column } from '@/components/compare/CompareBuilder'
 import { BuyerBrief } from '@/components/compare/BuyerBrief'
+import { Nav } from '@/components/site/Nav'
 import { DesktopTable, MobileCards, ResultsToolbar } from '@/components/compare/CompareTable'
 import {
   ActionToast,
@@ -247,6 +248,7 @@ function ComparePageInner() {
       className="font-[family-name:var(--font-dm-sans)]"
       style={{ minHeight: '100vh', background: '#fff', paddingTop: 80, paddingBottom: isMobile ? 88 : 72 }}
     >
+      <Nav />
       <Builder
         columns={builderColumns}
         onSwap={onSwap}

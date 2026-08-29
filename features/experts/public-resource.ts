@@ -16,8 +16,14 @@ export function resolveExpertPublicResourceUrl(value: string | null | undefined)
 
   if (value.startsWith('/')) return null
 
+  // Ensure URLs without protocol default to https://
+  let urlToParse = value
+  if (!/^https?:\/\//i.test(value)) {
+    urlToParse = `https://${value}`
+  }
+
   try {
-    const parsed = new URL(value)
+    const parsed = new URL(urlToParse)
     const hostname = parsed.hostname.toLowerCase()
     const configuredHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
       ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.toLowerCase()
@@ -32,7 +38,7 @@ export function resolveExpertPublicResourceUrl(value: string | null | undefined)
     ) {
       return null
     }
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? value : null
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? urlToParse : null
   } catch {
     return null
   }

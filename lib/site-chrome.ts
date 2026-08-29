@@ -27,6 +27,8 @@ export const V2_CHROME_EXACT = [
   '/experts',
   '/for-businesses',
   '/for-experts',
+  '/profile',
+  '/settings',
   // Expert category directories (static siblings of /experts/[id])
   '/experts/top',
   '/experts/engineering',
@@ -39,6 +41,8 @@ export const V2_CHROME_EXACT = [
 export const V2_CHROME_PREFIXES = [
   '/products',
   '/product/',
+  '/compare',
+  '/experts/',
   // Footer-linked v2 pages (app/(site)/(v2)/**)
   '/find-work',
   '/get-discovered',

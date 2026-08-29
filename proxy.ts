@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
     frame-ancestors 'none';
     form-action 'self';
     base-uri 'self';
-    object-src 'none';
+    object-src 'self' blob: data: https://service-apis-731353524841.australia-southeast1.run.app;
     upgrade-insecure-requests;
   `.replace(/\s{2,}/g, ' ').trim()
 
