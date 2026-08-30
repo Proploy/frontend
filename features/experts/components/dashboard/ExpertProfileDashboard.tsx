@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Nav } from '@/components/site/Nav'
 import { Footer } from '@/components/site/Footer'
-import { useExpertDashboardData, DashboardLoading, DashboardFailureState } from '@/components/experts/dashboard/ExpertDashboardFrame'
+import { useExpertDashboardData } from '@/components/experts/dashboard/ExpertDashboardFrame'
 import { ProfileTab } from './tabs/ProfileTab'
 import { ExperienceTab } from './tabs/ExperienceTab'
 import { ExpertiseTab } from './tabs/ExpertiseTab'
@@ -11,7 +11,7 @@ import { PortfolioTab } from './tabs/PortfolioTab'
 import { DocumentsTab } from './tabs/DocumentsTab'
 import { ActivityTab } from './tabs/ActivityTab'
 import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Loader2 } from 'lucide-react'
 
 const TABS = [
   'Profile',
@@ -30,10 +30,10 @@ export function ExpertProfileDashboard() {
 
   if (state.isPending) {
     return (
-      <div className="font-inter overflow-x-clip bg-[#f7f9fc] text-[#181d27]">
+      <div className="font-inter overflow-x-clip bg-[#fafafa] text-[#181d27]">
         <Nav />
-        <main className="min-h-screen pt-[120px]">
-          <DashboardLoading />
+        <main className="flex min-h-screen items-center justify-center bg-[#fafafa] pt-[80px]">
+          <Loader2 className="size-8 animate-spin text-[#155eef]" />
         </main>
         <Footer />
       </div>
@@ -42,10 +42,12 @@ export function ExpertProfileDashboard() {
 
   if (state.dashboardError || !state.dashboard) {
     return (
-      <div className="font-inter overflow-x-clip bg-[#f7f9fc] text-[#181d27]">
+      <div className="font-inter overflow-x-clip bg-[#fafafa] text-[#181d27]">
         <Nav />
-        <main className="min-h-screen pt-[120px]">
-          <DashboardFailureState state={state} />
+        <main className="flex min-h-screen items-center justify-center bg-[#fafafa] pt-[80px]">
+          <div className="text-center text-[#535862]">
+            {state.dashboardError ? 'Failed to load dashboard. Please try again.' : 'Dashboard unavailable.'}
+          </div>
         </main>
         <Footer />
       </div>
