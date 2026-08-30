@@ -50,17 +50,17 @@ export function mapKeywordSearchResponseToResults(
   }
 }
 
-// ── Hybrid Search (Full Results) ──────────────────────────────────────────────
+// ── Hybrid / Natural Search (Full Results) ────────────────────────────────────
 
 export function mapCatalogSearchResultToCardProduct(result: CatalogSearchResult): CardProduct {
   return {
     product_id: result.product_id,
     product_name: normalizePublishedValue(result.product_name) ?? '',
     product_description: normalizePublishedValue(result.short_description),
-    product_logo: null, // Hybrid search doesn't return logo
+    product_logo: getProductLogoUrl(result.product_id, result.approved_logo_url),
     rating: result.avg_rating,
     reviews: result.total_reviews,
-    primary_category: null, // Not in hybrid search result
+    primary_category: normalizePublishedValue(result.primary_category),
     vendor_name: normalizePublishedValue(result.vendor_name),
     free_plan_available: result.free_plan,
     free_trial_available: result.free_trial,
