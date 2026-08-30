@@ -3,7 +3,6 @@ import { DM_Sans, Inter, IBM_Plex_Mono } from 'next/font/google'
 import NextTopLoader from 'nextjs-toploader'
 import Navbar from '@/components/Navbar'
 import SiteFooter from '@/components/SiteFooter'
-import ProployAgentShell from '@/components/agent/ProployAgentShell'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { MotionProvider } from '@/components/providers/motion-provider'
 import { AuthBootstrapSplash } from '@/components/ui/AuthBootstrapSplash'
@@ -64,13 +63,11 @@ export default function RootLayout({
               <FavoritesProvider>
                 <CompareSelectionProvider>
                   <InterestCaptureProvider>
-                    <ProployAgentShell>
-                      <Navbar />
+                    <Navbar />
                       <main className="flex-1 w-full">{children}</main>
                       <SiteFooter />
                       <CompareTray />
-                    </ProployAgentShell>
-                  </InterestCaptureProvider>
+                    </InterestCaptureProvider>
                 </CompareSelectionProvider>
               </FavoritesProvider>
             </AuthBootstrapSplash>

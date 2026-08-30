@@ -51,7 +51,7 @@ export async function proxy(request: NextRequest) {
     media-src 'self' data: blob:${localDevSrc} https://eczlamdmamicyugklabj.supabase.co https://service-apis-731353524841.australia-southeast1.run.app;
     connect-src 'self'${localDevSrc} https://eczlamdmamicyugklabj.supabase.co wss://eczlamdmamicyugklabj.supabase.co https://*.sanity.io https://service-apis-731353524841.australia-southeast1.run.app;
     frame-src 'self' blob: data:${localDevSrc} https://accounts.google.com https://github.com https://login.microsoftonline.com https://eczlamdmamicyugklabj.supabase.co https://service-apis-731353524841.australia-southeast1.run.app https://www.youtube-nocookie.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://vimeo.com https://www.loom.com https://loom.com https://drive.google.com https://docs.google.com;
-    frame-ancestors 'none';
+    frame-ancestors 'self';
     form-action 'self';
     base-uri 'self';
     object-src 'self' blob: data: https://service-apis-731353524841.australia-southeast1.run.app;

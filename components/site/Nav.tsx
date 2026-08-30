@@ -10,6 +10,7 @@ import { useExpertApplication } from "@/features/experts/use-expert-application"
 import type { ExpertMe } from "@/features/experts/types";
 import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
 import { matchesPath } from "@/lib/nav-active";
+import { useUserProfilePicture } from "@/features/users/use-user-profile-picture";
 
 // Curated from the legacy global Navbar. The legacy version had two mega-menus
 // (Explore Products / Explore Experts) plus an "About Us" dropdown; those are
@@ -60,6 +61,7 @@ const NAV_LINK_ACTIVE = "text-cobalt font-medium after:origin-left after:scale-x
 
 export function Nav() {
   const { user, signOut } = useAuth();
+  const avatarUrl = useUserProfilePicture();
   const { getApplication } = useExpertApplication();
   const [expertState, setExpertState] = useState<{ userId: string; expert: ExpertMe | null } | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -216,9 +218,14 @@ export function Nav() {
                   onClick={() => setProfileOpen((v) => !v)}
                   aria-expanded={profileOpen}
                   aria-haspopup="menu"
-                  className="grid h-8 w-8 place-items-center rounded-full bg-cobalt text-[0.7rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-cobalt text-[0.7rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5 overflow-hidden"
                 >
-                  {(user.email ?? "?").charAt(0).toUpperCase()}
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (user.email ?? "?").charAt(0).toUpperCase()
+                  )}
                 </button>
                 {profileOpen && (
                   <div

@@ -378,7 +378,7 @@
 .pd-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:var(--sp-16);align-items:start}
 .pd-side{position:sticky;top:calc(var(--nav-h) + 76px);display:flex;flex-direction:column;gap:var(--sp-6)}
 .pd-shot{aspect-ratio:16/10;border-radius:var(--r-card);border:var(--bw) solid var(--line);background:linear-gradient(150deg,var(--cobalt-soft),var(--paper-deep));overflow:hidden}
-.pd-shot img{width:100%;height:100%;object-fit:cover}
+.pd-shot img{width:100%;height:100%;object-fit:contain}
 .pd-plan{display:flex;flex-direction:column;gap:var(--sp-5);padding:var(--sp-6);border:var(--bw) solid var(--line);border-radius:var(--r-card);background:#fff}
 .pd-plan.is-featured{border-color:var(--cobalt);border-width:var(--bw-thick);box-shadow:var(--shadow-lift)}
 .pd-price{font-family:var(--font-display);font-size:36px;line-height:1;font-weight:var(--weight-medium);letter-spacing:var(--tracking-display-tight);color:var(--ink)}

@@ -19,8 +19,7 @@ export const metadata: Metadata = {
 // The homepage ships the v2 Nav + Footer (design-system chrome). The global
 // legacy Navbar/SiteFooter are suppressed on "/" via hidesGlobalChrome in
 // lib/site-chrome.ts, so there is still exactly one navbar on this route.
-// The AI chatbot (ProployAgentShell) and CompareTray are still mounted from
-// the root layout.
+// CompareTray is still mounted from the root layout.
 export default function LandingPage() {
   return (
     <div className="font-inter overflow-x-clip bg-paper text-ink">
