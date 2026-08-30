@@ -191,7 +191,7 @@ export default function WorkspaceLeadsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-[12px]">
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-semibold leading-[22px] text-[#181d27]">
-                        {intent.requesterName || intent.requesterEmail || `Lead ${shortId(intent.id)}`}
+                        {intent.requesterName || `Lead ${shortId(intent.id)}`}
                       </p>
                       <p className="mt-[2px] truncate text-[13px] leading-[18px] text-[#535862]">
                         {eventTypeLabel(intent)}

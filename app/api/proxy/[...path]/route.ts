@@ -10,7 +10,8 @@ async function handleProxy(request: NextRequest, { params }: { params: Promise<{
   const fullPath = searchParams ? `${path}?${searchParams}` : path
 
   const headers = new Headers(request.headers)
-  const requireAuth = headers.get('x-require-auth') === 'true'
+  const isProfilePicture = path === '/api/v1/users/me/profile-picture'
+  const requireAuth = isProfilePicture || headers.get('x-require-auth') === 'true'
   headers.delete('x-require-auth')
   headers.delete('host') // Do not forward host header
 

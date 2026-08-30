@@ -2,19 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Menu, X, LogOut, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useExpertApplication } from "@/features/experts/use-expert-application";
 import type { ExpertMe } from "@/features/experts/types";
 import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
+import { matchesPath } from "@/lib/nav-active";
+import { useUserProfilePicture } from "@/features/users/use-user-profile-picture";
 
 // Curated from the legacy global Navbar. The legacy version had two mega-menus
 // (Explore Products / Explore Experts) plus an "About Us" dropdown; those are
 // flattened here into four real top-level destinations. Category and expert
 // filtering still live on /products and /experts themselves.
-const LINKS = [
-  { href: "/products", label: "Products" },
+const LINKS: NavLink[] = [
+  // `match` lists extra route prefixes that should still light this tab up:
+  // product detail pages live at /product/[id], not under /products.
+  { href: "/products", label: "Products", match: ["/product"] },
   { href: "/experts", label: "Experts" },
   {
     label: "About us",
@@ -26,8 +31,37 @@ const LINKS = [
   { href: "/AI_workspace", label: "Ask SAM" },
 ];
 
+type NavLink = {
+  label: string;
+  href?: string;
+  match?: string[];
+  items?: { href: string; label: string }[];
+};
+
+// A tab is active when the current route is its destination, one of its
+// aliases, or — for the "About us" group — any of its dropdown entries.
+function isLinkActive(pathname: string | null, link: NavLink): boolean {
+  const hrefs = [
+    ...(link.href ? [link.href] : []),
+    ...(link.match ?? []),
+    ...(link.items?.map((i) => i.href) ?? []),
+  ];
+  return hrefs.some((href) => matchesPath(pathname, href));
+}
+
+// Blue (cobalt) is the "you are here" signal across the header and footer.
+// The idle/active variants are kept as separate strings so the two never both
+// set the same utility (e.g. two `after:origin-*` classes) and race in the
+// generated stylesheet.
+const NAV_LINK_BASE =
+  "relative text-[0.875rem] transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:bg-cobalt after:transition-transform after:duration-300";
+const NAV_LINK_IDLE =
+  "text-ink-soft hover:text-ink after:origin-right after:scale-x-0 group-hover:after:origin-left group-hover:after:scale-x-100";
+const NAV_LINK_ACTIVE = "text-cobalt font-medium after:origin-left after:scale-x-100";
+
 export function Nav() {
   const { user, signOut } = useAuth();
+  const avatarUrl = useUserProfilePicture();
   const { getApplication } = useExpertApplication();
   const [expertState, setExpertState] = useState<{ userId: string; expert: ExpertMe | null } | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -35,6 +69,7 @@ export function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
   const userId = user?.id;
 
   useEffect(() => {
@@ -127,38 +162,52 @@ export function Nav() {
           </Link>
 
           <ul className="ml-2 hidden items-center gap-7 md:flex">
-            {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => (
+            {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => {
+              const active = isLinkActive(pathname, l);
+              return (
               <li key={l.label} className="relative group">
                 {l.items ? (
                   <>
-                    <button className="relative flex items-center gap-1 text-[0.875rem] text-ink-soft transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-cobalt after:transition-transform after:duration-300 group-hover:after:origin-left group-hover:after:scale-x-100">
+                    <button
+                      className={`${NAV_LINK_BASE} flex items-center gap-1 ${
+                        active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE
+                      }`}
+                    >
                       {l.label}
                       <ChevronDown className="h-3 w-3 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
                     </button>
                     <div className="absolute left-0 top-full pt-4 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
                       <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-[0_24px_48px_-16px_rgba(10,13,18,0.18)] min-w-[160px]">
-                        {l.items.map((sub) => (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            className="rounded-lg px-3 py-2 text-[0.85rem] text-ink transition-colors hover:bg-cobalt-soft/50"
-                          >
-                            {sub.label}
-                          </Link>
-                        ))}
+                        {l.items.map((sub) => {
+                          const subActive = matchesPath(pathname, sub.href);
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              aria-current={subActive ? "page" : undefined}
+                              className={`rounded-lg px-3 py-2 text-[0.85rem] transition-colors hover:bg-cobalt-soft/50 ${
+                                subActive ? "bg-cobalt-soft/60 font-medium text-cobalt" : "text-ink"
+                              }`}
+                            >
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   </>
                 ) : (
                   <Link
                     href={l.href!}
-                    className="relative text-[0.875rem] text-ink-soft transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-cobalt after:transition-transform after:duration-300 hover:after:origin-left hover:after:scale-x-100"
+                    aria-current={active ? "page" : undefined}
+                    className={`${NAV_LINK_BASE} ${active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}`}
                   >
                     {l.label}
                   </Link>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
 
           <div className="ml-auto flex items-center gap-3">
@@ -169,9 +218,14 @@ export function Nav() {
                   onClick={() => setProfileOpen((v) => !v)}
                   aria-expanded={profileOpen}
                   aria-haspopup="menu"
-                  className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[0.7rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-cobalt text-[0.7rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5 overflow-hidden"
                 >
-                  {(user.email ?? "?").charAt(0).toUpperCase()}
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (user.email ?? "?").charAt(0).toUpperCase()
+                  )}
                 </button>
                 {profileOpen && (
                   <div
@@ -250,35 +304,53 @@ export function Nav() {
         {menuOpen && (
           <div className="border-t border-border bg-paper/95 backdrop-blur-xl md:hidden">
             <ul className="mx-auto flex max-w-[1240px] flex-col px-6 py-3">
-              {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => (
+              {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => {
+                const active = isLinkActive(pathname, l);
+                return (
                 <li key={l.label}>
                   {l.items ? (
                     <div className="py-2.5">
-                      <span className="block text-[0.9375rem] font-medium text-ink mb-1">{l.label}</span>
+                      <span
+                        className={`block text-[0.9375rem] font-medium mb-1 ${
+                          active ? "text-cobalt" : "text-ink"
+                        }`}
+                      >
+                        {l.label}
+                      </span>
                       <div className="flex flex-col gap-1 pl-3 border-l-2 border-border/50 ml-1">
-                        {l.items.map(sub => (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            onClick={() => setMenuOpen(false)}
-                            className="block py-1.5 text-[0.9375rem] text-ink-soft transition-colors hover:text-cobalt"
-                          >
-                            {sub.label}
-                          </Link>
-                        ))}
+                        {l.items.map(sub => {
+                          const subActive = matchesPath(pathname, sub.href);
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={() => setMenuOpen(false)}
+                              aria-current={subActive ? "page" : undefined}
+                              className={`block py-1.5 text-[0.9375rem] transition-colors hover:text-cobalt ${
+                                subActive ? "font-medium text-cobalt" : "text-ink-soft"
+                              }`}
+                            >
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
                     <Link
                       href={l.href!}
                       onClick={() => setMenuOpen(false)}
-                      className="block py-2.5 text-[0.9375rem] text-ink-soft transition-colors hover:text-cobalt"
+                      aria-current={active ? "page" : undefined}
+                      className={`block py-2.5 text-[0.9375rem] transition-colors hover:text-cobalt ${
+                        active ? "font-medium text-cobalt" : "text-ink-soft"
+                      }`}
                     >
                       {l.label}
                     </Link>
                   )}
                 </li>
-              ))}
+                );
+              })}
               <li className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
                 {user ? (
                   <>

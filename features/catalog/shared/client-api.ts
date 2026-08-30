@@ -14,6 +14,7 @@ import type {
   CatalogSearchRequest,
   CatalogSearchResponse,
   KeywordSearchResponse,
+  NaturalSearchRequest,
 } from '../search/types'
 import type { ApiResult, CatalogRequestOptions } from './types'
 import { buildQueryString } from './query'
@@ -84,6 +85,12 @@ export const clientCatalogApi = {
       options?: CatalogRequestOptions,
     ): Promise<ApiResult<CatalogSearchResponse>> {
       return client.post<CatalogSearchResponse>('/api/v1/catalog/search/hybrid', params, options)
+    },
+    natural(
+      params: NaturalSearchRequest,
+      options?: CatalogRequestOptions,
+    ): Promise<ApiResult<CatalogSearchResponse>> {
+      return client.post<CatalogSearchResponse>('/api/v1/catalog/search/natural', params, options)
     },
   },
 }

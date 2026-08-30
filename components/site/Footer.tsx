@@ -1,5 +1,10 @@
+'use client'
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { Logo } from "./Nav";
+import { activeHref } from "@/lib/nav-active";
 
 // Full site IA carried over from the legacy global Footer — nothing dropped.
 // Layout keeps the ported 4-column spacing rhythm (~149px columns, 32px gaps)
@@ -102,6 +107,18 @@ const SOCIALS = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+  // One link at most is highlighted, and the most specific one wins: on
+  // /experts/engineering that is "Engineering", not "Explore all experts".
+  const currentHref = useMemo(
+    () =>
+      activeHref(pathname, [
+        ...COLUMNS.flatMap((c) => c.links.map((l) => l.href)),
+        ...LEGAL.map((l) => l.href),
+      ]),
+    [pathname],
+  );
+
   return (
     <footer className="rule-x bg-paper">
       <div className="mx-auto max-w-[1520px] px-6 py-16 lg:px-10">
@@ -144,7 +161,10 @@ export function Footer() {
                     <li key={`${c.title}-${l.href}`}>
                       <Link
                         href={l.href}
-                        className="text-[0.875rem] text-ink-soft transition-colors hover:text-cobalt"
+                        aria-current={l.href === currentHref ? "page" : undefined}
+                        className={`text-[0.875rem] transition-colors hover:text-cobalt ${
+                          l.href === currentHref ? "font-medium text-cobalt" : "text-ink-soft"
+                        }`}
                       >
                         {l.label}
                       </Link>
@@ -164,7 +184,10 @@ export function Footer() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[0.8125rem] text-ink-soft transition-colors hover:text-cobalt"
+                    aria-current={l.href === currentHref ? "page" : undefined}
+                    className={`text-[0.8125rem] transition-colors hover:text-cobalt ${
+                      l.href === currentHref ? "font-medium text-cobalt" : "text-ink-soft"
+                    }`}
                   >
                     {l.label}
                   </Link>

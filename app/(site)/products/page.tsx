@@ -14,11 +14,14 @@ import {
   getProductDetailHref,
   useCategoryTree,
   useKeywordSearch,
+  useNaturalSearch,
   useRecursiveCategoryProductList,
   type CardProduct,
   type CategoryNode,
+  type SearchMode,
   getDescendantProductCategoryTermIds,
 } from '@/features/catalog'
+import { SearchModeToggle } from '@/components/search/SearchModeToggle'
 import {
   DEFAULT_PRODUCT_FILTERS,
   ProductFiltersDrawer,
@@ -28,6 +31,13 @@ import { buildProductListRequest } from '@/features/catalog/products/filter-requ
 import { getNextProductPageOffset } from '@/features/catalog/products/pagination-state'
 
 const PRODUCT_PAGE_SIZE = 15
+
+type SearcherMap = {
+  keyword: (query: string, limit?: number) => Promise<void> | void
+  natural: (query: string, limit?: number) => Promise<void> | void
+  clearKeyword: () => void
+  clearNatural: () => void
+}
 
 export default function ProductsPage() {
   return (
@@ -202,6 +212,9 @@ function ProductsPageContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')?.trim() || undefined
   const categoryParam = searchParams.get('category')
+  const modeParam = searchParams.get('mode')
+  const activeMode: SearchMode =
+    modeParam === 'natural' ? 'natural' : 'keyword'
   const { tree, loading: catLoading, error: catError } = useCategoryTree()
   const requestKey = `${search ?? ''}:${categoryParam ?? ''}`
   const [paginationState, setPaginationState] = useState({
@@ -218,7 +231,8 @@ function ProductsPageContent() {
     categoryTermId: categoryParam ?? '',
   }
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const hasKeywordSearch = Boolean(search)
+  const hasActiveSearch = Boolean(search)
+  const naturalMode = activeMode === 'natural'
 
   const selectedCategoryNode = findCategoryNode(tree, filters.categoryTermId)
   const categoryTermIds = getDescendantProductCategoryTermIds(selectedCategoryNode)
@@ -237,7 +251,7 @@ function ProductsPageContent() {
       offset,
     }),
     categoryTermIds,
-    enabled: !hasKeywordSearch,
+    enabled: !hasActiveSearch,
     append: true,
   })
   const {
@@ -248,17 +262,75 @@ function ProductsPageContent() {
     clear: clearKeywordSearch,
   } = useKeywordSearch()
 
-  useEffect(() => {
-    if (search) {
-      void runKeywordSearch(search, 6)
-    } else {
-      clearKeywordSearch()
-    }
-  }, [clearKeywordSearch, runKeywordSearch, search])
+  const {
+    products: naturalProducts,
+    loading: naturalLoading,
+    error: naturalError,
+    note: naturalNote,
+    search: runNaturalSearch,
+    clear: clearNaturalSearch,
+  } = useNaturalSearch({
+    pricingBucket: filters.pricingBucket,
+    companySize: filters.companySize,
+    deploymentModel: filters.deploymentModel,
+    compliance: filters.compliance,
+    freePlan: filters.freePlan,
+  })
 
-  const products = hasKeywordSearch ? searchProducts : listedProducts
-  const loading = hasKeywordSearch ? searchLoading : listLoading
-  const error = hasKeywordSearch ? searchError : listError
+  const naturalFilterKey = [
+    filters.pricingBucket,
+    ...filters.companySize,
+    ...filters.deploymentModel,
+    ...filters.compliance,
+    filters.freePlan,
+  ].join('|')
+
+  const pageSearchersRef = useRef<SearcherMap>({
+    keyword: () => {},
+    natural: () => {},
+    clearKeyword: () => {},
+    clearNatural: () => {},
+  })
+  useEffect(() => {
+    pageSearchersRef.current = {
+      keyword: runKeywordSearch,
+      natural: runNaturalSearch,
+      clearKeyword: clearKeywordSearch,
+      clearNatural: clearNaturalSearch,
+    }
+  }, [runKeywordSearch, runNaturalSearch, clearKeywordSearch, clearNaturalSearch])
+
+  useEffect(() => {
+    if (activeMode !== 'natural' && search) {
+      void pageSearchersRef.current.keyword(search, 6)
+    } else {
+      pageSearchersRef.current.clearKeyword()
+    }
+  }, [activeMode, search])
+
+  useEffect(() => {
+    if (activeMode === 'natural' && search) {
+      void pageSearchersRef.current.natural(search, 6)
+    } else {
+      pageSearchersRef.current.clearNatural()
+    }
+  }, [activeMode, naturalFilterKey, search])
+
+  const products = hasActiveSearch
+    ? naturalMode
+      ? naturalProducts
+      : searchProducts
+    : listedProducts
+  const loading = hasActiveSearch
+    ? naturalMode
+      ? naturalLoading
+      : searchLoading
+    : listLoading
+  const error = hasActiveSearch
+    ? naturalMode
+      ? naturalError
+      : searchError
+    : listError
   const isLoadingInitialProducts = loading && (offset === 0 || products.length === 0)
   const isLoadingMoreProducts = loading && offset > 0 && products.length > 0
 
@@ -296,6 +368,13 @@ function ProductsPageContent() {
       const trimmed = query.trim()
       if (trimmed) params.set('search', trimmed)
       else params.delete('search')
+    })
+  }
+
+  const handleModeChange = (next: SearchMode) => {
+    navigateWithParams((params) => {
+      if (next === 'natural') params.set('mode', 'natural')
+      else params.delete('mode')
     })
   }
 
@@ -440,6 +519,8 @@ function ProductsPageContent() {
 
               <div className="pp-glass" style={{ padding: 'var(--sp-6)' }}>
                 <ProductSearchPanel
+                  mode={activeMode}
+                  onModeChange={handleModeChange}
                   initialQuery={searchParams.get('search') ?? ''}
                   onSearch={handleSearch}
                   onMoreFilters={() => setDrawerOpen(true)}
@@ -458,6 +539,7 @@ function ProductsPageContent() {
                     }))
                     resetOffset()
                   }}
+                  freeTrial={filters.freeTrial}
                 />
               </div>
             </Reveal>
@@ -563,6 +645,19 @@ function ProductsPageContent() {
 
             {/* product grid */}
             <div className="pp-fade-stack pp-stack pp-gap-8">
+              {naturalMode && search && (
+                <div className="pp-stack" style={{ gap: 4 }}>
+                  <h3 className="pp-heading-sm">
+                    Best matches for &quot;{search}&quot;
+                  </h3>
+                  {naturalNote && (
+                    <p className="pp-small" style={{ color: 'var(--slate-11)' }}>
+                      {naturalNote}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {error && (
                 <div
                   className="pp-stack pp-gap-4"
@@ -619,7 +714,7 @@ function ProductsPageContent() {
                     className="pp-body"
                     style={{ color: 'var(--slate-11)', maxWidth: '400px', marginTop: 'var(--sp-2)' }}
                   >
-                    We're actively onboarding new software vendors for this category. Try adjusting your filters or check back later.
+                    We&apos;re actively onboarding new software vendors for this category. Try adjusting your filters or check back later.
                   </p>
                 </div>
               ) : (
@@ -632,7 +727,7 @@ function ProductsPageContent() {
                 </Reveal>
               )}
 
-              {!hasKeywordSearch && pagination?.hasNextPage && (
+              {!hasActiveSearch && pagination?.hasNextPage && (
                 <div className="pp-fade-action" style={{ marginTop: 0 }}>
                   <button
                     type="button"
@@ -873,6 +968,8 @@ function ProductsPageContent() {
 /* ── search panel (hero glass form) ─────────────────────────── */
 
 function ProductSearchPanel({
+  mode,
+  onModeChange,
   initialQuery,
   onSearch,
   onMoreFilters,
@@ -882,7 +979,10 @@ function ProductSearchPanel({
   onPricingChange,
   deploymentValue,
   onDeploymentChange,
+  freeTrial,
 }: {
+  mode: SearchMode
+  onModeChange: (mode: SearchMode) => void
   initialQuery: string
   onSearch: (query: string) => void
   onMoreFilters: () => void
@@ -892,11 +992,46 @@ function ProductSearchPanel({
   onPricingChange: (value: string) => void
   deploymentValue: string
   onDeploymentChange: (value: string) => void
+  freeTrial: boolean
 }) {
   const [query, setQuery] = useState(initialQuery)
   const [resultsOpen, setResultsOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
-  const { products, loading, error, search, clear } = useKeywordSearch()
+  const {
+    products,
+    loading,
+    error,
+    search,
+    clear,
+  } = useKeywordSearch()
+  const {
+    products: naturalProducts,
+    loading: naturalLoading,
+    error: naturalError,
+    note: naturalNote,
+    search: searchNatural,
+    clear: clearNatural,
+  } = useNaturalSearch({ freeTrial })
+
+  const isNatural = mode === 'natural'
+  const activeProducts = isNatural ? naturalProducts : products
+  const activeLoading = isNatural ? naturalLoading : loading
+  const activeError = isNatural ? naturalError : error
+
+  const panelSearchersRef = useRef<SearcherMap>({
+    keyword: () => {},
+    natural: () => {},
+    clearKeyword: () => {},
+    clearNatural: () => {},
+  })
+  useEffect(() => {
+    panelSearchersRef.current = {
+      keyword: search,
+      natural: searchNatural,
+      clearKeyword: clear,
+      clearNatural: clearNatural,
+    }
+  }, [search, searchNatural, clear, clearNatural])
 
   useEffect(() => {
     setQuery(initialQuery)
@@ -904,11 +1039,15 @@ function ProductSearchPanel({
 
   useEffect(() => {
     if (query.trim().length > 1) {
-      void search(query, 6)
+      const activeSearch = isNatural
+        ? panelSearchersRef.current.natural
+        : panelSearchersRef.current.keyword
+      void activeSearch(query, 6)
     } else {
-      clear()
+      panelSearchersRef.current.clearKeyword()
+      panelSearchersRef.current.clearNatural()
     }
-  }, [clear, query, search])
+  }, [isNatural, query])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -935,6 +1074,10 @@ function ProductSearchPanel({
         onSearch(query)
       }}
     >
+      <div className="pp-flex">
+        <SearchModeToggle value={mode} onChange={onModeChange} />
+      </div>
+
       <div className="pp-flex pp-gap-3">
         <div ref={searchRef} style={{ flex: 1, position: 'relative' }}>
           <div className="pp-search">
@@ -970,20 +1113,32 @@ function ProductSearchPanel({
                 boxShadow: 'var(--shadow-menu)',
               }}
             >
-              {loading ? (
+              {isNatural && naturalNote && (
+                <p
+                  className="pp-small"
+                  style={{
+                    padding: '10px 14px',
+                    color: 'var(--slate-11)',
+                    borderBottom: 'var(--bw) solid var(--line)',
+                  }}
+                >
+                  {naturalNote}
+                </p>
+              )}
+              {activeLoading ? (
                 <p className="pp-small" style={{ padding: '14px 16px', textAlign: 'center' }}>
                   Searching products...
                 </p>
-              ) : error ? (
+              ) : activeError ? (
                 <p
                   className="pp-small"
                   style={{ padding: '14px 16px', textAlign: 'center', color: 'var(--color-error-600, #b42318)' }}
                 >
                   Unable to search products.
                 </p>
-              ) : products.length > 0 ? (
+              ) : activeProducts.length > 0 ? (
                 <div style={{ paddingBlock: 6 }}>
-                  {products.map((product) => (
+                  {activeProducts.map((product) => (
                     <Link
                       key={product.product_id}
                       href={getProductDetailHref(product.product_id)}

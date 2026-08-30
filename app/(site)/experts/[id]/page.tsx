@@ -272,7 +272,6 @@ export default function ExpertProfilePage() {
                   <InlineVideo
                     url={introVideoUrl}
                     title={`${profile.displayName} intro video`}
-                    mode="direct"
                   />
                 </div>
               </ProfileSection>

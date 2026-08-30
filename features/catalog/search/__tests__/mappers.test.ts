@@ -45,12 +45,15 @@ const mockCatalogSearchResult: CatalogSearchResult = {
   fit_score: 0.95,
   pricing_bucket: 'enterprise',
   market_presence_score: 95.5,
+  approved_logo_url: 'https://example.com/logo.png',
+  primary_category: 'CRM',
 }
 
 const mockCatalogSearchResponse: CatalogSearchResponse = {
   count: 10,
   results: [mockCatalogSearchResult],
   facets: null,
+  note: null,
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -63,7 +66,7 @@ describe('mapKeywordSearchResultToCardProduct', () => {
       product_id: 'prod-1',
       product_name: 'Salesforce CRM',
       product_description: null, // Not in keyword search
-      product_logo: 'http://localhost:8020/api/v1/catalog/products/prod-1/logo',
+      product_logo: '/api/proxy/api/v1/catalog/products/prod-1/logo',
       rating: null, // Not in keyword search
       reviews: null,
       primary_category: 'CRM',
@@ -113,10 +116,10 @@ describe('mapCatalogSearchResultToCardProduct', () => {
       product_id: 'prod-1',
       product_name: 'Salesforce CRM',
       product_description: 'The world\'s #1 CRM platform.',
-      product_logo: null, // Not in hybrid search
+      product_logo: '/api/proxy/api/v1/catalog/products/prod-1/logo',
       rating: 4.5,
       reviews: 1243,
-      primary_category: null, // Not in hybrid search
+      primary_category: 'CRM',
       vendor_name: 'Salesforce',
       free_plan_available: false,
       free_trial_available: true,

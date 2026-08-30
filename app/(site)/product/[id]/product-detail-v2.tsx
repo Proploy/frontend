@@ -11,6 +11,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
@@ -51,7 +52,7 @@ interface ProductDetailV2Props {
 
 export default function ProductDetailV2({ product, mediaError, onRetryMedia }: ProductDetailV2Props) {
   const gallery = getProductGalleryMedia(product.media)
-  const rotatingHeroMedia = gallery.filter((item) => item.type !== 'video')
+  const rotatingHeroMedia = gallery
   const [heroMediaIndex, setHeroMediaIndex] = useState(0)
   const heroShot = rotatingHeroMedia.length > 0
     ? rotatingHeroMedia[heroMediaIndex % rotatingHeroMedia.length]
@@ -62,7 +63,7 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
     if (rotatingHeroMedia.length < 2 || dialogIndex !== null) return
     const timer = window.setInterval(() => {
       setHeroMediaIndex((current) => (current + 1) % rotatingHeroMedia.length)
-    }, 10_000)
+    }, 5_000)
     return () => window.clearInterval(timer)
   }, [dialogIndex, rotatingHeroMedia.length])
 
@@ -343,32 +344,60 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
                 )}
 
                 {heroShot && (
-                  <button
-                    type="button"
-                    className="pd-shot"
-                    onClick={() => openMedia(gallery, heroShot, setDialogIndex)}
-                    aria-label={`Open ${product.product_name} media preview`}
-                    style={{ border: 'var(--bw) solid var(--line)', padding: 0, cursor: 'zoom-in' }}
-                  >
-                    {heroShot.type === 'video' ? (
-                      <ProductMediaVideo
-                        src={heroShot.url}
-                        title={heroShot.alt || `${product.product_name} video preview`}
-                        className="object-cover"
-                        autoPlay
-                        muted
-                        loop
-                        controls={false}
-                      />
-                    ) : (
-                      <CatalogImage
-                        src={heroShot.url}
-                        alt={heroShot.alt || `${product.product_name} interface preview`}
-                        className="size-full object-cover"
-                        fallback={<span className="size-full" style={{ display: 'block' }} />}
-                      />
+                  <div className="relative group w-full">
+                    <button
+                      type="button"
+                      className="pd-shot w-full"
+                      onClick={() => openMedia(gallery, heroShot, setDialogIndex)}
+                      aria-label={`Open ${product.product_name} media preview`}
+                      style={{ border: 'var(--bw) solid var(--line)', padding: 0, cursor: 'zoom-in' }}
+                    >
+                      {heroShot.type === 'video' ? (
+                        <ProductMediaVideo
+                          src={heroShot.url}
+                          title={heroShot.alt || `${product.product_name} video preview`}
+                          className="object-contain"
+                          autoPlay
+                          muted
+                          loop
+                          controls={false}
+                        />
+                      ) : (
+                        <CatalogImage
+                          src={heroShot.url}
+                          alt={heroShot.alt || `${product.product_name} interface preview`}
+                          className="size-full object-contain"
+                          fallback={<span className="size-full" style={{ display: 'block' }} />}
+                        />
+                      )}
+                    </button>
+                    {rotatingHeroMedia.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setHeroMediaIndex((idx) => (idx - 1 + rotatingHeroMedia.length) % rotatingHeroMedia.length)
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/90 border border-border shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-105"
+                          aria-label="Previous image"
+                        >
+                          <ChevronLeft className="h-5 w-5 text-ink" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setHeroMediaIndex((idx) => (idx + 1) % rotatingHeroMedia.length)
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/90 border border-border shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-105"
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="h-5 w-5 text-ink" />
+                        </button>
+                      </>
                     )}
-                  </button>
+                  </div>
                 )}
 
                 {(product.best_for || product.not_for) && (

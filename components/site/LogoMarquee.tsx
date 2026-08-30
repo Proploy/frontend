@@ -12,18 +12,46 @@ import { CatalogImage } from '@/components/catalog/CatalogImage'
 // marquee layout never collapses during initial paint.
 const FALLBACK_NAMES = ['Slack', 'Stripe', 'Linear', 'Jira', 'Zoom', 'HubSpot', 'Figma', 'DocuSign']
 
+/**
+ * Reorders tiles so logos from the same vendor are never adjacent — several
+ * vendors (HubSpot, Microsoft, …) own many products whose logos would
+ * otherwise march side by side. Round-robin across vendor groups keeps every
+ * company distributed evenly and is deterministic (stable across reloads).
+ */
+export function interleaveByVendor<T extends { vendor: string }>(tiles: T[]): T[] {
+  if (tiles.length < 3) return tiles
+
+  const groups = new Map<string, typeof tiles>()
+  for (const tile of tiles) {
+    const key = tile.vendor || '\u0000'
+    groups.set(key, [...(groups.get(key) ?? []), tile])
+  }
+
+  const groupList = [...groups.values()].sort((a, b) => b.length - a.length)
+  const max = Math.max(...groupList.map((g) => g.length))
+  const interleaved: typeof tiles = []
+  for (let i = 0; i < max; i++) {
+    for (const group of groupList) {
+      if (i < group.length) interleaved.push(group[i])
+    }
+  }
+  return interleaved
+}
+
 export function LogoMarquee() {
   const { products, loading } = useProductList({ limit: 100 })
 
   const tiles = useMemo(() => {
-    const fromCatalog = (products ?? [])
-      .filter((p) => p.product_logo)
-      .slice(0, 14)
-      .map((p) => ({
-        href: getProductDetailHref(p.product_id),
-        logo: p.product_logo as string,
-        alt: p.product_name,
-      }))
+    const fromCatalog = interleaveByVendor(
+      (products ?? [])
+        .filter((p) => p.product_logo)
+        .map((p) => ({
+          href: getProductDetailHref(p.product_id),
+          logo: p.product_logo as string,
+          alt: p.product_name,
+          vendor: p.vendor_name ?? '',
+        })),
+    )
     if (fromCatalog.length > 0) return fromCatalog
 
     // Only fallback to mock names if loading is complete and catalog returned 0 products

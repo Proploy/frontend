@@ -292,17 +292,30 @@ export default function WorkspaceEngagementsPage() {
                     Status changes sync to the workspace engagement.
                   </span>
                   <div className="flex flex-wrap items-center gap-[8px]">
-                    {(['active', 'paused', 'closed'] as const).map((status) => (
+                    {isExpertWorkspace && selected.status !== 'closed' && (
                       <button
-                        key={status}
                         type="button"
-                        onClick={() => void updateStatus(selected.id, status)}
-                        disabled={selected.status === status || busyId === selected.id}
-                        className={`rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-[#414651] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                        onClick={() => void updateStatus(selected.id, 'closed')}
+                        disabled={busyId === selected.id}
+                        className={`rounded-[8px] border border-[#fecdca] bg-[#fef3f2] px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-[#b42318] transition-colors hover:bg-[#fee4e2] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
                       >
-                        {statusLabel(status)}
+                        Unlink connection
                       </button>
-                    ))}
+                    )}
+                    {(['active', 'paused', 'closed'] as const).map((status) => {
+                      if (isExpertWorkspace && status === 'closed') return null
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => void updateStatus(selected.id, status)}
+                          disabled={selected.status === status || busyId === selected.id}
+                          className={`rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-[#414651] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                        >
+                          {statusLabel(status)}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               </div>

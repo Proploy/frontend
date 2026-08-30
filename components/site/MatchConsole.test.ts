@@ -4,78 +4,11 @@ import path from 'node:path'
 import {
   MIN_QUERY_LENGTH,
   isTypeThroughKey,
-  ratingToBarWidth,
-  resultNote,
 } from './MatchConsole'
-import type { CardProduct } from '@/features/catalog'
 
 function readSource(file: string) {
   return fs.readFileSync(path.join(process.cwd(), file), 'utf8')
 }
-
-function product(overrides: Partial<CardProduct> = {}): CardProduct {
-  return {
-    product_id: 'p1',
-    product_name: 'Gusto',
-    product_description: null,
-    product_logo: null,
-    rating: null,
-    reviews: null,
-    primary_category: 'Payroll',
-    vendor_name: null,
-    free_plan_available: false,
-    free_trial_available: false,
-    ...overrides,
-  }
-}
-
-describe('ratingToBarWidth', () => {
-  it('reads a 0–5 rating as a share of the track', () => {
-    expect(ratingToBarWidth(5)).toBe(100)
-    expect(ratingToBarWidth(4)).toBe(80)
-    expect(ratingToBarWidth(0)).toBe(0)
-  })
-
-  it('collapses the bar for unrated products instead of inventing a score', () => {
-    expect(ratingToBarWidth(null)).toBe(0)
-    expect(ratingToBarWidth(Number.NaN)).toBe(0)
-  })
-
-  it('clamps ratings that fall outside the documented range', () => {
-    expect(ratingToBarWidth(7)).toBe(100)
-    expect(ratingToBarWidth(-2)).toBe(0)
-  })
-})
-
-describe('resultNote', () => {
-  it('prefers the catalog description', () => {
-    expect(resultNote(product({ product_description: 'Cloud-based payroll.' })))
-      .toBe('Cloud-based payroll.')
-  })
-
-  it('drops a vendor that just restates the product name', () => {
-    // The catalog stores "Odoo" / "Odoo S.A.", which read as a duplicate line.
-    expect(resultNote(product({ product_name: 'Odoo', vendor_name: 'Odoo S.A.' })))
-      .toBe('Vetted implementers available')
-  })
-
-  it('keeps a vendor that adds information, with real plan and review signal', () => {
-    expect(
-      resultNote(
-        product({
-          product_name: 'Dynamics 365',
-          vendor_name: 'Microsoft',
-          free_trial_available: true,
-          reviews: 1234,
-        }),
-      ),
-    ).toBe('Microsoft · Free trial · 1,234 reviews')
-  })
-
-  it('never leaves the line empty', () => {
-    expect(resultNote(product())).toBe('Vetted implementers available')
-  })
-})
 
 describe('isTypeThroughKey', () => {
   const bare = { ctrlKey: false, metaKey: false, altKey: false }
@@ -104,45 +37,55 @@ describe('isTypeThroughKey', () => {
 describe('MatchConsole interaction contract', () => {
   const source = readSource('components/site/MatchConsole.tsx')
 
-  it('searches the real catalog rather than the demo fixtures', () => {
-    expect(source).toContain('useProductList')
-    expect(source).toContain('getProductDetailHref')
+  it('hosts the real catalog search rather than the demo fixtures', () => {
+    // The hosted bar is the shared ProductSearch; the old products/ui list is gone.
+    expect(source).toContain('ProductSearch')
+    expect(source).not.toContain('useProductList')
+    expect(source).not.toContain('products/ui')
   })
 
-  it('only queries the catalog once a real query exists', () => {
-    // LiveResults owns the hook and is mounted behind `hasQuery`, so an idle
-    // hero never calls the backend.
-    expect(source).toContain('hasQuery ? (')
+  it('places the mode toggle inside the card header so it drives the natural endpoint', () => {
+    expect(source).toContain('SearchModeToggle')
+    // "Describe what you need" must switch the real API — not be gated behind a
+    // rollout flag that silently keeps calling keyword search.
+    expect(source).not.toContain('isNaturalSearchEnabled')
+    expect(source).toContain('value={mode}')
+    expect(source).toContain('onChange={setMode}')
+  })
+
+  it('keeps the search bar visible and shows suggestions until a real query exists', () => {
+    expect(source).toContain('!hasQuery && (')
     expect(MIN_QUERY_LENGTH).toBeGreaterThan(1)
   })
 
-  it('stops the idle animations once live', () => {
-    // The scan beam is unmounted and the pulsing dot goes solid in live mode.
-    expect(source).toContain('{!live && (')
-    expect(source).toContain('${live ? "" : "pulse-dot"}')
-    // The demo typing reel bails out instead of running behind the real input.
-    expect(source).toContain('if (live) return;')
+  it('lets the hosted search own debouncing and fallback handling', () => {
+    const searchSource = readSource('components/search/ProductSearch.tsx')
+    expect(searchSource).toContain('useKeywordSearch')
+    expect(searchSource).toContain('useNaturalSearch')
+    // Debounce and the never-silent keyword fallback live in the shared hooks.
+    const hooksSource = readSource('features/catalog/search/hooks.ts')
+    expect(hooksSource).toContain('setTimeout(resolve, 200)')
   })
 
-  it('debounces keystrokes before they reach the catalog', () => {
-    expect(source).toContain('DEBOUNCE_MS')
-    expect(source).toContain('setTimeout(() => setDebouncedQuery(trimmed), DEBOUNCE_MS)')
-  })
-
-  it('reserves the demo reel footprint in every body state', () => {
-    // Activating used to collapse the card under the pointer, because the
-    // suggestion/loading/empty states are shorter than three result rows.
+  it('reserves the suggestion footprint so results never resize the card', () => {
     const bodyStates = source.match(/BODY_MIN_H/g) ?? []
-    // One definition plus demo list, suggestions, skeletons, error, empty, results.
-    expect(bodyStates.length).toBe(7)
-    // Skeleton rows must match a real row exactly, or loading shifts the card.
-    expect(source).toContain('className="h-32 animate-pulse')
+    // One definition plus the embedded results list and the suggestions block.
+    expect(bodyStates.length).toBe(3)
   })
 
-  it('decides deactivation from the pointer position, not a leave event', () => {
-    // Activating swaps the card's children and React can swallow the synthetic
-    // pointerleave, which used to strand the console in live mode.
-    expect(source).toContain('document.addEventListener("pointermove", onPointerMove)')
-    expect(source).toContain('if (!live || query) return;')
+  it('uses a persistent mode state instead of demo-reel live gating', () => {
+    expect(source).not.toContain('data-live')
+    expect(source).not.toContain('if (live) return;')
+    expect(source).toContain('data-[mode=natural]')
+  })
+
+  it('keeps hover-then-type flowing into the hosted input', () => {
+    expect(source).toContain('document.addEventListener("keydown", onKeyDown)')
+    expect(source).toContain('isTypeThroughKey(event.key, event)')
+  })
+
+  it('sends the view-all link to the products page in the active mode', () => {
+    expect(source).toContain('/products?search=${encodeURIComponent(trimmed)}')
+    expect(source).toContain('&mode=natural')
   })
 })

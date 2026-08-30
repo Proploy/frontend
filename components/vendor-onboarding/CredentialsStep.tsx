@@ -208,6 +208,7 @@ export default function CredentialsStep({ formData, updateFormData, uploadDocume
           </div>
         ))}
 
+
         <button type="button" onClick={addManualCertification} className="pp-link-arrow" style={{ alignSelf: 'flex-start' }}>
           <Plus size={16} />
           Add certification manually

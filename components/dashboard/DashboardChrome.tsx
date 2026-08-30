@@ -44,6 +44,7 @@ export type DashNavItem = {
 export type DashboardUser = {
   name: string
   email: string
+  avatarUrl?: string
   /** Optional avatar background (gradient classes or a single color). */
   avatarClassName?: string
 }
@@ -205,11 +206,16 @@ export function WorkspaceAccountMenu({
         title={collapsed ? name : undefined}
       >
         <div
-          className={`flex size-[40px] shrink-0 items-center justify-center rounded-full text-[14px] font-semibold text-white ${
+          className={`flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[14px] font-semibold text-white ${
             user?.avatarClassName ?? 'bg-gradient-to-br from-[#84adff] to-[#155eef]'
           }`}
         >
-          {initial}
+          {user?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatarUrl} alt="" className="size-full object-cover" />
+          ) : (
+            initial
+          )}
         </div>
         {!collapsed && (
           <>

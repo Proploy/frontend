@@ -1,6 +1,8 @@
 // Search Contracts — mirrors backend Pydantic models exactly.
-// Backend: KeywordSearchRequest, KeywordSearchResponse, KeywordSearchResult, CatalogSearchRequest, CatalogSearchResponse, CatalogSearchResult
+// Backend: KeywordSearchRequest, KeywordSearchResponse, KeywordSearchResult, CatalogSearchRequest, CatalogSearchResponse, CatalogSearchResult, NaturalSearchRequest
 // Source: service-apis/modules/catalog/search/models.py + modules/catalog/models.py
+
+export type SearchMode = 'keyword' | 'natural'
 
 export interface KeywordSearchRequest {
   query: string
@@ -38,6 +40,19 @@ export interface CatalogSearchRequest {
 
 export type CatalogSearchSort = NonNullable<CatalogSearchRequest['sort']>
 
+export interface NaturalSearchRequest {
+  query: string
+  limit?: number
+  filters?: Record<string, unknown>
+  pricing_bucket?: string[]
+  compliance?: string[]
+  deployment_model?: string[]
+  company_size?: string[]
+  free_plan?: boolean
+  trial_available?: boolean
+  pricing_model?: string[]
+}
+
 export interface CatalogSearchResult {
   product_id: string
   product_name: string
@@ -53,10 +68,13 @@ export interface CatalogSearchResult {
   fit_score: number
   pricing_bucket: string | null
   market_presence_score: number | null
+  approved_logo_url: string | null
+  primary_category: string | null
 }
 
 export interface CatalogSearchResponse {
   count: number
   results: CatalogSearchResult[]
   facets: Record<string, unknown> | null
+  note: string | null
 }

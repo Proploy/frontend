@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { clientCatalogApi } from '../shared/client-api'
 import { createLatestRequestGuard } from '../shared/latest-request'
 import type { NormalizedError } from '../shared/types'
-import type { CatalogSearchRequest } from '../search/types'
+import type { CatalogSearchRequest, NaturalSearchRequest } from '../search/types'
 import type { CardProduct, ProductListResult } from '../products/types'
 import {
   mapKeywordSearchResponseToResults,
@@ -188,6 +188,154 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     suggestedCorrection,
     ghostSuffix,
     fullCompletion,
+    search,
+    clear,
+  }
+}
+
+export interface UseNaturalSearchFilters {
+  pricingBucket?: string
+  companySize?: string[]
+  deploymentModel?: string[]
+  compliance?: string[]
+  freePlan?: boolean
+  /** Free-trial products only — resolved to `trial_available` on the wire. */
+  freeTrial?: boolean
+}
+
+interface UseNaturalSearchResult {
+  products: CardProduct[]
+  loading: boolean
+  error: NormalizedError | null
+  note: string | null
+  search: (query: string, limit?: number) => Promise<void>
+  clear: () => void
+}
+
+/**
+ * Natural-language search — semantic-first with hard-filter refinement and
+ * keyword fallback. Backend: POST /api/v1/catalog/search/natural
+ */
+export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNaturalSearchResult {
+  const [products, setProducts] = useState<CardProduct[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<NormalizedError | null>(null)
+  const [note, setNote] = useState<string | null>(null)
+
+  const requestGuardRef = useRef(createLatestRequestGuard())
+  const debounceRef = useRef<{
+    timer: ReturnType<typeof setTimeout>
+    resolve: () => void
+  } | null>(null)
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
+
+  const cancelDebounce = useCallback(() => {
+    if (!debounceRef.current) return
+
+    clearTimeout(debounceRef.current.timer)
+    debounceRef.current.resolve()
+    debounceRef.current = null
+  }, [])
+
+  const search = useCallback(async (query: string, limit = 20) => {
+    cancelDebounce()
+    const requestId = requestGuardRef.current.begin()
+
+    let debounce: {
+      timer: ReturnType<typeof setTimeout>
+      resolve: () => void
+    } | null = null
+
+    await new Promise<void>((resolve) => {
+      debounce = {
+        timer: setTimeout(resolve, 200),
+        resolve,
+      }
+      debounceRef.current = debounce
+    })
+    if (debounceRef.current === debounce) debounceRef.current = null
+
+    if (!requestGuardRef.current.isLatest(requestId)) return
+
+    const trimmed = query.trim()
+
+    if (!trimmed) {
+      setProducts([])
+      setLoading(false)
+      setError(null)
+      setNote(null)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const activeFilters = filtersRef.current
+      const request: NaturalSearchRequest = { query: trimmed, limit }
+      if (activeFilters.pricingBucket) {
+        request.pricing_bucket = [activeFilters.pricingBucket]
+      }
+      if (activeFilters.companySize?.length) {
+        request.company_size = activeFilters.companySize
+      }
+      if (activeFilters.deploymentModel?.length) {
+        request.deployment_model = activeFilters.deploymentModel
+      }
+      if (activeFilters.compliance?.length) {
+        request.compliance = activeFilters.compliance
+      }
+      if (activeFilters.freePlan) {
+        request.free_plan = true
+      }
+      if (activeFilters.freeTrial) {
+        request.trial_available = true
+      }
+
+      const result = await clientCatalogApi.search.natural(request)
+
+      if (!requestGuardRef.current.isLatest(requestId)) return
+
+      if (!result.ok) {
+        setError(result)
+        setProducts([])
+        setNote(null)
+        return
+      }
+
+      const mapped = mapCatalogSearchResponseToResults(result.data, limit, 0)
+      setProducts(mapped.products)
+      setNote(result.data.note ?? null)
+    } finally {
+      if (requestGuardRef.current.isLatest(requestId)) {
+        setLoading(false)
+      }
+    }
+  }, [cancelDebounce])
+
+  const clear = useCallback(() => {
+    cancelDebounce()
+    requestGuardRef.current.invalidate()
+    setProducts([])
+    setLoading(false)
+    setError(null)
+    setNote(null)
+  }, [cancelDebounce])
+
+  useEffect(() => {
+    const requestGuard = requestGuardRef.current
+    return () => {
+      cancelDebounce()
+      requestGuard.invalidate()
+    }
+  }, [cancelDebounce])
+
+  return {
+    products,
+    loading,
+    error,
+    note,
     search,
     clear,
   }
