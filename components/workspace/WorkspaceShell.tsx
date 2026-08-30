@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import {
   Bell,
   Calendar,
@@ -25,6 +25,7 @@ import {
 } from '@/components/dashboard/DashboardChrome'
 import type { WorkspaceRole } from '@/features/workspace/types'
 import { WorkspaceNotificationTrigger } from '@/features/workspace/workspace-experience'
+import { useUserProfilePicture } from '@/features/users/use-user-profile-picture'
 
 export { BUTTON_SKEUO, CARD_SHADOW }
 
@@ -60,13 +61,18 @@ const WORKSPACE_BRAND = {
 
 function useWorkspaceUser(): DashboardUser | undefined {
   const { user } = useAuth()
+  const avatarUrl = useUserProfilePicture()
+
   if (!user) return undefined
+
   return {
     name: user.name ?? 'Workspace',
     email: user.email ?? '',
+    avatarUrl: avatarUrl ?? undefined,
     avatarClassName: 'bg-gradient-to-br from-[#fde68a] to-[#c084fc]',
   }
 }
+
 
 function visibleNavItems(items: WorkspaceNavItem[], role?: WorkspaceRole | null): DashNavItem[] {
   return items.filter((item) => {
