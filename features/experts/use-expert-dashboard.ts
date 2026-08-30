@@ -13,6 +13,10 @@ import type {
   ExpertProfilePictureUploadUrlResponse,
   ExpertProfileUpdateRequest,
   ExpertProjectDownloadUrlResponse,
+  ExpertLinkInput,
+  ExpertProjectInput,
+  ApplicationDocumentUploadResponse,
+  ExpertProjectFileUploadResponse,
 } from '@/features/experts/types'
 
 const client = new ServiceApisBrowserClient()
@@ -86,9 +90,118 @@ async function saveProfilePicture(
   return { ok: true, data: result.data }
 }
 
+export type UpdateProfileResult = { ok: true; data: ExpertMe } | NormalizedError
+export type AddLinkResult = { ok: true; data: Record<string, unknown> } | NormalizedError
+export type DeleteLinkResult = { ok: true; data: Record<string, unknown> } | NormalizedError
+export type AddProjectResult = { ok: true; data: Record<string, unknown> } | NormalizedError
+export type UpdateProjectResult = { ok: true; data: Record<string, unknown> } | NormalizedError
+export type DeleteProjectResult = { ok: true; data: Record<string, unknown> } | NormalizedError
+export type UploadApplicationDocumentResult = { ok: true; data: ApplicationDocumentUploadResponse } | NormalizedError
+export type UploadProjectFileResult = { ok: true; data: ExpertProjectFileUploadResponse } | NormalizedError
+
+/**
+ * PATCH /api/v1/experts/me/profile
+ */
+async function updateProfile(payload: ExpertProfileUpdateRequest): Promise<UpdateProfileResult> {
+  const result = await client.patch<ExpertMe>('/api/v1/experts/me/profile', payload, {
+    requireAuth: true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * POST /api/v1/experts/me/links
+ */
+async function addLink(payload: ExpertLinkInput): Promise<AddLinkResult> {
+  const result = await client.post<Record<string, unknown>>('/api/v1/experts/me/links', payload, {
+    requireAuth: true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * DELETE /api/v1/experts/me/links/{linkId}
+ */
+async function deleteLink(linkId: string): Promise<DeleteLinkResult> {
+  const result = await client.delete<Record<string, unknown>>(`/api/v1/experts/me/links/${encodeURIComponent(linkId)}`, {
+    requireAuth: true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * POST /api/v1/experts/me/projects
+ */
+async function addProject(payload: ExpertProjectInput): Promise<AddProjectResult> {
+  const result = await client.post<Record<string, unknown>>('/api/v1/experts/me/projects', payload, {
+    requireAuth: true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * PATCH /api/v1/experts/me/projects/{projectId}
+ */
+async function updateProject(projectId: string, payload: ExpertProjectInput): Promise<UpdateProjectResult> {
+  const result = await client.patch<Record<string, unknown>>(`/api/v1/experts/me/projects/${encodeURIComponent(projectId)}`, payload, {
+    requireAuth: true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * DELETE /api/v1/experts/me/projects/{projectId}
+ */
+async function deleteProject(projectId: string): Promise<DeleteProjectResult> {
+  const result = await client.delete<Record<string, unknown>>(`/api/v1/experts/me/projects/${encodeURIComponent(projectId)}`, {
+    requireAuth: true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * POST /api/v1/experts/me/application/document-upload
+ */
+async function uploadApplicationDocument(documentType: string, file: File): Promise<UploadApplicationDocumentResult> {
+  const result = await client.postBinary<ApplicationDocumentUploadResponse>(
+    `/api/v1/experts/me/application/document-upload?documentType=${encodeURIComponent(documentType)}&filename=${encodeURIComponent(file.name)}`,
+    file,
+    { requireAuth: true }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
+/**
+ * POST /api/v1/experts/me/projects/{projectId}/file
+ */
+async function uploadProjectFile(projectId: string, file: File): Promise<UploadProjectFileResult> {
+  const result = await client.postBinary<ExpertProjectFileUploadResponse>(
+    `/api/v1/experts/me/projects/${encodeURIComponent(projectId)}/file?filename=${encodeURIComponent(file.name)}`,
+    file,
+    { requireAuth: true }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: result.data }
+}
+
 export const useExpertDashboard = () => useMemo(() => ({
   getDashboard,
   getProjectFileDownloadUrl,
   getProfilePictureUploadUrl,
   saveProfilePicture,
+  updateProfile,
+  addLink,
+  deleteLink,
+  addProject,
+  updateProject,
+  deleteProject,
+  uploadApplicationDocument,
+  uploadProjectFile,
 }), [])
