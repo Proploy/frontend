@@ -51,6 +51,7 @@ export interface NaturalSearchRequest {
   free_plan?: boolean
   trial_available?: boolean
   pricing_model?: string[]
+  category_term_id?: string
 }
 
 export interface CatalogSearchResult {

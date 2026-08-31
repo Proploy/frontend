@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Nav } from '@/components/site/Nav'
@@ -173,9 +173,15 @@ function ExpertsPageContent() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [query, setQuery] = useState(searchFromUrl)
 
+  const urlFiltersKey = `${searchParams.get('platform')}|${searchParams.get('industry')}|${searchParams.get('projectType')}|${searchParams.get('location')}`
+  const lastUrlFiltersKey = useRef(urlFiltersKey)
+
   useEffect(() => {
-    setFilters(filtersFromUrl)
-  }, [filtersFromUrl])
+    if (urlFiltersKey !== lastUrlFiltersKey.current) {
+      lastUrlFiltersKey.current = urlFiltersKey
+      setFilters(filtersFromUrl)
+    }
+  }, [urlFiltersKey, filtersFromUrl])
 
   useEffect(() => {
     setQuery(searchFromUrl)

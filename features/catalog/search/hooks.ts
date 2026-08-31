@@ -201,6 +201,7 @@ export interface UseNaturalSearchFilters {
   freePlan?: boolean
   /** Free-trial products only — resolved to `trial_available` on the wire. */
   freeTrial?: boolean
+  categoryTermId?: string
 }
 
 interface UseNaturalSearchResult {
@@ -291,6 +292,9 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
       }
       if (activeFilters.freeTrial) {
         request.trial_available = true
+      }
+      if (activeFilters.categoryTermId) {
+        request.category_term_id = activeFilters.categoryTermId
       }
 
       const result = await clientCatalogApi.search.natural(request)
