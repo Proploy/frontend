@@ -56,6 +56,17 @@ export function classifyProductMediaAsset(
   return 'image'
 }
 
+// How long the hero holds an auto-rotating item before advancing. Videos are
+// excluded — they drive their own advance via the `ended` event, so a video
+// returns 0 (no timer).
+export function getMediaAutoplayDuration(
+  type: ProductMediaPreview['type'],
+): number {
+  if (type === 'video') return 0
+  if (type === 'gif') return 8_000
+  return 5_000
+}
+
 const PRODUCT_DETAIL_TABS: ProductDetailTab[] = [
   { key: 'product-information', label: 'Product Information' },
   { key: 'integrations', label: 'Integrations' },

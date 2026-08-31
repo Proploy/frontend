@@ -115,11 +115,11 @@ export function PathCard({ entity }: { entity: Entity }) {
   )
 }
 
-export function ImplCtas() {
+export function ImplCtas({ entity }: { entity: Entity }) {
   return (
     <div className="flex flex-col gap-[8px] w-full">
-      <Btn variant="primary" size="sm" icon="users" full>View vetted experts</Btn>
-      <Btn variant="secondary" size="sm" icon="msg" full>Request implementation help</Btn>
+      <Btn variant="primary" size="sm" icon="users" full onClick={() => window.location.href = `/experts?search=${encodeURIComponent(entity.name)}`}>View vetted experts</Btn>
+      <Btn variant="secondary" size="sm" icon="msg" full onClick={() => window.location.href = `/contact?type=implementation_help&product=${encodeURIComponent(entity.name)}`}>Request implementation help</Btn>
     </div>
   )
 }
@@ -202,7 +202,7 @@ export function buildRows(tab: Tab | string): Row[] {
       { label: 'Admin skill required', cell: (e) => txt(e.adminSkill) },
       { label: 'Migration risk', cell: (e) => <Pill tone={riskTone(e.migrationRisk)} dot>{e.migrationRisk}</Pill>, best: (es) => [...es].sort((a, b) => order[a.migrationRisk] - order[b.migrationRisk])[0]?.id },
       { label: 'Recommended expert path', cell: (e) => <PathCard entity={e} /> },
-      { label: 'Take action', cell: () => <ImplCtas /> },
+      { label: 'Take action', cell: (e) => <ImplCtas entity={e} /> },
     ],
     Reviews: [
       { label: 'Rating', cell: (e) => <Stars rating={e.rating} size={16} />, best: (es) => [...es].sort((a, b) => b.rating - a.rating)[0]?.id },

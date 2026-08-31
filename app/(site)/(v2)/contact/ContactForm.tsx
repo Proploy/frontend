@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 const TOPICS = [
   'General question',
@@ -11,7 +12,11 @@ const TOPICS = [
   'Something else',
 ]
 
-export function ContactForm() {
+function ContactFormContent() {
+  const searchParams = useSearchParams()
+  const product = searchParams?.get('product')
+  const type = searchParams?.get('type')
+
   const [sent, setSent] = useState(false)
 
   if (sent) {
@@ -49,29 +54,44 @@ export function ContactForm() {
   return (
     <form
       className="pp-stack pp-gap-4"
-      action={() => {
+      action={async (formData: FormData) => {
+        try {
+          const payload = {
+            email: formData.get('email'),
+            firstName: formData.get('name'),
+            type: formData.get('topic'),
+            message: formData.get('message'),
+          }
+          await fetch(`${process.env.NEXT_PUBLIC_SERVICE_APIS_URL}/api/v1/contact`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+        } catch (e) {
+          console.error('Failed to submit contact form', e)
+        }
         setSent(true)
       }}
     >
       <div className="pp-grid pp-grid-2" style={{ gap: 'var(--sp-4)' }}>
         <div className="pp-field">
           <label htmlFor="ctName">Full name</label>
-          <input className="pp-input" id="ctName" type="text" required placeholder="Alex Rivera" />
+          <input className="pp-input" id="ctName" name="name" type="text" required placeholder="Alex Rivera" />
         </div>
         <div className="pp-field">
           <label htmlFor="ctEmail">Work email</label>
-          <input className="pp-input" id="ctEmail" type="email" required placeholder="you@company.com" />
+          <input className="pp-input" id="ctEmail" name="email" type="email" required placeholder="you@company.com" />
         </div>
       </div>
 
       <div className="pp-grid pp-grid-2" style={{ gap: 'var(--sp-4)' }}>
         <div className="pp-field">
           <label htmlFor="ctCompany">Company</label>
-          <input className="pp-input" id="ctCompany" type="text" placeholder="Company name" />
+          <input className="pp-input" id="ctCompany" name="company" type="text" placeholder="Company name" />
         </div>
         <div className="pp-field">
           <label htmlFor="ctTopic">Topic</label>
-          <select className="pp-select" id="ctTopic" defaultValue={TOPICS[0]}>
+          <select className="pp-select" id="ctTopic" name="topic" defaultValue={TOPICS[0]}>
             {TOPICS.map((topic) => (
               <option key={topic} value={topic}>
                 {topic}
@@ -86,7 +106,9 @@ export function ContactForm() {
         <textarea
           className="pp-textarea"
           id="ctMsg"
+          name="message"
           required
+          defaultValue={type === 'implementation_help' && product ? `I am requesting implementation help for ${product}.` : undefined}
           placeholder="Tell us a little about what you need — the more context, the faster the answer."
         />
       </div>
@@ -97,5 +119,13 @@ export function ContactForm() {
 
       <p className="pp-small">We reply to every message within one business day.</p>
     </form>
+  )
+}
+
+export function ContactForm() {
+  return (
+    <Suspense fallback={<div className="pp-stack pp-gap-4"><p>Loading form...</p></div>}>
+      <ContactFormContent />
+    </Suspense>
   )
 }

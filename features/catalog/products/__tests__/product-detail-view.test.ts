@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   classifyProductMediaAsset,
+  getMediaAutoplayDuration,
   getProductDetailHref,
   getProductDetailTabs,
   getProductHeroMedia,
@@ -37,6 +38,20 @@ describe('getProductDetailTabs', () => {
 describe('getProductDetailHref', () => {
   it('uses the canonical plural product route and encodes the id', () => {
     expect(getProductDetailHref('product/id')).toBe('/products/product%2Fid')
+  })
+})
+
+describe('getMediaAutoplayDuration', () => {
+  it('holds images for 5 seconds', () => {
+    expect(getMediaAutoplayDuration('image')).toBe(5_000)
+  })
+
+  it('holds GIFs for 8 seconds so the looped animation is visible', () => {
+    expect(getMediaAutoplayDuration('gif')).toBe(8_000)
+  })
+
+  it('returns 0 for videos so they drive their own advance via the ended event', () => {
+    expect(getMediaAutoplayDuration('video')).toBe(0)
   })
 })
 

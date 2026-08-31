@@ -33,9 +33,7 @@ import { getNextProductPageOffset } from '@/features/catalog/products/pagination
 const PRODUCT_PAGE_SIZE = 15
 
 type SearcherMap = {
-  keyword: (query: string, limit?: number) => Promise<void> | void
   natural: (query: string, limit?: number) => Promise<void> | void
-  clearKeyword: () => void
   clearNatural: () => void
 }
 
@@ -238,7 +236,7 @@ function ProductsPageContent() {
   const categoryTermIds = getDescendantProductCategoryTermIds(selectedCategoryNode)
   const { products: listedProducts, loading: listLoading, error: listError, pagination, refetch } = useRecursiveCategoryProductList({
     ...buildProductListRequest({
-      search: undefined,
+      search: !naturalMode ? search : undefined,
       categoryTermId: filters.categoryTermId,
       pricingBucket: filters.pricingBucket,
       freePlan: filters.freePlan,
@@ -251,16 +249,9 @@ function ProductsPageContent() {
       offset,
     }),
     categoryTermIds,
-    enabled: !hasActiveSearch,
+    enabled: !naturalMode || !hasActiveSearch,
     append: true,
   })
-  const {
-    products: searchProducts,
-    loading: searchLoading,
-    error: searchError,
-    search: runKeywordSearch,
-    clear: clearKeywordSearch,
-  } = useKeywordSearch()
 
   const {
     products: naturalProducts,
@@ -275,6 +266,8 @@ function ProductsPageContent() {
     deploymentModel: filters.deploymentModel,
     compliance: filters.compliance,
     freePlan: filters.freePlan,
+    freeTrial: filters.freeTrial,
+    categoryTermId: filters.categoryTermId,
   })
 
   const naturalFilterKey = [
@@ -283,30 +276,20 @@ function ProductsPageContent() {
     ...filters.deploymentModel,
     ...filters.compliance,
     filters.freePlan,
+    filters.freeTrial,
+    filters.categoryTermId,
   ].join('|')
 
   const pageSearchersRef = useRef<SearcherMap>({
-    keyword: () => {},
     natural: () => {},
-    clearKeyword: () => {},
     clearNatural: () => {},
   })
   useEffect(() => {
     pageSearchersRef.current = {
-      keyword: runKeywordSearch,
       natural: runNaturalSearch,
-      clearKeyword: clearKeywordSearch,
       clearNatural: clearNaturalSearch,
     }
-  }, [runKeywordSearch, runNaturalSearch, clearKeywordSearch, clearNaturalSearch])
-
-  useEffect(() => {
-    if (activeMode !== 'natural' && search) {
-      void pageSearchersRef.current.keyword(search, 6)
-    } else {
-      pageSearchersRef.current.clearKeyword()
-    }
-  }, [activeMode, search])
+  }, [runNaturalSearch, clearNaturalSearch])
 
   useEffect(() => {
     if (activeMode === 'natural' && search) {
@@ -316,21 +299,9 @@ function ProductsPageContent() {
     }
   }, [activeMode, naturalFilterKey, search])
 
-  const products = hasActiveSearch
-    ? naturalMode
-      ? naturalProducts
-      : searchProducts
-    : listedProducts
-  const loading = hasActiveSearch
-    ? naturalMode
-      ? naturalLoading
-      : searchLoading
-    : listLoading
-  const error = hasActiveSearch
-    ? naturalMode
-      ? naturalError
-      : searchError
-    : listError
+  const products = (hasActiveSearch && naturalMode) ? naturalProducts : listedProducts
+  const loading = (hasActiveSearch && naturalMode) ? naturalLoading : listLoading
+  const error = (hasActiveSearch && naturalMode) ? naturalError : listError
   const isLoadingInitialProducts = loading && (offset === 0 || products.length === 0)
   const isLoadingMoreProducts = loading && offset > 0 && products.length > 0
 
@@ -1018,7 +989,14 @@ function ProductSearchPanel({
   const activeLoading = isNatural ? naturalLoading : loading
   const activeError = isNatural ? naturalError : error
 
-  const panelSearchersRef = useRef<SearcherMap>({
+  type MobileSearcherMap = {
+    keyword: (query: string, limit?: number) => Promise<void> | void
+    natural: (query: string, limit?: number) => Promise<void> | void
+    clearKeyword: () => void
+    clearNatural: () => void
+  }
+
+  const panelSearchersRef = useRef<MobileSearcherMap>({
     keyword: () => {},
     natural: () => {},
     clearKeyword: () => {},
