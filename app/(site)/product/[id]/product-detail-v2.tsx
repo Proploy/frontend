@@ -9,7 +9,7 @@
  */
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
 import { AuthRequiredLink } from '@/components/auth/AuthRequiredLink'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
@@ -19,6 +19,7 @@ import { buildComparisonAdditions } from '@/components/product/product-detail-co
 import { Reveal } from '@/components/site/Reveal'
 import { Skeleton } from '@/components/ui/Skeleton'
 import {
+  getMediaAutoplayDuration,
   getProductDetailHref,
   getProductGalleryMedia,
   isUnpublishedValue,
@@ -59,13 +60,22 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
     : gallery[0] ?? null
   const [dialogIndex, setDialogIndex] = useState<number | null>(null)
 
+  // Hold duration per media type. Images advance on a fixed 5s timer, GIFs get
+  // a longer fixed hold (8s) since they loop on their own, and videos drive
+  // their own advance via the `ended` event (no timer for videos).
+  const advanceHero = useCallback(() => {
+    if (rotatingHeroMedia.length < 2) return
+    setHeroMediaIndex((current) => (current + 1) % rotatingHeroMedia.length)
+  }, [rotatingHeroMedia.length])
+
   useEffect(() => {
     if (rotatingHeroMedia.length < 2 || dialogIndex !== null) return
-    const timer = window.setInterval(() => {
-      setHeroMediaIndex((current) => (current + 1) % rotatingHeroMedia.length)
-    }, 5_000)
-    return () => window.clearInterval(timer)
-  }, [dialogIndex, rotatingHeroMedia.length])
+    const current = rotatingHeroMedia[heroMediaIndex % rotatingHeroMedia.length]
+    if (!current || current.type === 'video') return
+
+    const timer = window.setTimeout(advanceHero, getMediaAutoplayDuration(current.type))
+    return () => window.clearTimeout(timer)
+  }, [heroMediaIndex, dialogIndex, rotatingHeroMedia, advanceHero])
 
   const { experts, loading: expertsLoading } = useApprovedExperts({
     platform: product.product_name,
@@ -144,9 +154,6 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
 
   const stats: { value: string; label: string }[] = []
   if (product.avg_rating !== null) stats.push({ value: product.avg_rating.toFixed(1), label: 'Avg rating' })
-  if (product.total_reviews !== null && product.total_reviews > 0) {
-    stats.push({ value: product.total_reviews.toLocaleString(), label: 'Reviews' })
-  }
   if (product.integration_labels.length > 0) {
     stats.push({ value: String(product.integration_labels.length), label: 'Integrations' })
   }
@@ -359,8 +366,9 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
                           className="object-contain"
                           autoPlay
                           muted
-                          loop
+                          loop={false}
                           controls={false}
+                          onEnded={advanceHero}
                         />
                       ) : (
                         <CatalogImage
@@ -779,7 +787,20 @@ function PricingFact({ label, value }: { label: string; value: string }) {
 }
 
 function PlanCard({ plan }: { plan: PricingTier }) {
-  const priceText = plan.price_text || (plan.is_contact_sales ? 'Contact sales' : 'Pricing unavailable')
+  const getPriceText = () => {
+    if (plan.price_text) return plan.price_text
+    if (plan.price_value != null && plan.price_value > 0) {
+      const currency = plan.currency || 'USD'
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: plan.price_value % 1 === 0 ? 0 : 2
+      }).format(plan.price_value)
+    }
+    if (plan.is_free) return 'Free'
+    return plan.is_contact_sales ? 'Contact sales' : 'Pricing unavailable'
+  }
+  const priceText = getPriceText()
   const longPrice = priceText.length > 8
 
   return (
@@ -790,21 +811,9 @@ function PlanCard({ plan }: { plan: PricingTier }) {
           {plan.is_free && <span className="pp-tag pp-tag--success">Free</span>}
           {!plan.is_free && plan.is_trial && <span className="pp-tag pp-tag--cobalt">Trial</span>}
         </div>
-        {plan.is_contact_sales && plan.source_url ? (
-          <a
-            className="pd-price"
-            style={{ fontSize: 24 }}
-            href={plan.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Contact sales
-          </a>
-        ) : (
-          <p className="pd-price" style={longPrice ? { fontSize: 24, lineHeight: 1.2 } : undefined}>
-            {priceText}
-          </p>
-        )}
+        <p className="pd-price" style={longPrice ? { fontSize: 24, lineHeight: 1.2 } : undefined}>
+          {priceText}
+        </p>
         <div className="pp-flex pp-wrap pp-gap-2">
           {isPublishedMetaValue(plan.billing_period) && (
             <span className="pp-tag">{formatLabel(plan.billing_period)}</span>
@@ -816,11 +825,11 @@ function PlanCard({ plan }: { plan: PricingTier }) {
         {plan.statement && <p className="pp-small">{plan.statement}</p>}
       </div>
 
-      {(plan.features.length > 0 || plan.limits.length > 0) && <hr className="pp-rule" />}
+      {((plan.features?.length || 0) > 0 || (plan.limits?.length || 0) > 0) && <hr className="pp-rule" />}
 
-      {plan.features.length > 0 && (
+      {(plan.features?.length || 0) > 0 && (
         <ul className="pp-stack pp-gap-3" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-          {plan.features.map((feature) => (
+          {(plan.features || []).map((feature) => (
             <li key={`${plan.plan_id}-${feature.label}`} className="pp-small">
               {feature.label}
               {feature.value && feature.value !== 'included' ? `: ${feature.value}` : ''}
@@ -829,17 +838,31 @@ function PlanCard({ plan }: { plan: PricingTier }) {
         </ul>
       )}
 
-      {plan.limits.length > 0 && (
+      {(plan.limits?.length || 0) > 0 && (
         <div className="pp-stack pp-gap-2">
           <p className="pp-label">Limits</p>
           <ul className="pp-stack pp-gap-2" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {plan.limits.map((limit) => (
+            {(plan.limits || []).map((limit) => (
               <li key={`${plan.plan_id}-${limit.label}`} className="pp-small">
                 {limit.label}
                 {limit.value && limit.value !== 'limited' ? `: ${limit.value}` : ''}
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {plan.is_contact_sales && plan.source_url && (
+        <div style={{ marginTop: 'auto', paddingTop: 'var(--sp-4)' }}>
+          <a
+            href={plan.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pp-link-arrow"
+          >
+            View pricing source
+            <ArrowIcon />
+          </a>
         </div>
       )}
     </div>

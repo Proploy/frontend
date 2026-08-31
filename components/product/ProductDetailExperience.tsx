@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -22,6 +22,7 @@ import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { ProductMediaVideo } from '@/components/product/ProductMediaVideo'
 import {
+  getMediaAutoplayDuration,
   getProductDetailTabs,
   getProductGalleryMedia,
   isUnpublishedValue,
@@ -95,15 +96,18 @@ export default function ProductDetailExperience({
     void trackRecentlyViewed(product.product_id, 'product')
   }, [product.product_id, trackRecentlyViewed])
 
+  const advanceHero = useCallback(() => {
+    setHeroIndex((current) => (current + 1) % gallery.length)
+  }, [gallery.length])
+
   useEffect(() => {
     if (gallery.length <= 1) return
+    const current = gallery[heroIndex % gallery.length]
+    if (!current || current.type === 'video') return
 
-    const timer = window.setInterval(() => {
-      setHeroIndex((current) => (current + 1) % gallery.length)
-    }, 15000)
-
-    return () => window.clearInterval(timer)
-  }, [gallery.length])
+    const timer = window.setTimeout(advanceHero, getMediaAutoplayDuration(current.type))
+    return () => window.clearTimeout(timer)
+  }, [gallery, heroIndex, advanceHero])
 
   useEffect(() => {
     if (heroIndex >= gallery.length) {
@@ -146,8 +150,9 @@ export default function ProductDetailExperience({
                     className="object-cover"
                     autoPlay
                     muted
-                    loop
+                    loop={false}
                     controls={false}
+                    onEnded={advanceHero}
                   />
                 ) : (
                   <CatalogImage
@@ -328,19 +333,19 @@ export default function ProductDetailExperience({
                       <div>
                         <h3 className="text-[18px] font-semibold leading-[28px]">{plan.plan_name}</h3>
                         <p className="mt-[4px] text-[24px] font-semibold leading-[32px] tracking-[-0.48px] text-[#155eef]">
-                          {plan.is_contact_sales && plan.source_url ? (
-                            <a
-                              href={plan.source_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-[6px] hover:underline focus:outline-none focus:ring-2 focus:ring-[#84adff] focus:ring-offset-2"
-                            >
-                              Contact sales
-                              <ArrowUpRight size={20} />
-                            </a>
-                          ) : (
-                            plan.price_text || (plan.is_contact_sales ? 'Contact sales' : 'Pricing unavailable')
-                          )}
+                          {(() => {
+                            if (plan.price_text) return plan.price_text;
+                            if (plan.price_value != null && plan.price_value > 0) {
+                              const currency = plan.currency || 'USD';
+                              return new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency,
+                                minimumFractionDigits: plan.price_value % 1 === 0 ? 0 : 2
+                              }).format(plan.price_value);
+                            }
+                            if (plan.is_free) return 'Free';
+                            return plan.is_contact_sales ? 'Contact sales' : 'Pricing unavailable';
+                          })()}
                         </p>
                       </div>
                       {plan.is_free && (
@@ -362,13 +367,13 @@ export default function ProductDetailExperience({
                       <p className="mt-[16px] text-[14px] leading-[22px] text-[#535862]">{plan.statement}</p>
                     )}
 
-                    {plan.features.length > 0 && (
+                    {(plan.features?.length || 0) > 0 && (
                       <div className="mt-[20px]">
                         <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#717680]">
                           Included
                         </p>
                         <ul className="mt-[10px] space-y-[9px]">
-                          {plan.features.map((feature) => (
+                          {(plan.features || []).map((feature) => (
                             <li key={`${plan.plan_id}-${feature.label}`} className="flex gap-[8px] text-[14px] leading-[20px] text-[#414651]">
                               <Check size={16} className="mt-[2px] shrink-0 text-[#079455]" />
                               <span>
@@ -381,18 +386,32 @@ export default function ProductDetailExperience({
                       </div>
                     )}
 
-                    {plan.limits.length > 0 && (
+                    {(plan.limits?.length || 0) > 0 && (
                       <div className="mt-[16px] rounded-[10px] bg-[#fafafa] p-[12px]">
                         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#717680]">
                           Limits
                         </p>
                         <ul className="mt-[8px] space-y-[6px] text-[13px] leading-[19px] text-[#535862]">
-                          {plan.limits.map((limit) => (
+                          {(plan.limits || []).map((limit) => (
                             <li key={`${plan.plan_id}-${limit.label}`}>
                               {limit.label}{limit.value ? `: ${limit.value}` : ''}
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+                    
+                    {plan.is_contact_sales && plan.source_url && (
+                      <div className="mt-auto pt-[16px]">
+                        <a
+                          href={plan.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-[6px] text-[14px] font-medium text-[#155eef] hover:underline"
+                        >
+                          View pricing source
+                          <ArrowUpRight size={16} />
+                        </a>
                       </div>
                     )}
                   </article>
