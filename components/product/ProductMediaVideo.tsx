@@ -8,6 +8,8 @@ interface ProductMediaVideoProps {
   muted?: boolean
   loop?: boolean
   controls?: boolean
+  onEnded?: () => void
+  poster?: string
 }
 
 export function getEmbeddedProductVideoUrl(src: string): string | null {
@@ -48,6 +50,8 @@ export function ProductMediaVideo({
   muted = false,
   loop = false,
   controls = true,
+  onEnded,
+  poster,
 }: ProductMediaVideoProps) {
   const embedUrl = getEmbeddedProductVideoUrl(src)
 
@@ -57,6 +61,7 @@ export function ProductMediaVideo({
     if (muted) url.searchParams.set('muted', '1')
     if (loop) url.searchParams.set('loop', '1')
     if (!controls) url.searchParams.set('controls', '0')
+    if (!loop && onEnded) url.searchParams.set('onended', '1')
 
     return (
       <iframe
@@ -76,12 +81,14 @@ export function ProductMediaVideo({
       src={src}
       title={title}
       aria-label={title}
+      poster={poster}
       controls={controls}
       autoPlay={autoPlay}
       muted={muted}
       loop={loop}
       playsInline
       preload="metadata"
+      onEnded={onEnded}
       className={`block size-full bg-[#101828] object-contain ${className}`}
     />
   )
