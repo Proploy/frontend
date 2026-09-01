@@ -48,7 +48,7 @@ function scrollToSection(id: string, setActive: (id: string) => void) {
 interface ProductDetailV2Props {
   product: ProductPageModel
   mediaError: boolean
-  onRetryMedia: () => void
+  onRetryMedia?: () => void
 }
 
 export default function ProductDetailV2({ product, mediaError, onRetryMedia }: ProductDetailV2Props) {
@@ -637,7 +637,7 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
                 {mediaError ? (
                   <>
                     <p className="pp-small">Media could not be loaded.</p>
-                    <button type="button" className="pp-link-arrow" onClick={onRetryMedia}>
+                    <button type="button" className="pp-link-arrow" onClick={() => onRetryMedia ? onRetryMedia() : window.location.reload()}>
                       Retry
                       <ArrowIcon />
                     </button>
