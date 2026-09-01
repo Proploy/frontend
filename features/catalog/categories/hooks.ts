@@ -26,19 +26,30 @@ interface UseCategoryFiltersResult {
   refetch: () => void
 }
 
+interface UseCategoryTreeOptions {
+  initialData?: CategoryNode[]
+}
+
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
 /**
  * Fetches the full category tree (ui_category roots → product_category children).
  * Returns hierarchical tree for navigation/mega-menu.
  */
-export function useCategoryTree(): UseCategoryTreeResult {
-  const [tree, setTree] = useState<CategoryNode[]>([])
-  const [loading, setLoading] = useState(true)
+export function useCategoryTree(options: UseCategoryTreeOptions = {}): UseCategoryTreeResult {
+  const [tree, setTree] = useState<CategoryNode[]>(options.initialData ?? [])
+  const [loading, setLoading] = useState(!options.initialData)
   const [error, setError] = useState<NormalizedError | null>(null)
   const requestGuardRef = useRef(createLatestRequestGuard())
+  const initialDataSkippedRef = useRef(!!options.initialData)
 
   const fetch_ = useCallback(async () => {
+    if (initialDataSkippedRef.current) {
+      initialDataSkippedRef.current = false
+      setLoading(false)
+      return
+    }
+
     const requestId = requestGuardRef.current.begin()
     await Promise.resolve()
     if (!requestGuardRef.current.isLatest(requestId)) return
@@ -134,8 +145,8 @@ export function useCategoryFilters(): UseCategoryFiltersResult {
 /**
  * Gets ui_category roots only (for top-level navigation tabs).
  */
-export function useCategoryRoots(): UseCategoryTreeResult {
-  const { tree, loading, error, refetch } = useCategoryTree()
+export function useCategoryRoots(options?: UseCategoryTreeOptions): UseCategoryTreeResult {
+  const { tree, loading, error, refetch } = useCategoryTree(options)
   const roots = useMemo(() => mapCategoryTreeToRoots(tree), [tree])
   return { tree: roots, loading, error, refetch }
 }
