@@ -1,10 +1,10 @@
-'use client'
-
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { Footer } from '@/components/site/Footer'
 import { Nav } from '@/components/site/Nav'
-import { useProductDetail } from '@/features/catalog/products/hooks'
+import { serviceApisFetch } from '@/lib/service-apis/server'
+import { mapProductDetailToPageModel } from '@/features/catalog/products/mappers'
+import type { ProductDetail, ProductMediaAssetItem } from '@/features/catalog/products/types'
 import ProductDetailV2 from './product-detail-v2'
 
 function PageChrome({ children }: { children: React.ReactNode }) {
@@ -28,38 +28,16 @@ function CenteredState({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function ProductDetailPage() {
-  const params = useParams()
-  const id = params.id as string
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
 
-  const {
-    product,
-    loading,
-    error,
-    mediaError,
-    notFound,
-    refetch,
-  } = useProductDetail({ productId: id })
+  // Use serviceApisFetch directly to hit the backend from the server component
+  const [detailRes, mediaRes] = await Promise.all([
+    serviceApisFetch(`/api/v1/catalog/products/${encodeURIComponent(id)}/ui`, { next: { revalidate: 3600 } }),
+    serviceApisFetch(`/api/v1/catalog/products/${encodeURIComponent(id)}/media`, { next: { revalidate: 3600 } }),
+  ])
 
-  if (loading) {
-    return (
-      <div className="pp-scope overflow-x-clip">
-        <Nav />
-        <main
-          className="pp-page"
-          style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <div
-            className="animate-spin rounded-full size-12 border-b-2"
-            style={{ borderBottomColor: 'var(--cobalt)' }}
-            aria-label="Loading product"
-          />
-        </main>
-      </div>
-    )
-  }
-
-  if (notFound) {
+  if (detailRes.status === 404) {
     return (
       <PageChrome>
         <CenteredState>
@@ -73,20 +51,19 @@ export default function ProductDetailPage() {
     )
   }
 
-  if (error) {
+  if (!detailRes.ok) {
+    const errorJson = await detailRes.json().catch(() => ({}))
+    const isCircuitOpen = errorJson?.error?.code === 'CIRCUIT_OPEN'
     return (
       <PageChrome>
         <CenteredState>
           <p className="pp-label">Something went wrong</p>
           <p className="pp-lede">
-            {error.error.code === 'CIRCUIT_OPEN'
-              ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
+            {isCircuitOpen
+              ? `Service temporarily unavailable. Retry in ${errorJson.error.retryAfter}s.`
               : 'Unable to load product. Please try again.'}
           </p>
           <div className="pp-flex pp-gap-3">
-            <button type="button" onClick={refetch} className="pp-btn pp-btn--cobalt">
-              Retry
-            </button>
             <Link href="/products" className="pp-btn pp-btn--secondary" style={{ color: 'var(--ink)' }}>
               Back to products
             </Link>
@@ -96,16 +73,17 @@ export default function ProductDetailPage() {
     )
   }
 
-  if (!product) {
-    return null
-  }
+  const detail: ProductDetail = await detailRes.json()
+  const rawMedia = mediaRes.ok ? await mediaRes.json() : []
+  const media: ProductMediaAssetItem[] = Array.isArray(rawMedia) ? rawMedia : (rawMedia.data || [])
+
+  const product = mapProductDetailToPageModel(detail, media)
 
   return (
     <PageChrome>
       <ProductDetailV2
         product={product}
-        mediaError={Boolean(mediaError)}
-        onRetryMedia={refetch}
+        mediaError={!mediaRes.ok}
       />
     </PageChrome>
   )

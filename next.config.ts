@@ -90,6 +90,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'auth.proploy.io',
+      },
+      {
+        protocol: 'https',
         hostname: '*.run.app',
       },
     ],

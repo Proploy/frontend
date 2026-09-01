@@ -70,11 +70,21 @@ export async function serviceApisFetch(
   }
 
   const url = `${SERVICE_APIS_BASE}${path.startsWith('/') ? path : `/${path}`}`
-  return fetch(url, {
+  
+  const fetchOptions: RequestInit = {
     ...init,
     headers: finalHeaders,
-    cache: 'no-store',
-  })
+  }
+  
+  if (init.cache !== undefined || init.next !== undefined) {
+    // Respect explicitly provided cache options
+  } else if (path.includes('/catalog/')) {
+    fetchOptions.next = { revalidate: 3600 } // Cache catalog for 1 hour
+  } else {
+    fetchOptions.cache = 'no-store'
+  }
+
+  return fetch(url, fetchOptions)
 }
 
 export async function getUserInterests(): Promise<{

@@ -190,6 +190,10 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
 interface UseRecursiveCategoryProductListOptions extends UseProductListOptions {
   categoryTermIds: string[]
   enabled?: boolean
+  initialData?: {
+    products: ProductListResult['products']
+    pagination: ProductListResult['pagination'] | null
+  }
 }
 
 /**
@@ -200,6 +204,7 @@ interface UseRecursiveCategoryProductListOptions extends UseProductListOptions {
 export function useRecursiveCategoryProductList({
   categoryTermIds,
   enabled = true,
+  initialData,
   ...options
 }: UseRecursiveCategoryProductListOptions): UseProductListResult {
   const {
@@ -217,13 +222,20 @@ export function useRecursiveCategoryProductList({
     append = false,
   } = options
   const categoryTermIdsKey = Array.from(new Set(categoryTermIds)).sort().join('\u0001')
-  const [products, setProducts] = useState<ProductListResult['products']>([])
-  const [pagination, setPagination] = useState<ProductListResult['pagination'] | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [products, setProducts] = useState<ProductListResult['products']>(initialData?.products ?? [])
+  const [pagination, setPagination] = useState<ProductListResult['pagination'] | null>(initialData?.pagination ?? null)
+  const [loading, setLoading] = useState(!initialData)
   const [error, setError] = useState<NormalizedError | null>(null)
   const requestGuardRef = useRef(createLatestRequestGuard())
+  const initialDataSkippedRef = useRef(!!initialData)
 
   const fetch_ = useCallback(async () => {
+    if (initialDataSkippedRef.current) {
+      initialDataSkippedRef.current = false
+      setLoading(false)
+      return
+    }
+
     if (!enabled) {
       setLoading(false)
       return
