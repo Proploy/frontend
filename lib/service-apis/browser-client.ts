@@ -41,7 +41,7 @@ export async function serviceApisBrowserFetch(
   const requestHeaders = new Headers(headers)
   if (!requestHeaders.has('accept')) requestHeaders.set('accept', 'application/json')
 
-  requestHeaders.set('x-require-auth', requireAuth ? 'true' : 'false')
+  // Do not send x-require-auth; auth decisions are made server-side in the proxy route.
 
   return fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
     ...init,

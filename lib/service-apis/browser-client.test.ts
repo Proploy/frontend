@@ -1,39 +1,41 @@
 import { ServiceApisBrowserClient } from './browser-client'
 
 describe('ServiceApisBrowserClient', () => {
-  beforeEach(() => {
-    vi.stubEnv('NEXT_PUBLIC_SERVICE_APIS_URL', 'https://service-apis.example.com')
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
-
-  it('calls service-apis directly with the server-resolved session token', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ accessToken: 'server-session-token' }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({}),
-      })
+  it('routes through the first-party proxy instead of calling service-apis directly', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({}),
+    })
     vi.stubGlobal('fetch', fetchMock)
 
-    await new ServiceApisBrowserClient().get('/api/v1/users/me/profile', {
+    await new ServiceApisBrowserClient().get('/api/v1/users/favorites', {
       requireAuth: true,
     })
 
-    const [tokenUrl, tokenRequest] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(tokenUrl).toBe('/api/auth/session-token')
-    expect(tokenRequest.cache).toBe('no-store')
+    // Exactly one request: the browser no longer fetches a token of its own.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
 
-    const [url, request] = fetchMock.mock.calls[1] as [string, RequestInit]
-    expect(url).toBe('https://service-apis.example.com/api/v1/users/me/profile')
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/proxy/api/v1/users/favorites')
+  })
+
+  it('never lets the browser influence the auth decision', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({}),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await new ServiceApisBrowserClient().get('/api/v1/users/favorites', {
+      requireAuth: true,
+    })
+
+    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit]
     const headers = new Headers(request.headers)
-    expect(headers.get('authorization')).toBe('Bearer server-session-token')
-    expect(headers.get('x-proploy-service-auth')).toBeNull()
+
+    // The proxy decides requireAuth from a server-side path allowlist. A
+    // client-supplied hint or token here would be a trust boundary violation.
+    expect(headers.get('x-require-auth')).toBeNull()
+    expect(headers.get('authorization')).toBeNull()
   })
 })
