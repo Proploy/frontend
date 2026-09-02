@@ -5,9 +5,8 @@ import {
 } from '@/features/native-scheduling/access'
 
 describe('native scheduling access', () => {
-  it('keeps calendar ownership with experts and exposes admins in test-only mode', () => {
+  it('keeps calendar ownership with experts', () => {
     expect(nativeSchedulingAccessForRole('expert')).toBe('owner')
-    expect(nativeSchedulingAccessForRole('admin')).toBe('test_only')
   })
 
   it('does not expose native calendar controls to buyers before an engagement flow', () => {
@@ -15,7 +14,7 @@ describe('native scheduling access', () => {
     expect(nativeSchedulingAccessForRole(null)).toBe('unavailable')
   })
 
-  it('returns to the scheduling tab after the admin smoke test', () => {
+  it('returns to the scheduling tab after the test-only smoke flow', () => {
     expect(nativeSchedulingOAuthReturnPath(true)).toBe('/workspace/settings?tab=scheduling')
     expect(nativeSchedulingOAuthReturnPath(false)).toBe('/workspace/settings')
   })

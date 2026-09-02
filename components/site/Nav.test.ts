@@ -54,3 +54,40 @@ describe('Role-aware expert navigation', () => {
     expect(rolesSource).toContain('!isAuthenticated')
   })
 })
+
+describe('V2 Nav (homepage + v2 routes)', () => {
+  const navSource = readSource('components/site/Nav.tsx')
+  const chromeSource = readSource('lib/site-chrome.ts')
+
+  it('sends "Ask SAM" to the branding page, not straight into the workspace', () => {
+    expect(navSource).toContain('href: "/ask-sam"')
+    expect(navSource).not.toContain('href: "/AI_workspace"')
+    // The route ships v2 chrome, so the legacy navbar must be suppressed there.
+    expect(chromeSource).toContain("'/ask-sam'")
+  })
+
+  it('offers buyers "Join as Expert" while approved experts keep "Workspace"', () => {
+    expect(navSource).toContain('canSeeExpertJoinLink')
+    expect(navSource).toContain('"Join as Expert"')
+    expect(navSource).toContain('? "Workspace"')
+    // Other roles still get the marketplace CTA as the final fallback.
+    expect(navSource).toContain(': "Find an Expert"')
+  })
+
+  it('reveals orientation flyouts under Products and Experts on hover and keyboard focus', () => {
+    expect(navSource).toContain('flyout: "products"')
+    expect(navSource).toContain('flyout: "experts"')
+    expect(navSource).toContain('group-focus-within:visible')
+    const flyoutSource = readSource('components/site/NavFlyouts.tsx')
+    // Orientation only: no category/specialty lists and no data fetching.
+    expect(flyoutSource).not.toContain('useCategoryRoots')
+    expect(flyoutSource).not.toContain('Browse by')
+    expect(flyoutSource).toContain('href="/products"')
+    expect(flyoutSource).toContain('href="/experts"')
+  })
+
+  it('nudges idle tabs on hover in addition to the underline sweep', () => {
+    expect(navSource).toContain('hover:-translate-y-px')
+    expect(navSource).toContain('group-hover:after:scale-x-100')
+  })
+})

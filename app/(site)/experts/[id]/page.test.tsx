@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('next/navigation', () => ({
   useParams: () => ({ id: 'expert-1' }),
   useRouter: () => ({ push: mocks.push }),
+  usePathname: () => '/',
 }))
 
 vi.mock('@/components/Footer', () => ({

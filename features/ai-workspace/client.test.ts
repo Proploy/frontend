@@ -32,7 +32,7 @@ describe('AI_workspace write payloads', () => {
       candidate_data: { product_id: 'product-1', name: 'Asana' },
     })
 
-    const [, request] = fetchMock.mock.calls[1] as [string, RequestInit]
+    const [, request] = (fetchMock.mock.calls.at(-1) ?? fetchMock.mock.calls[0]) as [string, RequestInit]
     expect(JSON.parse(String(request.body))).toEqual({
       session_id: 'session-1',
       candidate_data: { product_id: 'product-1', name: 'Asana' },
