@@ -21,16 +21,25 @@ import {
   type DashboardUser,
 } from '@/components/dashboard/DashboardChrome'
 import { MOCK_BUSINESS_USER } from '@/lib/service-apis/business-dashboard-mock'
-import { BUSINESS_NOTIFICATIONS } from '@/lib/service-apis/notifications-mock'
-import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
+import { MOCK_ENABLED } from '@/lib/service-apis/dashboard-mock'
+import type { NotificationItem } from '@/features/workspace/types'
+import { useWorkspaceNotifications } from '@/features/workspace/use-workspace-notifications'
 import { useDemo } from '@/lib/demo/demo-store'
+import { useAuth } from '@/components/providers/auth-provider'
 
 function useBusinessNotifications(): NotificationItem[] {
+  // Live feed: GET /api/v1/workspace/notifications/me.
+  const { items } = useWorkspaceNotifications()
   const { notifications } = useDemo()
+
+  // Demo-store rows are local, unsaved interactions and only surface when the
+  // dashboard mock is explicitly enabled — never in production.
+  if (!MOCK_ENABLED) return items
+
   const extra: NotificationItem[] = notifications
     .filter((n) => n.role === 'business')
     .map((n) => ({ id: n.id, kind: n.kind, title: n.title, body: n.body, when: 'now', unread: true, href: n.href }))
-  return [...extra, ...BUSINESS_NOTIFICATIONS]
+  return [...extra, ...items]
 }
 
 export { BUTTON_SKEUO, CARD_SHADOW } from '@/components/dashboard/DashboardChrome'
@@ -55,19 +64,25 @@ const NAV_SECONDARY: DashNavItem[] = [
 
 const BUSINESS_BRAND = { mark: 'p', word: 'proploy', href: '/business/dashboard', markBg: '#155eef' }
 
-const BUSINESS_USER: DashboardUser = {
-  name: MOCK_BUSINESS_USER.name,
-  email: MOCK_BUSINESS_USER.company,
-  avatarClassName: 'bg-gradient-to-br from-[#155eef] to-[#7f56d9]',
+/** Chrome identity for the signed-in account; the mock name is dev-only. */
+function useBusinessChromeUser(): DashboardUser {
+  const { user } = useAuth()
+  return {
+    name: user?.name ?? (MOCK_ENABLED ? MOCK_BUSINESS_USER.name : 'Account'),
+    email: user?.email ?? (MOCK_ENABLED ? MOCK_BUSINESS_USER.company : ''),
+    avatarUrl: user?.image,
+    avatarClassName: 'bg-gradient-to-br from-[#155eef] to-[#7f56d9]',
+  }
 }
 
 export function BusinessDashboardShell({ children }: { children: ReactNode }) {
   const notifications = useBusinessNotifications()
+  const user = useBusinessChromeUser()
   return (
     <DashboardChrome
       nav={NAV_PRIMARY}
       secondaryNav={NAV_SECONDARY}
-      user={BUSINESS_USER}
+      user={user}
       brand={BUSINESS_BRAND}
       notifications={notifications}
     >

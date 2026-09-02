@@ -19,7 +19,7 @@ export function NativeMeetingActions({
 }) {
   const actions = useNativeMeetingActions()
   const [error, setError] = useState<string | null>(null)
-  const canNoShow = role === 'expert' || role === 'admin'
+  const canNoShow = role === 'expert'
   const calendarExportUrl =
     meeting.provider === 'google_calendar'
       ? buildGoogleCalendarEventUrl({

@@ -34,7 +34,7 @@ export function NativeBookingRequestsPanel({
   engagementLabel,
   onOpenCalendar,
 }: Props) {
-  const isExpert = role === 'expert' || role === 'admin'
+  const isExpert = role === 'expert'
   const native = useNativeBookingRequests()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [alternative, setAlternative] = useState({ startsAt: '', endsAt: '', reason: '' })

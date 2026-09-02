@@ -91,7 +91,7 @@ export default function WorkspaceEngagementsPage() {
       !requestedEngagementId
       || !engagements.some((engagement) => engagement.id === requestedEngagementId)
     ) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSelectedId(requestedEngagementId)
   }, [engagements, requestedEngagementId])
 
@@ -100,7 +100,7 @@ export default function WorkspaceEngagementsPage() {
     [engagements, filter],
   )
   const selected = engagements.find((engagement) => engagement.id === selectedId) ?? engagements[0] ?? null
-  const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
+  const isExpertWorkspace = state.role === 'expert'
 
   async function updateStatus(engagementId: string, status: WorkspaceEngagement['status']) {
     setBusyId(engagementId)

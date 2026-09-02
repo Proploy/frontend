@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { NotificationsBell } from '@/components/dashboard/NotificationsBell'
-import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
+import type { NotificationItem } from '@/features/workspace/types'
 
 /**
  * Generic, role-agnostic dashboard chrome shared by the expert and business

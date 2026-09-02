@@ -21,7 +21,7 @@ export function WorkspaceModuleGap({
   expertOnly?: boolean
 }) {
   const state = useCurrentUserRole()
-  const allowed = !expertOnly || state.role === 'expert' || state.role === 'admin'
+  const allowed = !expertOnly || state.role === 'expert'
 
   if (state.isPending) return <WorkspaceLoading role={state.role} />
   if (!state.user) return <WorkspaceSignInState redirect="/workspace" />

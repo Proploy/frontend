@@ -20,8 +20,10 @@ export type WorkspaceRoleState = {
 const WorkspaceRoleContext = createContext<WorkspaceRoleState | null>(null)
 
 function toWorkspaceRole(role?: string | null): WorkspaceRole | null {
-  if (role === 'expert' || role === 'admin') return role
-  if (role === 'user' || role === 'business') return 'buyer'
+  if (role === 'expert') return 'expert'
+  // 'business' is a legacy alias of 'user'; 'admin' is no longer issued and
+  // has no workspace surface, so both resolve to the buyer experience.
+  if (role === 'user' || role === 'business' || role === 'admin') return 'buyer'
   return null
 }
 

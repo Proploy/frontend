@@ -1,11 +1,10 @@
 import { redirect } from 'next/navigation'
-import { getUserRole } from '@/lib/auth'
 
-// Generic dashboard entry point — routes to the workspace for the user's role.
-// Business accounts land on the business dashboard; everyone else (experts and
-// users completing an application) lands on the expert workspace.
+// Generic dashboard entry point. Every account role — user, business and
+// expert — is served by /workspace, which scopes what it shows to the caller's
+// role. `business` is an alias of `user` (a buyer), not a separate surface;
+// the old redirect sent those accounts to /business/dashboard, which is a
+// design reference gated out of production.
 export default async function DashboardRedirect() {
-  const role = await getUserRole()
-  if (role === 'business') redirect('/business/dashboard')
   redirect('/workspace')
 }

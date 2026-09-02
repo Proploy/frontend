@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Bell, Check } from 'lucide-react'
-import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
+import type { NotificationItem } from '@/features/workspace/types'
 
 /**
  * Notification bell + dropdown for the dashboard chrome. Self-contained so it can

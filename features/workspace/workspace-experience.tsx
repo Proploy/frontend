@@ -19,7 +19,7 @@ import {
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
 import { useRealtimeNotifications } from '@/features/workspace/use-realtime-notifications'
 import type { WorkspaceNotification } from '@/features/workspace/types'
-import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
+import type { NotificationItem } from '@/features/workspace/types'
 
 const client = new ServiceApisBrowserClient()
 const NOTIFICATIONS_PATH = '/api/v1/workspace/notifications'
@@ -118,6 +118,7 @@ export function WorkspaceExperienceProvider({ children }: { children: ReactNode 
 
   useRealtimeNotifications({
     enabled: Boolean(user),
+    userId: user?.id ?? null,
     onNotification: () => {
       void loadNotifications()
     },
