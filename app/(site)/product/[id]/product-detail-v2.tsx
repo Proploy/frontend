@@ -926,10 +926,23 @@ function AlternativesCard({
                   border: 'var(--bw) solid var(--line)',
                   borderRadius: 'var(--r-tile)',
                   padding: 'var(--sp-4)',
+                  position: 'relative',
+                  transition: 'border-color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--cobalt)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--line)'
                 }}
               >
+                <Link
+                  href={getProductDetailHref(alternative.product_id)}
+                  className="absolute inset-0 z-0"
+                  aria-label={`View ${alternative.product_name}`}
+                />
                 <div className="pp-flex pp-gap-3" style={{ alignItems: 'flex-start' }}>
-                  <span className="pp-tile pp-tile--sm" style={{ padding: 5 }}>
+                  <span className="pp-tile pp-tile--sm" style={{ padding: 5, position: 'relative', zIndex: 10 }}>
                     {alternative.logo_url ? (
                       <CatalogImage
                         src={alternative.logo_url}
@@ -941,13 +954,12 @@ function AlternativesCard({
                       <span>{alternative.product_name.charAt(0).toUpperCase()}</span>
                     )}
                   </span>
-                  <div className="min-w-0">
-                    <Link
-                      href={getProductDetailHref(alternative.product_id)}
-                      className="pp-h6 text-[15px] hover:text-[var(--cobalt)]"
+                  <div className="min-w-0" style={{ position: 'relative', zIndex: 10, pointerEvents: 'none' }}>
+                    <span
+                      className="pp-h6 text-[15px]"
                     >
                       {alternative.product_name}
-                    </Link>
+                    </span>
                     {alternative.short_description && (
                       <p className="pp-small pp-clamp-3" style={{ marginTop: 2 }}>
                         {alternative.short_description}
@@ -955,13 +967,7 @@ function AlternativesCard({
                     )}
                   </div>
                 </div>
-                <div className="pp-stack pp-gap-2">
-                  <Link
-                    href={getProductDetailHref(alternative.product_id)}
-                    className="pp-btn pp-btn--secondary pp-btn--block pp-btn--sm"
-                  >
-                    View product
-                  </Link>
+                <div className="pp-stack pp-gap-2" style={{ position: 'relative', zIndex: 10 }}>
                   <button
                     type="button"
                     className="pp-btn pp-btn--secondary pp-btn--block pp-btn--sm"

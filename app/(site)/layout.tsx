@@ -48,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${dmSans.variable} ${inter.variable} ${ibmPlexMono.variable}`}>
-      <body className="antialiased font-inter flex flex-col min-h-screen">
+      <body className="antialiased font-inter flex flex-col min-h-dvh">
         <NextTopLoader
           color="#155eef"
           height={3}
