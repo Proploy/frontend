@@ -70,7 +70,7 @@ export function useApprovedExperts(
 
   useEffect(() => {
     mountedRef.current = true
-    fetch_() // eslint-disable-line react-hooks/set-state-in-effect
+    fetch_()  
     return () => {
       mountedRef.current = false
     }

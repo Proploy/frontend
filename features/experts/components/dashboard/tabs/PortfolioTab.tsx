@@ -53,7 +53,7 @@ export function PortfolioTab({ expert }: { expert: ExpertMe }) {
     setIsAddingProject(true)
     setProjectError(null)
     
-    let fileMeta = null
+    const fileMeta = null
     if (projectFile) {
       // For immediate upload we'd ideally have an endpoint that doesn't need projectId first,
       // but our API currently requires projectId. So we create the project first, then upload the file.
