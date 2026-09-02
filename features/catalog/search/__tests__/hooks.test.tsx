@@ -91,7 +91,7 @@ describe('freeTrial wiring contract', () => {
   const pageSource = fs.readFileSync(
     path.join(
       process.cwd(),
-      'app/(site)/products/page.tsx',
+      'app/(site)/products/ProductsPageClient.tsx',
     ),
     'utf8',
   )

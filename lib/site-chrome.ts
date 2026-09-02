@@ -27,6 +27,7 @@ export function isPortalRoute(pathname: string | null | undefined): boolean {
 // for /experts rather than a prefix.
 export const V2_CHROME_EXACT = [
   '/experts',
+  '/ask-sam',
   '/for-businesses',
   '/for-experts',
   '/profile',

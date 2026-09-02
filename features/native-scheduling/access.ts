@@ -6,7 +6,6 @@ export function nativeSchedulingAccessForRole(
   role: WorkspaceRole | null,
 ): NativeSchedulingAccessMode {
   if (role === 'expert') return 'owner'
-  if (role === 'admin') return 'test_only'
   return 'unavailable'
 }
 

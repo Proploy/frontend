@@ -22,7 +22,7 @@ describe('product alternatives', () => {
         product_name: 'Two',
         logo_url: '/api/v1/catalog/products/prod-2/logo',
       }).logo_url,
-    ).toBe('http://localhost:8020/api/v1/catalog/products/prod-2/logo')
+    ).toBe('/api/proxy/api/v1/catalog/products/prod-2/logo')
 
     expect(
       mapProductAlternative({

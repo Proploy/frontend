@@ -60,9 +60,9 @@ export async function getUserWithProfile() {
   return userProfile
 }
 
-// Returns the user's account role ('user' | 'expert' | 'business' | 'admin')
-// from the `user` table, or null when unauthenticated. Used to route the
-// generic /dashboard entry point to the right workspace.
+// Returns the user's account role from the `user` table, or null when
+// unauthenticated. `business` is a legacy alias of `user` (a buyer) —
+// service-apis normalizes it, and useCurrentUserRole maps it to 'buyer'.
 export async function getUserRole(): Promise<string | null> {
   const profile = await getUserWithProfile()
   if (!profile) return null
@@ -70,14 +70,6 @@ export async function getUserRole(): Promise<string | null> {
   // base role hasn't been migrated yet.
   if (profile.expert) return 'expert'
   return (profile.role as string | undefined) ?? 'user'
-}
-
-export async function requireBusiness() {
-  const role = await getUserRole()
-  if (role !== 'business') {
-    throw new Error('BUSINESS_ACCOUNT_REQUIRED')
-  }
-  return role
 }
 
 export async function getUserSession() {

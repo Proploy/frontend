@@ -38,7 +38,7 @@ export default function WorkspaceLeadsPage() {
   const state = useCurrentUserRole()
   const workspace = useWorkspace()
   const expertId = state.expert?.id ?? null
-  const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
+  const isExpertWorkspace = state.role === 'expert'
 
   const [intents, setIntents] = useState<WorkspaceMeetingIntent[]>([])
   const [error, setError] = useState<NormalizedError | null>(null)

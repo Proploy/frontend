@@ -109,7 +109,7 @@ export default function WorkspaceInvoicesPage() {
   const [saving, setSaving] = useState(false)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [settlingId, setSettlingId] = useState<string | null>(null)
-  const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
+  const isExpertWorkspace = state.role === 'expert'
 
   useEffect(() => {
     if (state.isPending || !state.user) return

@@ -13,7 +13,10 @@ export const MOCK_BUSINESS_USER = {
 
 /* ----------------------------------------------------------------- projects */
 
-export type EngagementStatus = 'On track' | 'At risk' | 'Blocked' | 'In review' | 'Launched'
+// EngagementStatus now lives with the shared dashboard primitives; imported
+// here so this module's fixtures can still be typed with it.
+import type { EngagementStatus } from '@/components/dashboard/ui'
+export type { EngagementStatus }
 
 export interface BusinessProject {
   id: string

@@ -417,7 +417,7 @@ export function useWorkspaceSettings(): SettingsHookState {
     setSchedulingProfilePending(true)
     setSchedulingProfileError(null)
 
-    let cancelled = false
+    const cancelled = false
     try {
       const result: ApiResult<WorkspaceSchedulingProfile | null> =
         await workspace.getMySchedulingProfile()

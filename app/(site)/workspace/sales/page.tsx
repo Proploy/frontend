@@ -150,7 +150,7 @@ export default function WorkspaceSalesPage() {
   const [proposals, setProposals] = useState<WorkspaceProposal[]>([])
   const [error, setError] = useState<NormalizedError | null>(null)
   const [loading, setLoading] = useState(false)
-  const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
+  const isExpertWorkspace = state.role === 'expert'
 
   useEffect(() => {
     if (state.isPending || !state.user || !isExpertWorkspace) return

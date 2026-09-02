@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
+import { RatingStars } from '@/components/catalog/RatingStars'
 import { Skeleton } from '@/components/ui/Skeleton'
 import CompareToggle from '@/components/compare/CompareToggle'
 import FavoriteToggle from '@/components/personalization/FavoriteToggle'
@@ -15,24 +16,46 @@ import {
   useCategoryTree,
   useKeywordSearch,
   useNaturalSearch,
-  useRecursiveCategoryProductList,
+  useCatalogProductList,
+  useProductFacets,
   type CardProduct,
   type CategoryNode,
+  type FacetOption,
+  type ProductFacets,
+  type ProductSort,
   type SearchMode,
-  getDescendantProductCategoryTermIds,
 } from '@/features/catalog'
 import { SearchModeToggle } from '@/components/search/SearchModeToggle'
 import {
-  DEFAULT_PRODUCT_FILTERS,
   ProductFiltersDrawer,
   type ProductFilterValues,
 } from '@/components/filters/ProductFiltersDrawer'
+import { ProductFilterSidebar } from '@/components/filters/ProductFilterSidebar'
+import { SortMenu, type SortOption } from '@/components/filters/SortMenu'
 import { buildProductListRequest } from '@/features/catalog/products/filter-request'
+import { DEFAULT_PRODUCT_FILTERS, countActiveProductFilters } from '@/features/catalog/products/filter-values'
+import {
+  applyProductFilterParams,
+  parseProductFilterParams,
+  serializeProductFilterParams,
+} from '@/features/catalog/products/filter-params'
 import { getNextProductPageOffset } from '@/features/catalog/products/pagination-state'
 
 import type { ProductListResult } from '@/features/catalog/products/types'
 
 const PRODUCT_PAGE_SIZE = 15
+
+const PRODUCT_SORT_OPTIONS: SortOption<ProductSort>[] = [
+  { value: 'name', label: 'Name' },
+  { value: 'rating', label: 'Rating' },
+  { value: 'market_presence', label: 'Market presence' },
+  { value: 'created_at', label: 'Newest' },
+]
+
+type SearcherMap = {
+  natural: (query: string, limit?: number) => void | Promise<void>
+  clearNatural: () => void
+}
 
 /* ── icons (from the v2 mockup) ─────────────────────────────── */
 
@@ -41,22 +64,6 @@ function SearchIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
-    </svg>
-  )
-}
-
-function CategoryIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-      <path d="M3 6h18M6 12h12M10 18h4" />
-    </svg>
-  )
-}
-
-function PricingIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-      <path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 3 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3" />
     </svg>
   )
 }
@@ -89,22 +96,7 @@ function findCategoryNode(nodes: CategoryNode[], termId: string): CategoryNode |
   return null
 }
 
-function subtreeContains(node: CategoryNode, termId: string): boolean {
-  if (node.term_id === termId) return true
-  return node.children.some((child) => subtreeContains(child, termId))
-}
-
 /** Flatten a root's subtree to the selectable (product_category) filter terms. */
-function flattenSelectableCategories(node: CategoryNode): CategoryNode[] {
-  const result: CategoryNode[] = []
-  const walk = (current: CategoryNode) => {
-    if (current.taxonomy_type === 'product_category') result.push(current)
-    current.children.forEach(walk)
-  }
-  node.children.forEach(walk)
-  return result
-}
-
 function pricingLabel(value: string): string | null {
   const labels: Record<string, string> = {
     free: 'Free',
@@ -112,6 +104,7 @@ function pricingLabel(value: string): string | null {
     paid_tier_1: 'Paid (Tier 1)',
     paid_tier_2: 'Paid (Tier 2)',
     paid_tier_3: 'Paid (Tier 3)',
+    contact_sales: 'Contact sales',
   }
   return labels[value] ?? null
 }
@@ -197,24 +190,28 @@ function ProductCardSkeleton() {
 export default function ProductsPageClient({
   initialCategoryTree,
   initialProductsPage,
+  initialFacets = null,
 }: {
   initialCategoryTree: CategoryNode[]
   initialProductsPage: {
     products: ProductListResult['products']
     pagination: ProductListResult['pagination'] | null
   } | null
+  initialFacets?: ProductFacets | null
 }) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const search = searchParams.get('search')?.trim() || undefined
-  const categoryParam = searchParams.get('category')
   const modeParam = searchParams.get('mode')
   const activeMode: SearchMode =
     modeParam === 'natural' ? 'natural' : 'keyword'
   const { tree, loading: catLoading, error: catError } = useCategoryTree({
     initialData: initialCategoryTree,
   })
-  const requestKey = `${search ?? ''}:${categoryParam ?? ''}`
+  // The URL is the single source of truth for filters (shareable, survives
+  // refresh/back, server-renderable). See features/catalog/products/filter-params.
+  const filters: ProductFilterValues = parseProductFilterParams(searchParams)
+  const filterKey = serializeProductFilterParams(filters)
+  const requestKey = `${search ?? ''}:${filterKey}`
   const [paginationState, setPaginationState] = useState({
     requestKey,
     offset: 0,
@@ -222,37 +219,26 @@ export default function ProductsPageClient({
   const offset =
     paginationState.requestKey === requestKey ? paginationState.offset : 0
   const resetOffset = () => setPaginationState({ requestKey, offset: 0 })
-  const [storedFilters, setStoredFilters] =
-    useState<ProductFilterValues>(DEFAULT_PRODUCT_FILTERS)
-  const filters: ProductFilterValues = {
-    ...storedFilters,
-    categoryTermId: categoryParam ?? '',
-  }
+  // Options are scoped to the active search so every one of them returns
+  // something; without a search they describe the whole catalog.
+  const { facets } = useProductFacets(initialFacets, search)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const hasActiveSearch = Boolean(search)
   const naturalMode = activeMode === 'natural'
 
-  const selectedCategoryNode = findCategoryNode(tree, filters.categoryTermId)
-  const categoryTermIds = getDescendantProductCategoryTermIds(selectedCategoryNode)
-  const { products: listedProducts, loading: listLoading, error: listError, pagination, refetch } = useRecursiveCategoryProductList({
-    initialData:
-      !hasActiveSearch && !filters.categoryTermId && initialProductsPage
-        ? initialProductsPage
-        : undefined,
+  const selectedCategoryNodes = filters.categoryTermIds
+    .map((termId) => findCategoryNode(tree, termId))
+    .filter((node): node is CategoryNode => node !== null)
+  const { products: listedProducts, loading: listLoading, error: listError, pagination, refetch } = useCatalogProductList({
+    // The server rendered the first page for exactly this URL (filters and
+    // search included), so it is valid as-is; later param changes refetch.
+    initialData: initialProductsPage ?? undefined,
     ...buildProductListRequest({
+      ...filters,
       search: !naturalMode ? search : undefined,
-      categoryTermId: filters.categoryTermId,
-      pricingBucket: filters.pricingBucket,
-      freePlan: filters.freePlan,
-      freeTrial: filters.freeTrial,
-      companySize: filters.companySize,
-      deploymentModel: filters.deploymentModel,
-      compliance: filters.compliance,
-      sort: filters.sort,
       limit: PRODUCT_PAGE_SIZE,
       offset,
     }),
-    categoryTermIds,
     enabled: !naturalMode || !hasActiveSearch,
     append: true,
   })
@@ -265,24 +251,21 @@ export default function ProductsPageClient({
     search: runNaturalSearch,
     clear: clearNaturalSearch,
   } = useNaturalSearch({
-    pricingBucket: filters.pricingBucket,
+    pricingBuckets: filters.pricingBuckets,
     companySize: filters.companySize,
     deploymentModel: filters.deploymentModel,
     compliance: filters.compliance,
+    integrations: filters.integrations,
+    industries: filters.industries,
+    implementationComplexity: filters.implementationComplexity,
+    minRating: filters.minRating,
+    maxStartingPrice: filters.maxStartingPrice,
     freePlan: filters.freePlan,
     freeTrial: filters.freeTrial,
-    categoryTermId: filters.categoryTermId,
+    categoryTermIds: filters.categoryTermIds,
   })
 
-  const naturalFilterKey = [
-    filters.pricingBucket,
-    ...filters.companySize,
-    ...filters.deploymentModel,
-    ...filters.compliance,
-    filters.freePlan,
-    filters.freeTrial,
-    filters.categoryTermId,
-  ].join('|')
+  const naturalFilterKey = filterKey
 
   const pageSearchersRef = useRef<SearcherMap>({
     natural: () => {},
@@ -297,7 +280,7 @@ export default function ProductsPageClient({
 
   useEffect(() => {
     if (activeMode === 'natural' && search) {
-      void pageSearchersRef.current.natural(search, 6)
+      void pageSearchersRef.current.natural(search, PRODUCT_PAGE_SIZE)
     } else {
       pageSearchersRef.current.clearNatural()
     }
@@ -306,37 +289,33 @@ export default function ProductsPageClient({
   const products = (hasActiveSearch && naturalMode) ? naturalProducts : listedProducts
   const loading = (hasActiveSearch && naturalMode) ? naturalLoading : listLoading
   const error = (hasActiveSearch && naturalMode) ? naturalError : listError
-  const isLoadingInitialProducts = loading && (offset === 0 || products.length === 0)
+  // Only blank the grid when there is nothing to show. While a filter or
+  // search change is in flight, keep the current cards dimmed so the page
+  // never looks empty mid-request.
+  const isLoadingInitialProducts = loading && products.length === 0
+  const isRefreshingProducts = loading && products.length > 0 && offset === 0
   const isLoadingMoreProducts = loading && offset > 0 && products.length > 0
 
-  /* category rail state: which ui_category root is expanded */
-  const [railRootOverride, setRailRootOverride] = useState<string | null>(null)
-  const selectedRoot = railRootOverride
-    ? (tree.find((node) => node.term_id === railRootOverride) ?? null)
-    : filters.categoryTermId
-      ? (tree.find((node) => subtreeContains(node, filters.categoryTermId)) ??
-        null)
-      : null
-  const subcategories = selectedRoot
-    ? flattenSelectableCategories(selectedRoot)
-    : []
-  const describedNode = selectedCategoryNode ?? selectedRoot
-  const categoryLabel = selectedCategoryNode?.label ?? null
+  const categoryLabel =
+    selectedCategoryNodes.length === 1
+      ? selectedCategoryNodes[0].label
+      : selectedCategoryNodes.length > 1
+        ? `${selectedCategoryNodes.length} categories`
+        : null
 
   const navigateWithParams = (mutate: (params: URLSearchParams) => void) => {
     resetOffset()
     const params = new URLSearchParams(searchParams.toString())
     mutate(params)
     const query = params.toString()
-    router.push(`/products${query ? `?${query}` : ''}`, { scroll: false })
+    // Update the URL in place rather than routing. A router navigation
+    // re-renders the server component, which blocks on a fresh catalog fetch
+    // and blanks the grid for seconds; the list hook already refetches when
+    // the params change. Next syncs useSearchParams with history updates, and
+    // back/forward still work.
+    window.history.pushState(null, '', `/products${query ? `?${query}` : ''}`)
   }
 
-  const selectCategory = (termId: string) => {
-    navigateWithParams((params) => {
-      if (termId) params.set('category', termId)
-      else params.delete('category')
-    })
-  }
 
   const handleSearch = (query: string) => {
     navigateWithParams((params) => {
@@ -354,102 +333,75 @@ export default function ProductsPageClient({
   }
 
   const applyFilters = (values: ProductFilterValues) => {
-    setStoredFilters(values)
-    resetOffset()
-    if (values.categoryTermId !== (categoryParam ?? '')) {
-      selectCategory(values.categoryTermId)
-    }
-  }
-
-  /* removable active-filter tags (same clearing mechanics as before) */
-  const activeFilterTags: ActiveFilterTag[] = []
-  if (filters.categoryTermId) {
-    activeFilterTags.push({
-      label: categoryLabel ?? 'Selected category',
-      clear: () => selectCategory(''),
+    navigateWithParams((params) => {
+      applyProductFilterParams(params, values)
     })
   }
-  if (filters.pricingBucket) {
+
+  const updateFilters = (patch: Partial<ProductFilterValues>) => {
+    applyFilters({ ...filters, ...patch })
+  }
+
+  const clearAllFilters = () => applyFilters({ ...DEFAULT_PRODUCT_FILTERS, sort: filters.sort })
+  const activeFilterCount = countActiveProductFilters(filters)
+
+  /* removable active-filter tags — each removal writes back to the URL */
+  const optionLabel = (
+    options: FacetOption[] | undefined,
+    value: string,
+    fallback: (value: string) => string,
+  ) => options?.find((option) => option.value === value)?.label ?? fallback(value)
+
+  const activeFilterTags: ActiveFilterTag[] = []
+  filters.categoryTermIds.forEach((termId) => {
     activeFilterTags.push({
-      label: pricingLabel(filters.pricingBucket) ?? filters.pricingBucket,
-      clear: () => {
-        setStoredFilters({ ...storedFilters, pricingBucket: '' })
-        resetOffset()
-      },
+      label: findCategoryNode(tree, termId)?.label ?? 'Selected category',
+      clear: () => updateFilters({ categoryTermIds: filters.categoryTermIds.filter((id) => id !== termId) }),
+    })
+  })
+  const listTags = (
+    key: 'pricingBuckets' | 'companySize' | 'deploymentModel' | 'compliance' | 'industries' | 'integrations' | 'implementationComplexity',
+    label: (value: string) => string,
+  ) => {
+    filters[key].forEach((value) => {
+      activeFilterTags.push({
+        label: label(value),
+        clear: () => updateFilters({ [key]: filters[key].filter((v) => v !== value) }),
+      })
+    })
+  }
+  listTags('pricingBuckets', (v) => optionLabel(facets?.pricing_buckets, v, (x) => pricingLabel(x) ?? x))
+  listTags('companySize', (v) => optionLabel(facets?.company_sizes, v, companySizeLabel))
+  listTags('deploymentModel', (v) => optionLabel(facets?.deployment_models, v, deploymentLabel))
+  listTags('implementationComplexity', (v) => `${optionLabel(facets?.implementation_complexity, v, (x) => x)} effort`)
+  listTags('compliance', (v) => v)
+  listTags('industries', (v) => v)
+  listTags('integrations', (v) => `Integrates with ${v}`)
+  if (filters.minRating) {
+    activeFilterTags.push({
+      label: optionLabel(facets?.ratings, filters.minRating, (v) => `${v}+ stars`),
+      clear: () => updateFilters({ minRating: '' }),
+    })
+  }
+  if (filters.maxStartingPrice !== '') {
+    activeFilterTags.push({
+      label: optionLabel(facets?.starting_prices, filters.maxStartingPrice, (v) =>
+        v === '0' ? 'Free to start' : `Up to $${v}/mo`,
+      ),
+      clear: () => updateFilters({ maxStartingPrice: '' }),
     })
   }
   if (filters.freePlan) {
     activeFilterTags.push({
       label: 'Free plan available',
-      clear: () => {
-        setStoredFilters({ ...storedFilters, freePlan: false })
-        resetOffset()
-      },
+      clear: () => updateFilters({ freePlan: false }),
     })
   }
   if (filters.freeTrial) {
     activeFilterTags.push({
       label: 'Free trial available',
-      clear: () => {
-        setStoredFilters({ ...storedFilters, freeTrial: false })
-        resetOffset()
-      },
+      clear: () => updateFilters({ freeTrial: false }),
     })
-  }
-  
-  if (filters.companySize?.length) {
-    filters.companySize.forEach(size => {
-      activeFilterTags.push({
-        label: companySizeLabel(size),
-        clear: () => {
-          setStoredFilters({
-            ...storedFilters,
-            companySize: storedFilters.companySize.filter(s => s !== size)
-          })
-          resetOffset()
-        }
-      })
-    })
-  }
-
-  if (filters.deploymentModel?.length) {
-    filters.deploymentModel.forEach(dep => {
-      activeFilterTags.push({
-        label: deploymentLabel(dep),
-        clear: () => {
-          setStoredFilters({
-            ...storedFilters,
-            deploymentModel: storedFilters.deploymentModel.filter(d => d !== dep)
-          })
-          resetOffset()
-        }
-      })
-    })
-  }
-
-  if (filters.compliance?.length) {
-    filters.compliance.forEach(comp => {
-      activeFilterTags.push({
-        label: comp,
-        clear: () => {
-          setStoredFilters({
-            ...storedFilters,
-            compliance: storedFilters.compliance.filter(c => c !== comp)
-          })
-          resetOffset()
-        }
-      })
-    })
-  }
-
-  const planCount = Number(filters.freePlan) + Number(filters.freeTrial)
-  const quickChipLabels = {
-    category: categoryLabel ?? 'Any category',
-    pricing: pricingLabel(filters.pricingBucket) ?? 'Any pricing',
-    plans:
-      planCount > 0
-        ? `${planCount} plan filter${planCount === 1 ? '' : 's'}`
-        : 'Plans & trials',
   }
 
   const [contact, setContact] = useState({
@@ -498,22 +450,6 @@ export default function ProductsPageClient({
                   onModeChange={handleModeChange}
                   initialQuery={searchParams.get('search') ?? ''}
                   onSearch={handleSearch}
-                  onMoreFilters={() => setDrawerOpen(true)}
-                  quickChipLabels={quickChipLabels}
-                  activeFilterTags={activeFilterTags}
-                  pricingValue={filters.pricingBucket || ''}
-                  onPricingChange={(val) => {
-                    setStoredFilters((prev) => ({ ...prev, pricingBucket: val || '' }))
-                    resetOffset()
-                  }}
-                  deploymentValue={filters.deploymentModel?.[0] || ''}
-                  onDeploymentChange={(val) => {
-                    setStoredFilters((prev) => ({
-                      ...prev,
-                      deploymentModel: val ? [val] : [],
-                    }))
-                    resetOffset()
-                  }}
                   freeTrial={filters.freeTrial}
                 />
               </div>
@@ -541,187 +477,177 @@ export default function ProductsPageClient({
               </p>
             </Reveal>
 
-            {/* category rail */}
-            {!catError && (
-              <div id="catalogue-rail">
-              <Reveal className="pp-stack pp-gap-6">
-                <div className="pp-flex pp-wrap pp-gap-2">
-                  <button
-                    type="button"
-                    className="pp-chip pp-chip--all"
-                    aria-pressed={!selectedRoot && !filters.categoryTermId}
-                    onClick={() => {
-                      setRailRootOverride(null)
-                      if (filters.categoryTermId) selectCategory('')
-                    }}
-                  >
-                    View all
-                  </button>
-                  {catLoading
-                    ? Array.from({ length: 5 }).map((_, i) => (
-                        <Skeleton key={i} className="h-[38px] w-[124px] rounded-full" />
-                      ))
-                    : tree.map((root) => (
-                        <button
-                          key={root.term_id}
-                          type="button"
-                          className="pp-chip"
-                          aria-pressed={selectedRoot?.term_id === root.term_id}
-                          onClick={() => {
-                            setRailRootOverride(root.term_id)
-                            selectCategory(root.term_id)
-                          }}
-                        >
-                          {root.label}
-                        </button>
-                      ))}
+            {/* filters + results */}
+            <div className="pp-catalog-layout">
+              <aside className="pp-filter-side" aria-label="Product filters">
+                <ProductFilterSidebar
+                  values={filters}
+                  onChange={applyFilters}
+                  facets={facets}
+                  categoryTree={catError ? [] : tree}
+                  categoriesLoading={catLoading}
+                />
+              </aside>
+
+              <div className="pp-fade-stack pp-stack pp-gap-6" style={{ minWidth: 0 }}>
+                <div className="pp-results-head">
+                  <div className="pp-stack" style={{ gap: 4 }}>
+                    <h3 className="pp-heading-sm">
+                      {naturalMode && search
+                        ? `Best matches for "${search}"`
+                        : search
+                          ? `Results for "${search}"`
+                          : categoryLabel ?? 'All products'}
+                    </h3>
+                    {naturalMode && search && naturalNote && (
+                      <p className="pp-small" style={{ color: 'var(--slate-11)' }}>
+                        {naturalNote}
+                      </p>
+                    )}
+                  </div>
+                  <div className="pp-flex pp-gap-3" style={{ alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="pp-btn pp-btn--secondary pp-btn--sm pp-btn--inline pp-filters-toggle"
+                      onClick={() => setDrawerOpen(true)}
+                    >
+                      <FunnelIcon size={16} />
+                      {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+                    </button>
+                    <SortMenu<ProductSort>
+                      value={filters.sort}
+                      options={PRODUCT_SORT_OPTIONS}
+                      onChange={(sort) => updateFilters({ sort })}
+                    />
+                  </div>
                 </div>
 
-                {subcategories.length > 0 && (
-                  <div className="pp-flex pp-wrap pp-gap-2">
-                    {subcategories.map((node) => (
-                      <button
-                        key={node.term_id}
-                        type="button"
-                        className="pp-chip pp-chip--outline"
-                        aria-pressed={filters.categoryTermId === node.term_id}
-                        onClick={() =>
-                          selectCategory(
-                            filters.categoryTermId === node.term_id
-                              ? ''
-                              : node.term_id,
-                          )
-                        }
-                      >
-                        {node.label}
-                      </button>
+                {activeFilterTags.length > 0 && (
+                  <div className="pp-flex pp-wrap pp-gap-2" style={{ rowGap: 'var(--sp-2)', alignItems: 'center' }}>
+                    {activeFilterTags.map((tag) => (
+                      <span key={tag.label} className="pp-tag pp-tag--filter">
+                        {tag.label}
+                        <button
+                          type="button"
+                          className="pp-tag-x"
+                          aria-label={`Remove ${tag.label}`}
+                          onClick={tag.clear}
+                        >
+                          <TagX />
+                        </button>
+                      </span>
                     ))}
+                    <button type="button" className="pp-filter-group-clear" onClick={clearAllFilters}>
+                      Clear all
+                    </button>
                   </div>
                 )}
 
-                {describedNode?.description ? (
+                {error && (
                   <div
-                    className="pp-stack"
-                    style={{
-                      gap: 2,
-                      borderLeft: '2px solid var(--cobalt)',
-                      paddingLeft: 'var(--sp-4)',
-                    }}
+                    className="pp-stack pp-gap-4"
+                    style={{ alignItems: 'center', paddingBlock: 'var(--sp-12)' }}
                   >
-                    <p className="pp-h6" style={{ color: 'var(--cobalt-deep)' }}>
-                      {describedNode.label}
+                    <p className="pp-body" style={{ color: 'var(--color-error-600, #d92d20)' }}>
+                      {error.error.code === 'CIRCUIT_OPEN'
+                        ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
+                        : 'Unable to load products. Please try again.'}
                     </p>
-                    <p className="pp-body">{describedNode.description}</p>
+                    <button
+                      type="button"
+                      onClick={refetch}
+                      className="pp-btn pp-btn--cobalt pp-btn--sm pp-btn--inline"
+                    >
+                      Retry
+                    </button>
                   </div>
-                ) : null}
-              </Reveal>
-              </div>
-            )}
+                )}
 
-            {/* product grid */}
-            <div className="pp-fade-stack pp-stack pp-gap-8">
-              {naturalMode && search && (
-                <div className="pp-stack" style={{ gap: 4 }}>
-                  <h3 className="pp-heading-sm">
-                    Best matches for &quot;{search}&quot;
-                  </h3>
-                  {naturalNote && (
-                    <p className="pp-small" style={{ color: 'var(--slate-11)' }}>
-                      {naturalNote}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {error && (
-                <div
-                  className="pp-stack pp-gap-4"
-                  style={{ alignItems: 'center', paddingBlock: 'var(--sp-12)' }}
-                >
-                  <p className="pp-body" style={{ color: 'var(--color-error-600, #d92d20)' }}>
-                    {error.error.code === 'CIRCUIT_OPEN'
-                      ? `Service temporarily unavailable. Retry in ${error.error.retryAfter}s.`
-                      : 'Unable to load products. Please try again.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={refetch}
-                    className="pp-btn pp-btn--cobalt pp-btn--sm pp-btn--inline"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-
-              {isLoadingInitialProducts ? (
-                <div
-                  className="pp-grid pp-grid-3"
-                  style={{ gap: 'var(--sp-8)' }}
-                  role="status"
-                  aria-busy="true"
-                >
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <ProductCardSkeleton key={i} />
-                  ))}
-                </div>
-              ) : products.length === 0 && !error ? (
-                <div
-                  className="pp-stack"
-                  style={{ alignItems: 'center', paddingBlock: 'var(--sp-24)', textAlign: 'center' }}
-                >
+                {isLoadingInitialProducts ? (
                   <div
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--slate-2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 'var(--sp-4)',
-                      color: 'var(--slate-11)',
-                    }}
+                    className="pp-grid pp-grid-2"
+                    style={{ gap: 'var(--sp-6)' }}
+                    role="status"
+                    aria-busy="true"
                   >
-                    <SearchIcon />
-                  </div>
-                  <h3 className="pp-heading-sm">More products coming soon!</h3>
-                  <p
-                    className="pp-body"
-                    style={{ color: 'var(--slate-11)', maxWidth: '400px', marginTop: 'var(--sp-2)' }}
-                  >
-                    We&apos;re actively onboarding new software vendors for this category. Try adjusting your filters or check back later.
-                  </p>
-                </div>
-              ) : (
-                <Reveal>
-                  <div className="pp-grid pp-grid-3" style={{ gap: 'var(--sp-8)' }}>
-                    {products.map((p) => (
-                      <ProductCard key={p.product_id} product={p} />
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <ProductCardSkeleton key={i} />
                     ))}
                   </div>
-                </Reveal>
-              )}
-
-              {!hasActiveSearch && pagination?.hasNextPage && (
-                <div className="pp-fade-action" style={{ marginTop: 0 }}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPaginationState({
-                        requestKey,
-                        offset: getNextProductPageOffset(products),
-                      })
-                    }
-                    disabled={isLoadingMoreProducts}
-                    aria-busy={isLoadingMoreProducts}
-                    className="pp-btn pp-btn--secondary pp-btn--pill pp-btn--inline"
+                ) : products.length === 0 && !error ? (
+                  <div
+                    className="pp-stack"
+                    style={{ alignItems: 'center', paddingBlock: 'var(--sp-20)', textAlign: 'center' }}
                   >
-                    {isLoadingMoreProducts
-                      ? 'Loading more products...'
-                      : 'Load more products'}
-                  </button>
-                </div>
-              )}
+                    <div
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--slate-2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 'var(--sp-4)',
+                        color: 'var(--slate-11)',
+                      }}
+                    >
+                      <SearchIcon />
+                    </div>
+                    <h3 className="pp-heading-sm">No products match these filters</h3>
+                    <p
+                      className="pp-body"
+                      style={{ color: 'var(--slate-11)', maxWidth: '400px', marginTop: 'var(--sp-2)' }}
+                    >
+                      Try removing a filter or broadening your search. We&apos;re onboarding new vendors every week.
+                    </p>
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        className="pp-btn pp-btn--secondary pp-btn--sm pp-btn--inline"
+                        style={{ marginTop: 'var(--sp-4)' }}
+                        onClick={clearAllFilters}
+                      >
+                        Clear all filters
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <Reveal>
+                    <div
+                      className="pp-grid pp-grid-2"
+                      style={{
+                        gap: 'var(--sp-6)',
+                        opacity: isRefreshingProducts ? 0.5 : 1,
+                        transition: 'opacity 160ms ease',
+                      }}
+                      aria-busy={isRefreshingProducts}
+                    >
+                      {products.map((p) => (
+                        <ProductCard key={p.product_id} product={p} />
+                      ))}
+                    </div>
+                  </Reveal>
+                )}
+
+                {(!naturalMode || !hasActiveSearch) && pagination?.hasNextPage && (
+                  <div className="pp-fade-action" style={{ marginTop: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPaginationState({
+                          requestKey,
+                          offset: getNextProductPageOffset(products),
+                        })
+                      }
+                      disabled={isLoadingMoreProducts}
+                      className="pp-btn pp-btn--secondary pp-btn--inline"
+                    >
+                      {isLoadingMoreProducts ? 'Loading…' : 'Load more products'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -930,6 +856,8 @@ export default function ProductsPageClient({
           key={JSON.stringify(filters)}
           open={drawerOpen}
           values={filters}
+          facets={facets}
+          categoryTree={tree}
           onClose={() => setDrawerOpen(false)}
           onApply={applyFilters}
         />
@@ -947,26 +875,12 @@ function ProductSearchPanel({
   onModeChange,
   initialQuery,
   onSearch,
-  onMoreFilters,
-  quickChipLabels,
-  activeFilterTags,
-  pricingValue,
-  onPricingChange,
-  deploymentValue,
-  onDeploymentChange,
   freeTrial,
 }: {
   mode: SearchMode
   onModeChange: (mode: SearchMode) => void
   initialQuery: string
   onSearch: (query: string) => void
-  onMoreFilters: () => void
-  quickChipLabels: { category: string; pricing: string; plans: string }
-  activeFilterTags: ActiveFilterTag[]
-  pricingValue: string
-  onPricingChange: (value: string) => void
-  deploymentValue: string
-  onDeploymentChange: (value: string) => void
   freeTrial: boolean
 }) {
   const [query, setQuery] = useState(initialQuery)
@@ -1040,12 +954,6 @@ function ProductSearchPanel({
     document.addEventListener('mousedown', handlePointerDown)
     return () => document.removeEventListener('mousedown', handlePointerDown)
   }, [])
-
-  const scrollToRail = () => {
-    document
-      .getElementById('catalogue-rail')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
 
   return (
     <form
@@ -1199,95 +1107,6 @@ function ProductSearchPanel({
         </button>
       </div>
 
-      <div className="pp-flex pp-wrap pp-gap-3" style={{ justifyContent: 'space-between' }}>
-        <div className="pp-flex pp-wrap pp-gap-2">
-          <button
-            type="button"
-            className="pp-chip pp-btn--inline"
-            onClick={scrollToRail}
-            title="Browse categories below"
-          >
-            <CategoryIcon />
-            {quickChipLabels.category}
-          </button>
-          <label
-            className="pp-chip pp-btn--inline"
-            style={{ position: 'relative', cursor: 'pointer', margin: 0 }}
-          >
-            <PricingIcon />
-            {quickChipLabels.pricing}
-            <select
-              value={pricingValue}
-              onChange={(e) => onPricingChange(e.target.value)}
-              style={{
-                position: 'absolute',
-                opacity: 0,
-                inset: 0,
-                width: '100%',
-                cursor: 'pointer',
-              }}
-              aria-label="Pricing filter"
-            >
-              <option value="">Any pricing</option>
-              <option value="free">Free</option>
-              <option value="freemium">Freemium</option>
-              <option value="paid_tier_1">Paid (Tier 1)</option>
-              <option value="paid_tier_2">Paid (Tier 2)</option>
-              <option value="paid_tier_3">Paid (Tier 3)</option>
-            </select>
-          </label>
-          <label
-            className="pp-chip pp-btn--inline"
-            style={{ position: 'relative', cursor: 'pointer', margin: 0 }}
-          >
-            <FunnelIcon />
-            Any deployment
-            <select
-              value={deploymentValue}
-              onChange={(e) => onDeploymentChange(e.target.value)}
-              style={{
-                position: 'absolute',
-                opacity: 0,
-                inset: 0,
-                width: '100%',
-                cursor: 'pointer',
-              }}
-              aria-label="Deployment filter"
-            >
-              <option value="">Any deployment</option>
-              <option value="cloud">Cloud (SaaS)</option>
-              <option value="self_hosted">Self-hosted / On-premise</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
-          </label>
-        </div>
-        <button
-          type="button"
-          className="pp-btn pp-btn--secondary pp-btn--sm pp-btn--inline"
-          onClick={onMoreFilters}
-        >
-          <FunnelIcon size={16} />
-          More filters
-        </button>
-      </div>
-
-      {activeFilterTags.length > 0 && (
-        <div className="pp-flex pp-wrap pp-gap-2" style={{ rowGap: 'var(--sp-2)' }}>
-          {activeFilterTags.map((tag) => (
-            <span key={tag.label} className="pp-tag pp-tag--filter">
-              {tag.label}
-              <button
-                type="button"
-                className="pp-tag-x"
-                aria-label={`Remove ${tag.label}`}
-                onClick={tag.clear}
-              >
-                <TagX />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
     </form>
   )
 }
@@ -1323,6 +1142,9 @@ function ProductCard({ product }: { product: CardProduct }) {
               <span aria-hidden="true">{initial}</span>
             )}
           </span>
+          {product.rating !== null && product.rating > 0 && (
+            <RatingStars rating={product.rating} />
+          )}
         </div>
         <div className="pp-h6">
           {product.product_name}

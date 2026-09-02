@@ -128,11 +128,11 @@ export default function WorkspaceProposalsPage() {
     if (!requestedProposalId || !proposals.some((proposal) => proposal.id === requestedProposalId)) return
     // The URL is external navigation state; keep the visible record synchronized
     // when Next.js changes only the query string on the mounted page.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSelectedId(requestedProposalId)
   }, [proposals, requestedProposalId])
 
-  const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
+  const isExpertWorkspace = state.role === 'expert'
   const isBuyerWorkspace = state.role === 'buyer'
   const visible = useMemo(
     () => (filter === 'all' ? proposals : proposals.filter((proposal) => proposal.status === filter)),

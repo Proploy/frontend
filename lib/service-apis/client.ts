@@ -9,6 +9,7 @@
  * `Authorization: Bearer <token>` so the gateway can authenticate the user.
  */
 import { createClient } from '@/lib/supabase/server'
+import { isCacheableCatalogPath } from './cache-policy'
 
 const SERVICE_APIS_BASE = (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || process.env.SERVICE_APIS_BASE_URL || '').replace(/\/$/, '')
 
@@ -49,12 +50,21 @@ export async function serviceApisFetch(
   const { requireAuth, accessToken, headers, ...init } = options
   const finalHeaders: Record<string, string> = { accept: 'application/json' }
   const requestHeaders = new Headers(headers)
-  const blockedHeaders = new Set(['authorization', 'cookie', 'proxy-authorization', 'set-cookie'])
 
-  // This helper is server-only. Never let a caller accidentally forward
-  // browser credentials or override the server-resolved Supabase token.
+  // Allowlist: only forward headers with a safe, defined purpose for the backend.
+  // Using an allowlist (not a denylist) prevents client-injected trust headers
+  // (x-forwarded-for, x-real-ip, x-admin, etc.) from reaching the backend.
+  const allowedHeaders = new Set([
+    'content-type',
+    'accept',
+    'accept-language',
+    'accept-encoding',
+    'cache-control',
+    'range',
+  ])
+
   requestHeaders.forEach((value, name) => {
-    if (!blockedHeaders.has(name.toLowerCase())) finalHeaders[name.toLowerCase()] = value
+    if (allowedHeaders.has(name.toLowerCase())) finalHeaders[name.toLowerCase()] = value
   })
 
   if (init.body && !finalHeaders['content-type']) {
@@ -78,9 +88,10 @@ export async function serviceApisFetch(
   
   if (init.cache !== undefined || init.next !== undefined) {
     // Respect explicitly provided cache options
-  } else if (path.includes('/catalog/')) {
+  } else if (isCacheableCatalogPath(path)) {
     fetchOptions.next = { revalidate: 3600 } // Cache catalog for 1 hour
   } else {
+    // Includes every catalog request carrying a search term — see cache-policy.
     fetchOptions.cache = 'no-store'
   }
 

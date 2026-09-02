@@ -10,7 +10,9 @@ import { useExpertApplication } from "@/features/experts/use-expert-application"
 import type { ExpertMe } from "@/features/experts/types";
 import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
 import { matchesPath } from "@/lib/nav-active";
+import { canSeeExpertJoinLink } from "@/lib/auth/roles";
 import { useUserProfilePicture } from "@/features/users/use-user-profile-picture";
+import { ExpertsFlyout, ProductsFlyout } from "./NavFlyouts";
 
 // Curated from the legacy global Navbar. The legacy version had two mega-menus
 // (Explore Products / Explore Experts) plus an "About Us" dropdown; those are
@@ -19,8 +21,8 @@ import { useUserProfilePicture } from "@/features/users/use-user-profile-picture
 const LINKS: NavLink[] = [
   // `match` lists extra route prefixes that should still light this tab up:
   // product detail pages live at /product/[id], not under /products.
-  { href: "/products", label: "Products", match: ["/product"] },
-  { href: "/experts", label: "Experts" },
+  { href: "/products", label: "Products", match: ["/product"], flyout: "products" },
+  { href: "/experts", label: "Experts", flyout: "experts" },
   {
     label: "About us",
     items: [
@@ -28,7 +30,9 @@ const LINKS: NavLink[] = [
       { href: "/for-experts", label: "For experts" },
     ],
   },
-  { href: "/AI_workspace", label: "Ask SAM" },
+  // Branding page for Sam. The authenticated workspace itself is reached from
+  // the page's CTA and from the match-engine card on the homepage.
+  { href: "/ask-sam", label: "Ask SAM" },
 ];
 
 type NavLink = {
@@ -36,7 +40,14 @@ type NavLink = {
   href?: string;
   match?: string[];
   items?: { href: string; label: string }[];
+  /** Hover/focus panel with orientation copy and quick links (desktop only). */
+  flyout?: "products" | "experts";
 };
+
+// Shared reveal for every hover panel under a tab. `pt-4` is the hover bridge
+// between the tab and the panel; focus-within keeps it reachable by keyboard.
+const FLYOUT_WRAP =
+  "absolute left-0 top-full pt-4 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0";
 
 // A tab is active when the current route is its destination, one of its
 // aliases, or — for the "About us" group — any of its dropdown entries.
@@ -52,11 +63,12 @@ function isLinkActive(pathname: string | null, link: NavLink): boolean {
 // Blue (cobalt) is the "you are here" signal across the header and footer.
 // The idle/active variants are kept as separate strings so the two never both
 // set the same utility (e.g. two `after:origin-*` classes) and race in the
-// generated stylesheet.
+// generated stylesheet. Idle tabs also nudge up a hair on hover so the
+// affordance reads as "clickable", not just "highlighted".
 const NAV_LINK_BASE =
-  "relative text-[0.875rem] transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:bg-cobalt after:transition-transform after:duration-300";
+  "relative text-[0.875rem] transition-[color,transform] duration-300 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:bg-cobalt after:transition-transform after:duration-300";
 const NAV_LINK_IDLE =
-  "text-ink-soft hover:text-ink after:origin-right after:scale-x-0 group-hover:after:origin-left group-hover:after:scale-x-100";
+  "text-ink-soft hover:text-ink hover:-translate-y-px after:origin-right after:scale-x-0 group-hover:after:origin-left group-hover:after:scale-x-100";
 const NAV_LINK_ACTIVE = "text-cobalt font-medium after:origin-left after:scale-x-100";
 
 export function Nav() {
@@ -115,13 +127,18 @@ export function Nav() {
   const showComplete = status === "draft" || status === "changes_requested";
 
   // Approved experts see their own workspace pill, matching the legacy global
-  // Navbar behavior — non-experts see the marketplace CTA.
+  // Navbar behavior. Visitors and buyer ("user") accounts are invited to join
+  // as an expert; other roles (business/admin) keep the marketplace CTA.
+  const canJoinAsExpert = canSeeExpertJoinLink(user?.role, Boolean(user));
+
   const ctaLabel = showDashboard
     ? "Workspace"
     : showPending
     ? "Application Pending"
     : showComplete
     ? "Complete Application"
+    : canJoinAsExpert
+    ? "Join as Expert"
     : "Find an Expert";
 
   const ctaHref = showDashboard
@@ -130,6 +147,8 @@ export function Nav() {
     ? "/become-expert"
     : showPending
     ? "#"
+    : canJoinAsExpert
+    ? "/become-expert"
     : "/experts";
 
   const handleCtaClick = (e: React.MouseEvent) => {
@@ -162,7 +181,7 @@ export function Nav() {
           </Link>
 
           <ul className="ml-2 hidden items-center gap-7 md:flex">
-            {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => {
+            {LINKS.map((l) => {
               const active = isLinkActive(pathname, l);
               return (
               <li key={l.label} className="relative group">
@@ -176,7 +195,7 @@ export function Nav() {
                       {l.label}
                       <ChevronDown className="h-3 w-3 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
                     </button>
-                    <div className="absolute left-0 top-full pt-4 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+                    <div className={FLYOUT_WRAP}>
                       <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-[0_24px_48px_-16px_rgba(10,13,18,0.18)] min-w-[160px]">
                         {l.items.map((sub) => {
                           const subActive = matchesPath(pathname, sub.href);
@@ -197,13 +216,20 @@ export function Nav() {
                     </div>
                   </>
                 ) : (
-                  <Link
-                    href={l.href!}
-                    aria-current={active ? "page" : undefined}
-                    className={`${NAV_LINK_BASE} ${active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}`}
-                  >
-                    {l.label}
-                  </Link>
+                  <>
+                    <Link
+                      href={l.href!}
+                      aria-current={active ? "page" : undefined}
+                      className={`${NAV_LINK_BASE} ${active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}`}
+                    >
+                      {l.label}
+                    </Link>
+                    {l.flyout && (
+                      <div className={FLYOUT_WRAP}>
+                        {l.flyout === "products" ? <ProductsFlyout /> : <ExpertsFlyout />}
+                      </div>
+                    )}
+                  </>
                 )}
               </li>
               );
@@ -304,7 +330,7 @@ export function Nav() {
         {menuOpen && (
           <div className="border-t border-border bg-paper/95 backdrop-blur-xl md:hidden">
             <ul className="mx-auto flex max-w-[1240px] flex-col px-6 py-3">
-              {LINKS.filter(l => !(showDashboard && l.href === "/AI_workspace")).map((l) => {
+              {LINKS.map((l) => {
                 const active = isLinkActive(pathname, l);
                 return (
                 <li key={l.label}>

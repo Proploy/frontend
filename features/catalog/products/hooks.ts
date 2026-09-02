@@ -9,6 +9,7 @@ import type { NormalizedError } from '../shared/types'
 import type {
   ProductDetail,
   ProductAlternative,
+  ProductFacets,
   ProductMediaAssetItem,
   ProductListResult,
   ProductPageModel,
@@ -24,13 +25,18 @@ import { mergeProductListPage } from './pagination-state'
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface UseProductListOptions {
-  category?: string
-  pricing_bucket?: string
+  category?: string[]
+  pricing_bucket?: string[]
   free_plan?: boolean
   free_trial?: boolean
   company_size?: string[]
   deployment_model?: string[]
   compliance?: string[]
+  integration?: string[]
+  industry?: string[]
+  implementation_complexity?: string[]
+  min_rating?: number
+  max_starting_price_usd?: number
   search?: string
   sort?: ProductSort
   page?: number
@@ -94,6 +100,11 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
     company_size,
     deployment_model,
     compliance,
+    integration,
+    industry,
+    implementation_complexity,
+    min_rating,
+    max_starting_price_usd,
     search,
     sort = 'name',
     page = 1,
@@ -127,6 +138,11 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
         company_size,
         deployment_model,
         compliance,
+        integration,
+        industry,
+        implementation_complexity,
+        min_rating,
+        max_starting_price_usd,
         search,
         sort,
         limit,
@@ -164,6 +180,11 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
     company_size,
     deployment_model,
     compliance,
+    integration,
+    industry,
+    implementation_complexity,
+    min_rating,
+    max_starting_price_usd,
     search,
     sort,
     page,
@@ -187,8 +208,7 @@ export function useProductList(options: UseProductListOptions = {}): UseProductL
   return { products, pagination, loading, error, refetch: fetch_ }
 }
 
-interface UseRecursiveCategoryProductListOptions extends UseProductListOptions {
-  categoryTermIds: string[]
+interface UseCatalogProductListOptions extends UseProductListOptions {
   enabled?: boolean
   initialData?: {
     products: ProductListResult['products']
@@ -197,23 +217,30 @@ interface UseRecursiveCategoryProductListOptions extends UseProductListOptions {
 }
 
 /**
- * Lists a category and all of its descendant product categories. The catalog
- * API accepts one exact category term, so a branch is assembled from its
- * product-category requests and deduplicated before client-side pagination.
+ * Product list for the Explore Products page. The API expands a category to
+ * its descendants and orders searched lists by relevance, so this is a single
+ * request per page. `initialData` (server-rendered first page) skips the first
+ * client fetch; `enabled=false` parks the hook while natural search owns the
+ * results.
  */
-export function useRecursiveCategoryProductList({
-  categoryTermIds,
+export function useCatalogProductList({
   enabled = true,
   initialData,
   ...options
-}: UseRecursiveCategoryProductListOptions): UseProductListResult {
+}: UseCatalogProductListOptions = {}): UseProductListResult {
   const {
+    category,
     pricing_bucket,
     free_plan,
     free_trial,
     company_size,
     deployment_model,
     compliance,
+    integration,
+    industry,
+    implementation_complexity,
+    min_rating,
+    max_starting_price_usd,
     search,
     sort = 'name',
     page = 1,
@@ -221,7 +248,11 @@ export function useRecursiveCategoryProductList({
     offset,
     append = false,
   } = options
-  const categoryTermIdsKey = Array.from(new Set(categoryTermIds)).sort().join('\u0001')
+  const requestKey = JSON.stringify({
+    category, pricing_bucket, free_plan, free_trial, company_size, deployment_model, compliance,
+    integration, industry, implementation_complexity, min_rating, max_starting_price_usd,
+    search, sort, page, limit, offset, append,
+  })
   const [products, setProducts] = useState<ProductListResult['products']>(initialData?.products ?? [])
   const [pagination, setPagination] = useState<ProductListResult['pagination'] | null>(initialData?.pagination ?? null)
   const [loading, setLoading] = useState(!initialData)
@@ -248,106 +279,35 @@ export function useRecursiveCategoryProductList({
     setLoading(true)
     setError(null)
     try {
-      const requestOffset = offset ?? (page - 1) * limit
-      const sharedRequest = { pricing_bucket, free_plan, free_trial, company_size, deployment_model, compliance, search, sort }
-      const termIds = categoryTermIdsKey ? categoryTermIdsKey.split('\u0001') : []
+      const request = JSON.parse(requestKey) as UseProductListOptions
+      const requestLimit = request.limit ?? 30
+      const requestOffset = request.offset ?? ((request.page ?? 1) - 1) * requestLimit
+      const { page: _page, offset: _offset, append: _append, ...filters } = request
+      void _page
+      void _offset
+      void _append
 
-      if (termIds.length <= 1) {
-        const result = await clientCatalogApi.products.list({
-          ...sharedRequest,
-          category: termIds[0],
-          limit,
-          offset: requestOffset,
-        })
-        if (!requestGuardRef.current.isLatest(requestId)) return
-        if (!result.ok) {
-          setError(result)
-          return
-        }
-        const mapped = mapProductListResponseToPage(result.data, limit, requestOffset)
-        setProducts((currentProducts) => append
-          ? mergeProductListPage({ currentProducts, incomingProducts: mapped.products, offset: requestOffset })
-          : mapped.products)
-        setPagination(mapped.pagination)
-        return
-      }
-
-      const firstPages = await Promise.all(termIds.map((category) =>
-        clientCatalogApi.products.list({ ...sharedRequest, category, limit: 100, offset: 0 }),
-      ))
-      if (!requestGuardRef.current.isLatest(requestId)) return
-      const failed = firstPages.find((result) => !result.ok)
-      if (failed && !failed.ok) {
-        setError(failed)
-        return
-      }
-
-      const successfulFirstPages = firstPages.filter((result): result is Extract<typeof result, { ok: true }> => result.ok)
-      const remainingPages = await Promise.all(successfulFirstPages.flatMap((result, index) => {
-        const requests = []
-        for (let nextOffset = 100; nextOffset < result.data.total; nextOffset += 100) {
-          requests.push(clientCatalogApi.products.list({
-            ...sharedRequest,
-            category: termIds[index],
-            limit: 100,
-            offset: nextOffset,
-          }))
-        }
-        return requests
-      }))
-      if (!requestGuardRef.current.isLatest(requestId)) return
-      const remainingFailure = remainingPages.find((result) => !result.ok)
-      if (remainingFailure && !remainingFailure.ok) {
-        setError(remainingFailure)
-        return
-      }
-
-      const uniqueProducts = new Map<string, ProductListResult['products'][number]>()
-      for (const result of [...successfulFirstPages, ...remainingPages]) {
-        if (!result.ok) continue
-        for (const product of mapProductListResponseToPage(result.data, 100, 0).products) {
-          uniqueProducts.set(product.product_id, product)
-        }
-      }
-      const allProducts = Array.from(uniqueProducts.values())
-      if (sort === 'name') {
-        allProducts.sort((left, right) => left.product_name.localeCompare(right.product_name))
-      }
-      const incomingProducts = allProducts.slice(requestOffset, requestOffset + limit)
-      const total = allProducts.length
-      const currentPage = Math.floor(requestOffset / limit) + 1
-      setProducts((currentProducts) => append
-        ? mergeProductListPage({ currentProducts, incomingProducts, offset: requestOffset })
-        : incomingProducts)
-      setPagination({
-        page: currentPage,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: requestOffset + limit < total,
-        hasPreviousPage: requestOffset > 0,
+      const result = await clientCatalogApi.products.list({
+        ...filters,
+        limit: requestLimit,
+        offset: requestOffset,
       })
+      if (!requestGuardRef.current.isLatest(requestId)) return
+      if (!result.ok) {
+        setError(result)
+        return
+      }
+      const mapped = mapProductListResponseToPage(result.data, requestLimit, requestOffset)
+      setProducts((currentProducts) => request.append
+        ? mergeProductListPage({ currentProducts, incomingProducts: mapped.products, offset: requestOffset })
+        : mapped.products)
+      setPagination(mapped.pagination)
     } finally {
       if (requestGuardRef.current.isLatest(requestId)) {
         setLoading(false)
       }
     }
-  }, [
-    append,
-    categoryTermIdsKey,
-    enabled,
-    free_plan,
-    free_trial,
-    limit,
-    offset,
-    page,
-    pricing_bucket,
-    search,
-    sort,
-    company_size,
-    deployment_model,
-    compliance,
-  ])
+  }, [enabled, requestKey])
 
   useEffect(() => {
     const requestGuard = requestGuardRef.current
@@ -362,6 +322,65 @@ export function useRecursiveCategoryProductList({
   }, [fetch_])
 
   return { products, pagination, loading, error, refetch: fetch_ }
+}
+
+interface UseProductFacetsResult {
+  facets: ProductFacets | null
+  error: NormalizedError | null
+}
+
+const facetsCache = new Map<string, { at: number; facets: ProductFacets }>()
+const FACETS_CLIENT_TTL_MS = 60_000
+
+/**
+ * Filter options with counts. Backend: GET /api/v1/catalog/products/facets.
+ *
+ * Pass the active search so the options describe that result set — otherwise
+ * the sidebar offers filters that have no overlap with the search and the
+ * buyer lands on an empty page. The previous options stay on screen while a
+ * new scope loads, so the sidebar never flickers empty.
+ */
+export function useProductFacets(
+  initialData?: ProductFacets | null,
+  search?: string,
+): UseProductFacetsResult {
+  const scope = (search ?? '').trim().toLowerCase()
+  const [facets, setFacets] = useState<ProductFacets | null>(initialData ?? null)
+  const [error, setError] = useState<NormalizedError | null>(null)
+  const requestGuardRef = useRef(createLatestRequestGuard())
+
+  useEffect(() => {
+    // The server already resolved the unscoped options for the first paint.
+    if (!scope && initialData) return
+
+    const requestGuard = requestGuardRef.current
+    const requestId = requestGuard.begin()
+    let active = true
+
+    void (async () => {
+      const cached = facetsCache.get(scope)
+      if (cached && Date.now() - cached.at < FACETS_CLIENT_TTL_MS) {
+        if (active && requestGuard.isLatest(requestId)) setFacets(cached.facets)
+        return
+      }
+      const result = await clientCatalogApi.products.getFacets(scope || undefined)
+      if (!active || !requestGuard.isLatest(requestId)) return
+      if (result.ok) {
+        facetsCache.set(scope, { at: Date.now(), facets: result.data })
+        setFacets(result.data)
+        setError(null)
+      } else {
+        setError(result)
+      }
+    })()
+
+    return () => {
+      active = false
+      requestGuard.invalidate()
+    }
+  }, [scope, initialData])
+
+  return { facets, error }
 }
 
 /**

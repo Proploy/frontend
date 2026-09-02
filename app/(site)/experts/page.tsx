@@ -1,8 +1,8 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Nav } from '@/components/site/Nav'
 import { Footer } from '@/components/site/Footer'
 import { Reveal } from '@/components/site/Reveal'
@@ -14,15 +14,28 @@ import type { ExpertListItem } from '@/features/experts/types'
 import {
   ExpertCard,
   ExpertCardSkeleton,
-  PinIcon,
   dedupe,
   expertPlatforms,
 } from '@/components/experts/ExpertCardV2'
+import { ExpertFiltersDrawer } from '@/components/filters/ExpertFiltersDrawer'
+import { ExpertFilterSidebar } from '@/components/filters/ExpertFilterSidebar'
+import { SortMenu } from '@/components/filters/SortMenu'
 import {
   DEFAULT_EXPERT_FILTERS,
-  ExpertFiltersDrawer,
+  ENTITY_TYPE_LABELS,
+  EXPERT_SORT_OPTIONS,
+  countActiveExpertFilters,
+  deriveExpertFilterOptions,
+  matchesExpertFilters,
+  sortExperts,
   type ExpertFilterValues,
-} from '@/components/filters/ExpertFiltersDrawer'
+} from '@/features/experts/filter-values'
+import {
+  applyExpertFilterParams,
+  parseExpertFilterParams,
+} from '@/features/experts/filter-params'
+
+const DIRECTORY_LIMIT = 100
 
 export default function ExpertsPage() {
   return (
@@ -94,7 +107,7 @@ function ExpertsPageSuspenseFallback() {
               <Skeleton className="h-[120px] w-[520px] max-w-full rounded-[12px]" />
               <Skeleton className="h-[52px] w-[440px] max-w-full rounded-[10px]" />
             </div>
-            <Skeleton className="h-[168px] w-full rounded-[16px]" />
+            <Skeleton className="h-[112px] w-full rounded-[16px]" />
           </div>
         </div>
       </section>
@@ -115,39 +128,27 @@ type ActiveFilterChip = {
   clear: () => void
 }
 
-const SORT_LABELS: Record<ExpertFilterValues['sort'], string> = {
-  relevance: 'Relevance',
-  experience: 'Most experienced',
-  projects: 'Most projects',
-  name: 'Name',
-}
-
 function buildFilterChips(
   values: ExpertFilterValues,
   onChange: (values: ExpertFilterValues) => void,
 ): ActiveFilterChip[] {
   const chips: ActiveFilterChip[] = []
-  if (values.sort && values.sort !== 'relevance') {
-    chips.push({
-      label: SORT_LABELS[values.sort],
-      clear: () => onChange({ ...values, sort: 'relevance' }),
+  const listChips = (
+    key: 'platforms' | 'industries' | 'projectTypes' | 'countries' | 'entityTypes',
+    label: (value: string) => string,
+  ) => {
+    values[key].forEach((value) => {
+      chips.push({
+        label: label(value),
+        clear: () => onChange({ ...values, [key]: values[key].filter((v) => v !== value) }),
+      })
     })
   }
-  if (values.entityType) {
-    chips.push({ label: values.entityType, clear: () => onChange({ ...values, entityType: '' }) })
-  }
-  if (values.platform) {
-    chips.push({ label: values.platform, clear: () => onChange({ ...values, platform: '' }) })
-  }
-  if (values.industry) {
-    chips.push({ label: values.industry, clear: () => onChange({ ...values, industry: '' }) })
-  }
-  if (values.projectType) {
-    chips.push({ label: values.projectType, clear: () => onChange({ ...values, projectType: '' }) })
-  }
-  if (values.location) {
-    chips.push({ label: values.location, clear: () => onChange({ ...values, location: '' }) })
-  }
+  listChips('platforms', (v) => v)
+  listChips('industries', (v) => v)
+  listChips('projectTypes', (v) => v)
+  listChips('entityTypes', (v) => ENTITY_TYPE_LABELS[v] ?? v)
+  listChips('countries', (v) => v)
   if (values.minimumYears > 0) {
     chips.push({
       label: `${values.minimumYears}+ years`,
@@ -158,109 +159,74 @@ function buildFilterChips(
 }
 
 function ExpertsPageContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const searchFromUrl = searchParams.get('search') ?? ''
 
-  const filtersFromUrl = useMemo<ExpertFilterValues>(() => ({
-    ...DEFAULT_EXPERT_FILTERS,
-    platform: searchParams.get('platform') ?? '',
-    industry: searchParams.get('industry') ?? '',
-    projectType: searchParams.get('projectType') ?? '',
-    location: searchParams.get('location') ?? '',
-  }), [searchParams])
-  const [filters, setFilters] = useState<ExpertFilterValues>(filtersFromUrl)
+  // The URL is the single source of truth for filters and sort.
+  const filters = useMemo(() => parseExpertFilterParams(searchParams), [searchParams])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [query, setQuery] = useState(searchFromUrl)
-
-  const urlFiltersKey = `${searchParams.get('platform')}|${searchParams.get('industry')}|${searchParams.get('projectType')}|${searchParams.get('location')}`
-  const lastUrlFiltersKey = useRef(urlFiltersKey)
-
-  useEffect(() => {
-    if (urlFiltersKey !== lastUrlFiltersKey.current) {
-      lastUrlFiltersKey.current = urlFiltersKey
-      setFilters(filtersFromUrl)
-    }
-  }, [urlFiltersKey, filtersFromUrl])
 
   useEffect(() => {
     setQuery(searchFromUrl)
   }, [searchFromUrl])
 
-  const { experts, loading, error, refetch } = useApprovedExperts({
-    platform: filters.platform || undefined,
-    industry: filters.industry || undefined,
-    projectType: filters.projectType || undefined,
-    limit: 50,
+  const navigate = (mutate: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '')
+    mutate(params)
+    const next = params.toString()
+    // Update the URL in place: filtering is evaluated client-side, so a router
+    // navigation would re-render the route for no new data. Next syncs
+    // useSearchParams with history updates, and back/forward still work.
+    window.history.pushState(null, '', `/experts${next ? `?${next}` : ''}`)
+  }
+  const applyFilters = (values: ExpertFilterValues) => navigate((params) => {
+    applyExpertFilterParams(params, values)
   })
+  const clearAllFilters = () => applyFilters({ ...DEFAULT_EXPERT_FILTERS, sort: filters.sort })
+
+  // Load the directory once; filters are evaluated client-side so the pill
+  // options reflect the real data and every group can be multi-select.
+  const { experts, loading, error, refetch } = useApprovedExperts({ limit: DIRECTORY_LIMIT })
   const {
     experts: keywordExperts,
     loading: keywordLoading,
     error: keywordError,
     refetch: refetchKeywordExperts,
-  } = useExpertKeywordSearch(query, 50, {
-    platform: filters.platform,
-    industry: filters.industry,
-    projectType: filters.projectType,
-    location: filters.location,
-    minimumYears: filters.minimumYears,
-    entityType: filters.entityType,
-    sort: filters.sort,
-  })
+  } = useExpertKeywordSearch(query, DIRECTORY_LIMIT, { sort: filters.sort })
   const showingKeywordResults = Boolean(query.trim())
-  const displayedExperts = showingKeywordResults ? keywordExperts : experts
+
+  const filterOptions = useMemo(() => deriveExpertFilterOptions(experts), [experts])
 
   const typedExperts: ExpertListItem[] = useMemo(() => {
-    if (showingKeywordResults) return keywordExperts
-
-    const filtered = experts.filter((expert) => {
-      const location = [expert.regionCity, expert.regionCountry].filter(Boolean).join(' ').toLowerCase()
-      const matchesLocation = !filters.location || location.includes(filters.location.toLowerCase())
-      const matchesYears = (expert.yearsExperience ?? 0) >= filters.minimumYears
-      const matchesType = !filters.entityType || expert.entityType?.toLowerCase().includes(filters.entityType)
-      return matchesLocation && matchesYears && matchesType
-    })
-
-    if (filters.sort === 'experience') {
-      return [...filtered].sort((a, b) => (b.yearsExperience ?? 0) - (a.yearsExperience ?? 0))
-    }
-    if (filters.sort === 'projects') {
-      return [...filtered].sort((a, b) => (b.projectsCompletedTotal ?? 0) - (a.projectsCompletedTotal ?? 0))
-    }
-    if (filters.sort === 'name') {
-      return [...filtered].sort((a, b) => a.displayName.localeCompare(b.displayName))
-    }
-    return filtered
+    const source = showingKeywordResults ? keywordExperts : experts
+    const filtered = source.filter((expert) => matchesExpertFilters(expert, filters))
+    // Keyword results are already relevance-ordered by the API.
+    return showingKeywordResults && filters.sort === 'relevance' ? filtered : sortExperts(filtered, filters.sort)
   }, [experts, filters, keywordExperts, showingKeywordResults])
 
-  const activeChips = useMemo(
-    () => buildFilterChips(filters, setFilters),
-    [filters],
-  )
+  const activeChips = useMemo(() => buildFilterChips(filters, applyFilters), [filters]) // eslint-disable-line react-hooks/exhaustive-deps
+  const activeFilterCount = countActiveExpertFilters(filters)
 
   // Resolve the experts' platform labels to catalog products so cards can show
   // real product logos (capped to keep the keyword-search fan-out bounded).
   const platformQueries = useMemo(
-    () => dedupe(displayedExperts.flatMap((expert) => expertPlatforms(expert))).slice(0, 24),
-    [displayedExperts],
+    () => dedupe(typedExperts.flatMap((expert) => expertPlatforms(expert))).slice(0, 24),
+    [typedExperts],
   )
   const { products: platformProducts } = useCatalogProductMatches(platformQueries)
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const params = new URLSearchParams(searchParams?.toString() ?? '')
-    const trimmed = query.trim()
-    if (trimmed) params.set('search', trimmed)
-    else params.delete('search')
-    router.push(`/experts?${params.toString()}`)
+    navigate((params) => {
+      const trimmed = query.trim()
+      if (trimmed) params.set('search', trimmed)
+      else params.delete('search')
+    })
   }
 
-  const count = typedExperts.length
   const directoryLoading = showingKeywordResults ? keywordLoading : loading
   const directoryError = showingKeywordResults ? keywordError : error
-  const directoryLede = directoryLoading || directoryError
-    ? 'Specialists with verified credentials and published case studies, matched to your filters.'
-    : `${count} ${count === 1 ? 'specialist matches' : 'specialists match'} your filters, each with verified credentials and published case studies.`
 
   const [ctaEmail, setCtaEmail] = useState('')
   const [ctaSent, setCtaSent] = useState(false)
@@ -314,69 +280,6 @@ function ExpertsPageContent() {
                     <SearchIcon size={20} />
                   </button>
                 </div>
-
-                <div className="pp-flex pp-wrap pp-gap-3" style={{ justifyContent: 'space-between' }}>
-                  <div className="pp-flex pp-wrap pp-gap-2">
-                    <button
-                      type="button"
-                      className="pp-chip pp-btn--inline"
-                      aria-pressed={Boolean(filters.entityType)}
-                      onClick={() => setDrawerOpen(true)}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                        <path d="M3 6h18M6 12h12M10 18h4" />
-                      </svg>
-                      {filters.entityType || 'Any expert type'}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="pp-chip pp-btn--inline"
-                      aria-pressed={Boolean(filters.location)}
-                      onClick={() => setDrawerOpen(true)}
-                    >
-                      <PinIcon size={15} />
-                      {filters.location || 'Any location'}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="pp-chip pp-btn--inline"
-                      aria-pressed={filters.minimumYears > 0}
-                      onClick={() => setDrawerOpen(true)}
-                    >
-                      <FilterIcon size={15} />
-                      {filters.minimumYears > 0 ? `${filters.minimumYears}+ years` : 'Any experience'}
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="pp-btn pp-btn--secondary pp-btn--sm pp-btn--inline"
-                    onClick={() => setDrawerOpen(true)}
-                  >
-                    <FilterIcon />
-                    More filters
-                  </button>
-                </div>
-
-                {activeChips.length > 0 && (
-                  <div className="pp-flex pp-wrap pp-gap-2">
-                    {activeChips.map((chip) => (
-                      <span key={chip.label} className="pp-tag pp-tag--filter">
-                        {chip.label}
-                        <button
-                          className="pp-tag-x"
-                          type="button"
-                          aria-label={`Remove ${chip.label}`}
-                          onClick={chip.clear}
-                        >
-                          <XIcon />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </form>
             </div>
           </Reveal>
@@ -393,30 +296,87 @@ function ExpertsPageContent() {
               <p className="pp-label">Expert directory</p>
               <h2 className="pp-display pp-d3">Execution is the deliverable.</h2>
             </div>
-            <p className="pp-lede">{directoryLede}</p>
+            <p className="pp-lede">
+              Specialists with verified credentials and published case studies, matched to your filters.
+            </p>
           </Reveal>
 
-          {directoryLoading ? (
-            <ExpertGridSkeleton />
-          ) : directoryError ? (
-            <div className="pp-stack pp-gap-4" style={{ alignItems: 'center', paddingBlock: 'var(--sp-16)', textAlign: 'center' }}>
-              <p className="pp-lede">We couldn&apos;t load approved experts right now.</p>
-              <p className="pp-small">{directoryError.error.message}</p>
-              <button type="button" onClick={showingKeywordResults ? refetchKeywordExperts : refetch} className="pp-btn pp-btn--cobalt pp-btn--inline">
-                Try again
-              </button>
+          <div className="pp-catalog-layout">
+            <aside className="pp-filter-side" aria-label="Expert filters">
+              <ExpertFilterSidebar values={filters} onChange={applyFilters} options={filterOptions} />
+            </aside>
+
+            <div className="pp-stack pp-gap-6" style={{ minWidth: 0 }}>
+              <div className="pp-results-head">
+                <h3 className="pp-heading-sm">
+                  {showingKeywordResults ? `Experts for "${query.trim()}"` : 'All experts'}
+                </h3>
+                <div className="pp-flex pp-gap-3" style={{ alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--secondary pp-btn--sm pp-btn--inline pp-filters-toggle"
+                    onClick={() => setDrawerOpen(true)}
+                  >
+                    <FilterIcon size={16} />
+                    {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+                  </button>
+                  <SortMenu
+                    value={filters.sort}
+                    options={EXPERT_SORT_OPTIONS}
+                    onChange={(sort) => applyFilters({ ...filters, sort })}
+                  />
+                </div>
+              </div>
+
+              {activeChips.length > 0 && (
+                <div className="pp-flex pp-wrap pp-gap-2" style={{ alignItems: 'center' }}>
+                  {activeChips.map((chip) => (
+                    <span key={chip.label} className="pp-tag pp-tag--filter">
+                      {chip.label}
+                      <button
+                        className="pp-tag-x"
+                        type="button"
+                        aria-label={`Remove ${chip.label}`}
+                        onClick={chip.clear}
+                      >
+                        <XIcon />
+                      </button>
+                    </span>
+                  ))}
+                  <button type="button" className="pp-filter-group-clear" onClick={clearAllFilters}>
+                    Clear all
+                  </button>
+                </div>
+              )}
+
+              {directoryLoading ? (
+                <ExpertGridSkeleton />
+              ) : directoryError ? (
+                <div className="pp-stack pp-gap-4" style={{ alignItems: 'center', paddingBlock: 'var(--sp-16)', textAlign: 'center' }}>
+                  <p className="pp-lede">We couldn&apos;t load approved experts right now.</p>
+                  <p className="pp-small">{directoryError.error.message}</p>
+                  <button type="button" onClick={showingKeywordResults ? refetchKeywordExperts : refetch} className="pp-btn pp-btn--cobalt pp-btn--inline">
+                    Try again
+                  </button>
+                </div>
+              ) : typedExperts.length === 0 ? (
+                <div className="pp-stack pp-gap-4" style={{ alignItems: 'center', paddingBlock: 'var(--sp-16)', textAlign: 'center' }}>
+                  <p className="pp-lede">No experts match these filters.</p>
+                  {activeFilterCount > 0 && (
+                    <button type="button" className="pp-btn pp-btn--secondary pp-btn--sm pp-btn--inline" onClick={clearAllFilters}>
+                      Clear all filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="xp-grid">
+                  {typedExperts.map((expert, index) => (
+                    <ExpertCard key={expert.id} expert={expert} index={index} catalogProducts={platformProducts} />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : typedExperts.length === 0 ? (
-            <div className="pp-stack pp-gap-4" style={{ alignItems: 'center', paddingBlock: 'var(--sp-16)', textAlign: 'center' }}>
-              <p className="pp-lede">No experts found yet. Check back soon!</p>
-            </div>
-          ) : (
-            <div className="xp-grid">
-              {typedExperts.map((expert, index) => (
-                <ExpertCard key={expert.id} expert={expert} index={index} catalogProducts={platformProducts} />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </section>
 
@@ -471,8 +431,9 @@ function ExpertsPageContent() {
           key={JSON.stringify(filters)}
           open={drawerOpen}
           values={filters}
+          options={filterOptions}
           onClose={() => setDrawerOpen(false)}
-          onApply={(values) => setFilters(values)}
+          onApply={applyFilters}
         />
       )}
     </main>

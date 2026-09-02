@@ -260,7 +260,7 @@ describe('compareEntryToEntity — new optional fields', () => {
   it('threads vendorName, logoUrl, officialWebsite from CompareProductEntry', () => {
     const entity = compareEntryToEntity(makeEntry())
     expect(entity.vendorName).toBe('Vendor Co')
-    expect(entity.logoUrl).toBe('http://localhost:8020/api/v1/catalog/products/prod_abc/logo')
+    expect(entity.logoUrl).toBe('/api/proxy/api/v1/catalog/products/prod_abc/logo')
     expect(entity.officialWebsite).toBe('https://example.com')
   })
 
@@ -310,7 +310,7 @@ describe('compareEntryToEntity — alternatives', () => {
       initial: 'A',
       category: 'Project Management',
       rating: 4.2,
-      logoUrl: 'http://localhost:8020/api/v1/catalog/products/prod_alt/logo',
+      logoUrl: '/api/proxy/api/v1/catalog/products/prod_alt/logo',
     })
   })
 
@@ -336,7 +336,7 @@ describe('productAlternativeToCompareAlternative', () => {
       initial: 'L',
       category: 'A live service-api alternative',
       rating: null,
-      logoUrl: 'http://localhost:8020/api/v1/catalog/products/prod_live/logo',
+      logoUrl: '/api/proxy/api/v1/catalog/products/prod_live/logo',
     })
   })
 })

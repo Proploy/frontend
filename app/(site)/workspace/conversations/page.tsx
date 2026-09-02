@@ -80,7 +80,7 @@ export default function WorkspaceConversationsPage() {
       !requestedConversationId
       || !conversations.some((conversation) => conversation.id === requestedConversationId)
     ) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSelectedId(requestedConversationId)
   }, [conversations, requestedConversationId])
 

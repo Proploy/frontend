@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import {
   AlertTriangle,
   ArrowUpRight,
+  Ban,
   Bell,
   Briefcase,
   CalendarClock,
@@ -14,11 +15,14 @@ import {
   FileText,
   Handshake,
   Inbox,
+  Info,
   Plus,
   TrendingUp,
   Users,
 } from 'lucide-react'
+import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { KpiCard, SectionCard, usd } from '@/components/dashboard/ui'
 import {
   BUTTON_SKEUO,
   CARD_SHADOW,
@@ -60,15 +64,25 @@ export default function WorkspaceHomePage() {
     return source.split(/[ @]/)[0] || 'there'
   }, [state.user?.name, state.user?.email])
 
+  // Must precede the early returns below — hook order has to be stable.
+  const reduce = useReducedMotion()
+
   if (state.isPending) return <WorkspaceLoading role={state.role} />
   if (!state.user) return <WorkspaceSignInState redirect="/workspace" />
 
-  const isExpert = state.role === 'expert' || state.role === 'admin'
+  const container = { hidden: {}, show: { transition: { staggerChildren: reduce ? 0 : 0.06 } } }
+  const item = {
+    hidden: reduce ? { opacity: 0 } : { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const } },
+  }
+
+  const isExpert = state.role === 'expert'
   const roleLabel = isExpert
     ? 'Expert workspace'
     : statusLabel(state.role ?? 'buyer')
 
   return (
+    <LazyMotion features={domAnimation}>
     <WorkspaceShell role={state.role}>
       <div className="mx-auto w-full max-w-[1200px] px-[20px] py-[24px] md:px-[32px] md:py-[32px]">
         {/* Hero */}
@@ -124,36 +138,56 @@ export default function WorkspaceHomePage() {
         )}
 
         {/* KPI row — loading skeletons per card */}
-        <div className="mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 xl:grid-cols-4">
+        <m.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 xl:grid-cols-4"
+        >
+          <m.div variants={item}>
           <KpiCard
             icon={<Users size={18} />}
             label="Open engagements"
-            value={home.kpis.openEngagements}
+            value={String(home.kpis.openEngagements)}
+            sub={`${home.engagements.length} total`}
             isLoading={home.isLoading}
+            loadingSlot={<KpiSkeleton />}
             error={findEndpointError(home, '/me/engagements')}
             href="/workspace/engagements"
           />
+          </m.div>
+          <m.div variants={item}>
           <KpiCard
             icon={<Briefcase size={18} />}
             label="Active projects"
-            value={home.kpis.activeProjects}
+            value={String(home.kpis.activeProjects)}
+            sub={`${home.projects.length} in portfolio`}
             isLoading={home.isLoading}
+            loadingSlot={<KpiSkeleton />}
             error={findEndpointError(home, '/me/projects')}
             href="/workspace/projects"
           />
+          </m.div>
+          <m.div variants={item}>
           <KpiCard
             icon={<Inbox size={18} />}
             label="Unread messages"
-            value={home.kpis.unreadMessages}
+            value={String(home.kpis.unreadMessages)}
+            sub={`across ${home.conversations.length} conversations`}
             isLoading={home.isLoading}
+            loadingSlot={<KpiSkeleton />}
             error={findEndpointError(home, '/me/conversations')}
             href="/workspace/messages"
           />
+          </m.div>
+          <m.div variants={item}>
           <KpiCard
             icon={<Clock size={18} />}
             label="Pending decisions"
-            value={home.kpis.pendingDecisions}
+            value={String(home.kpis.pendingDecisions)}
+            sub={pendingDecisionsBreakdown(home)}
             isLoading={home.isLoading}
+            loadingSlot={<KpiSkeleton />}
             error={
               findEndpointError(home, '/me/proposals') ||
               findEndpointError(home, '/me/contracts') ||
@@ -161,25 +195,201 @@ export default function WorkspaceHomePage() {
             }
             href="/workspace/proposals"
           />
-        </div>
+          </m.div>
+        </m.div>
 
         {/* Main two-column area: activity + side cards */}
-        <div className="mt-[24px] grid grid-cols-1 gap-[24px] lg:grid-cols-[1.6fr_1fr]">
-          <div className="flex min-w-0 flex-col gap-[24px]">
+        <m.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="mt-[24px] grid grid-cols-1 gap-[24px] lg:grid-cols-[1.6fr_1fr]"
+        >
+          <m.div variants={item} className="flex min-w-0 flex-col gap-[24px]">
+            <NeedsAttention home={home} />
             <RecentActivity
               items={home.recentActivity}
               isLoading={home.isLoading}
               onOpenNotifications={workspaceExperience.openNotifications}
             />
             <ActiveProjects projects={home.projects} engagements={home.engagements} viewerRole={state.role} />
-          </div>
-          <div className="flex min-w-0 flex-col gap-[24px]">
+          </m.div>
+          <m.div variants={item} className="flex min-w-0 flex-col gap-[24px]">
+            <CurrentStatement home={home} />
             <MessagesCard conversations={home.conversations} engagements={home.engagements} viewerRole={state.role} />
             <UpcomingMeetingsCard meetings={upcomingMeetings(home.meetings)} />
-          </div>
-        </div>
+          </m.div>
+        </m.div>
       </div>
     </WorkspaceShell>
+    </LazyMotion>
+  )
+}
+
+
+// ─── Attention + statement derivations ─────────────────────────────────────
+
+type AttentionSeverity = 'blocked' | 'risk' | 'info'
+
+interface AttentionEntry {
+  id: string
+  severity: AttentionSeverity
+  title: string
+  detail: string
+  href: string
+}
+
+/** Sub-line for the pending-decisions KPI: what actually makes up the count. */
+function pendingDecisionsBreakdown(home: WorkspaceHomeSnapshot): string {
+  const proposals = home.proposals.filter((p) => p.status === 'sent').length
+  const contracts = home.contracts.filter(
+    (c) => c.status === 'sent' || c.status === 'buyer_signed' || c.status === 'expert_signed',
+  ).length
+  const invoices = home.invoices.filter((i) => i.status === 'sent' || i.status === 'overdue').length
+  const parts = [
+    proposals ? `${proposals} proposal${proposals === 1 ? '' : 's'}` : null,
+    contracts ? `${contracts} contract${contracts === 1 ? '' : 's'}` : null,
+    invoices ? `${invoices} invoice${invoices === 1 ? '' : 's'}` : null,
+  ].filter(Boolean)
+  return parts.length ? parts.join(' · ') : 'nothing waiting'
+}
+
+/**
+ * Items that need a decision, ordered by urgency. Derived from the same
+ * snapshot the KPIs use — overdue invoices block, awaiting-signature contracts
+ * and near-due invoices are risks, sent proposals are informational.
+ */
+function attentionEntries(home: WorkspaceHomeSnapshot): AttentionEntry[] {
+  const now = Date.now()
+  const soon = 1000 * 60 * 60 * 24 * 7
+  const entries: AttentionEntry[] = []
+
+  for (const invoice of home.invoices) {
+    if (invoice.status === 'overdue') {
+      entries.push({
+        id: `invoice-${invoice.id}`,
+        severity: 'blocked',
+        title: `Invoice ${invoice.invoiceNumber} is overdue`,
+        detail: `${usd(invoice.totalCents)} · was due ${longDate(invoice.dueAt)}`,
+        href: '/workspace/invoices',
+      })
+    } else if (invoice.status === 'sent') {
+      const due = new Date(invoice.dueAt).getTime()
+      if (Number.isFinite(due) && due - now <= soon) {
+        entries.push({
+          id: `invoice-${invoice.id}`,
+          severity: 'risk',
+          title: `Invoice ${invoice.invoiceNumber} due soon`,
+          detail: `${usd(invoice.totalCents)} · due ${longDate(invoice.dueAt)}`,
+          href: '/workspace/invoices',
+        })
+      }
+    }
+  }
+
+  for (const contract of home.contracts) {
+    if (contract.status === 'sent' || contract.status === 'buyer_signed' || contract.status === 'expert_signed') {
+      entries.push({
+        id: `contract-${contract.id}`,
+        severity: 'risk',
+        title: `${contract.title} awaits signature`,
+        detail: statusLabel(contract.status),
+        href: '/workspace/contracts',
+      })
+    }
+  }
+
+  for (const proposal of home.proposals) {
+    if (proposal.status === 'sent') {
+      entries.push({
+        id: `proposal-${proposal.id}`,
+        severity: 'info',
+        title: `${proposal.title} awaits a decision`,
+        detail: 'Proposal sent',
+        href: '/workspace/proposals',
+      })
+    }
+  }
+
+  const rank: Record<AttentionSeverity, number> = { blocked: 0, risk: 1, info: 2 }
+  return entries.sort((a, b) => rank[a.severity] - rank[b.severity]).slice(0, 5)
+}
+
+const ATTENTION_STYLES: Record<AttentionSeverity, { icon: ReactNode; bg: string; fg: string }> = {
+  blocked: { icon: <Ban size={16} />, bg: '#fef3f2', fg: '#b42318' },
+  risk: { icon: <AlertTriangle size={16} />, bg: '#fffaeb', fg: '#b54708' },
+  info: { icon: <Info size={16} />, bg: '#eff4ff', fg: '#004eeb' },
+}
+
+function NeedsAttention({ home }: { home: WorkspaceHomeSnapshot }) {
+  const entries = attentionEntries(home)
+  return (
+    <SectionCard title="Needs attention">
+      {entries.length === 0 ? (
+        <p className="px-[20px] py-[24px] text-[13px] leading-[20px] text-[#717680]">
+          {home.isLoading ? 'Checking for anything that needs a decision…' : 'Nothing is waiting on you right now.'}
+        </p>
+      ) : (
+        <ul className="flex flex-col">
+          {entries.map((entry) => {
+            const style = ATTENTION_STYLES[entry.severity]
+            return (
+              <li key={entry.id} className="border-b border-[#f0f0f1] last:border-b-0">
+                <Link href={entry.href} className="flex items-start gap-[12px] px-[20px] py-[14px] hover:bg-[#fafafa]">
+                  <span
+                    className="mt-[1px] flex size-[28px] shrink-0 items-center justify-center rounded-[8px]"
+                    style={{ background: style.bg, color: style.fg }}
+                  >
+                    {style.icon}
+                  </span>
+                  <span className="flex min-w-0 flex-col gap-[2px]">
+                    <span className="truncate text-[14px] font-medium leading-[20px] text-[#181d27]">{entry.title}</span>
+                    <span className="truncate text-[12px] leading-[18px] text-[#717680]">{entry.detail}</span>
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </SectionCard>
+  )
+}
+
+function CurrentStatement({ home }: { home: WorkspaceHomeSnapshot }) {
+  const outstanding = home.invoices.filter((i) => i.status === 'sent' || i.status === 'overdue')
+  const total = outstanding.reduce((sum, invoice) => sum + invoice.totalCents, 0)
+  const latest = outstanding[0]
+
+  return (
+    <SectionCard title="Current statement" action={{ label: 'Invoices', href: '/workspace/invoices' }}>
+      <div className="flex flex-col gap-[14px] px-[20px] py-[18px]">
+        <div className="flex flex-col gap-[2px]">
+          <p className="text-[13px] leading-[18px] text-[#535862]">Outstanding</p>
+          <p className="font-semibold text-[28px] leading-[36px] tracking-[-0.02em] text-[#181d27]">
+            {usd(total)}
+          </p>
+          <p className="text-[12px] leading-[18px] text-[#717680]">
+            {outstanding.length === 0
+              ? 'No open invoices'
+              : `${outstanding.length} open invoice${outstanding.length === 1 ? '' : 's'}`}
+          </p>
+        </div>
+        {latest && (
+          <div className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] px-[14px] py-[12px]">
+            <span className="flex min-w-0 flex-col gap-[2px]">
+              <span className="truncate text-[13px] font-medium leading-[18px] text-[#181d27]">
+                {latest.invoiceNumber}
+              </span>
+              <span className="text-[12px] leading-[18px] text-[#717680]">due {longDate(latest.dueAt)}</span>
+            </span>
+            <span className="shrink-0 text-[14px] font-semibold leading-[20px] text-[#181d27]">
+              {usd(latest.totalCents)}
+            </span>
+          </div>
+        )}
+      </div>
+    </SectionCard>
   )
 }
 
@@ -240,55 +450,6 @@ function QuickActions({
 
 // ─── KPI card with per-card loading + error ────────────────────────────────
 
-function KpiCard({
-  icon,
-  label,
-  value,
-  isLoading,
-  error,
-  href,
-}: {
-  icon: ReactNode
-  label: string
-  value: number
-  isLoading: boolean
-  error: { message: string } | null
-  href: string
-}) {
-  return (
-    <Link
-      href={href}
-      className={`group relative flex h-full flex-col gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[20px] transition-colors hover:border-[#d5d7da] ${CARD_SHADOW}`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="flex size-[36px] items-center justify-center rounded-[8px] bg-[#eff4ff] text-[#155eef]">
-          {icon}
-        </span>
-        {error ? (
-          <span title={error.message} className="text-[#b42318]" aria-label="error">
-            <AlertTriangle size={16} />
-          </span>
-        ) : (
-          <ArrowUpRight size={16} className="text-[#a4a7ae] transition-colors group-hover:text-[#155eef]" />
-        )}
-      </div>
-      <div className="flex flex-col gap-[2px]">
-        <p className="text-[14px] font-medium leading-[20px] text-[#535862]">{label}</p>
-        {isLoading ? (
-          <KpiSkeleton />
-        ) : (
-          <p className="font-semibold text-[28px] leading-[36px] tracking-normal text-[#181d27]">
-            {value}
-          </p>
-        )}
-        <p className="text-[12px] leading-[18px] text-[#717680]">
-          {error ? 'unable to refresh' : 'live count'}
-        </p>
-      </div>
-    </Link>
-  )
-}
-
 function KpiSkeleton() {
   return (
     <Skeleton
@@ -300,44 +461,6 @@ function KpiSkeleton() {
 }
 
 // ─── Section card shell ────────────────────────────────────────────────────
-
-function SectionCard({
-  title,
-  action,
-  children,
-}: {
-  title: string
-  action?: { label: string; href?: string; onClick?: () => void }
-  children: ReactNode
-}) {
-  return (
-    <section className={`rounded-[12px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-      <div className="flex items-center justify-between gap-[12px] border-b border-[#f0f0f1] px-[20px] py-[16px]">
-        <h2 className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{title}</h2>
-        {action?.href && (
-          <Link
-            href={action.href}
-            className="inline-flex items-center gap-[4px] text-[13px] font-semibold leading-[18px] text-[#004eeb] hover:text-[#155eef]"
-          >
-            {action.label}
-            <ArrowUpRight size={14} />
-          </Link>
-        )}
-        {action?.onClick && (
-          <button
-            type="button"
-            onClick={action.onClick}
-            className="inline-flex items-center gap-[4px] text-[13px] font-semibold leading-[18px] text-[#004eeb] hover:text-[#155eef]"
-          >
-            {action.label}
-            <ArrowUpRight size={14} />
-          </button>
-        )}
-      </div>
-      {children}
-    </section>
-  )
-}
 
 // ─── Recent activity ───────────────────────────────────────────────────────
 
@@ -438,7 +561,7 @@ function ActiveProjects({
 }: {
   projects: WorkspaceProject[]
   engagements: WorkspaceEngagement[]
-  viewerRole: 'buyer' | 'expert' | 'admin' | null
+  viewerRole: 'buyer' | 'expert' | null
 }) {
   const engagementMap = new Map(engagements.map((engagement) => [engagement.id, engagement]))
   return (
@@ -485,7 +608,7 @@ function MessagesCard({
 }: {
   conversations: WorkspaceConversation[]
   engagements: WorkspaceEngagement[]
-  viewerRole: 'buyer' | 'expert' | 'admin' | null
+  viewerRole: 'buyer' | 'expert' | null
 }) {
   const engagementMap = new Map(engagements.map((engagement) => [engagement.id, engagement]))
   return (

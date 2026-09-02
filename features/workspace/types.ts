@@ -10,7 +10,10 @@
 // features/workspace/index.ts. Do not import from features/experts/* in
 // workspace code.
 
-export type WorkspaceRole = 'buyer' | 'expert' | 'admin'
+// The workspace has two audiences. `admin` is not one of them: admin
+// tooling lives in its own app, and service-apis no longer issues the role.
+// Legacy admin rows resolve to 'buyer' so they are not locked out.
+export type WorkspaceRole = 'buyer' | 'expert'
 
 // ─── Engagement ──────────────────────────────────────────────────────────
 
@@ -279,6 +282,33 @@ export interface ScheduleMeetingRequest {
 // ─── Notification (outbox state) ─────────────────────────────────────────
 
 export type NotificationStatus = 'pending' | 'processing' | 'sent' | 'failed' | 'dead_letter'
+
+/**
+ * View model for the dashboard notification bell.
+ *
+ * Lives here rather than in a mock module so production components do not
+ * depend on mock scaffolding for their types. `notificationToItem` in
+ * `workspace-experience.tsx` maps a `WorkspaceNotification` from the API onto
+ * this shape.
+ */
+export type NotificationKind =
+  | 'payment'
+  | 'project'
+  | 'message'
+  | 'review'
+  | 'approval'
+  | 'dispute'
+  | 'system'
+
+export interface NotificationItem {
+  id: string
+  kind: NotificationKind
+  title: string
+  body: string
+  when: string
+  unread: boolean
+  href?: string
+}
 
 export interface WorkspaceNotification {
   id: string

@@ -6,7 +6,7 @@ import {
 } from './ProductFiltersDrawer'
 
 describe('ProductFiltersDrawer', () => {
-  it('uses the centered filter modal without duplicating the category tree', async () => {
+  it('uses the centered filter modal with pill filters (no checkboxes)', async () => {
     const view = await render(
       <ProductFiltersDrawer
         open
@@ -20,8 +20,8 @@ describe('ProductFiltersDrawer', () => {
       view.container.querySelector<HTMLElement>('[role="dialog"]')
     expect(dialog?.getAttribute('aria-modal')).toBe('true')
     expect(dialog?.className).toContain('rounded-[22px]')
-    expect(view.container.textContent).not.toContain('Category')
-    expect(view.container.textContent).not.toContain('AI Assistants')
+    expect(view.container.textContent).toContain('Categories')
+    expect(view.container.querySelector('input[type="checkbox"]')).toBeNull()
     expect(view.container.textContent).toContain('Clear all filters')
     expect(view.container.textContent).toContain('Save filters')
     await view.unmount()
@@ -34,17 +34,22 @@ describe('ProductFiltersDrawer', () => {
         open
         values={{
           ...DEFAULT_PRODUCT_FILTERS,
-          categoryTermId: 'ai-search',
+          categoryTermIds: ['ai-search'],
         }}
         onClose={() => undefined}
         onApply={onApply}
       />,
     )
 
-    const freePlan =
-      view.container.querySelector<HTMLInputElement>(
-        'input[type="checkbox"]',
-      )
+    // Groups other than Categories start collapsed; open Company size first.
+    const sizeToggle = Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>('button[aria-expanded]'),
+    ).find((button) => button.textContent?.includes('Company size'))
+    expect(sizeToggle).toBeDefined()
+    await act(async () => sizeToggle?.click())
+    const freePlan = Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>('button[aria-pressed]'),
+    ).find((button) => button.textContent === 'SMB / Startup') ?? null
     const save = Array.from(
       view.container.querySelectorAll<HTMLButtonElement>('button'),
     ).find((button) => button.textContent === 'Save filters')
@@ -56,8 +61,8 @@ describe('ProductFiltersDrawer', () => {
 
     expect(onApply).toHaveBeenCalledWith({
       ...DEFAULT_PRODUCT_FILTERS,
-      categoryTermId: 'ai-search',
-      freePlan: true,
+      categoryTermIds: ['ai-search'],
+      companySize: ['smb'],
     })
     await view.unmount()
   })

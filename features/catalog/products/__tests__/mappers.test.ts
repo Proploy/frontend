@@ -138,7 +138,7 @@ describe('mapProductCardToCardProduct', () => {
       product_id: 'prod-123',
       product_name: 'Salesforce CRM',
       product_description: 'The world\'s #1 CRM platform.',
-      product_logo: 'http://localhost:8020/api/v1/catalog/products/prod-123/logo',
+      product_logo: '/api/proxy/api/v1/catalog/products/prod-123/logo',
       rating: 4.5,
       reviews: 1243,
       primary_category: 'CRM',

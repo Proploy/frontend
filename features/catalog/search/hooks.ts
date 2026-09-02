@@ -194,14 +194,21 @@ export function useKeywordSearch(): UseKeywordSearchResult {
 }
 
 export interface UseNaturalSearchFilters {
-  pricingBucket?: string
+  pricingBuckets?: string[]
   companySize?: string[]
   deploymentModel?: string[]
   compliance?: string[]
+  integrations?: string[]
+  industries?: string[]
+  implementationComplexity?: string[]
+  /** Minimum average rating, e.g. "4.5". Empty string means no minimum. */
+  minRating?: string
+  /** Starting price ceiling in USD/month, e.g. "30". Empty string means no ceiling. */
+  maxStartingPrice?: string
   freePlan?: boolean
   /** Free-trial products only — resolved to `trial_available` on the wire. */
   freeTrial?: boolean
-  categoryTermId?: string
+  categoryTermIds?: string[]
 }
 
 interface UseNaturalSearchResult {
@@ -275,8 +282,25 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
     try {
       const activeFilters = filtersRef.current
       const request: NaturalSearchRequest = { query: trimmed, limit }
-      if (activeFilters.pricingBucket) {
-        request.pricing_bucket = [activeFilters.pricingBucket]
+      if (activeFilters.pricingBuckets?.length) {
+        request.pricing_bucket = activeFilters.pricingBuckets
+      }
+      if (activeFilters.integrations?.length) {
+        request.integration = activeFilters.integrations
+      }
+      if (activeFilters.industries?.length) {
+        request.industry = activeFilters.industries
+      }
+      if (activeFilters.implementationComplexity?.length) {
+        request.implementation_complexity = activeFilters.implementationComplexity
+      }
+      const minRating = Number(activeFilters.minRating)
+      if (activeFilters.minRating && Number.isFinite(minRating)) {
+        request.min_rating = minRating
+      }
+      const maxPrice = Number(activeFilters.maxStartingPrice)
+      if (activeFilters.maxStartingPrice !== undefined && activeFilters.maxStartingPrice !== '' && Number.isFinite(maxPrice)) {
+        request.max_starting_price_usd = maxPrice
       }
       if (activeFilters.companySize?.length) {
         request.company_size = activeFilters.companySize
@@ -293,8 +317,8 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
       if (activeFilters.freeTrial) {
         request.trial_available = true
       }
-      if (activeFilters.categoryTermId) {
-        request.category_term_id = activeFilters.categoryTermId
+      if (activeFilters.categoryTermIds?.length) {
+        request.category_term_id = activeFilters.categoryTermIds
       }
 
       const result = await clientCatalogApi.search.natural(request)

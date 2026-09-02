@@ -1,19 +1,27 @@
 'use client'
 
 /**
- * useRealtimeNotifications — W8 (workspace-completion-harness §8.W8).
+ * useRealtimeNotifications — surfaces newly-arrived notifications.
  *
- * Polls the service-apis notification feed for new user-targeted rows.
+ * Polls `GET /api/v1/workspace/notifications/me` and invokes `onNotification`
+ * for rows the viewer has not seen yet.
  *
- * Flow:
- *   1. Fetch GET /api/v1/workspace/notifications/me through service-apis.
- *   2. Remember existing ids without replaying old notifications.
- *   3. Invoke the caller's `onNotification` callback for newly seen rows.
- *   4. Stop polling on unmount.
+ * "Not seen yet" is measured against a persisted watermark — the newest
+ * `createdAt` this browser has already surfaced for this user — rather than
+ * against the first poll of the current mount. That distinction matters: the
+ * previous implementation discarded whatever was present when the hook mounted,
+ * so anything that arrived while the user was away was silently swallowed and
+ * never announced. With a watermark, history is skipped exactly once (on the
+ * first visit in this browser) and every later arrival is reported, including
+ * those that landed between sessions.
+ *
+ * Rows already marked read elsewhere are never announced.
  */
 
 import { useEffect, useEffectEvent } from 'react'
+
 import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
+import type { WorkspaceNotification } from '@/features/workspace/types'
 
 /** Shape of the realtime config returned by service-apis. */
 export interface RealtimeConfig {
@@ -23,25 +31,13 @@ export interface RealtimeConfig {
   filter: string
 }
 
-/** Shape of a notification_event row returned by service-apis. */
-export interface NotificationEventRow {
-  id: string
-  template: string
-  toEmail?: string
-  toUserId?: string | null
-  payload: Record<string, unknown>
-  status: string
-  createdAt: string
-  [k: string]: unknown
-}
-
 const serviceApis = new ServiceApisBrowserClient()
 const NOTIFICATION_POLL_MS = 30000
+const WATERMARK_PREFIX = 'proploy:notifications-watermark:'
 
 /**
- * Fetch the realtime config from service-apis. Returns null on
- * any error so the caller can degrade gracefully (no toast, no
- * subscription, but the app keeps working).
+ * Fetch the realtime config from service-apis. Returns null on any error so the
+ * caller can degrade gracefully (no toast, no subscription, app keeps working).
  */
 export async function fetchRealtimeConfig(): Promise<RealtimeConfig | null> {
   const result = await serviceApis.get<RealtimeConfig>(
@@ -69,8 +65,8 @@ export async function fetchRealtimeConfig(): Promise<RealtimeConfig | null> {
   }
 }
 
-async function fetchNotificationEvents(): Promise<NotificationEventRow[] | null> {
-  const result = await serviceApis.get<{ notifications: NotificationEventRow[] }>(
+async function fetchNotifications(): Promise<WorkspaceNotification[] | null> {
+  const result = await serviceApis.get<{ notifications: WorkspaceNotification[] }>(
     '/api/v1/workspace/notifications/me',
     { requireAuth: true },
   )
@@ -80,22 +76,45 @@ async function fetchNotificationEvents(): Promise<NotificationEventRow[] | null>
   return Array.isArray(result.data.notifications) ? result.data.notifications : null
 }
 
+/** Timestamps are compared numerically; unparseable values sort as "oldest". */
+function timestamp(iso: string | null | undefined): number {
+  if (!iso) return 0
+  const value = Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/i.test(iso) ? iso : `${iso}Z`)
+  return Number.isFinite(value) ? value : 0
+}
+
+function readWatermark(key: string): number | null {
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return null
+    const value = Number(raw)
+    return Number.isFinite(value) ? value : null
+  } catch {
+    // Private mode or blocked storage: behave like a first visit.
+    return null
+  }
+}
+
+function writeWatermark(key: string, value: number): void {
+  try {
+    window.localStorage.setItem(key, String(value))
+  } catch {
+    // Non-fatal: the watermark degrades to in-session only.
+  }
+}
+
 export interface UseRealtimeNotificationsOptions {
-  /** Called for every new notification row received. */
-  onNotification: (row: NotificationEventRow) => void
-  /**
-   * Whether the hook should actively subscribe. Defaults to true.
-   * Set to false to pause without unmounting.
-   */
+  /** Called once for every notification the viewer has not seen before. */
+  onNotification: (row: WorkspaceNotification) => void
+  /** Scopes the watermark so one browser can serve several accounts. */
+  userId?: string | null
+  /** Whether the hook should poll. Defaults to true. */
   enabled?: boolean
 }
 
-/**
- * React hook that polls the notification feed and calls back for new rows.
- * Cleans up on unmount.
- */
 export function useRealtimeNotifications({
   onNotification,
+  userId,
   enabled = true,
 }: UseRealtimeNotificationsOptions): void {
   const notify = useEffectEvent(onNotification)
@@ -104,26 +123,29 @@ export function useRealtimeNotifications({
     if (!enabled) return
 
     let cancelled = false
-    let initialized = false
-    const seenIds = new Set<string>()
+    const key = `${WATERMARK_PREFIX}${userId ?? 'anonymous'}`
 
     const poll = async () => {
-      const rows = await fetchNotificationEvents()
-      if (cancelled) return
-      if (!rows) return
+      const rows = await fetchNotifications()
+      if (cancelled || !rows) return
 
-      if (!initialized) {
-        rows.forEach((row) => seenIds.add(row.id))
-        initialized = true
+      const newest = rows.reduce((max, row) => Math.max(max, timestamp(row.createdAt)), 0)
+      const watermark = readWatermark(key)
+
+      // First visit for this account in this browser: adopt the current head so
+      // the whole backlog is not replayed, then report everything after it.
+      if (watermark === null) {
+        if (newest > 0) writeWatermark(key, newest)
         return
       }
 
-      rows.forEach((row) => {
-        if (!seenIds.has(row.id)) {
-          seenIds.add(row.id)
-          notify(row)
-        }
-      })
+      const fresh = rows
+        .filter((row) => row.readAt == null && timestamp(row.createdAt) > watermark)
+        .sort((a, b) => timestamp(a.createdAt) - timestamp(b.createdAt))
+
+      fresh.forEach((row) => notify(row))
+
+      if (newest > watermark) writeWatermark(key, newest)
     }
 
     void poll()
@@ -135,5 +157,5 @@ export function useRealtimeNotifications({
       cancelled = true
       window.clearInterval(interval)
     }
-  }, [enabled])
+  }, [enabled, userId])
 }

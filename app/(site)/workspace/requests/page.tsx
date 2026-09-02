@@ -68,7 +68,7 @@ export default function WorkspaceRequestsPage() {
     notes: '',
   })
   const [activatedIntentIds, setActivatedIntentIds] = useState<Set<string>>(new Set())
-  const isExpertWorkspace = state.role === 'expert' || state.role === 'admin'
+  const isExpertWorkspace = state.role === 'expert'
   const expertId = isExpertWorkspace ? state.expert?.id ?? null : null
 
   useEffect(() => {

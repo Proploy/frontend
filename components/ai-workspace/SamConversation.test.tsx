@@ -1,6 +1,6 @@
 import { render } from '@/test/render'
 import type { EvaluationDetail } from '@/features/ai-workspace'
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 import { SamConversation } from './SamConversation'
 
 const evaluation: EvaluationDetail = {
@@ -103,7 +103,7 @@ describe('SamConversation', () => {
       />,
     )
     expect(view.container.textContent).toMatch(
-      /SAM is (carefully|thoughtfully|securely)/,
+      /Thoroughly comparing/,
     )
     await view.unmount()
   })
@@ -131,9 +131,9 @@ describe('SamConversation', () => {
 
     const status = view.container.querySelector('[role="status"]')
     expect(status?.textContent).toMatch(
-      /SAM is (carefully|thoughtfully|securely)/,
+      /Thoroughly comparing/,
     )
-    expect(status?.querySelector('.animate-spin')).not.toBeNull()
+    expect(status?.querySelector('.animate-ping')).not.toBeNull()
     await view.unmount()
   })
 

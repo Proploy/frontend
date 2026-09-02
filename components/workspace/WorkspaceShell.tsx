@@ -35,16 +35,16 @@ type WorkspaceNavItem = DashNavItem & {
 
 const NAV_PRIMARY: WorkspaceNavItem[] = [
   { label: 'Home', icon: Home, href: '/workspace' },
-  { label: 'Sales', icon: TrendingUp, href: '/workspace/sales', roles: ['expert', 'admin'] },
-  { label: 'Leads', icon: Inbox, href: '/workspace/leads', roles: ['expert', 'admin'] },
+  { label: 'Sales', icon: TrendingUp, href: '/workspace/sales', roles: ['expert'] },
+  { label: 'Leads', icon: Inbox, href: '/workspace/leads', roles: ['expert'] },
   { label: 'Requests', icon: Inbox, href: '/workspace/requests', roles: ['buyer'] },
   { label: 'Proposals', icon: Handshake, href: '/workspace/proposals' },
   { label: 'Contracts', icon: FileText, href: '/workspace/contracts' },
   { label: 'Projects', icon: FolderClosed, href: '/workspace/projects' },
   { label: 'Invoices', icon: FileText, href: '/workspace/invoices' },
-  { label: 'Earnings', icon: TrendingUp, href: '/workspace/earnings', roles: ['expert', 'admin'] },
+  { label: 'Earnings', icon: TrendingUp, href: '/workspace/earnings', roles: ['expert'] },
   { label: 'Messages', icon: MessageSquare, href: '/workspace/messages' },
-  { label: 'Clients', icon: Users, href: '/workspace/engagements', roles: ['expert', 'admin'] },
+  { label: 'Clients', icon: Users, href: '/workspace/engagements', roles: ['expert'] },
   { label: 'Meetings', icon: Calendar, href: '/workspace/meetings' },
 ]
 
@@ -77,7 +77,6 @@ function useWorkspaceUser(): DashboardUser | undefined {
 function visibleNavItems(items: WorkspaceNavItem[], role?: WorkspaceRole | null): DashNavItem[] {
   return items.filter((item) => {
     if (!item.roles) return true
-    if (role === 'admin') return true
     return Boolean(role && item.roles.includes(role))
   }).map((item) => ({
     label: item.label,

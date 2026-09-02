@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 import type { SearchMode } from "@/features/catalog";
 import { SearchModeToggle } from "@/components/search/SearchModeToggle";
+import { useAuth } from "@/components/providers/auth-provider";
+import { isExpertRole } from "@/lib/auth/roles";
 import { ProductSearch } from "@/components/search/ProductSearch";
 
 const SUGGESTIONS = [
@@ -46,6 +48,8 @@ const NATURAL_HINT = "Ask in plain language — we match the best software";
  * header so visitors pick keyword vs natural-language up front.
  */
 export function MatchConsole() {
+  const { user } = useAuth();
+  const isExpert = isExpertRole(user?.role);
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<SearchMode>("keyword");
 
@@ -112,6 +116,23 @@ export function MatchConsole() {
           </div>
         )}
       </div>
+
+      {/* Sam is the guided route: for buyers who don't yet know what to search
+          for, the workspace runs the discovery questions and builds the shortlist.
+          Experts cannot use Sam, so they are not offered the way in. */}
+      {!isExpert && (
+      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-2.5">
+        <p className="label !normal-case !tracking-normal text-[0.72rem]">
+          Not sure what to search? Sam asks a few questions and shortlists for you.
+        </p>
+        <Link
+          href="/AI_workspace"
+          className="shrink-0 rounded-full border border-border bg-white/70 px-2.5 py-1 text-[0.72rem] font-medium text-cobalt-deep transition-colors hover:border-cobalt/50 hover:bg-cobalt-soft/40"
+        >
+          Ask Sam →
+        </Link>
+      </div>
+      )}
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3">
         {hasQuery ? (

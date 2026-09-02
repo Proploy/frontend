@@ -30,16 +30,23 @@ import {
   type DashNavItem,
   type DashboardUser,
 } from '@/components/dashboard/DashboardChrome'
-import { EXPERT_NOTIFICATIONS } from '@/lib/service-apis/notifications-mock'
-import type { NotificationItem } from '@/lib/service-apis/notifications-mock'
+import type { NotificationItem } from '@/features/workspace/types'
+import { useWorkspaceNotifications } from '@/features/workspace/use-workspace-notifications'
 import { useDemo } from '@/lib/demo/demo-store'
 
 function useExpertNotifications(): NotificationItem[] {
+  // Live feed: GET /api/v1/workspace/notifications/me.
+  const { items } = useWorkspaceNotifications()
   const { notifications } = useDemo()
+
+  // Demo-store rows are local, unsaved interactions and only surface when the
+  // dashboard mock is explicitly enabled — never in production.
+  if (!MOCK_ENABLED) return items
+
   const extra: NotificationItem[] = notifications
     .filter((n) => n.role === 'expert')
     .map((n) => ({ id: n.id, kind: n.kind, title: n.title, body: n.body, when: 'now', unread: true, href: n.href }))
-  return [...extra, ...EXPERT_NOTIFICATIONS]
+  return [...extra, ...items]
 }
 
 // Re-exported so the many expert sub-pages keep their existing import paths.
