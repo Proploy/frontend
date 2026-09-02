@@ -178,7 +178,7 @@ export function ContractsProvider({ children }: { children: ReactNode }) {
       deleteContract: (id) =>
         setState((s) => ({ contracts: s.contracts.filter((c) => c.id !== id) })),
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [state])
 
   return <ContractsContext.Provider value={value}>{children}</ContractsContext.Provider>
