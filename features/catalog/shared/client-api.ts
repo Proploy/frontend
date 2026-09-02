@@ -6,6 +6,7 @@ import type { CategoryTreeResponse } from '../categories/types'
 import type {
   ProductCardResponse,
   ProductDetail,
+  ProductFacets,
   ProductListRequest,
   ProductMediaAssetItem,
   ProductAlternativesResponse,
@@ -34,6 +35,12 @@ export const clientCatalogApi = {
     ): Promise<ApiResult<ProductCardResponse>> {
       const query = buildQueryString(params)
       return client.get<ProductCardResponse>(`/api/v1/catalog/products/ui?${query}`, options)
+    },
+    getFacets(search?: string, options?: CatalogRequestOptions): Promise<ApiResult<ProductFacets>> {
+      // With a search term the API scopes the counts to what that search
+      // matched, so the filter UI never offers an option that empties the page.
+      const query = buildQueryString({ search: search?.trim() || undefined })
+      return client.get<ProductFacets>(`/api/v1/catalog/products/facets${query ? `?${query}` : ''}`, options)
     },
     getDetail(
       productId: string,

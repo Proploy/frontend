@@ -6,18 +6,50 @@ import type { Pagination } from '../shared/types'
 
 export type ProductSort = 'name' | 'rating' | 'market_presence' | 'created_at'
 
-export interface ProductListRequest {
-  category?: string
-  pricing_bucket?: string
+/** Hard filters shared by the product list and natural search (backend ProductFilterSet). */
+export interface ProductFilterRequest {
+  /** Category term ids (OR-ed); the API expands ui_category roots to their product categories. */
+  category?: string[]
+  pricing_bucket?: string[]
   free_plan?: boolean
   free_trial?: boolean
   company_size?: string[]
   deployment_model?: string[]
   compliance?: string[]
+  integration?: string[]
+  industry?: string[]
+  implementation_complexity?: string[]
+  min_rating?: number
+  max_starting_price_usd?: number
+}
+
+export interface ProductListRequest extends ProductFilterRequest {
   search?: string
   sort?: ProductSort
   limit?: number
   offset?: number
+}
+
+// Backend: ProductFacetsResponse (GET /api/v1/catalog/products/facets)
+export interface FacetOption {
+  value: string
+  label: string
+  count: number
+}
+
+export interface ProductFacets {
+  total: number
+  pricing_buckets: FacetOption[]
+  company_sizes: FacetOption[]
+  deployment_models: FacetOption[]
+  compliance: FacetOption[]
+  integrations: FacetOption[]
+  industries: FacetOption[]
+  implementation_complexity: FacetOption[]
+  ratings: FacetOption[]
+  starting_prices: FacetOption[]
+  free_plan_count: number
+  free_trial_count: number
 }
 
 export interface ProductCard {
