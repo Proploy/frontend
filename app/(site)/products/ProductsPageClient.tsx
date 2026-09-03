@@ -858,6 +858,7 @@ export default function ProductsPageClient({
           values={filters}
           facets={facets}
           categoryTree={tree}
+          categoriesLoading={catLoading}
           onClose={() => setDrawerOpen(false)}
           onApply={applyFilters}
         />

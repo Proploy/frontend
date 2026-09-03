@@ -39,7 +39,9 @@ export default async function ProductsPage({
         ),
   ])
 
-  const categoryTree = treeResult.ok ? treeResult.data.tree : []
+  // Leave this empty when the fetch fails; the client hook refetches when it
+  // starts without a tree, so the filter list is never permanently empty.
+  const categoryTree = treeResult.ok ? treeResult.data.tree ?? [] : []
   const initialFacets = facetsResult.ok ? facetsResult.data : null
   const initialProductsPage =
     productsResult && productsResult.ok
