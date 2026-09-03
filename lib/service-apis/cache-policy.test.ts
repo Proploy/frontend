@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { isCacheableCatalogPath } from './cache-policy'
+import {
+  CATALOG_REVALIDATE_SECONDS,
+  CATEGORY_TREE_REVALIDATE_SECONDS,
+  catalogRevalidateSeconds,
+  isCacheableCatalogPath,
+} from './cache-policy'
 
 describe('isCacheableCatalogPath', () => {
   it('caches catalog reference data', () => {
@@ -28,5 +33,22 @@ describe('isCacheableCatalogPath', () => {
   it('leaves non-catalog paths to the caller (no caching)', () => {
     expect(isCacheableCatalogPath('/api/v1/experts')).toBe(false)
     expect(isCacheableCatalogPath('/api/v1/auth/sync')).toBe(false)
+  })
+})
+
+describe('catalogRevalidateSeconds', () => {
+  it('gives the category tree a short window so a bad snapshot cannot linger', () => {
+    expect(catalogRevalidateSeconds('/api/v1/catalog/categories/tree')).toBe(CATEGORY_TREE_REVALIDATE_SECONDS)
+    expect(CATEGORY_TREE_REVALIDATE_SECONDS).toBeLessThan(CATALOG_REVALIDATE_SECONDS)
+  })
+
+  it('keeps the long window for other catalog reference data', () => {
+    expect(catalogRevalidateSeconds('/api/v1/catalog/products/facets')).toBe(CATALOG_REVALIDATE_SECONDS)
+    expect(catalogRevalidateSeconds('/api/v1/catalog/products/abc/ui')).toBe(CATALOG_REVALIDATE_SECONDS)
+  })
+
+  it('refuses to cache searches and non-catalog paths', () => {
+    expect(catalogRevalidateSeconds('/api/v1/catalog/products/ui?search=crm')).toBeNull()
+    expect(catalogRevalidateSeconds('/api/v1/experts')).toBeNull()
   })
 })

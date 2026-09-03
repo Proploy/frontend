@@ -37,11 +37,18 @@ interface UseCategoryTreeOptions {
  * Returns hierarchical tree for navigation/mega-menu.
  */
 export function useCategoryTree(options: UseCategoryTreeOptions = {}): UseCategoryTreeResult {
+  // An empty array is truthy, so `!!initialData` counted "the server render
+  // produced no categories" as usable data: the first client fetch was
+  // skipped and the tree stayed empty for the life of the page, with no
+  // loading state and no retry. Only a non-empty tree is worth trusting;
+  // anything else falls through to a fetch, so the page self-heals when the
+  // server render misses the categories.
+  const hasInitialTree = Array.isArray(options.initialData) && options.initialData.length > 0
   const [tree, setTree] = useState<CategoryNode[]>(options.initialData ?? [])
-  const [loading, setLoading] = useState(!options.initialData)
+  const [loading, setLoading] = useState(!hasInitialTree)
   const [error, setError] = useState<NormalizedError | null>(null)
   const requestGuardRef = useRef(createLatestRequestGuard())
-  const initialDataSkippedRef = useRef(!!options.initialData)
+  const initialDataSkippedRef = useRef(hasInitialTree)
 
   const fetch_ = useCallback(async () => {
     if (initialDataSkippedRef.current) {

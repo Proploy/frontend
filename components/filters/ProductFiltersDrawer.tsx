@@ -23,6 +23,7 @@ export function ProductFiltersDrawer({
   onApply,
   facets,
   categoryTree = [],
+  categoriesLoading = false,
 }: {
   open: boolean
   values: ProductFilterValues
@@ -30,6 +31,7 @@ export function ProductFiltersDrawer({
   onApply: (values: ProductFilterValues) => void
   facets?: ProductFacets | null
   categoryTree?: CategoryNode[]
+  categoriesLoading?: boolean
 }) {
   const [draft, setDraft] = useState(values)
   if (!open) return null
@@ -49,6 +51,7 @@ export function ProductFiltersDrawer({
         onChange={setDraft}
         facets={facets}
         categoryTree={categoryTree}
+        categoriesLoading={categoriesLoading}
       />
     </FilterModal>
   )

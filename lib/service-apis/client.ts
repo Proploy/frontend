@@ -9,7 +9,7 @@
  * `Authorization: Bearer <token>` so the gateway can authenticate the user.
  */
 import { createClient } from '@/lib/supabase/server'
-import { isCacheableCatalogPath } from './cache-policy'
+import { catalogRevalidateSeconds } from './cache-policy'
 
 const SERVICE_APIS_BASE = (process.env.NEXT_PUBLIC_SERVICE_APIS_URL || process.env.SERVICE_APIS_BASE_URL || '').replace(/\/$/, '')
 
@@ -86,12 +86,13 @@ export async function serviceApisFetch(
     headers: finalHeaders,
   }
   
+  const revalidate = catalogRevalidateSeconds(path)
   if (init.cache !== undefined || init.next !== undefined) {
     // Respect explicitly provided cache options
-  } else if (isCacheableCatalogPath(path)) {
-    fetchOptions.next = { revalidate: 3600 } // Cache catalog for 1 hour
+  } else if (revalidate !== null) {
+    fetchOptions.next = { revalidate }
   } else {
-    // Includes every catalog request carrying a search term — see cache-policy.
+    // Everything non-catalog, plus catalog requests carrying a search term.
     fetchOptions.cache = 'no-store'
   }
 
