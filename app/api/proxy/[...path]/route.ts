@@ -61,8 +61,15 @@ async function handleProxy(request: NextRequest, context: { params: Promise<unkn
   })
 
   const responseHeaders = new Headers(response.headers)
-  // Let Next.js handle encoding
+  // undici decompresses the upstream body transparently but leaves the
+  // upstream's `content-encoding` and `content-length` on the headers — the
+  // latter describing the *compressed* size. Re-emitting that length beside a
+  // now-decompressed body makes the runtime truncate the response at the
+  // compressed byte count, so the browser gets a fragment and JSON.parse
+  // fails. Both headers describe an encoding that no longer applies; drop
+  // them and let the runtime frame the response it is actually sending.
   responseHeaders.delete('content-encoding')
+  responseHeaders.delete('content-length')
 
   return new Response(response.body, {
     status: response.status,

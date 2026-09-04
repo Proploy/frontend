@@ -34,25 +34,4 @@ export async function createClient() {
   )
 }
 
-/**
- * Creates a Supabase admin client with service role key for server-side operations
- * Use this only in API routes where you need elevated permissions
- */
-export function createAdminClient() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookieOptions: supabaseAuthCookieOptions,
-      cookies: {
-        getAll() {
-          return []
-        },
-        setAll() {
-          // No-op for admin client
-        },
-      },
-    }
-  )
-}
 

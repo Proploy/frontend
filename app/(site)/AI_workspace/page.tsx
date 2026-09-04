@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import { SoftwareProcurementWorkspace } from '@/components/ai-workspace/SoftwareProcurementWorkspace'
-import { getUserWithProfile } from '@/lib/auth'
-import { isRestrictedFromSam } from '@/lib/auth/roles'
+import { isCurrentUserRestrictedFromSam } from '@/lib/auth/sam-access'
 
 /**
  * Sam is a buyer tool, so approved experts are kept out of the workspace.
@@ -16,9 +15,7 @@ import { isRestrictedFromSam } from '@/lib/auth/roles'
  * account role or an approved expert record is turned away.
  */
 export default async function AIWorkspacePage() {
-  const profile = await getUserWithProfile()
-  const expertRecord = Array.isArray(profile?.expert) ? profile?.expert[0] : profile?.expert
-  if (isRestrictedFromSam(profile?.role, expertRecord?.status)) {
+  if (await isCurrentUserRestrictedFromSam()) {
     redirect('/experts/dashboard')
   }
 
