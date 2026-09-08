@@ -464,6 +464,79 @@
 /* Inline error */
 .vo-error{padding:10px 14px;border-radius:var(--r-control);border:var(--bw) solid var(--color-error-200);background:var(--color-error-50);color:var(--color-error-700);font-size:14px;line-height:21px}
 
+
+/* ===========================================================================
+   .ap-*  AUTH PANEL — the dark brand column on /sign-in, /sign-up and the two
+   email screens. Four variants keyed off the route the user was gated from;
+   see app/(site)/(auth)/auth-panels.tsx.
+
+   These only ever render inside `.pp-dark` at the lg breakpoint and up (the
+   shell hides the whole column below it), so there are no mobile overrides
+   here on purpose.
+   =========================================================================== */
+
+.ap-body{max-width:560px;width:100%;margin:auto}
+/* Slightly tighter than .pp-lede: the graphic-bearing variants use the d3
+   headline and need the supporting line to sit closer to it. */
+.ap-lede{font-size:16px;line-height:26px;color:color-mix(in oklab,var(--paper) 72%,transparent);max-width:46ch}
+
+/* Shared glass surface for every panel graphic */
+.ap-glass{margin:0;border-radius:var(--r-card);border:var(--bw) solid color-mix(in oklab,var(--paper) 18%,transparent);background:color-mix(in oklab,#fff 8%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:hidden}
+.ap-glass-head,.ap-glass-foot{display:flex;align-items:center;gap:var(--sp-2);padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 62%,transparent)}
+.ap-glass-head{border-bottom:var(--bw) solid color-mix(in oklab,var(--paper) 14%,transparent)}
+.ap-glass-foot{justify-content:space-between;border-top:var(--bw) solid color-mix(in oklab,var(--paper) 14%,transparent);color:color-mix(in oklab,var(--paper) 58%,transparent)}
+.ap-dot{width:6px;height:6px;border-radius:var(--r-full);background:var(--cobalt);flex-shrink:0}
+
+/* --- ask-sam: discovery console --- */
+.ap-bubble{align-self:flex-end;max-width:84%;margin:0;padding:10px 14px;border-radius:var(--r-card) var(--r-card) var(--r-sm) var(--r-card);background:var(--paper);color:var(--ink);font-size:14px;line-height:21px}
+.ap-score{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px var(--sp-3)}
+.ap-score-name{font-size:14px;line-height:20px;color:color-mix(in oklab,var(--paper) 88%,transparent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-score-num{font-family:var(--font-mono);font-size:14px;font-weight:var(--weight-medium);letter-spacing:-.02em;text-align:right;color:var(--paper);font-variant-numeric:tabular-nums}
+.ap-score-track{grid-column:1/-1;height:3px;border-radius:var(--r-full);background:color-mix(in oklab,var(--paper) 16%,transparent);overflow:hidden}
+.ap-score-fill{display:block;height:100%;border-radius:var(--r-full);background:var(--cobalt)}
+.ap-score.is-dim .ap-score-name,.ap-score.is-dim .ap-score-num{color:color-mix(in oklab,var(--paper) 55%,transparent)}
+.ap-score.is-dim .ap-score-fill{background:color-mix(in oklab,var(--cobalt) 58%,transparent)}
+
+/* --- become-expert: brief stack + pipeline rail --- */
+.ap-stack-wrap{position:relative;padding-top:14px}
+.ap-stack-ghost{position:absolute;left:50%;translate:-50% 0;height:40px;border-radius:var(--r-card);border:var(--bw) solid color-mix(in oklab,var(--paper) 14%,transparent);background:color-mix(in oklab,#fff 5%,transparent)}
+.ap-stack-ghost--a{top:0;width:90%}
+.ap-stack-ghost--b{top:7px;width:95%}
+/* The stacked ghost edges sit behind this card, so unlike the other glass
+   surfaces it needs an opaque base — the same tint painted as a gradient over
+   solid ink — or the offset edges show straight through it. */
+.ap-brief{position:relative;background-color:var(--ink);background-image:linear-gradient(color-mix(in oklab,#fff 8%,transparent),color-mix(in oklab,#fff 8%,transparent))}
+.ap-brief-top{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4)}
+.ap-brief-title{margin:0;font-family:var(--font-display);font-size:17px;line-height:24px;font-weight:var(--weight-semibold);letter-spacing:-.01em;color:var(--paper)}
+.ap-brief-fee{font-family:var(--font-mono);font-size:17px;font-weight:var(--weight-medium);letter-spacing:-.02em;color:var(--paper);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ap-chips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.ap-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 20%,transparent);font-size:12.5px;line-height:18px;color:color-mix(in oklab,var(--paper) 80%,transparent)}
+.ap-chip.is-on{background:color-mix(in oklab,var(--cobalt) 30%,transparent);border-color:color-mix(in oklab,var(--cobalt) 55%,transparent);color:#fff}
+.ap-rail{list-style:none;margin:0;padding:var(--sp-1) 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.ap-rail-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:9px}
+.ap-rail-step::before{content:"";position:absolute;top:9px;left:-50%;width:100%;height:1px;background:color-mix(in oklab,var(--paper) 20%,transparent)}
+.ap-rail-step:first-child::before{display:none}
+.ap-rail-node{position:relative;z-index:1;display:grid;place-items:center;width:19px;height:19px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 32%,transparent);background:var(--ink);color:#fff}
+.ap-rail-node.is-on{background:var(--cobalt);border-color:var(--cobalt)}
+.ap-rail-label{font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 55%,transparent)}
+
+/* --- browse-experts: roster + locked profile --- */
+.ap-roster{display:flex;align-items:center;gap:10px}
+.ap-avatar{position:relative;display:grid;place-items:center;flex-shrink:0;width:52px;height:52px;border-radius:var(--r-tile);border:var(--bw) solid color-mix(in oklab,var(--paper) 22%,transparent);background:linear-gradient(150deg,color-mix(in oklab,var(--cobalt) 46%,var(--ink)),color-mix(in oklab,var(--ink) 82%,var(--paper)));font-family:var(--font-display);font-size:16px;font-weight:var(--weight-semibold);letter-spacing:-.01em;color:var(--paper)}
+.ap-avatar--sm{width:44px;height:44px;font-size:14px}
+.ap-verified{position:absolute;right:-4px;bottom:-4px;display:grid;place-items:center;width:18px;height:18px;border-radius:var(--r-full);background:var(--cobalt);border:2px solid var(--ink);color:#fff}
+.ap-roster-more{display:flex;flex-direction:column;justify-content:center;padding-left:var(--sp-1)}
+.ap-roster-count{font-family:var(--font-mono);font-size:19px;font-weight:var(--weight-medium);letter-spacing:-.02em;color:var(--paper)}
+.ap-roster-cap{font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 55%,transparent)}
+.ap-profile{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5)}
+.ap-profile-top{display:flex;align-items:center;gap:var(--sp-3)}
+.ap-profile-name{display:block;font-size:15.5px;line-height:20px;font-weight:var(--weight-semibold);color:var(--paper)}
+.ap-profile-role{display:block;font-size:13px;line-height:18px;color:color-mix(in oklab,var(--paper) 62%,transparent)}
+.ap-locked{position:relative}
+.ap-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3);margin:0;filter:blur(5px);user-select:none}
+.ap-meta dt{margin:0 0 5px;font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 50%,transparent)}
+.ap-meta dd{margin:0;font-size:15px;line-height:22px;font-weight:var(--weight-medium);color:var(--paper)}
+.ap-lock-chip{position:absolute;inset:0;margin:auto;width:max-content;height:max-content;display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 26%,transparent);background:color-mix(in oklab,var(--ink) 82%,transparent);font-family:var(--font-mono);font-size:11px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--paper);white-space:nowrap}
 @media (max-width:768px){
   .vo-rail-label{display:none}
   .vo-rail-line{top:15px}
