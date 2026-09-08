@@ -26,7 +26,7 @@ export function SearchModeToggle({
       <div
         role="group"
         aria-label="Search mode"
-        className="inline-flex items-center gap-0.5 rounded-full border border-slate-200 bg-white/90 p-0.5 shadow-sm"
+        className="mc-toggle"
       >
         {MODES.map((mode) => {
           const active = value === mode.value
@@ -37,12 +37,7 @@ export function SearchModeToggle({
               aria-pressed={active}
               title={mode.hint}
               onClick={() => onChange(mode.value)}
-              className={[
-                'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.78rem] font-medium transition-colors',
-                active
-                  ? 'bg-[var(--cobalt)] text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-              ].join(' ')}
+              className="mc-toggle-btn"
             >
               {mode.value === 'keyword' ? (
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" aria-hidden>
