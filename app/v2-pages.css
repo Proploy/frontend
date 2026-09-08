@@ -537,6 +537,66 @@
 .ap-meta dt{margin:0 0 5px;font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 50%,transparent)}
 .ap-meta dd{margin:0;font-size:15px;line-height:22px;font-weight:var(--weight-medium);color:var(--paper)}
 .ap-lock-chip{position:absolute;inset:0;margin:auto;width:max-content;height:max-content;display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 26%,transparent);background:color-mix(in oklab,var(--ink) 82%,transparent);font-family:var(--font-mono);font-size:11px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--paper);white-space:nowrap}
+
+/* ===========================================================================
+   .mc-*  MATCH CONSOLE — the landing hero and its search card.
+
+   Previously built from the legacy `@utility` classes in globals.css
+   (`glass-card`, `label`, `display`, `blueprint`) plus one-off Tailwind
+   arbitrary values. Those utilities are near-twins of the v2 primitives, so
+   the markup now uses `.pp-glass` / `.pp-label` / `.pp-display` / `.pp-d1` and
+   everything else resolves from the tokens here — same system as the other
+   ported sections.
+   =========================================================================== */
+
+.mc-hero{position:relative;z-index:20;padding-block:var(--sp-32) var(--sp-24)}
+.mc-hero-mesh{position:absolute;right:-96px;top:-96px;width:900px;max-width:none;opacity:.45;mix-blend-mode:multiply;pointer-events:none;-webkit-mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.mc-hero-grid{display:grid;align-items:center;gap:var(--sp-12);grid-template-columns:minmax(0,1fr) minmax(0,.92fr)}
+.mc-hero-copy{min-width:0}
+.mc-hero-card{min-width:0;padding-left:var(--sp-4)}
+.mc-eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);padding:6px 12px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent)}
+.mc-proof{display:flex;align-items:center;gap:var(--sp-3)}
+.mc-proof-dots{display:flex;flex-shrink:0}
+.mc-proof-dots span{width:20px;height:20px;border-radius:var(--r-full);border:2px solid var(--paper);background:linear-gradient(135deg,var(--cobalt),var(--cobalt-deep))}
+.mc-proof-dots span+span{margin-left:-6px}
+
+/* --- the card --- */
+.mc-card{position:relative;overflow:hidden;min-width:0;scroll-margin-top:calc(var(--nav-h) + var(--sp-4));transition:box-shadow var(--d-lift) var(--ease),border-color var(--d-base) ease}
+/* Natural-language mode warms the whole card, so the mode toggle reads as a
+   change of behaviour rather than a styling detail. */
+.mc-card[data-mode="natural"]{border-color:color-mix(in oklab,var(--cobalt) 38%,var(--line));box-shadow:0 34px 80px -40px color-mix(in oklab,var(--cobalt) 60%,transparent)}
+.mc-row{display:flex;align-items:center;gap:var(--sp-3);padding:10px var(--sp-4)}
+.mc-row--head{border-bottom:var(--bw) solid var(--line);gap:6px var(--sp-2);flex-wrap:wrap}
+/* The engine name never breaks mid-phrase; the mode toggle beside it is the
+   element that gives way if the card gets narrow. */
+.mc-row--head .pp-label{white-space:nowrap}
+.mc-row--sam,.mc-row--foot{border-top:var(--bw) solid var(--line);justify-content:space-between}
+.mc-row--foot{padding-block:var(--sp-3)}
+.mc-body{padding:var(--sp-3) var(--sp-4) 0}
+/* Reserves the suggestion block's footprint so swapping suggestions for
+   results never resizes the card under the pointer. */
+.mc-min-h{min-height:14rem}
+.mc-hint{letter-spacing:.05em}
+.mc-suggest{display:flex;flex-direction:column;justify-content:center;gap:10px;padding-block:var(--sp-4)}
+.mc-search{margin-top:10px}
+.mc-suggest-list{display:flex;flex-wrap:wrap;gap:6px}
+.mc-suggestion{padding:6px 10px;border-radius:var(--r-control);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--ink-soft);font-size:13px;line-height:18px;text-align:left;cursor:pointer;transition:border-color var(--d-base) ease,color var(--d-base) ease}
+.mc-suggestion:hover{border-color:color-mix(in oklab,var(--cobalt) 40%,var(--line));color:var(--ink)}
+.mc-sam{flex-shrink:0;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--cobalt-deep);font-size:13px;font-weight:var(--weight-medium);transition:border-color var(--d-base) ease,background-color var(--d-base) ease}
+.mc-sam:hover{border-color:color-mix(in oklab,var(--cobalt) 50%,var(--line));background:color-mix(in oklab,var(--cobalt-soft) 40%,white)}
+.mc-viewall{color:var(--cobalt-deep);transition:opacity var(--d-base) ease}
+.mc-viewall:hover{opacity:.7}
+
+/* Keyword vs natural-language segmented control (SearchModeToggle's `card`
+   variant, used only here). Active state keys off `aria-pressed`, the same way
+   `.pp-chip` does, so the styling follows the accessible state rather than a
+   parallel class. Labels never wrap — the row gives the toggle its width. */
+.mc-toggle{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 90%,transparent);box-shadow:var(--shadow-xs)}
+.mc-toggle-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r-full);border:0;background:transparent;color:var(--ink-soft);font-family:var(--font-body);font-size:12px;font-weight:var(--weight-medium);white-space:nowrap;cursor:pointer;transition:background-color var(--d-base) ease,color var(--d-base) ease}
+.mc-toggle-btn:hover{background:var(--cobalt-soft);color:var(--ink)}
+.mc-toggle-btn[aria-pressed="true"]{background:var(--cobalt);color:#fff}
+.mc-toggle-btn[aria-pressed="true"]:hover{background:var(--cobalt-deep);color:#fff}
+
 @media (max-width:768px){
   .vo-rail-label{display:none}
   .vo-rail-line{top:15px}
@@ -609,6 +669,8 @@
 .pd-side{position:static}
 .pd-rail-inner{padding-block:var(--sp-2)}
 .pd-price{font-size:30px}
+.mc-hero{padding-block:var(--sp-24) var(--sp-16)}
+.mc-hero-mesh{width:560px;opacity:.4}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -673,4 +735,6 @@
 .pp-catalog-layout{grid-template-columns:minmax(0,1fr)}
 .pp-filter-side{display:none}
 .pp-filters-toggle{display:inline-flex}
+.mc-hero-grid{grid-template-columns:minmax(0,1fr);gap:var(--sp-12)}
+.mc-hero-card{padding-left:0}
 }
