@@ -1,56 +1,41 @@
 import Link from 'next/link'
 import Image from 'next/image'
 
+import { AuthPanel } from './auth-panels'
+import type { AuthPanelVariant } from './auth-panel-variant'
+
 // Shared v2 shell for the auth flow: dark brand panel on the left (lg+),
 // centered form column on the right. The global Navbar/SiteFooter are
 // suppressed on these routes via lib/site-chrome.ts (AUTH_ROUTES), so this
 // shell owns the full viewport.
-export function AuthShell({ children }: { children: React.ReactNode }) {
+//
+// `variant` picks which brand panel fills the left column — it reflects the
+// route the user was gated from, so someone bounced off Sam sees what Sam
+// does rather than a generic marketplace pitch. The pages resolve it from
+// their `searchParams` on the server, so the correct panel is in the first
+// paint with no post-hydration swap. See auth-panel-variant.ts.
+export function AuthShell({
+  children,
+  variant = 'default',
+}: {
+  children: React.ReactNode
+  variant?: AuthPanelVariant
+}) {
   return (
     <div className="pp-scope flex min-h-dvh lg:h-dvh" style={{ background: 'var(--paper)' }}>
+      {/* The panel never scrolls — it is scenery, not content. The body centres
+          itself with `margin: auto` (see `.ap-body`) and `.pp-dark` clips any
+          overflow, so a short viewport crops the panel rather than putting a
+          scrollbar beside the form. */}
       <div
         className="pp-dark hidden lg:flex"
         style={{
           borderRadius: 0,
           flex: 3,
-          alignItems: 'center',
-          justifyContent: 'center',
           padding: 'var(--sp-16)',
         }}
       >
-        <div className="pp-stack pp-gap-12" style={{ maxWidth: 560 }}>
-          <Image alt="Proploy" src="/proploy-logomark-white.png" width={44} height={44} />
-
-          <div className="pp-stack pp-gap-6">
-            <p className="pp-label">AI software marketplace</p>
-            <h1 className="pp-display pp-d2">
-              Discover. Decide.
-              <br />
-              Deploy. Done.
-            </h1>
-            <p className="pp-lede" style={{ maxWidth: '44ch' }}>
-              The marketplace that matches your business with the right software —
-              and the vetted experts who make it work.
-            </p>
-          </div>
-
-          <ul className="pp-stack pp-gap-3">
-            {[
-              'Products scored against your stack and sector',
-              'Specialists vetted before they ever see a brief',
-              'Contracts, invoices and payments in one workspace',
-            ].map((line) => (
-              <li key={line} className="pp-flex pp-gap-3" style={{ alignItems: 'center' }}>
-                <span className="pp-yes" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-                <span className="pp-body">{line}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <AuthPanel variant={variant} />
       </div>
 
       <div
