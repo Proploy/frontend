@@ -8,6 +8,7 @@ import { SearchModeToggle } from "@/components/search/SearchModeToggle";
 import { useAuth } from "@/components/providers/auth-provider";
 import { isExpertRole } from "@/lib/auth/roles";
 import { ProductSearch } from "@/components/search/ProductSearch";
+import { MATCH_CONSOLE_HASH } from "./match-console-hash";
 
 const SUGGESTIONS = [
   "Procurement suite for a 400-person manufacturer",
@@ -32,12 +33,8 @@ export function isTypeThroughKey(
   return key.length === 1 && key !== " ";
 }
 
-/**
- * Reserves the suggestion block's footprint — three 8rem rows, two 0.5rem gaps
- * and the 1rem padding either side — so swapping suggestions for results never
- * resizes the card under the pointer.
- */
-const BODY_MIN_H = "min-h-[14rem]";
+/** See `.mc-min-h` in v2-pages.css — reserves the suggestion block's footprint. */
+const BODY_MIN_H = "mc-min-h";
 
 const KEYWORD_HINT = "Exact product, vendor or category names";
 const NATURAL_HINT = "Ask in plain language — we match the best software";
@@ -60,6 +57,20 @@ export function MatchConsole() {
   const hasQuery = trimmed.length >= MIN_QUERY_LENGTH;
   const isNatural = mode === "natural";
 
+  // Arriving on `/#match-engine` (the nav's "Search products" link) should put
+  // the caret in the field, not just scroll the card into view. `hashchange`
+  // covers the case where the visitor is already on the homepage, since Next
+  // updates the hash without remounting this component.
+  useEffect(() => {
+    const focusIfTargeted = () => {
+      if (window.location.hash !== `#${MATCH_CONSOLE_HASH}`) return;
+      inputRef.current?.focus();
+    };
+    focusIfTargeted();
+    window.addEventListener("hashchange", focusIfTargeted);
+    return () => window.removeEventListener("hashchange", focusIfTargeted);
+  }, []);
+
   // Type-through: keystrokes while hovered flow into the field.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -75,27 +86,29 @@ export function MatchConsole() {
 
   return (
     <div
+      id={MATCH_CONSOLE_HASH}
+      data-mode={mode}
       onPointerEnter={() => {
         hoveredRef.current = true;
       }}
       onPointerLeave={() => {
         hoveredRef.current = false;
       }}
-      className="glass-card relative overflow-hidden rounded-2xl transition-[box-shadow,border-color] duration-500 data-[mode=natural]:border-[color-mix(in_oklab,var(--cobalt)_38%,var(--line))] data-[mode=natural]:shadow-[0_34px_80px_-40px_color-mix(in_oklab,var(--cobalt)_60%,transparent)]"
+      className="pp-glass mc-card"
     >
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+      <div className="mc-row mc-row--head">
         <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-cobalt" />
-        <span className="label">Proploy match engine</span>
+        <span className="pp-label">Proploy match engine</span>
         <span className="ml-auto">
           <SearchModeToggle value={mode} onChange={setMode} variant="card" />
         </span>
       </div>
 
-      <div className="px-4 pt-3">
-        <p className="label !tracking-[0.05em]" aria-live="polite">
+      <div className="mc-body">
+        <p className="pp-label mc-hint" aria-live="polite">
           {isNatural ? NATURAL_HINT : KEYWORD_HINT}
         </p>
-        <div className="mt-2.5">
+        <div className="mc-search">
           <ProductSearch
             query={query}
             onQueryChange={setQuery}
@@ -121,46 +134,29 @@ export function MatchConsole() {
           for, the workspace runs the discovery questions and builds the shortlist.
           Experts cannot use Sam, so they are not offered the way in. */}
       {!isExpert && (
-      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-2.5">
-        <p className="label !normal-case !tracking-normal text-[0.72rem]">
-          Not sure what to search? Sam asks a few questions and shortlists for you.
-        </p>
-        <Link
-          href="/AI_workspace"
-          className="shrink-0 rounded-full border border-border bg-white/70 px-2.5 py-1 text-[0.72rem] font-medium text-cobalt-deep transition-colors hover:border-cobalt/50 hover:bg-cobalt-soft/40"
-        >
-          Ask Sam →
-        </Link>
-      </div>
+        <div className="mc-row mc-row--sam">
+          <p className="pp-small">
+            Not sure what to search? Sam asks a few questions and shortlists for you.
+          </p>
+          <Link href="/AI_workspace" className="mc-sam">
+            Ask Sam →
+          </Link>
+        </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-border px-4 py-3">
-        {hasQuery ? (
-          <>
-            <span className="label">Top rated matches</span>
-            <Link
-              href={`/products?search=${encodeURIComponent(trimmed)}${isNatural ? "&mode=natural" : ""}`}
-              className="label !tracking-[0.12em] text-cobalt-deep transition-opacity hover:opacity-70"
-            >
-              View all →
-            </Link>
-          </>
-        ) : (
-          <>
-            <span className="label">Vetted experts attached</span>
-            <div className="flex -space-x-2">
-              {["A", "M", "R", "K"].map((c) => (
-                <span
-                  key={c}
-                  className="grid h-6 w-6 place-items-center rounded-full border border-white bg-ink text-[0.6rem] font-medium text-paper"
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      {/* Only rendered once there is something to link to — with no query the
+          card ends on the search body rather than an empty bordered strip. */}
+      {hasQuery && (
+        <div className="mc-row mc-row--foot">
+          <span className="pp-label">Top rated matches</span>
+          <Link
+            href={`/products?search=${encodeURIComponent(trimmed)}${isNatural ? "&mode=natural" : ""}`}
+            className="pp-label mc-viewall"
+          >
+            View all →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -169,15 +165,15 @@ export function MatchConsole() {
 
 function Suggestions({ onPick }: { onPick: (suggestion: string) => void }) {
   return (
-    <div className="flex flex-col justify-center py-4">
-      <p className="label mb-2.5">Start typing — or try one</p>
-      <div className="flex flex-wrap gap-1.5">
+    <div className="mc-suggest">
+      <p className="pp-label">Start typing — or try one</p>
+      <div className="mc-suggest-list">
         {SUGGESTIONS.map((suggestion) => (
           <button
             key={suggestion}
             type="button"
             onClick={() => onPick(suggestion)}
-            className="rounded-lg border border-border bg-white/70 px-2.5 py-1.5 text-left text-[0.72rem] text-ink-soft transition-colors hover:border-[color-mix(in_oklab,var(--cobalt)_40%,var(--line))] hover:text-ink"
+            className="mc-suggestion"
           >
             {suggestion}
           </button>
