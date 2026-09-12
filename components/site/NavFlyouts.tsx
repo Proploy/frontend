@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+import { MATCH_CONSOLE_HASH } from "./match-console-hash";
+
 // Hover flyouts for the Products and Experts tabs in the v2 Nav: a one-line
 // orientation plus the two most useful next clicks, in the same visual
 // language as the "About us" dropdown. Purely static — no data fetching.
@@ -29,7 +31,9 @@ export function ProductsFlyout() {
         Curated B2B software, scored on fit for your team, with vetted implementers attached.
       </p>
       <div className="flex flex-col gap-2 pt-1">
-        <ArrowLink href="/products">All products</ArrowLink>
+        {/* Straight into the homepage match engine, with its search field
+            focused on arrival — see MATCH_CONSOLE_HASH in MatchConsole.tsx. */}
+        <ArrowLink href={`/#${MATCH_CONSOLE_HASH}`}>Search products</ArrowLink>
         <ArrowLink href="/compare">Compare products</ArrowLink>
       </div>
     </div>

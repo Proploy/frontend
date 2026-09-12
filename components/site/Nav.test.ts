@@ -69,7 +69,10 @@ describe('V2 Nav (homepage + v2 routes)', () => {
   it('offers buyers "Join as Expert" while approved experts keep "Workspace"', () => {
     expect(navSource).toContain('canSeeExpertJoinLink')
     expect(navSource).toContain('"Join as Expert"')
-    expect(navSource).toContain('? "Workspace"')
+    // The stage → label mapping (approved → "Workspace") lives in the shared hook.
+    expect(navSource).toContain('useExpertApplicationStage')
+    const stageSource = readSource('features/experts/use-expert-application-stage.ts')
+    expect(stageSource).toContain("label: 'Workspace', href: '/workspace'")
     // Other roles still get the marketplace CTA as the final fallback.
     expect(navSource).toContain(': "Find an Expert"')
   })
@@ -82,7 +85,9 @@ describe('V2 Nav (homepage + v2 routes)', () => {
     // Orientation only: no category/specialty lists and no data fetching.
     expect(flyoutSource).not.toContain('useCategoryRoots')
     expect(flyoutSource).not.toContain('Browse by')
-    expect(flyoutSource).toContain('href="/products"')
+    // Products leads with search — into the homepage match engine, not the
+    // catalog index. Experts still leads with its directory.
+    expect(flyoutSource).toContain('MATCH_CONSOLE_HASH')
     expect(flyoutSource).toContain('href="/experts"')
   })
 

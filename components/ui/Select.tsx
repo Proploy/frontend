@@ -17,6 +17,7 @@ interface SelectProps {
   disabled?: boolean;
   size?: 'sm' | 'md';
   label?: string;
+  labelTip?: string;
   required?: boolean;
   hintText?: string;
   error?: boolean;
@@ -34,6 +35,7 @@ export default function Select({
   disabled = false,
   size = 'md',
   label,
+  labelTip,
   required = false,
   hintText,
   error = false,
@@ -70,7 +72,9 @@ export default function Select({
     <div ref={containerRef} className={`pp-field ${className}`} style={{ width: '100%' }}>
       {label && (
         <label htmlFor={selectId}>
-          {label}
+          {labelTip ? (
+            <span className="vo-label-tip" data-tip={labelTip}>{label}</span>
+          ) : label}
           {required && <span className="vo-req"> *</span>}
         </label>
       )}

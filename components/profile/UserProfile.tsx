@@ -5,8 +5,10 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type ReactN
 import { ArrowRight, Camera, Download, Eye, GitCompareArrows, Heart, Loader2, Package2, Trash2, UserRound } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { CatalogImage } from '@/components/catalog/CatalogImage'
-import { useProductDetail } from '@/features/catalog'
+import { clientCatalogApi } from '@/features/catalog/shared/client-api'
+import type { ProductSummary } from '@/features/catalog/products/types'
 import { useExpertProfile } from '@/features/experts'
+import type { ExpertSummary } from '@/features/experts/types'
 import {
   deleteUserProfilePicture,
   deleteSavedReport,
@@ -33,6 +35,7 @@ function formatDate(value?: string | null) {
 }
 
 import { Nav } from '@/components/site/Nav'
+import { CompleteApplicationCard } from '@/components/experts/CompleteApplicationCard'
 import { Footer } from '@/components/site/Footer'
 
 export function UserProfile() {
@@ -168,14 +171,12 @@ export function UserProfile() {
                 Saved products and AI research are kept together to personalize your Proploy experience.
               </p>
             </div>
-            <Link href="/AI_workspace" className={`inline-flex h-[42px] items-center gap-2 rounded-[8px] bg-[#155eef] px-4 text-[14px] font-semibold text-white ${BUTTON_SHADOW}`}>
-              Open AI_workspace
-              <ArrowRight size={16} />
-            </Link>
           </header>
 
           {error ? <p className="rounded-[8px] border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[14px] text-[#b42318]">{error}</p> : null}
           {message ? <p className="rounded-[8px] border border-[#abefc6] bg-[#ecfdf3] px-3 py-2 text-[14px] text-[#067647]">{message}</p> : null}
+
+          <CompleteApplicationCard />
 
           <ProfileIdentityCard
             key={profile.name ?? profile.email}
@@ -196,11 +197,69 @@ export function UserProfile() {
 
 export function UserActivitySections({ profile, onUpdateProfile }: { profile: PersonalizationProfile, onUpdateProfile: (updater: (current: PersonalizationProfile | null) => PersonalizationProfile | null) => void }) {
   const [error, setError] = useState<string | null>(null)
+  const { getExpertsSummary } = useExpertProfile()
 
   const savedProducts = profile.favorites.filter((favorite) => favorite.targetType === 'product')
   const recentlyViewed = profile.recentlyViewed ?? []
   const savedComparisons = profile.reports.filter(isSavedComparisonReport)
   const researchReports = profile.reports.filter((report) => !isSavedComparisonReport(report))
+
+  const productIds = Array.from(new Set([
+    ...savedProducts.map((favorite) => favorite.targetId),
+    ...recentlyViewed.filter((item) => item.targetType === 'product').map((item) => item.targetId),
+  ]))
+  const expertIds = Array.from(new Set(
+    recentlyViewed.filter((item) => item.targetType === 'expert').map((item) => item.targetId),
+  ))
+
+  const [productsById, setProductsById] = useState<Map<string, ProductSummary>>(new Map())
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [expertsById, setExpertsById] = useState<Map<string, ExpertSummary>>(new Map())
+  const [expertsLoading, setExpertsLoading] = useState(true)
+  const productIdsKey = productIds.join(',')
+  const expertIdsKey = expertIds.join(',')
+
+  useEffect(() => {
+    let active = true
+    if (productIds.length === 0) {
+      setProductsById(new Map())
+      setProductsLoading(false)
+      return
+    }
+    setProductsLoading(true)
+    void clientCatalogApi.products.getSummaryByIds(productIds).then((result) => {
+      if (!active) return
+      if (result.ok) {
+        setProductsById(new Map(result.data.results.map((product) => [product.product_id, product])))
+      }
+      setProductsLoading(false)
+    })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productIdsKey])
+
+  useEffect(() => {
+    let active = true
+    if (expertIds.length === 0) {
+      setExpertsById(new Map())
+      setExpertsLoading(false)
+      return
+    }
+    setExpertsLoading(true)
+    void getExpertsSummary(expertIds).then((result) => {
+      if (!active) return
+      if (result.ok) {
+        setExpertsById(new Map(result.data.results.map((expert) => [expert.id, expert])))
+      }
+      setExpertsLoading(false)
+    })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expertIdsKey, getExpertsSummary])
 
   const handleRemoveFavorite = async (favoriteId: string) => {
     const result = await removeFavorite(favoriteId)
@@ -238,6 +297,8 @@ export function UserActivitySections({ profile, onUpdateProfile }: { profile: Pe
                   <SavedProductCard
                     key={favorite.id}
                     productId={favorite.targetId}
+                    product={productsById.get(favorite.targetId) ?? null}
+                    loading={productsLoading}
                     savedAt={favorite.createdAt}
                     onRemove={() => void handleRemoveFavorite(favorite.id)}
                   />
@@ -266,7 +327,14 @@ export function UserActivitySections({ profile, onUpdateProfile }: { profile: Pe
             ) : (
               <div className="grid gap-3 p-5 sm:grid-cols-2">
                 {recentlyViewed.map((item) => (
-                  <RecentlyViewedCard key={item.id} item={item} />
+                  <RecentlyViewedCard
+                    key={item.id}
+                    item={item}
+                    product={item.targetType === 'product' ? productsById.get(item.targetId) ?? null : null}
+                    productLoading={productsLoading}
+                    expert={item.targetType === 'expert' ? expertsById.get(item.targetId) ?? null : null}
+                    expertLoading={expertsLoading}
+                  />
                 ))}
               </div>
             )}
@@ -296,20 +364,23 @@ function recentlyViewedHref(targetType: string, targetId: string) {
 
 function SavedProductCard({
   productId,
+  product,
+  loading,
   savedAt,
   onRemove,
 }: {
   productId: string
+  product: ProductSummary | null
+  loading: boolean
   savedAt: string
   onRemove: () => void
 }) {
-  const { product, loading, error } = useProductDetail({ productId })
-  const productName = product?.product_name ?? (loading || !error ? 'Loading product…' : 'Product unavailable')
+  const productName = product?.product_name ?? (loading ? 'Loading product…' : 'Product unavailable')
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] px-4 py-3">
       <Link href={`/products/${encodeURIComponent(productId)}`} className="flex min-w-0 items-center gap-3 text-[15px] font-semibold text-[#181d27] hover:text-[#155eef]">
-        <ProductLogo productName={productName} logoUrl={product?.product_logo ?? null} />
+        <ProductLogo productName={productName} logoUrl={product?.logo_url ?? null} />
         <span className="min-w-0">
           <span className="block truncate">{productName}</span>
           <span className="mt-1 block text-[12px] font-normal text-[#717680]">Saved {formatDate(savedAt)}</span>
@@ -322,21 +393,42 @@ function SavedProductCard({
   )
 }
 
-function RecentlyViewedCard({ item }: { item: PersonalizationProfile['recentlyViewed'][number] }) {
+function RecentlyViewedCard({
+  item,
+  product,
+  productLoading,
+  expert,
+  expertLoading,
+}: {
+  item: PersonalizationProfile['recentlyViewed'][number]
+  product: ProductSummary | null
+  productLoading: boolean
+  expert: ExpertSummary | null
+  expertLoading: boolean
+}) {
   if (item.targetType === 'expert') {
-    return <RecentlyViewedExpertCard expertId={item.targetId} viewedAt={item.viewedAt} />
+    return <RecentlyViewedExpertCard expertId={item.targetId} viewedAt={item.viewedAt} expert={expert} loading={expertLoading} />
   }
 
-  return <RecentlyViewedProductCard productId={item.targetId} viewedAt={item.viewedAt} />
+  return <RecentlyViewedProductCard productId={item.targetId} viewedAt={item.viewedAt} product={product} loading={productLoading} />
 }
 
-function RecentlyViewedProductCard({ productId, viewedAt }: { productId: string; viewedAt: string }) {
-  const { product, loading, error } = useProductDetail({ productId })
-  const productName = product?.product_name ?? (loading || !error ? 'Loading product…' : 'Product unavailable')
+function RecentlyViewedProductCard({
+  productId,
+  viewedAt,
+  product,
+  loading,
+}: {
+  productId: string
+  viewedAt: string
+  product: ProductSummary | null
+  loading: boolean
+}) {
+  const productName = product?.product_name ?? (loading ? 'Loading product…' : 'Product unavailable')
 
   return (
     <Link href={recentlyViewedHref('product', productId)} className="flex min-w-0 items-center gap-3 rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] px-4 py-3 hover:border-[#b2ccff]">
-      <ProductLogo productName={productName} logoUrl={product?.product_logo ?? null} />
+      <ProductLogo productName={productName} logoUrl={product?.logo_url ?? null} />
       <span className="min-w-0">
         <span className="block truncate text-[15px] font-semibold text-[#181d27]">{productName}</span>
         <span className="mt-1 block text-[12px] text-[#717680]">Viewed {formatDate(viewedAt)}</span>
@@ -345,31 +437,19 @@ function RecentlyViewedProductCard({ productId, viewedAt }: { productId: string;
   )
 }
 
-function RecentlyViewedExpertCard({ expertId, viewedAt }: { expertId: string; viewedAt: string }) {
-  const { getExpertProfile } = useExpertProfile()
-  const [displayName, setDisplayName] = useState<string | null>(null)
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let active = true
-    void getExpertProfile(expertId).then((result) => {
-      if (!active) return
-      if (result.ok) {
-        setDisplayName(result.data.displayName)
-        setProfilePictureUrl(result.data.profilePictureUrl ?? null)
-      } else {
-        setDisplayName(null)
-        setProfilePictureUrl(null)
-      }
-      setLoading(false)
-    })
-    return () => {
-      active = false
-    }
-  }, [expertId, getExpertProfile])
-
-  const name = displayName ?? (loading ? 'Loading expert…' : 'Expert unavailable')
+function RecentlyViewedExpertCard({
+  expertId,
+  viewedAt,
+  expert,
+  loading,
+}: {
+  expertId: string
+  viewedAt: string
+  expert: ExpertSummary | null
+  loading: boolean
+}) {
+  const name = expert?.displayName ?? (loading ? 'Loading expert…' : 'Expert unavailable')
+  const profilePictureUrl = expert?.profilePictureUrl ?? null
 
   return (
     <Link href={recentlyViewedHref('expert', expertId)} className="flex min-w-0 items-center gap-3 rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] px-4 py-3 hover:border-[#b2ccff]">

@@ -9,8 +9,7 @@ import CatalogMegaMenu from '@/components/catalog/CatalogMegaMenu'
 import ExpertMegaMenu from '@/components/experts/ExpertMegaMenu'
 import { useAuth } from '@/components/providers/auth-provider'
 import { getUserProfilePicture, USER_PROFILE_PICTURE_CHANGED_EVENT } from '@/features/users'
-import { useExpertApplication } from '@/features/experts/use-expert-application'
-import type { ExpertMe } from '@/features/experts/types'
+import { useExpertApplicationStage } from '@/features/experts/use-expert-application-stage'
 import { canSeeExpertJoinLink, isExpertRole } from '@/lib/auth/roles'
 import { setServerAuthIntent } from '@/lib/utils/auth-intent-client'
 import { hidesGlobalChrome } from '@/lib/site-chrome'
@@ -44,8 +43,7 @@ function JoinUsToggle({ mobile = false }: { mobile?: boolean }) {
 export default function Navbar() {
   const pathname = usePathname()
   const { user, isLoading, signOut } = useAuth()
-  const { getApplication } = useExpertApplication()
-  const [expertState, setExpertState] = useState<{ userId: string; expert: ExpertMe | null } | null>(null)
+  const application = useExpertApplicationStage({ enabled: !hidesGlobalChrome(pathname) })
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -123,25 +121,6 @@ export default function Navbar() {
     }
   }, [hideOnWorkspace, userId])
 
-  useEffect(() => {
-    if (!userId || hideOnWorkspace) return
-    const currentUserId = userId
-
-    let cancelled = false
-
-    async function loadExpertStatus() {
-      const result = await getApplication()
-      if (cancelled) return
-      setExpertState({ userId: currentUserId, expert: result.ok ? result.data : null })
-    }
-
-    void loadExpertStatus()
-
-    return () => {
-      cancelled = true
-    }
-  }, [getApplication, hideOnWorkspace, userId])
-
   useEffect(() => () => {
     if (catalogCloseTimerRef.current) clearTimeout(catalogCloseTimerRef.current)
     if (expertsCloseTimerRef.current) clearTimeout(expertsCloseTimerRef.current)
@@ -150,11 +129,11 @@ export default function Navbar() {
 
   if (hideOnWorkspace) return null
 
-  const expert = expertState && expertState.userId === userId ? expertState.expert : null
-  const expertStatus = expert?.status
-  const showDashboard = expertStatus === 'approved'
-  const showCompleteApplication = expertStatus === 'draft' || expertStatus === 'changes_requested'
-  const showApplicationPending = expertStatus === 'submitted'
+  // The application stage → CTA mapping lives in useExpertApplicationStage.
+  const showCompleteApplication =
+    application.stage === 'draft' || application.stage === 'changes_requested' || application.stage === 'rejected'
+  const showApplicationPending = application.stage === 'submitted'
+  const hasApplication = application.stage !== 'none'
   const dashboardHref = '/workspace'
   const settingsHref = '/settings'
   const canJoinAsExpert = canSeeExpertJoinLink(user?.role, Boolean(user))
@@ -168,20 +147,12 @@ export default function Navbar() {
     setIsProfileOpen(false)
   }
 
-  const ctaLabel = showDashboard
-    ? 'Workspace'
-    : showApplicationPending
-    ? 'Application Pending'
-    : showCompleteApplication
-    ? 'Complete Application'
+  const ctaLabel = hasApplication
+    ? application.label
     : 'Find an Expert'
 
-  const ctaHref = showDashboard
-    ? '/workspace'
-    : showCompleteApplication
-    ? '/become-expert'
-    : showApplicationPending
-    ? '#'
+  const ctaHref = hasApplication
+    ? application.href ?? '#'
     : '/experts'
 
   const handleCtaClick = (e: React.MouseEvent) => {
@@ -441,12 +412,12 @@ export default function Navbar() {
                       className="flex items-center gap-2 px-4 py-2 text-sm text-[#0466e7] hover:bg-blue-50 font-medium"
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      Complete Application
+                      {application.label}
                     </Link>
                   )}
                   {showApplicationPending && (
                     <div className="flex items-center gap-2 px-4 py-2 text-sm text-amber-600">
-                      Application Pending
+                      {application.label}
                     </div>
                   )}
                   <Link

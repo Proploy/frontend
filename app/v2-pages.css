@@ -282,7 +282,7 @@
 /* ---------- helpers ---------- */
 .pp-flex{display:flex}
 .pp-wrap{flex-wrap:wrap}
-.pp-gap-2{gap:var(--sp-2)}.pp-gap-3{gap:var(--sp-3)}.pp-gap-4{gap:var(--sp-4)}.pp-gap-6{gap:var(--sp-6)}.pp-gap-8{gap:var(--sp-8)}.pp-gap-12{gap:var(--sp-12)}.pp-gap-16{gap:var(--sp-16)}
+.pp-gap-2{gap:var(--sp-2)}.pp-gap-3{gap:var(--sp-3)}.pp-gap-4{gap:var(--sp-4)}.pp-gap-5{gap:var(--sp-5)}.pp-gap-6{gap:var(--sp-6)}.pp-gap-8{gap:var(--sp-8)}.pp-gap-10{gap:var(--sp-10)}.pp-gap-12{gap:var(--sp-12)}.pp-gap-16{gap:var(--sp-16)}
 .pp-grid{display:grid;gap:var(--sp-6)}
 .pp-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pp-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -402,7 +402,7 @@
 /* Step scaffolding */
 .vo-step{display:flex;flex-direction:column;gap:var(--sp-6)}
 .vo-group{display:flex;flex-direction:column;gap:var(--sp-4)}
-.vo-req{color:var(--cobalt)}
+.vo-req{color:#e03131}
 .vo-divider{display:flex;align-items:center;gap:var(--sp-3);font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink-soft)}
 .vo-divider::before,.vo-divider::after{content:"";flex:1;height:var(--bw);background:var(--line)}
 
@@ -464,6 +464,62 @@
 /* Inline error */
 .vo-error{padding:10px 14px;border-radius:var(--r-control);border:var(--bw) solid var(--color-error-200);background:var(--color-error-50);color:var(--color-error-700);font-size:14px;line-height:21px}
 
+/* Inline hints (validation nudges; never block navigation) */
+.vo-hints{display:flex;flex-direction:column;gap:4px;margin:0;padding:10px 14px;list-style:none;border-radius:var(--r-control);border:var(--bw) solid var(--color-warning-200);background:var(--color-warning-50);color:var(--color-warning-700);font-size:13px;line-height:20px}
+
+/* Clickable section rail (the rail nodes become buttons) */
+.vo-rail--sections .vo-rail-btn{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);width:100%;padding:0;border:0;background:none;cursor:pointer;color:inherit;font:inherit}
+.vo-rail--sections .vo-rail-btn:disabled{cursor:default}
+.vo-rail--sections .vo-rail-btn:hover .vo-rail-node{border-color:var(--cobalt)}
+.vo-rail--sections .vo-rail-btn:focus-visible .vo-rail-node{box-shadow:var(--ring-brand);outline:none}
+.vo-rail-step[data-attention="true"] .vo-rail-node{background:var(--color-warning-50);border-color:var(--color-warning-200);color:var(--color-warning-700)}
+.vo-rail-step[data-attention="true"][data-state="current"] .vo-rail-node{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
+.vo-rail-step[data-attention="true"] .vo-rail-label{color:var(--color-warning-700)}
+
+/* Percent bar under the rail */
+.vo-progress{position:relative;height:22px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:#fff;overflow:hidden}
+.vo-progress-fill{position:absolute;inset:0 auto 0 0;background:var(--cobalt-soft);border-right:var(--bw) solid color-mix(in oklab,var(--cobalt) 40%,var(--line));transition:width var(--d-base) var(--ease)}
+.vo-progress-text{position:relative;display:block;text-align:center;font-size:11px;line-height:20px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink-soft)}
+
+/* Status banners at the top of the wizard */
+.vo-banner{display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-card);border:var(--bw) solid var(--line);background:#fff;font-size:14px;line-height:21px;color:var(--ink)}
+.vo-banner svg{flex-shrink:0;margin-top:2px}
+.vo-banner--danger{border-color:var(--color-error-200);background:var(--color-error-50);color:var(--color-error-700)}
+.vo-banner--info{border-color:color-mix(in oklab,var(--cobalt) 25%,var(--line));background:var(--cobalt-soft);color:var(--cobalt-deep)}
+.vo-banner--success{border-color:var(--color-success-200);background:var(--color-success-50);color:var(--color-success-700)}
+.vo-banner-body{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0;flex:1}
+.vo-banner-note{white-space:pre-wrap;color:var(--ink)}
+
+/* Sticky submit footer */
+.vo-footer{position:sticky;bottom:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-3);margin-top:var(--sp-6);padding:var(--sp-4) var(--sp-5);border:var(--bw) solid var(--line);border-radius:var(--r-card);background:color-mix(in oklab,white 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow-lift)}
+.vo-footer-blockers{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--ink-soft)}
+
+/* Product cards (products section) */
+.vo-product{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-5);background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow-xs)}
+.vo-product-head{display:flex;align-items:center;gap:var(--sp-3)}
+.vo-product-name{font-family:var(--font-display);font-size:16px;line-height:24px;font-weight:var(--weight-semibold);letter-spacing:-.01em;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-logo{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:var(--r-control);border:var(--bw) solid var(--line);background:#fff;font-size:14px;font-weight:var(--weight-semibold);color:var(--cobalt-deep);overflow:hidden}
+.vo-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.vo-seg{display:inline-flex;padding:2px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:#fff}
+.vo-seg button{padding:5px 12px;border:0;border-radius:var(--r-full);background:transparent;color:var(--ink-soft);font-family:var(--font-body);font-size:12px;font-weight:var(--weight-medium);cursor:pointer;white-space:nowrap}
+.vo-seg button[aria-pressed="true"]{background:var(--cobalt);color:#fff}
+.vo-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4)}
+.vo-cert{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4);border:var(--bw) solid var(--line);border-radius:var(--r-control);background:color-mix(in oklab,var(--paper-deep) 50%,white)}
+
+/* Typeahead */
+.vo-typeahead{position:relative}
+.vo-typeahead .vo-menu{top:calc(100% + 4px)}
+
+/* Photo picker */
+.vo-photo{display:flex;align-items:center;gap:var(--sp-5)}
+.vo-photo-preview{display:grid;place-items:center;width:88px;height:88px;flex-shrink:0;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:linear-gradient(135deg,var(--cobalt-soft),var(--paper-deep));color:var(--cobalt-deep);font-family:var(--font-display);font-size:28px;font-weight:var(--weight-semibold);overflow:hidden}
+.vo-photo-preview img{width:100%;height:100%;object-fit:cover}
+
+/* Label hint tooltip — hover the label text to reveal a one-liner */
+.vo-label-tip{position:relative;display:inline-block;cursor:help;border-bottom:1px dashed color-mix(in oklab,var(--ink-soft) 50%,transparent);transition:border-color .15s,color .15s}
+.vo-label-tip:hover{color:var(--ink);border-bottom-color:var(--ink-soft)}
+.vo-label-tip::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 7px);white-space:nowrap;max-width:260px;padding:6px 10px;border-radius:6px;background:var(--ink);color:#fff;font-size:.72rem;font-weight:400;line-height:1.45;letter-spacing:.01em;pointer-events:none;opacity:0;transition:opacity .15s .05s;z-index:30;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.vo-label-tip:hover::after{opacity:1}
 
 /* ===========================================================================
    .ap-*  AUTH PANEL — the dark brand column on /sign-in, /sign-up and the two
@@ -601,6 +657,13 @@
   .vo-rail-label{display:none}
   .vo-rail-line{top:15px}
   .vo-choice-row{flex-direction:column}
+  .vo-rail--sections{overflow-x:auto;padding-bottom:var(--sp-2);scrollbar-width:none}
+  .vo-rail--sections::-webkit-scrollbar{display:none}
+  .vo-rail--sections .vo-rail-step{flex:0 0 auto;min-width:72px}
+  .vo-rail--sections .vo-rail-label{display:block;font-size:10px}
+  .vo-grid-2{grid-template-columns:1fr}
+  .vo-photo{flex-direction:column;align-items:flex-start}
+  .vo-footer{border-radius:var(--r-control)}
 }
 
 /* ============================================================
@@ -671,6 +734,76 @@
 .pd-price{font-size:30px}
 .mc-hero{padding-block:var(--sp-24) var(--sp-16)}
 .mc-hero-mesh{width:560px;opacity:.4}
+}
+
+/* Wizard shell: sticky section sidebar + content column */
+.vo-layout{display:grid;grid-template-columns:272px minmax(0,1fr);gap:var(--sp-8);align-items:start}
+.vo-side{position:sticky;top:calc(var(--nav-h,72px) + var(--sp-6));display:flex;flex-direction:column;gap:var(--sp-5);padding:var(--sp-5);background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow-xs)}
+.vo-side-nav{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.vo-side-item{display:flex;align-items:center;gap:var(--sp-3);width:100%;padding:8px 10px;border:0;border-radius:var(--r-control);background:none;color:var(--ink-soft);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer;transition:background-color var(--d-base) var(--ease),color var(--d-base) var(--ease)}
+.vo-side-item:hover{background:var(--paper-deep);color:var(--ink)}
+.vo-side-item:focus-visible{box-shadow:var(--ring-brand);outline:none}
+.vo-side-item:disabled{cursor:default;opacity:.6}
+.vo-side-item[aria-current="step"]{background:var(--cobalt-soft);color:var(--cobalt-deep);font-weight:var(--weight-medium)}
+.vo-side-node{display:grid;place-items:center;width:24px;height:24px;flex-shrink:0;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:#fff;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft)}
+.vo-side-item[aria-current="step"] .vo-side-node{border-color:var(--cobalt);background:var(--cobalt);color:#fff}
+.vo-side-item[data-state="complete"] .vo-side-node{border-color:var(--color-success-200);background:var(--color-success-50);color:var(--color-success-700)}
+.vo-side-item[data-state="attention"] .vo-side-node{border-color:var(--color-warning-200);background:var(--color-warning-50);color:var(--color-warning-700)}
+.vo-side-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-side-meta{font-size:11px;color:var(--ink-soft)}
+.vo-side-foot{display:flex;flex-direction:column;gap:var(--sp-3);padding-top:var(--sp-4);border-top:var(--bw) solid var(--line)}
+.vo-side-blockers{margin:0;padding:0 0 0 18px;font-size:12.5px;line-height:18px;color:var(--ink-soft)}
+@media (max-width:900px){
+.vo-layout{grid-template-columns:1fr}
+.vo-side{position:static}
+.vo-side-nav{flex-direction:row;flex-wrap:wrap}
+.vo-side-item{width:auto}
+.vo-side-label{white-space:normal}
+}
+
+/* Socials: fixed row per platform, icon in the input */
+.vo-social{display:grid;grid-template-columns:150px minmax(0,1fr);gap:var(--sp-3);align-items:start}
+.vo-social-name{display:flex;align-items:center;gap:var(--sp-2);min-height:46px;font-size:14px;color:var(--ink)}
+.vo-social-name svg{color:var(--ink-soft);flex-shrink:0}
+.vo-social-input{position:relative}
+.vo-social-input .pp-input{padding-left:40px}
+.vo-social-input .pp-input[aria-invalid="true"]{border-color:var(--color-error-200);box-shadow:none}
+.vo-social-input .pp-input[data-valid="true"]{border-color:var(--color-success-200)}
+.vo-social-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-soft);pointer-events:none;display:grid;place-items:center}
+.vo-social-ico[data-valid="true"]{color:var(--color-success-700)}
+@media (max-width:640px){
+.vo-social{grid-template-columns:1fr;gap:4px}
+.vo-social-name{min-height:0}
+}
+
+/* Products: one card per product, because each is a separate thing to fill in
+   — years, projects, industries and certifications all belong to that product
+   and to no other. As flat rows the fields read as one long form and people
+   filled the first row and stopped. */
+.vo-prow{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4);background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-card);box-shadow:0 1px 2px rgba(10,13,18,.04);transition:border-color var(--d-base) var(--ease),box-shadow var(--d-base) var(--ease)}
+.vo-prow:focus-within{border-color:color-mix(in oklab,var(--cobalt) 45%,var(--line));box-shadow:0 0 0 3px color-mix(in oklab,var(--cobalt) 10%,transparent)}
+/* The product is the card's title, so it sits above a rule rather than inline
+   with the answers that belong to it. */
+.vo-prow-head{display:flex;align-items:center;gap:var(--sp-3);padding-bottom:var(--sp-3);border-bottom:var(--bw) solid var(--line)}
+.vo-prow-fields{display:grid;grid-template-columns:120px 120px minmax(0,1fr);gap:var(--sp-3);align-items:end}
+.vo-prow-fields .pp-field{gap:4px}
+.vo-prow-fields .pp-field label{font-size:12px;color:var(--ink-soft)}
+.vo-prow-certs-cta{justify-self:end;align-items:flex-end}
+.vo-prow .vo-logo{width:40px;height:40px;font-size:13px}
+.vo-prow-name{font-size:15px;font-weight:var(--weight-semibold,600);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-prow-sub{font-size:11.5px;color:var(--ink-soft)}
+.vo-prow .pp-input{height:36px;padding:0 10px;font-size:13px}
+/* Certifications hang off the product, so they are inset rather than another
+   sibling block competing with it. */
+.vo-prow-certs{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3);background:var(--paper-deep);border-radius:var(--r-tile)}
+/* White against the inset wash, so a credential still reads as its own card. */
+.vo-prow-certs .vo-cert{background:#fff}
+.vo-prow-toggle{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--cobalt);font:inherit;font-size:13px;font-weight:var(--weight-medium);cursor:pointer}
+.vo-prow-toggle:hover{text-decoration:underline}
+.vo-opt-logo{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
+@media (max-width:700px){
+.vo-prow-fields{grid-template-columns:1fr 1fr}
+.vo-prow-certs-cta{grid-column:1/-1;justify-self:start}
 }
 
 @media (prefers-reduced-motion:reduce){
