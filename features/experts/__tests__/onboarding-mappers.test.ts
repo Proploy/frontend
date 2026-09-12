@@ -5,17 +5,36 @@ const form: VendorOnboardingData = {
   accountType: 'individual',
   displayName: 'Alex Tan',
   headline: 'CRM implementation expert',
-  categories: ['HubSpot CRM'],
-  specializations: ['Zoho CRM'],
-  skills: [],
-  platform: 'HubSpot CRM',
-  industry: 'Technology',
+  productExpertise: [
+    {
+      localId: 'p1',
+      productId: 'prod-hubspot',
+      productName: 'HubSpot CRM',
+      isPrimary: true,
+      yearsExperience: '6',
+      projectsCompleted: '9',
+      certifications: [{ localId: 'c1', name: 'HubSpot Solutions Partner', issuer: 'HubSpot', year: '2024', credentialUrl: '' }],
+    },
+    {
+      localId: 'p2',
+      productId: null,
+      productName: 'Zoho CRM',
+      isPrimary: false,
+      yearsExperience: '',
+      projectsCompleted: '',
+      certifications: [],
+    },
+  ],
   industries: ['Technology'],
   certificationFiles: [],
-  manualCertifications: [],
+  manualCertifications: ['HubSpot Solutions Partner', 'Salesforce Admin', ' hubspot solutions partner '],
   yearsExperience: '6–10 years',
-  openToAssessment: true,
   totalProjects: '12',
+  uniqueStrength: 'Pipeline design',
+  biggestWin: 'Cut lead response time in half',
+  idealClients: 'B2B SaaS sales teams',
+  socialLinks: [{ platform: 'linkedin', url: 'https://linkedin.com/in/alex-tan' }],
+  remoteOnly: false,
   featuredProjects: [{
     clientProjectId: 'client-project-1',
     title: 'CRM migration',
@@ -30,6 +49,8 @@ const form: VendorOnboardingData = {
   portfolioLinks: [{ url: 'https://example.com', visible: true }],
   visibilitySettings: {},
   timezone: 'UTC+08:00 (Singapore)',
+  regionCountry: 'Singapore',
+  regionCity: 'Singapore',
   regions: ['Southeast Asia'],
   weeklyAvailability: '10 to 20 hours',
   earliestStartDate: '2026-07-01',
@@ -50,6 +71,50 @@ describe('mapVendorOnboardingToExpertDraft', () => {
     expect(result.projects?.[0].title).toBe('CRM migration')
     expect(result.agreeTerms).toBe(true)
     expect(result.consentContact).toBe(true)
+    expect(result.productExpertise).toHaveLength(2)
+    expect(result.productExpertise?.[0]).toMatchObject({
+      productId: 'prod-hubspot',
+      productName: 'HubSpot CRM',
+      isPrimary: true,
+      yearsExperience: 6,
+      projectsCompleted: 9,
+    })
+    expect(result.productExpertise?.[0].certifications[0]).toMatchObject({
+      name: 'HubSpot Solutions Partner',
+      issuer: 'HubSpot',
+      year: 2024,
+    })
+    expect(result.socialLinks).toEqual([{ platform: 'linkedin', url: 'https://linkedin.com/in/alex-tan' }])
+    expect(result.regionsServed).toEqual(['Southeast Asia'])
+    expect(result.earliestStartDate).toBe('2026-07-01')
+  })
+
+  it('sends the country and city the directory filters on', () => {
+    const result = mapVendorOnboardingToExpertDraft(form)
+
+    expect(result.regionCountry).toBe('Singapore')
+    expect(result.regionCity).toBe('Singapore')
+  })
+
+  it('carries hand-typed certifications through as tags, de-duplicated', () => {
+    const result = mapVendorOnboardingToExpertDraft(form)
+    const certifications = (result.tags ?? []).filter((tag) => tag.tagType === 'certification')
+
+    expect(certifications.map((tag) => tag.tagValue)).toEqual([
+      'HubSpot Solutions Partner',
+      'Salesforce Admin',
+    ])
+  })
+
+  it('omits country and city rather than sending blanks', () => {
+    const result = mapVendorOnboardingToExpertDraft({
+      ...form,
+      regionCountry: '',
+      regionCity: '   ',
+    })
+
+    expect(result.regionCountry).toBeUndefined()
+    expect(result.regionCity).toBeUndefined()
   })
 
   it('does not persist a raw storage URL for uploaded portfolio evidence', () => {

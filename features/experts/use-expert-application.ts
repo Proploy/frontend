@@ -8,6 +8,7 @@ import type {
   ExpertProjectFileUploadResponse,
   ExpertProjectDownloadUrlResponse,
 } from '@/features/experts/types'
+import { hasApplyRequiredFields } from '@/features/experts/onboarding-mappers'
 
 const client = new ServiceApisBrowserClient()
 let inFlightApplicationRequest: Promise<GetApplicationResult> | null = null
@@ -30,8 +31,11 @@ async function getApplication(): Promise<GetApplicationResult> {
   if (inFlightApplicationRequest) return inFlightApplicationRequest
 
   inFlightApplicationRequest = (async () => {
+    // Cached for a minute: the nav, the nudge card and the wizard all read
+    // this. Saves and submits invalidate it via notifyExpertApplicationChanged.
     const result = await client.get<ExpertMe>('/api/v1/experts/me/application', {
       requireAuth: true,
+      readCache: { ttlMs: 60_000 },
     })
 
     if (!result.ok) {
@@ -52,14 +56,19 @@ async function getApplication(): Promise<GetApplicationResult> {
   }
 }
 
+/**
+ * Draft saves go through the same upsert as submit: POST /experts/apply.
+ * That endpoint still requires displayName, headline and yearsExperience, so
+ * a draft saved before those exist (the identity section persists too) uses
+ * the deprecated PATCH upsert, which accepts a partial body. Delete the
+ * fallback once ExpertApplyRequest makes those fields optional.
+ */
 async function saveApplicationDraft(
   payload: ExpertDraftRequest,
 ): Promise<SaveApplicationDraftResult> {
-  const result = await client.patch<ExpertMe>(
-    '/api/v1/experts/me/application',
-    payload,
-    { requireAuth: true },
-  )
+  const result = hasApplyRequiredFields(payload)
+    ? await client.post<ExpertMe>('/api/v1/experts/apply', payload, { requireAuth: true })
+    : await client.patch<ExpertMe>('/api/v1/experts/me/application', payload, { requireAuth: true })
 
   if (!result.ok) return result
   return { ok: true, data: result.data }
