@@ -20,12 +20,16 @@ export interface ExpertKeywordSearchOptions {
 
 const client = new ServiceApisBrowserClient()
 
+/** Server contract: `ExpertKeywordSearchRequest.limit` is `le=100`, the same ceiling as `GET /experts`. */
+export const EXPERT_KEYWORD_SEARCH_MAX_LIMIT = 100
+
 export function useExpertKeywordSearch(
   query: string,
   limit = 6,
   options: ExpertKeywordSearchOptions = {},
 ) {
   const trimmedQuery = query.trim()
+  const boundedLimit = Math.min(Math.max(1, Math.floor(limit)), EXPERT_KEYWORD_SEARCH_MAX_LIMIT)
   const requestKey = [
     trimmedQuery,
     options.platform,
@@ -41,9 +45,14 @@ export function useExpertKeywordSearch(
   const [error, setError] = useState<NormalizedError | null>(null)
   const [resolvedRequestKey, setResolvedRequestKey] = useState('')
   const requestId = useRef(0)
+  // Aborts a superseded request that's already past the debounce and mid-flight,
+  // so a slow backend response doesn't keep holding a connection after the user
+  // has typed past it.
+  const abortRef = useRef<AbortController | null>(null)
 
   const search = useCallback(async () => {
     const trimmed = trimmedQuery
+    abortRef.current?.abort()
     if (!trimmed) {
       setExperts([])
       setLoading(false)
@@ -54,10 +63,12 @@ export function useExpertKeywordSearch(
     const current = ++requestId.current
     setLoading(true)
     setError(null)
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
       const result = await client.post<ExpertKeywordSearchResponse>('/api/v1/experts/search/keyword', {
         query: trimmed,
-        limit,
+        limit: boundedLimit,
         filters: {
           platform: options.platform || undefined,
           industry: options.industry || undefined,
@@ -67,7 +78,7 @@ export function useExpertKeywordSearch(
           entityType: options.entityType || undefined,
         },
         sort: options.sort ?? 'relevance',
-      }, { requireAuth: false })
+      }, { requireAuth: false, signal: controller.signal })
       if (current !== requestId.current) return
       if (!result.ok) {
         setExperts([])
@@ -77,13 +88,16 @@ export function useExpertKeywordSearch(
       }
       setExperts(result.data.results)
       setResolvedRequestKey(requestKey)
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      throw err
     } finally {
       if (current === requestId.current) {
         setLoading(false)
       }
     }
   }, [
-    limit,
+    boundedLimit,
     options.entityType,
     options.industry,
     options.location,
@@ -99,6 +113,7 @@ export function useExpertKeywordSearch(
     const timer = setTimeout(() => void search(), 200)
     return () => {
       clearTimeout(timer)
+      abortRef.current?.abort()
       requestId.current += 1
     }
   }, [search])

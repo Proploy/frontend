@@ -1,39 +1,120 @@
-import type { ExpertListItem } from './types'
-
 /**
- * Filter state for the experts directory. All list filters are multi-select
- * (OR within a group, AND across groups) and evaluated client-side against
- * the loaded directory, so the pill options can be derived from real data.
+ * Filter state for the experts directory.
+ *
+ * Every group is evaluated server-side by `GET /api/v1/experts`, which also
+ * returns the option counts (see `ExpertFacets`). The client no longer derives
+ * options from the loaded page: several groups — regions served, remote only,
+ * weekly availability, earliest start — are not present on `ExpertListItem` at
+ * all, so they can only be filtered where the data lives.
+ *
+ * Group names match `FACET_GROUP_FIELDS` in
+ * `service-apis/modules/experts/browse/models.py`.
  */
-export type ExpertSort = 'relevance' | 'experience' | 'projects' | 'name'
+export type ExpertSort = 'relevance' | 'experience' | 'projects' | 'name' | 'recent'
 
 export interface ExpertFilterValues {
-  platforms: string[]
+  /** Catalog product ids (facet group `products`). */
+  products: string[]
+  /**
+   * Depth on the picked product, not on the expert. The API matches these
+   * against the same expertise row as `products`, so "Asana" with
+   * `minimumProductYears: 5` means five years on Asana. With no product
+   * picked they still read correctly, as "on some one product".
+   */
+  minimumProductYears: number
+  minimumProductProjects: number
+  primaryProductOnly: boolean
+  productCertified: boolean
+  /**
+   * Industries the expert serves *on the picked product*, chosen when applying
+   * from that product's own catalog list. Distinct from `industries`, which is
+   * the expert-wide answer: an expert can work in healthcare generally and use
+   * Zendesk only for retail clients.
+   */
+  productIndustries: string[]
+  /**
+   * How many credentials the expert declared, as a band from
+   * `CERTIFICATION_BUCKETS` carried by its lower bound ('0', '1', '2', '5').
+   * '' means no preference.
+   */
+  certificationCount: string
   industries: string[]
   projectTypes: string[]
   countries: string[]
+  regionsServed: string[]
+  timezones: string[]
   entityTypes: string[]
-  /** Minimum years of experience; 0 means any. */
+  /** Thresholds; 0 means any. */
   minimumYears: number
+  minimumProjects: number
+  minimumHoursPerWeek: number
+  /** ISO date (YYYY-MM-DD); '' means any. */
+  availableFrom: string
+  /** Tri-state: true filters to remote-only experts, false is "no preference". */
+  remoteOnly: boolean
   sort: ExpertSort
 }
 
 export const DEFAULT_EXPERT_FILTERS: ExpertFilterValues = {
-  platforms: [],
+  products: [],
+  minimumProductYears: 0,
+  minimumProductProjects: 0,
+  primaryProductOnly: false,
+  productCertified: false,
+  productIndustries: [],
+  certificationCount: '',
   industries: [],
   projectTypes: [],
   countries: [],
+  regionsServed: [],
+  timezones: [],
   entityTypes: [],
   minimumYears: 0,
+  minimumProjects: 0,
+  minimumHoursPerWeek: 0,
+  availableFrom: '',
+  remoteOnly: false,
   sort: 'relevance',
 }
 
-export const EXPERT_YEARS_OPTIONS = [3, 5, 10] as const
+/** Multi-select groups, and the facet group each one is counted by. */
+export const EXPERT_LIST_GROUPS = {
+  products: 'products',
+  productIndustries: 'product_industries',
+  industries: 'industries',
+  projectTypes: 'project_types',
+  countries: 'countries',
+  regionsServed: 'regions_served',
+  timezones: 'timezones',
+  entityTypes: 'entity_types',
+} as const
+
+export type ExpertListGroupKey = keyof typeof EXPERT_LIST_GROUPS
+
+/** Threshold groups, and the facet group each one is counted by. */
+export const EXPERT_THRESHOLD_GROUPS = {
+  minimumYears: 'years',
+  minimumProjects: 'projects',
+  minimumHoursPerWeek: 'availability_hours',
+  minimumProductYears: 'product_years',
+  minimumProductProjects: 'product_projects',
+} as const
+
+export type ExpertThresholdKey = keyof typeof EXPERT_THRESHOLD_GROUPS
+
+/** Flags that qualify the picked product, and the facet group counting each. */
+export const EXPERT_PRODUCT_FLAG_GROUPS = {
+  primaryProductOnly: 'product_primary_only',
+  productCertified: 'product_certified',
+} as const
+
+export type ExpertProductFlagKey = keyof typeof EXPERT_PRODUCT_FLAG_GROUPS
 
 export const EXPERT_SORT_OPTIONS: { value: ExpertSort; label: string }[] = [
   { value: 'relevance', label: 'Relevance' },
   { value: 'experience', label: 'Most experienced' },
   { value: 'projects', label: 'Most projects' },
+  { value: 'recent', label: 'Recently joined' },
   { value: 'name', label: 'Name' },
 ]
 
@@ -43,120 +124,54 @@ export const ENTITY_TYPE_LABELS: Record<string, string> = {
 }
 
 export function countActiveExpertFilters(values: ExpertFilterValues): number {
-  return (
-    values.platforms.length +
-    values.industries.length +
-    values.projectTypes.length +
-    values.countries.length +
-    values.entityTypes.length +
-    Number(values.minimumYears > 0)
+  const lists = (Object.keys(EXPERT_LIST_GROUPS) as ExpertListGroupKey[]).reduce(
+    (total, key) => total + values[key].length,
+    0,
   )
+  const thresholds = (Object.keys(EXPERT_THRESHOLD_GROUPS) as ExpertThresholdKey[]).reduce(
+    (total, key) => total + Number(values[key] > 0),
+    0,
+  )
+  const flags = (Object.keys(EXPERT_PRODUCT_FLAG_GROUPS) as ExpertProductFlagKey[]).reduce(
+    (total, key) => total + Number(values[key]),
+    0,
+  )
+  return (
+    lists +
+    thresholds +
+    flags +
+    Number(Boolean(values.certificationCount)) +
+    Number(Boolean(values.availableFrom)) +
+    Number(values.remoteOnly)
+  )
+}
+
+/**
+ * Change the product selection, dropping depth when nothing is left to qualify.
+ *
+ * Depth is only reachable in the UI while a product is selected, so clearing
+ * the last product has to clear it too — otherwise it keeps narrowing the
+ * results from a control nobody can see, and the only clue is a chip.
+ */
+export function withProducts(
+  values: ExpertFilterValues,
+  products: string[],
+): ExpertFilterValues {
+  // Industries are offered per product, so a value picked under the old
+  // selection may not be offered under the new one. Left in place it would
+  // keep narrowing the results with no option on screen to switch it off.
+  if (products.length > 0) return { ...values, products, productIndustries: [] }
+  return {
+    ...values,
+    products,
+    minimumProductYears: 0,
+    minimumProductProjects: 0,
+    primaryProductOnly: false,
+    productCertified: false,
+    productIndustries: [],
+  }
 }
 
 export function hasActiveExpertFilters(values: ExpertFilterValues): boolean {
   return countActiveExpertFilters(values) > 0
-}
-
-const norm = (value: string) => value.trim().toLowerCase()
-
-function tagValues(expert: ExpertListItem, tagType: string): string[] {
-  return (expert.tags ?? [])
-    .filter((tag) => tag.tagType === tagType)
-    .map((tag) => tag.tagValue)
-    .filter((value): value is string => Boolean(value))
-}
-
-export function expertPlatformLabels(expert: ExpertListItem): string[] {
-  return unique([
-    ...(expert.primaryPlatforms ?? []),
-    ...(expert.secondaryPlatforms ?? []),
-    ...tagValues(expert, 'platform'),
-  ])
-}
-
-export function expertIndustryLabels(expert: ExpertListItem): string[] {
-  return unique([...(expert.industryExpertise ?? []), ...tagValues(expert, 'industry')])
-}
-
-export function expertProjectTypeLabels(expert: ExpertListItem): string[] {
-  return unique([...(expert.preferredProjectTypes ?? []), ...tagValues(expert, 'project_type')])
-}
-
-export function expertEntityType(expert: ExpertListItem): string {
-  const raw = norm(expert.entityType ?? '')
-  if (!raw) return ''
-  return raw.includes('business') || raw.includes('team') || raw.includes('agency') ? 'business' : 'individual'
-}
-
-function unique(values: string[]): string[] {
-  const seen = new Map<string, string>()
-  for (const value of values) {
-    const key = norm(value)
-    if (key && !seen.has(key)) seen.set(key, value.trim())
-  }
-  return Array.from(seen.values())
-}
-
-function matchesAny(selected: string[], candidates: string[]): boolean {
-  if (selected.length === 0) return true
-  const keys = new Set(candidates.map(norm))
-  return selected.some((value) => keys.has(norm(value)))
-}
-
-/** True when the expert satisfies every active group (OR within a group). */
-export function matchesExpertFilters(expert: ExpertListItem, values: ExpertFilterValues): boolean {
-  if (!matchesAny(values.platforms, expertPlatformLabels(expert))) return false
-  if (!matchesAny(values.industries, expertIndustryLabels(expert))) return false
-  if (!matchesAny(values.projectTypes, expertProjectTypeLabels(expert))) return false
-  if (!matchesAny(values.countries, expert.regionCountry ? [expert.regionCountry] : [])) return false
-  if (!matchesAny(values.entityTypes, [expertEntityType(expert)])) return false
-  if ((expert.yearsExperience ?? 0) < values.minimumYears) return false
-  return true
-}
-
-export function sortExperts(experts: ExpertListItem[], sort: ExpertSort): ExpertListItem[] {
-  if (sort === 'experience') {
-    return [...experts].sort((a, b) => (b.yearsExperience ?? 0) - (a.yearsExperience ?? 0))
-  }
-  if (sort === 'projects') {
-    return [...experts].sort((a, b) => (b.projectsCompletedTotal ?? 0) - (a.projectsCompletedTotal ?? 0))
-  }
-  if (sort === 'name') {
-    return [...experts].sort((a, b) => a.displayName.localeCompare(b.displayName))
-  }
-  return experts
-}
-
-export interface ExpertFilterOptions {
-  platforms: string[]
-  industries: string[]
-  projectTypes: string[]
-  countries: string[]
-  entityTypes: string[]
-}
-
-/** Distinct option labels present in the directory, most common first. */
-export function deriveExpertFilterOptions(experts: ExpertListItem[]): ExpertFilterOptions {
-  const tally = (lists: string[][]): string[] => {
-    const counts = new Map<string, { label: string; count: number }>()
-    for (const list of lists) {
-      for (const value of list) {
-        const key = norm(value)
-        if (!key) continue
-        const entry = counts.get(key) ?? { label: value.trim(), count: 0 }
-        entry.count += 1
-        counts.set(key, entry)
-      }
-    }
-    return Array.from(counts.values())
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-      .map((entry) => entry.label)
-  }
-  return {
-    platforms: tally(experts.map(expertPlatformLabels)),
-    industries: tally(experts.map(expertIndustryLabels)),
-    projectTypes: tally(experts.map(expertProjectTypeLabels)),
-    countries: tally(experts.map((expert) => (expert.regionCountry ? [expert.regionCountry] : []))),
-    entityTypes: tally(experts.map((expert) => [expertEntityType(expert)].filter(Boolean))),
-  }
 }
