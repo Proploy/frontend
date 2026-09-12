@@ -73,6 +73,7 @@ describe('mapKeywordSearchResultToCardProduct', () => {
       vendor_name: 'Salesforce',
       free_plan_available: false, // Not in keyword search
       free_trial_available: false,
+      industry_fit: [], // Not in keyword search
     })
   })
 })
@@ -123,6 +124,7 @@ describe('mapCatalogSearchResultToCardProduct', () => {
       vendor_name: 'Salesforce',
       free_plan_available: false,
       free_trial_available: true,
+      industry_fit: [], // Search results don't carry the profile's industry fit
     })
   })
 })

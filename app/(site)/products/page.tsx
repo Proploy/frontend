@@ -2,7 +2,10 @@ import { Suspense } from 'react'
 import { serverCatalogApi } from '@/features/catalog/shared/server-api'
 import ProductsPageClient from './ProductsPageClient'
 import { ProductsPageSuspenseFallback } from './ProductsPageClient'
-import { mapProductListResponseToPage } from '@/features/catalog/products/mappers'
+import {
+  mapProductFacets,
+  mapProductListResponseToPage,
+} from '@/features/catalog/products/mappers'
 import { buildProductListRequest } from '@/features/catalog/products/filter-request'
 import {
   parseProductFilterParams,
@@ -17,32 +20,37 @@ export default async function ProductsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   // Filters live in the URL, so the first page is rendered for exactly the
-  // requested view (category, filters, keyword search). Natural-language
-  // search runs client-side, so no list is prefetched in that mode.
+  // requested view (category, filters, keyword search). The same request
+  // carries the filter facets for that view, so the sidebar and the results
+  // describe one id universe. Natural-language search runs client-side, so
+  // nothing (list or facets) is prefetched in that mode.
   const params = searchParamsFromRecord(await searchParams)
   const filters = parseProductFilterParams(params)
   const search = params.get('search')?.trim() || undefined
   const naturalMode = params.get('mode') === 'natural'
 
-  const [treeResult, facetsResult, productsResult] = await Promise.all([
+  const [treeResult, productsResult] = await Promise.all([
     serverCatalogApi.categories.getTree(),
-    serverCatalogApi.products.getFacets(search),
     naturalMode && search
       ? Promise.resolve(null)
-      : serverCatalogApi.products.list(
-          buildProductListRequest({
+      : serverCatalogApi.products.list({
+          ...buildProductListRequest({
             ...filters,
             search,
             limit: PRODUCT_PAGE_SIZE,
             offset: 0,
           }),
-        ),
+          include_facets: true,
+        }),
   ])
 
   // Leave this empty when the fetch fails; the client hook refetches when it
   // starts without a tree, so the filter list is never permanently empty.
   const categoryTree = treeResult.ok ? treeResult.data.tree ?? [] : []
-  const initialFacets = facetsResult.ok ? facetsResult.data : null
+  const initialFacets =
+    productsResult && productsResult.ok && productsResult.data.facets
+      ? mapProductFacets(productsResult.data.facets)
+      : null
   const initialProductsPage =
     productsResult && productsResult.ok
       ? mapProductListResponseToPage(productsResult.data, PRODUCT_PAGE_SIZE, 0)

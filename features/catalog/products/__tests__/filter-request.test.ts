@@ -69,12 +69,24 @@ describe('catalog filter requests', () => {
       sort: 'name',
     })
     expect(DEFAULT_EXPERT_FILTERS).toEqual({
-      platforms: [],
+      products: [],
+      minimumProductYears: 0,
+      minimumProductProjects: 0,
+      primaryProductOnly: false,
+      productCertified: false,
+      productIndustries: [],
+      certificationCount: '',
       industries: [],
       projectTypes: [],
       countries: [],
+      regionsServed: [],
+      timezones: [],
       entityTypes: [],
       minimumYears: 0,
+      minimumProjects: 0,
+      minimumHoursPerWeek: 0,
+      availableFrom: '',
+      remoteOnly: false,
       sort: 'relevance',
     })
   })

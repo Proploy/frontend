@@ -62,6 +62,7 @@ describe('useNaturalSearch filters on the wire', () => {
 
       expect(hoisted.mocks.natural).toHaveBeenCalledWith(
         expect.objectContaining({ query: 'invoicing', trial_available: true }),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       )
       await unmount()
     } finally {
@@ -76,10 +77,10 @@ describe('useNaturalSearch filters on the wire', () => {
       await vi.advanceTimersByTimeAsync(250)
       await flush()
 
-      expect(hoisted.mocks.natural).toHaveBeenCalledWith({
-        query: 'invoicing',
-        limit: 20,
-      })
+      expect(hoisted.mocks.natural).toHaveBeenCalledWith(
+        { query: 'invoicing', limit: 20 },
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      )
       await unmount()
     } finally {
       vi.useRealTimers()

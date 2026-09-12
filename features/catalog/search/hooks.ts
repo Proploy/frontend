@@ -7,11 +7,12 @@ import { clientCatalogApi } from '../shared/client-api'
 import { createLatestRequestGuard } from '../shared/latest-request'
 import type { NormalizedError } from '../shared/types'
 import type { CatalogSearchRequest, NaturalSearchRequest } from '../search/types'
-import type { CardProduct, ProductListResult } from '../products/types'
+import type { CardProduct, ProductFacets, ProductListResult } from '../products/types'
 import {
   mapKeywordSearchResponseToResults,
   mapCatalogSearchResponseToResults,
 } from '../search/mappers'
+import { mapProductFacets } from '../products/mappers'
 import { isUnpublishedValue } from '../products/published-values'
 
 import {
@@ -69,6 +70,10 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     timer: ReturnType<typeof setTimeout>
     resolve: () => void
   } | null>(null)
+  // Aborts a superseded request that's already past the debounce and mid-flight,
+  // so a slow backend response doesn't keep holding a connection after the user
+  // has typed past it.
+  const abortRef = useRef<AbortController | null>(null)
 
   const cancelDebounce = useCallback(() => {
     if (!debounceRef.current) return
@@ -80,6 +85,7 @@ export function useKeywordSearch(): UseKeywordSearchResult {
 
   const search = useCallback(async (query: string, limit = 20) => {
     cancelDebounce()
+    abortRef.current?.abort()
     const requestId = requestGuardRef.current.begin()
 
     let debounce: {
@@ -116,10 +122,13 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     setLoading(true)
     setError(null)
 
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
       // Search with exact query or corrected query if exact is severe typo
       const targetSearchQuery = localCorrection && localCorrection.distance === 1 ? localCorrection.suggestion : trimmed
-      const result = await clientCatalogApi.search.keyword(targetSearchQuery, limit)
+      const result = await clientCatalogApi.search.keyword(targetSearchQuery, limit, { signal: controller.signal })
 
       if (!requestGuardRef.current.isLatest(requestId)) return
 
@@ -155,6 +164,9 @@ export function useKeywordSearch(): UseKeywordSearchResult {
         mapped.products.map((p) => p.product_name),
       )
       setSuggestedCorrection(refinedCorrection)
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      throw err
     } finally {
       if (requestGuardRef.current.isLatest(requestId)) {
         setLoading(false)
@@ -164,6 +176,7 @@ export function useKeywordSearch(): UseKeywordSearchResult {
 
   const clear = useCallback(() => {
     cancelDebounce()
+    abortRef.current?.abort()
     requestGuardRef.current.invalidate()
     setProducts([])
     setLoading(false)
@@ -177,6 +190,7 @@ export function useKeywordSearch(): UseKeywordSearchResult {
     const requestGuard = requestGuardRef.current
     return () => {
       cancelDebounce()
+      abortRef.current?.abort()
       requestGuard.invalidate()
     }
   }, [cancelDebounce])
@@ -211,11 +225,21 @@ export interface UseNaturalSearchFilters {
   categoryTermIds?: string[]
 }
 
+export interface UseNaturalSearchOptions {
+  /**
+   * Ask the API for filter facets over the ids the search matched. Only the
+   * results page needs them; the typeahead leaves this off.
+   */
+  includeFacets?: boolean
+}
+
 interface UseNaturalSearchResult {
   products: CardProduct[]
   loading: boolean
   error: NormalizedError | null
   note: string | null
+  /** Facets from the last successful search when `includeFacets` is on; null otherwise. */
+  facets: ProductFacets | null
   search: (query: string, limit?: number) => Promise<void>
   clear: () => void
 }
@@ -224,17 +248,22 @@ interface UseNaturalSearchResult {
  * Natural-language search — semantic-first with hard-filter refinement and
  * keyword fallback. Backend: POST /api/v1/catalog/search/natural
  */
-export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNaturalSearchResult {
+export function useNaturalSearch(
+  filters: UseNaturalSearchFilters = {},
+  { includeFacets = false }: UseNaturalSearchOptions = {},
+): UseNaturalSearchResult {
   const [products, setProducts] = useState<CardProduct[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<NormalizedError | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  const [facets, setFacets] = useState<ProductFacets | null>(null)
 
   const requestGuardRef = useRef(createLatestRequestGuard())
   const debounceRef = useRef<{
     timer: ReturnType<typeof setTimeout>
     resolve: () => void
   } | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const filtersRef = useRef(filters)
   filtersRef.current = filters
 
@@ -248,6 +277,7 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
 
   const search = useCallback(async (query: string, limit = 20) => {
     cancelDebounce()
+    abortRef.current?.abort()
     const requestId = requestGuardRef.current.begin()
 
     let debounce: {
@@ -273,6 +303,7 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
       setLoading(false)
       setError(null)
       setNote(null)
+      setFacets(null)
       return
     }
 
@@ -320,8 +351,13 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
       if (activeFilters.categoryTermIds?.length) {
         request.category_term_id = activeFilters.categoryTermIds
       }
+      if (includeFacets) {
+        request.include_facets = true
+      }
 
-      const result = await clientCatalogApi.search.natural(request)
+      const controller = new AbortController()
+      abortRef.current = controller
+      const result = await clientCatalogApi.search.natural(request, { signal: controller.signal })
 
       if (!requestGuardRef.current.isLatest(requestId)) return
 
@@ -335,26 +371,36 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
       const mapped = mapCatalogSearchResponseToResults(result.data, limit, 0)
       setProducts(mapped.products)
       setNote(result.data.note ?? null)
+      // A facets failure never fails the search; keep the last facets then.
+      if (result.data.facets) {
+        setFacets(mapProductFacets(result.data.facets))
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      throw err
     } finally {
       if (requestGuardRef.current.isLatest(requestId)) {
         setLoading(false)
       }
     }
-  }, [cancelDebounce])
+  }, [cancelDebounce, includeFacets])
 
   const clear = useCallback(() => {
     cancelDebounce()
+    abortRef.current?.abort()
     requestGuardRef.current.invalidate()
     setProducts([])
     setLoading(false)
     setError(null)
     setNote(null)
+    setFacets(null)
   }, [cancelDebounce])
 
   useEffect(() => {
     const requestGuard = requestGuardRef.current
     return () => {
       cancelDebounce()
+      abortRef.current?.abort()
       requestGuard.invalidate()
     }
   }, [cancelDebounce])
@@ -364,6 +410,7 @@ export function useNaturalSearch(filters: UseNaturalSearchFilters = {}): UseNatu
     loading,
     error,
     note,
+    facets,
     search,
     clear,
   }

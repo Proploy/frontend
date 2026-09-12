@@ -145,6 +145,7 @@ describe('mapProductCardToCardProduct', () => {
       vendor_name: 'Salesforce',
       free_plan_available: false,
       free_trial_available: true,
+      industry_fit: [],
     })
   })
 

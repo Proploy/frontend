@@ -17,7 +17,6 @@ import {
   useKeywordSearch,
   useNaturalSearch,
   useCatalogProductList,
-  useProductFacets,
   type CardProduct,
   type CategoryNode,
   type FacetOption,
@@ -130,6 +129,8 @@ function deploymentLabel(value: string): string {
 
 type ActiveFilterTag = {
   label: string
+  /** Products this option would keep given the other filters; null when unknown. */
+  count: number | null
   clear: () => void
 }
 
@@ -219,20 +220,32 @@ export default function ProductsPageClient({
   const offset =
     paginationState.requestKey === requestKey ? paginationState.offset : 0
   const resetOffset = () => setPaginationState({ requestKey, offset: 0 })
-  // Options are scoped to the active search so every one of them returns
-  // something; without a search they describe the whole catalog.
-  const { facets } = useProductFacets(initialFacets, search)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const hasActiveSearch = Boolean(search)
   const naturalMode = activeMode === 'natural'
+  // A keyword search ranks its matches by rating, so the menu would otherwise
+  // read "Name" over results that are not alphabetical. Natural search keeps
+  // its own fit ordering and is not sorted here.
+  const displayedSort: ProductSort =
+    hasActiveSearch && !naturalMode && filters.sort === 'name' ? 'rating' : filters.sort
 
   const selectedCategoryNodes = filters.categoryTermIds
     .map((termId) => findCategoryNode(tree, termId))
     .filter((node): node is CategoryNode => node !== null)
-  const { products: listedProducts, loading: listLoading, error: listError, pagination, refetch } = useCatalogProductList({
-    // The server rendered the first page for exactly this URL (filters and
-    // search included), so it is valid as-is; later param changes refetch.
-    initialData: initialProductsPage ?? undefined,
+  const {
+    products: listedProducts,
+    facets: listFacets,
+    loading: listLoading,
+    error: listError,
+    pagination,
+    refetch,
+  } = useCatalogProductList({
+    // The server rendered the first page (and its facets) for exactly this
+    // URL (filters and search included), so it is valid as-is; later param
+    // changes refetch.
+    initialData: initialProductsPage
+      ? { ...initialProductsPage, facets: initialFacets }
+      : undefined,
     ...buildProductListRequest({
       ...filters,
       search: !naturalMode ? search : undefined,
@@ -245,6 +258,7 @@ export default function ProductsPageClient({
 
   const {
     products: naturalProducts,
+    facets: naturalFacets,
     loading: naturalLoading,
     error: naturalError,
     note: naturalNote,
@@ -263,7 +277,7 @@ export default function ProductsPageClient({
     freePlan: filters.freePlan,
     freeTrial: filters.freeTrial,
     categoryTermIds: filters.categoryTermIds,
-  })
+  }, { includeFacets: true })
 
   const naturalFilterKey = filterKey
 
@@ -289,6 +303,17 @@ export default function ProductsPageClient({
   const products = (hasActiveSearch && naturalMode) ? naturalProducts : listedProducts
   const loading = (hasActiveSearch && naturalMode) ? naturalLoading : listLoading
   const error = (hasActiveSearch && naturalMode) ? naturalError : listError
+  // Facets ride along on whichever request produced the results, so they
+  // always describe the id universe on screen. While the next request is in
+  // flight the previous facets stay up (dimmed) rather than emptying the
+  // sidebar; the server-rendered facets seed the very first paint.
+  const activeFacets = (hasActiveSearch && naturalMode) ? naturalFacets : listFacets
+  const [lastFacets, setLastFacets] = useState<ProductFacets | null>(initialFacets)
+  useEffect(() => {
+    if (activeFacets) setLastFacets(activeFacets)
+  }, [activeFacets])
+  const facets = activeFacets ?? lastFacets
+  const facetsBusy = loading && offset === 0
   // Only blank the grid when there is nothing to show. While a filter or
   // search change is in flight, keep the current cards dimmed so the page
   // never looks empty mid-request.
@@ -346,40 +371,51 @@ export default function ProductsPageClient({
   const activeFilterCount = countActiveProductFilters(filters)
 
   /* removable active-filter tags — each removal writes back to the URL */
+  const findOption = (options: FacetOption[] | undefined, value: string) =>
+    options?.find((option) => option.value === value)
   const optionLabel = (
     options: FacetOption[] | undefined,
     value: string,
     fallback: (value: string) => string,
-  ) => options?.find((option) => option.value === value)?.label ?? fallback(value)
+  ) => findOption(options, value)?.label ?? fallback(value)
+  // Selected options are returned even at count 0; a value missing from the
+  // facets means they are stale or from an older backend, so its count is
+  // unknown rather than zero.
+  const optionCount = (options: FacetOption[] | undefined, value: string): number | null =>
+    findOption(options, value)?.count ?? null
 
   const activeFilterTags: ActiveFilterTag[] = []
   filters.categoryTermIds.forEach((termId) => {
     activeFilterTags.push({
       label: findCategoryNode(tree, termId)?.label ?? 'Selected category',
+      count: null,
       clear: () => updateFilters({ categoryTermIds: filters.categoryTermIds.filter((id) => id !== termId) }),
     })
   })
   const listTags = (
     key: 'pricingBuckets' | 'companySize' | 'deploymentModel' | 'compliance' | 'industries' | 'integrations' | 'implementationComplexity',
+    options: FacetOption[] | undefined,
     label: (value: string) => string,
   ) => {
     filters[key].forEach((value) => {
       activeFilterTags.push({
         label: label(value),
+        count: optionCount(options, value),
         clear: () => updateFilters({ [key]: filters[key].filter((v) => v !== value) }),
       })
     })
   }
-  listTags('pricingBuckets', (v) => optionLabel(facets?.pricing_buckets, v, (x) => pricingLabel(x) ?? x))
-  listTags('companySize', (v) => optionLabel(facets?.company_sizes, v, companySizeLabel))
-  listTags('deploymentModel', (v) => optionLabel(facets?.deployment_models, v, deploymentLabel))
-  listTags('implementationComplexity', (v) => `${optionLabel(facets?.implementation_complexity, v, (x) => x)} effort`)
-  listTags('compliance', (v) => v)
-  listTags('industries', (v) => v)
-  listTags('integrations', (v) => `Integrates with ${v}`)
+  listTags('pricingBuckets', facets?.pricing_buckets, (v) => optionLabel(facets?.pricing_buckets, v, (x) => pricingLabel(x) ?? x))
+  listTags('companySize', facets?.company_sizes, (v) => optionLabel(facets?.company_sizes, v, companySizeLabel))
+  listTags('deploymentModel', facets?.deployment_models, (v) => optionLabel(facets?.deployment_models, v, deploymentLabel))
+  listTags('implementationComplexity', facets?.implementation_complexity, (v) => `${optionLabel(facets?.implementation_complexity, v, (x) => x)} effort`)
+  listTags('compliance', facets?.compliance, (v) => v)
+  listTags('industries', facets?.industries, (v) => v)
+  listTags('integrations', facets?.integrations, (v) => `Integrates with ${v}`)
   if (filters.minRating) {
     activeFilterTags.push({
       label: optionLabel(facets?.ratings, filters.minRating, (v) => `${v}+ stars`),
+      count: optionCount(facets?.ratings, filters.minRating),
       clear: () => updateFilters({ minRating: '' }),
     })
   }
@@ -388,21 +424,27 @@ export default function ProductsPageClient({
       label: optionLabel(facets?.starting_prices, filters.maxStartingPrice, (v) =>
         v === '0' ? 'Free to start' : `Up to $${v}/mo`,
       ),
+      count: optionCount(facets?.starting_prices, filters.maxStartingPrice),
       clear: () => updateFilters({ maxStartingPrice: '' }),
     })
   }
   if (filters.freePlan) {
     activeFilterTags.push({
       label: 'Free plan available',
+      count: facets?.scope ? facets.free_plan_count : null,
       clear: () => updateFilters({ freePlan: false }),
     })
   }
   if (filters.freeTrial) {
     activeFilterTags.push({
       label: 'Free trial available',
+      count: facets?.scope ? facets.free_trial_count : null,
       clear: () => updateFilters({ freeTrial: false }),
     })
   }
+  // Filters that, given everything else applied, match nothing — the ones to
+  // offer removing when the page is empty.
+  const zeroCountTags = activeFilterTags.filter((tag) => tag.count === 0)
 
   const [contact, setContact] = useState({
     firstName: '',
@@ -479,7 +521,12 @@ export default function ProductsPageClient({
 
             {/* filters + results */}
             <div className="pp-catalog-layout">
-              <aside className="pp-filter-side" aria-label="Product filters">
+              <aside
+                className="pp-filter-side"
+                aria-label="Product filters"
+                aria-busy={facetsBusy}
+                style={{ opacity: facetsBusy ? 0.6 : 1, transition: 'opacity 160ms ease' }}
+              >
                 <ProductFilterSidebar
                   values={filters}
                   onChange={applyFilters}
@@ -515,7 +562,7 @@ export default function ProductsPageClient({
                       {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
                     </button>
                     <SortMenu<ProductSort>
-                      value={filters.sort}
+                      value={displayedSort}
                       options={PRODUCT_SORT_OPTIONS}
                       onChange={(sort) => updateFilters({ sort })}
                     />
@@ -527,6 +574,15 @@ export default function ProductsPageClient({
                     {activeFilterTags.map((tag) => (
                       <span key={tag.label} className="pp-tag pp-tag--filter">
                         {tag.label}
+                        {tag.count === 0 && (
+                          <span
+                            className="pp-filter-group-badge"
+                            title="No products match this filter with the others applied"
+                            data-testid="filter-tag-zero"
+                          >
+                            0
+                          </span>
+                        )}
                         <button
                           type="button"
                           className="pp-tag-x"
@@ -595,12 +651,49 @@ export default function ProductsPageClient({
                       <SearchIcon />
                     </div>
                     <h3 className="pp-heading-sm">No products match these filters</h3>
-                    <p
-                      className="pp-body"
-                      style={{ color: 'var(--slate-11)', maxWidth: '400px', marginTop: 'var(--sp-2)' }}
-                    >
-                      Try removing a filter or broadening your search. We&apos;re onboarding new vendors every week.
-                    </p>
+                    {zeroCountTags.length > 0 ? (
+                      <>
+                        <p
+                          className="pp-body"
+                          style={{ color: 'var(--slate-11)', maxWidth: '440px', marginTop: 'var(--sp-2)' }}
+                        >
+                          No results for{' '}
+                          {zeroCountTags.map((tag, index) => (
+                            <span key={tag.label}>
+                              {index > 0 && (index === zeroCountTags.length - 1 ? ' or ' : ', ')}
+                              <b>{tag.label}</b>
+                            </span>
+                          ))}
+                          {search ? <> within &quot;{search}&quot;</> : ' with the other filters applied'}.
+                        </p>
+                        <div
+                          className="pp-flex pp-wrap pp-gap-2"
+                          style={{ justifyContent: 'center', marginTop: 'var(--sp-4)' }}
+                        >
+                          {zeroCountTags.map((tag) => (
+                            <button
+                              key={tag.label}
+                              type="button"
+                              className="pp-tag pp-tag--filter"
+                              style={{ cursor: 'pointer' }}
+                              onClick={tag.clear}
+                            >
+                              Remove {tag.label}
+                              <span className="pp-tag-x" aria-hidden="true">
+                                <TagX />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p
+                        className="pp-body"
+                        style={{ color: 'var(--slate-11)', maxWidth: '400px', marginTop: 'var(--sp-2)' }}
+                      >
+                        Try removing a filter or broadening your search. We&apos;re onboarding new vendors every week.
+                      </p>
+                    )}
                     {activeFilterCount > 0 && (
                       <button
                         type="button"

@@ -28,28 +28,71 @@ export interface ProductListRequest extends ProductFilterRequest {
   sort?: ProductSort
   limit?: number
   offset?: number
+  /** Attach facets computed over this request's id universe. First page only. */
+  include_facets?: boolean
 }
 
-// Backend: ProductFacetsResponse (GET /api/v1/catalog/products/facets)
+// Backend: ProductFacetsResponse (service-apis/modules/catalog/facet_models.py).
+// Returned by GET /products/facets and, with `include_facets`, inline on the
+// list and natural-search responses.
+export type FacetMode = 'catalog' | 'search' | 'natural' | 'keyword'
+export type FacetGroupState = 'expanded' | 'collapsed' | 'hidden'
+
 export interface FacetOption {
   value: string
   label: string
   count: number
+  /** Whether this option is part of the applied filters. Selected options are
+   * returned even at count 0; unselected zero-count options are omitted. */
+  selected: boolean
 }
 
-export interface ProductFacets {
+/** Which id universe the counts were computed over. `matched` equals the list total. */
+export interface FacetScope {
+  mode: FacetMode
+  search: string | null
+  universe: number
+  matched: number
+}
+
+/** Response field names the backend reports group state for. */
+export type FacetGroupKey =
+  | 'pricing_buckets'
+  | 'company_sizes'
+  | 'deployment_models'
+  | 'compliance'
+  | 'integrations'
+  | 'industries'
+  | 'implementation_complexity'
+  | 'ratings'
+  | 'starting_prices'
+  | 'free_plan'
+  | 'free_trial'
+
+export type FacetOptionsKey = Exclude<FacetGroupKey, 'free_plan' | 'free_trial'>
+
+export type FacetGroups = Partial<Record<FacetGroupKey, { state: FacetGroupState }>>
+
+/** Wire option: `selected` is absent from older responses. */
+export type FacetOptionResponse = Omit<FacetOption, 'selected'> & { selected?: boolean }
+
+/** Wire shape. `selected`, `scope` and `groups` are absent from older responses. */
+export interface ProductFacetsResponse extends Record<FacetOptionsKey, FacetOptionResponse[]> {
   total: number
-  pricing_buckets: FacetOption[]
-  company_sizes: FacetOption[]
-  deployment_models: FacetOption[]
-  compliance: FacetOption[]
-  integrations: FacetOption[]
-  industries: FacetOption[]
-  implementation_complexity: FacetOption[]
-  ratings: FacetOption[]
-  starting_prices: FacetOption[]
   free_plan_count: number
   free_trial_count: number
+  scope?: FacetScope | null
+  groups?: FacetGroups | null
+}
+
+/** Normalised facets (see mapProductFacets): every option carries `selected`,
+ * `scope` is null for older responses, `groups` is always an object. */
+export interface ProductFacets extends Record<FacetOptionsKey, FacetOption[]> {
+  total: number
+  free_plan_count: number
+  free_trial_count: number
+  scope: FacetScope | null
+  groups: FacetGroups
 }
 
 export interface ProductCard {
@@ -67,12 +110,25 @@ export interface ProductCard {
   free_plan: boolean
   implementation_complexity: string | null
   typical_timeline: string | null
+  industry_fit?: string[]
 }
 
 export interface ProductCardResponse {
   count: number
   results: ProductCard[]
   total: number
+  /** Present when the request asked for `include_facets` on the first page. */
+  facets?: ProductFacetsResponse | null
+}
+
+export interface ProductSummary {
+  product_id: string
+  product_name: string
+  logo_url: string | null
+}
+
+export interface ProductSummaryResponse {
+  results: ProductSummary[]
 }
 
 export interface ProductAlternative {
@@ -184,6 +240,8 @@ export interface CardProduct {
   vendor_name: string | null
   free_plan_available: boolean
   free_trial_available: boolean
+  /** The catalog's own view of which industries the product suits. */
+  industry_fit: string[]
 }
 
 export interface ProductPageModel {
