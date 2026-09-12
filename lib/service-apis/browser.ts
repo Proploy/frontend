@@ -16,5 +16,8 @@ export {
   ServiceApisBrowserClient,
   getServiceApisBrowserBaseUrl,
   serviceApisBrowserFetch,
+  getCacheKey,
+  type GetCacheOptions,
 } from './browser-client'
+export { invalidateQueries, peekQuery, setQuery, subscribeQuery } from './query-cache'
 export { normalizeServiceApiError, normalizeCircuitOpen, isCircuitOpen, type NormalizedError } from './error-utils'

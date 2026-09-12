@@ -1,9 +1,40 @@
 import { normalizeServiceApiError, type NormalizedError } from './error-utils'
+import { catalogRevalidateSeconds } from './cache-policy'
+import { cachedRead } from './query-cache'
+
+export interface GetCacheOptions {
+  /** Fresh window in milliseconds. */
+  ttlMs: number
+  /** Serve a stale entry up to this long past `ttlMs` while refreshing. */
+  staleMs?: number
+  /** Mirror into sessionStorage (public reference data only). */
+  persist?: boolean
+}
 
 interface RequestOptions {
   requireAuth?: boolean
   /** Optional current Supabase token, used by auth sync and token-aware callers. */
   accessToken?: string | null
+  /**
+   * Client read cache for GET. Catalog paths are cached by default per
+   * `cache-policy.ts`; pass `false` to bypass, or an object to opt any other
+   * path in. Authenticated reads are keyed separately from public ones.
+   */
+  readCache?: GetCacheOptions | false
+  /** Aborts the in-flight request, e.g. when a newer typeahead query supersedes it. */
+  signal?: AbortSignal
+}
+
+/** Cache key for a GET: auth reads never share entries with public ones. */
+export function getCacheKey(path: string, requireAuth: boolean): string {
+  return `${requireAuth ? 'auth:' : 'public:'}${path}`
+}
+
+function defaultCacheFor(path: string, requireAuth: boolean): GetCacheOptions | null {
+  if (requireAuth) return null
+  const seconds = catalogRevalidateSeconds(path)
+  if (seconds === null) return null
+  return { ttlMs: seconds * 1000, staleMs: seconds * 1000, persist: true }
 }
 
 export interface ServiceApisBrowserFetchOptions extends RequestInit {
@@ -66,7 +97,7 @@ export class ServiceApisBrowserClient {
     body: unknown | undefined,
     options: RequestOptions,
   ): Promise<NormalizedError | { ok: true; data: T }> {
-    const { requireAuth = false, accessToken } = options
+    const { requireAuth = false, accessToken, signal } = options
 
     const headers: Record<string, string> = {
       accept: 'application/json',
@@ -91,8 +122,10 @@ export class ServiceApisBrowserClient {
             : JSON.stringify(body),
         requireAuth,
         accessToken,
+        signal,
       })
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') throw err
       // Network/CORS failure — service-apis unreachable
       return {
         ok: false,
@@ -117,9 +150,33 @@ export class ServiceApisBrowserClient {
     return { ok: true, data }
   }
 
-  /** Public GET — no auth attached */
+  /**
+   * GET through the shared read cache. Errors are never cached: a failed
+   * read rejects the cached promise so the next call refetches.
+   */
   async get<T = unknown>(path: string, options: RequestOptions = {}): Promise<NormalizedError | { ok: true; data: T }> {
-    return this.fetch<T>('GET', path, undefined, options)
+    const { readCache, ...rest } = options
+    const policy = readCache === false ? null : readCache ?? defaultCacheFor(path, Boolean(rest.requireAuth))
+    if (!policy) return this.fetch<T>('GET', path, undefined, rest)
+
+    const key = getCacheKey(path, Boolean(rest.requireAuth))
+    try {
+      const data = await cachedRead<T>(
+        key,
+        async () => {
+          const result = await this.fetch<T>('GET', path, undefined, rest)
+          if (!result.ok) throw result
+          return result.data
+        },
+        policy,
+      )
+      return { ok: true, data }
+    } catch (failure) {
+      if (failure && typeof failure === 'object' && (failure as NormalizedError).ok === false) {
+        return failure as NormalizedError
+      }
+      return { ok: false, status: 0, error: { code: 'NETWORK_ERROR', message: 'Unable to reach service APIs' } }
+    }
   }
 
   /** Auth-required POST */
