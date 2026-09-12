@@ -10,7 +10,7 @@ import type { NormalizedError } from '@/lib/service-apis/error-utils'
 import type { ExpertListItem, ExpertListResponse } from '@/features/experts/types'
 
 interface UseApprovedExpertsOptions {
-  platform?: string
+  productId?: string
   industry?: string
   projectType?: string
   country?: string
@@ -28,7 +28,7 @@ interface UseApprovedExpertsResult {
 const client = new ServiceApisBrowserClient()
 
 export function useApprovedExperts(
-  { platform, industry, projectType, country, timezone, limit }: UseApprovedExpertsOptions = {},
+  { productId, industry, projectType, country, timezone, limit }: UseApprovedExpertsOptions = {},
 ): UseApprovedExpertsResult {
   const [experts, setExperts] = useState<ExpertListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +42,7 @@ export function useApprovedExperts(
     setError(null)
 
     const params = new URLSearchParams()
-    if (platform) params.set('platform', platform)
+    if (productId) params.set('product_id', productId)
     if (industry) params.set('industry', industry)
     if (projectType) params.set('project_type', projectType)
     if (country) params.set('country', country)
@@ -53,6 +53,9 @@ export function useApprovedExperts(
     try {
       const result = await client.get<ExpertListResponse>(`/api/v1/experts${query ? `?${query}` : ''}`, {
         requireAuth: false,
+        // Directory reads are shared across the list, the mega menu and
+        // compare; five minutes fresh, served stale for another five.
+        readCache: { ttlMs: 5 * 60_000, staleMs: 5 * 60_000, persist: true },
       })
 
       if (!mountedRef.current) return
@@ -66,7 +69,7 @@ export function useApprovedExperts(
     } finally {
       if (mountedRef.current) setLoading(false)
     }
-  }, [platform, industry, projectType, country, timezone, limit, client])
+  }, [productId, industry, projectType, country, timezone, limit, client])
 
   useEffect(() => {
     mountedRef.current = true

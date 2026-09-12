@@ -1,4 +1,5 @@
 import type { NormalizedError } from '@/lib/service-apis/browser'
+import type { AiWorkspaceProfile } from './types'
 
 export type EvaluationStatus = 'active' | 'archived' | 'deleted'
 export type EvaluationAttentionGroup =
@@ -113,6 +114,8 @@ export type EvaluationDetail = EvaluationSummary & {
   shortlist: EvaluationProduct[]
   recommendation: EvaluationRecommendation | null
   documents?: Array<Record<string, unknown>>
+  /** What Sam knows about the buyer (goals, constraints, pain points…). */
+  profile?: AiWorkspaceProfile | null
   messages: EvaluationMessage[]
 }
 

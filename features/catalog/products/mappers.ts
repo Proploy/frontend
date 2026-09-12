@@ -1,6 +1,9 @@
 // Product Mappers — convert backend contracts to UI view models.
 
 import type {
+  FacetOption,
+  FacetOptionResponse,
+  FacetOptionsKey,
   ProductCardResponse,
   ProductCard,
   ProductDetail,
@@ -8,6 +11,8 @@ import type {
   RatingItem,
   ProductMediaAssetItem,
   ProductAlternative,
+  ProductFacets,
+  ProductFacetsResponse,
 } from './types'
 import { getProductLogoUrl } from './logo-url'
 
@@ -34,6 +39,48 @@ export function mapProductAlternative(alternative: ProductAlternative): ProductA
   }
 }
 
+// ── Facets ──────────────────────────────────────────────────────────────────
+
+export const FACET_OPTION_KEYS: FacetOptionsKey[] = [
+  'pricing_buckets',
+  'company_sizes',
+  'deployment_models',
+  'compliance',
+  'integrations',
+  'industries',
+  'implementation_complexity',
+  'ratings',
+  'starting_prices',
+]
+
+function mapFacetOption(option: FacetOptionResponse): FacetOption {
+  return {
+    value: option.value,
+    label: option.label,
+    count: option.count,
+    selected: option.selected ?? false,
+  }
+}
+
+/**
+ * Normalises the facets contract. Older responses (no `scope`, `groups` or
+ * per-option `selected`) map to the same shape so the UI never branches on
+ * which backend produced them.
+ */
+export function mapProductFacets(response: ProductFacetsResponse): ProductFacets {
+  const options = Object.fromEntries(
+    FACET_OPTION_KEYS.map((key) => [key, (response[key] ?? []).map(mapFacetOption)]),
+  ) as Record<FacetOptionsKey, FacetOption[]>
+  return {
+    ...options,
+    total: response.total,
+    free_plan_count: response.free_plan_count ?? 0,
+    free_trial_count: response.free_trial_count ?? 0,
+    scope: response.scope ?? null,
+    groups: response.groups ?? {},
+  }
+}
+
 // ── Product List ────────────────────────────────────────────────────────────
 
 export function mapProductCardToCardProduct(card: ProductCard): CardProduct {
@@ -42,6 +89,7 @@ export function mapProductCardToCardProduct(card: ProductCard): CardProduct {
     product_name: normalizePublishedValue(card.product_name) ?? '',
     product_description: normalizePublishedValue(card.short_description),
     product_logo: getProductLogoUrl(card.product_id, card.approved_logo_url),
+    industry_fit: card.industry_fit ?? [],
     rating: card.avg_rating,
     reviews: card.total_reviews,
     primary_category: normalizePublishedValue(card.primary_category),

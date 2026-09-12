@@ -6,10 +6,10 @@ import type { CategoryTreeResponse } from '../categories/types'
 import type {
   ProductCardResponse,
   ProductDetail,
-  ProductFacets,
   ProductListRequest,
   ProductMediaAssetItem,
   ProductAlternativesResponse,
+  ProductSummaryResponse,
 } from '../products/types'
 import type {
   CatalogSearchRequest,
@@ -36,12 +36,6 @@ export const clientCatalogApi = {
       const query = buildQueryString(params)
       return client.get<ProductCardResponse>(`/api/v1/catalog/products/ui?${query}`, options)
     },
-    getFacets(search?: string, options?: CatalogRequestOptions): Promise<ApiResult<ProductFacets>> {
-      // With a search term the API scopes the counts to what that search
-      // matched, so the filter UI never offers an option that empties the page.
-      const query = buildQueryString({ search: search?.trim() || undefined })
-      return client.get<ProductFacets>(`/api/v1/catalog/products/facets${query ? `?${query}` : ''}`, options)
-    },
     getDetail(
       productId: string,
       options?: CatalogRequestOptions,
@@ -60,6 +54,17 @@ export const clientCatalogApi = {
       const suffix = query ? `?${query}` : ''
       return client.get<ProductMediaAssetItem[]>(
         `/api/v1/catalog/products/${encodeURIComponent(productId)}/media${suffix}`,
+        options,
+      )
+    },
+    /** Batch name+logo lookup for card lists (e.g. saved/recently-viewed products). Max 50 ids. */
+    getSummaryByIds(
+      productIds: string[],
+      options?: CatalogRequestOptions,
+    ): Promise<ApiResult<ProductSummaryResponse>> {
+      const query = buildQueryString({ ids: productIds })
+      return client.get<ProductSummaryResponse>(
+        `/api/v1/catalog/products/summary?${query}`,
         options,
       )
     },

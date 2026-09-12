@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { FilterModal } from './FilterModal'
 import { ExpertFilterSections } from './ExpertFilterSections'
+import type { ExpertFacets } from '@/features/experts/types'
 import {
   DEFAULT_EXPERT_FILTERS,
-  type ExpertFilterOptions,
   type ExpertFilterValues,
 } from '@/features/experts/filter-values'
 
@@ -16,13 +16,13 @@ export type { ExpertFilterValues }
 export function ExpertFiltersDrawer({
   open,
   values,
-  options,
+  facets,
   onClose,
   onApply,
 }: {
   open: boolean
   values: ExpertFilterValues
-  options: ExpertFilterOptions
+  facets: ExpertFacets | null
   onClose: () => void
   onApply: (values: ExpertFilterValues) => void
 }) {
@@ -39,7 +39,7 @@ export function ExpertFiltersDrawer({
         onClose()
       }}
     >
-      <ExpertFilterSections values={draft} onChange={setDraft} options={options} />
+      <ExpertFilterSections values={draft} onChange={setDraft} facets={facets} />
     </FilterModal>
   )
 }

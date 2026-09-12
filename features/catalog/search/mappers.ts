@@ -19,6 +19,7 @@ export function mapKeywordSearchResultToCardProduct(result: KeywordSearchResult)
     product_name: normalizePublishedValue(result.product_name) ?? '',
     product_description: null, // Keyword search doesn't return description
     product_logo: getProductLogoUrl(result.product_id, result.approved_logo_url),
+    industry_fit: [], // Keyword search doesn't return industry fit
     rating: null, // Keyword search doesn't return rating
     reviews: null,
     primary_category: normalizePublishedValue(result.primary_category),
@@ -58,6 +59,7 @@ export function mapCatalogSearchResultToCardProduct(result: CatalogSearchResult)
     product_name: normalizePublishedValue(result.product_name) ?? '',
     product_description: normalizePublishedValue(result.short_description),
     product_logo: getProductLogoUrl(result.product_id, result.approved_logo_url),
+    industry_fit: [], // Search results don't carry the profile's industry fit
     rating: result.avg_rating,
     reviews: result.total_reviews,
     primary_category: normalizePublishedValue(result.primary_category),

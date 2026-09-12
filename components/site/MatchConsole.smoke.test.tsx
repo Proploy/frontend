@@ -32,7 +32,9 @@ describe('MatchConsole render smoke', () => {
     )
     // Suggestions are visible before a query exists.
     expect(container.textContent).toContain('Start typing — or try one')
-    expect(container.textContent).toContain('Vetted experts attached')
+    // With no query there is nothing to link to, so the card ends on the
+    // search body rather than a footer strip.
+    expect(container.textContent).not.toContain('Top rated matches')
     // Subtle guided route into the authenticated Sam workspace.
     const askSam = container.querySelector('a[href="/AI_workspace"]')
     expect(askSam).not.toBeNull()

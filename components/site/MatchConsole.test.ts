@@ -76,7 +76,10 @@ describe('MatchConsole interaction contract', () => {
   it('uses a persistent mode state instead of demo-reel live gating', () => {
     expect(source).not.toContain('data-live')
     expect(source).not.toContain('if (live) return;')
-    expect(source).toContain('data-[mode=natural]')
+    // The card reflects the mode through `data-mode`, which `.mc-card` styles
+    // in v2-pages.css. Previously the card carried a `data-[mode=natural]`
+    // Tailwind variant but never set the attribute, so it never applied.
+    expect(source).toContain('data-mode={mode}')
   })
 
   it('keeps hover-then-type flowing into the hosted input', () => {

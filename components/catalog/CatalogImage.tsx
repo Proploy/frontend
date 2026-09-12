@@ -12,17 +12,24 @@ interface CatalogImageProps {
 const PRODUCTION_GATEWAY = 'https://service-apis-731353524841.australia-southeast1.run.app'
 
 /**
+ * Sources that already failed this session. A remount (menu reopened, row
+ * re-rendered, another page) renders the fallback at once instead of
+ * requesting the asset again. Successful loads rely on the HTTP cache.
+ */
+const failedSources = new Set<string>()
+
+/**
  * Catalog media is supplied by service-apis and can use arbitrary approved hosts.
  * Rendering standard HTML img directly avoids Next.js domain constraints
  * and prevents 1px HTML attribute sizing collapses in production builds.
  */
 export function CatalogImage({ src, alt, className = '', fallback = null }: CatalogImageProps) {
   const [currentSrc, setCurrentSrc] = useState<string>(src)
-  const [hasFailed, setHasFailed] = useState<boolean>(false)
+  const [hasFailed, setHasFailed] = useState<boolean>(() => failedSources.has(src))
 
   useEffect(() => {
     setCurrentSrc(src)
-    setHasFailed(false)
+    setHasFailed(failedSources.has(src))
   }, [src])
 
   if (!src || hasFailed) {
@@ -35,6 +42,7 @@ export function CatalogImage({ src, alt, className = '', fallback = null }: Cata
       const cloudRunUrl = currentSrc.replace(/http:\/\/(localhost|127\.0\.0\.1):8020/, PRODUCTION_GATEWAY)
       setCurrentSrc(cloudRunUrl)
     } else {
+      failedSources.add(src)
       setHasFailed(true)
     }
   }
@@ -46,6 +54,7 @@ export function CatalogImage({ src, alt, className = '', fallback = null }: Cata
       onError={handleError}
       className={className}
       loading="lazy"
+      decoding="async"
     />
   )
 }

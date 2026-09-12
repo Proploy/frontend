@@ -3,20 +3,20 @@
 import {
   DEFAULT_EXPERT_FILTERS,
   countActiveExpertFilters,
-  type ExpertFilterOptions,
   type ExpertFilterValues,
 } from '@/features/experts/filter-values'
 import { ExpertFilterSections } from './ExpertFilterSections'
+import type { ExpertFacets } from '@/features/experts/types'
 
 /** Desktop filter column for the experts directory; every click applies immediately. */
 export function ExpertFilterSidebar({
   values,
   onChange,
-  options,
+  facets,
 }: {
   values: ExpertFilterValues
   onChange: (next: ExpertFilterValues) => void
-  options: ExpertFilterOptions
+  facets: ExpertFacets | null
 }) {
   const activeCount = countActiveExpertFilters(values)
   return (
@@ -40,7 +40,7 @@ export function ExpertFilterSidebar({
           </button>
         )}
       </div>
-      <ExpertFilterSections values={values} onChange={onChange} options={options} />
+      <ExpertFilterSections values={values} onChange={onChange} facets={facets} />
     </div>
   )
 }

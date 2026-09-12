@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { CompleteApplicationCard } from '@/components/experts/CompleteApplicationCard'
 import { KpiCard, SectionCard, usd } from '@/components/dashboard/ui'
 import {
   BUTTON_SKEUO,
@@ -123,6 +124,8 @@ export default function WorkspaceHomePage() {
             The workspace API is currently unreachable. Counts and activity below are stale or empty until it recovers.
           </div>
         )}
+
+        {!isExpert && <CompleteApplicationCard className="mt-[18px]" />}
 
         {nativeSchedulingAccessForRole(state.role) === 'test_only' && (
           <div className="mt-[24px]">

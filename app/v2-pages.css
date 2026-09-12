@@ -282,7 +282,7 @@
 /* ---------- helpers ---------- */
 .pp-flex{display:flex}
 .pp-wrap{flex-wrap:wrap}
-.pp-gap-2{gap:var(--sp-2)}.pp-gap-3{gap:var(--sp-3)}.pp-gap-4{gap:var(--sp-4)}.pp-gap-6{gap:var(--sp-6)}.pp-gap-8{gap:var(--sp-8)}.pp-gap-12{gap:var(--sp-12)}.pp-gap-16{gap:var(--sp-16)}
+.pp-gap-2{gap:var(--sp-2)}.pp-gap-3{gap:var(--sp-3)}.pp-gap-4{gap:var(--sp-4)}.pp-gap-5{gap:var(--sp-5)}.pp-gap-6{gap:var(--sp-6)}.pp-gap-8{gap:var(--sp-8)}.pp-gap-10{gap:var(--sp-10)}.pp-gap-12{gap:var(--sp-12)}.pp-gap-16{gap:var(--sp-16)}
 .pp-grid{display:grid;gap:var(--sp-6)}
 .pp-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pp-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -402,7 +402,7 @@
 /* Step scaffolding */
 .vo-step{display:flex;flex-direction:column;gap:var(--sp-6)}
 .vo-group{display:flex;flex-direction:column;gap:var(--sp-4)}
-.vo-req{color:var(--cobalt)}
+.vo-req{color:#e03131}
 .vo-divider{display:flex;align-items:center;gap:var(--sp-3);font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink-soft)}
 .vo-divider::before,.vo-divider::after{content:"";flex:1;height:var(--bw);background:var(--line)}
 
@@ -464,10 +464,206 @@
 /* Inline error */
 .vo-error{padding:10px 14px;border-radius:var(--r-control);border:var(--bw) solid var(--color-error-200);background:var(--color-error-50);color:var(--color-error-700);font-size:14px;line-height:21px}
 
+/* Inline hints (validation nudges; never block navigation) */
+.vo-hints{display:flex;flex-direction:column;gap:4px;margin:0;padding:10px 14px;list-style:none;border-radius:var(--r-control);border:var(--bw) solid var(--color-warning-200);background:var(--color-warning-50);color:var(--color-warning-700);font-size:13px;line-height:20px}
+
+/* Clickable section rail (the rail nodes become buttons) */
+.vo-rail--sections .vo-rail-btn{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);width:100%;padding:0;border:0;background:none;cursor:pointer;color:inherit;font:inherit}
+.vo-rail--sections .vo-rail-btn:disabled{cursor:default}
+.vo-rail--sections .vo-rail-btn:hover .vo-rail-node{border-color:var(--cobalt)}
+.vo-rail--sections .vo-rail-btn:focus-visible .vo-rail-node{box-shadow:var(--ring-brand);outline:none}
+.vo-rail-step[data-attention="true"] .vo-rail-node{background:var(--color-warning-50);border-color:var(--color-warning-200);color:var(--color-warning-700)}
+.vo-rail-step[data-attention="true"][data-state="current"] .vo-rail-node{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
+.vo-rail-step[data-attention="true"] .vo-rail-label{color:var(--color-warning-700)}
+
+/* Percent bar under the rail */
+.vo-progress{position:relative;height:22px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:#fff;overflow:hidden}
+.vo-progress-fill{position:absolute;inset:0 auto 0 0;background:var(--cobalt-soft);border-right:var(--bw) solid color-mix(in oklab,var(--cobalt) 40%,var(--line));transition:width var(--d-base) var(--ease)}
+.vo-progress-text{position:relative;display:block;text-align:center;font-size:11px;line-height:20px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink-soft)}
+
+/* Status banners at the top of the wizard */
+.vo-banner{display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-card);border:var(--bw) solid var(--line);background:#fff;font-size:14px;line-height:21px;color:var(--ink)}
+.vo-banner svg{flex-shrink:0;margin-top:2px}
+.vo-banner--danger{border-color:var(--color-error-200);background:var(--color-error-50);color:var(--color-error-700)}
+.vo-banner--info{border-color:color-mix(in oklab,var(--cobalt) 25%,var(--line));background:var(--cobalt-soft);color:var(--cobalt-deep)}
+.vo-banner--success{border-color:var(--color-success-200);background:var(--color-success-50);color:var(--color-success-700)}
+.vo-banner-body{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0;flex:1}
+.vo-banner-note{white-space:pre-wrap;color:var(--ink)}
+
+/* Sticky submit footer */
+.vo-footer{position:sticky;bottom:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-3);margin-top:var(--sp-6);padding:var(--sp-4) var(--sp-5);border:var(--bw) solid var(--line);border-radius:var(--r-card);background:color-mix(in oklab,white 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow-lift)}
+.vo-footer-blockers{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--ink-soft)}
+
+/* Product cards (products section) */
+.vo-product{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-5);background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow-xs)}
+.vo-product-head{display:flex;align-items:center;gap:var(--sp-3)}
+.vo-product-name{font-family:var(--font-display);font-size:16px;line-height:24px;font-weight:var(--weight-semibold);letter-spacing:-.01em;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-logo{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:var(--r-control);border:var(--bw) solid var(--line);background:#fff;font-size:14px;font-weight:var(--weight-semibold);color:var(--cobalt-deep);overflow:hidden}
+.vo-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.vo-seg{display:inline-flex;padding:2px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:#fff}
+.vo-seg button{padding:5px 12px;border:0;border-radius:var(--r-full);background:transparent;color:var(--ink-soft);font-family:var(--font-body);font-size:12px;font-weight:var(--weight-medium);cursor:pointer;white-space:nowrap}
+.vo-seg button[aria-pressed="true"]{background:var(--cobalt);color:#fff}
+.vo-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4)}
+.vo-cert{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4);border:var(--bw) solid var(--line);border-radius:var(--r-control);background:color-mix(in oklab,var(--paper-deep) 50%,white)}
+
+/* Typeahead */
+.vo-typeahead{position:relative}
+.vo-typeahead .vo-menu{top:calc(100% + 4px)}
+
+/* Photo picker */
+.vo-photo{display:flex;align-items:center;gap:var(--sp-5)}
+.vo-photo-preview{display:grid;place-items:center;width:88px;height:88px;flex-shrink:0;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:linear-gradient(135deg,var(--cobalt-soft),var(--paper-deep));color:var(--cobalt-deep);font-family:var(--font-display);font-size:28px;font-weight:var(--weight-semibold);overflow:hidden}
+.vo-photo-preview img{width:100%;height:100%;object-fit:cover}
+
+/* Label hint tooltip — hover the label text to reveal a one-liner */
+.vo-label-tip{position:relative;display:inline-block;cursor:help;border-bottom:1px dashed color-mix(in oklab,var(--ink-soft) 50%,transparent);transition:border-color .15s,color .15s}
+.vo-label-tip:hover{color:var(--ink);border-bottom-color:var(--ink-soft)}
+.vo-label-tip::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 7px);white-space:nowrap;max-width:260px;padding:6px 10px;border-radius:6px;background:var(--ink);color:#fff;font-size:.72rem;font-weight:400;line-height:1.45;letter-spacing:.01em;pointer-events:none;opacity:0;transition:opacity .15s .05s;z-index:30;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.vo-label-tip:hover::after{opacity:1}
+
+/* ===========================================================================
+   .ap-*  AUTH PANEL — the dark brand column on /sign-in, /sign-up and the two
+   email screens. Four variants keyed off the route the user was gated from;
+   see app/(site)/(auth)/auth-panels.tsx.
+
+   These only ever render inside `.pp-dark` at the lg breakpoint and up (the
+   shell hides the whole column below it), so there are no mobile overrides
+   here on purpose.
+   =========================================================================== */
+
+.ap-body{max-width:560px;width:100%;margin:auto}
+/* Slightly tighter than .pp-lede: the graphic-bearing variants use the d3
+   headline and need the supporting line to sit closer to it. */
+.ap-lede{font-size:16px;line-height:26px;color:color-mix(in oklab,var(--paper) 72%,transparent);max-width:46ch}
+
+/* Shared glass surface for every panel graphic */
+.ap-glass{margin:0;border-radius:var(--r-card);border:var(--bw) solid color-mix(in oklab,var(--paper) 18%,transparent);background:color-mix(in oklab,#fff 8%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:hidden}
+.ap-glass-head,.ap-glass-foot{display:flex;align-items:center;gap:var(--sp-2);padding:10px 14px;font-family:var(--font-mono);font-size:11px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 62%,transparent)}
+.ap-glass-head{border-bottom:var(--bw) solid color-mix(in oklab,var(--paper) 14%,transparent)}
+.ap-glass-foot{justify-content:space-between;border-top:var(--bw) solid color-mix(in oklab,var(--paper) 14%,transparent);color:color-mix(in oklab,var(--paper) 58%,transparent)}
+.ap-dot{width:6px;height:6px;border-radius:var(--r-full);background:var(--cobalt);flex-shrink:0}
+
+/* --- ask-sam: discovery console --- */
+.ap-bubble{align-self:flex-end;max-width:84%;margin:0;padding:10px 14px;border-radius:var(--r-card) var(--r-card) var(--r-sm) var(--r-card);background:var(--paper);color:var(--ink);font-size:14px;line-height:21px}
+.ap-score{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px var(--sp-3)}
+.ap-score-name{font-size:14px;line-height:20px;color:color-mix(in oklab,var(--paper) 88%,transparent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-score-num{font-family:var(--font-mono);font-size:14px;font-weight:var(--weight-medium);letter-spacing:-.02em;text-align:right;color:var(--paper);font-variant-numeric:tabular-nums}
+.ap-score-track{grid-column:1/-1;height:3px;border-radius:var(--r-full);background:color-mix(in oklab,var(--paper) 16%,transparent);overflow:hidden}
+.ap-score-fill{display:block;height:100%;border-radius:var(--r-full);background:var(--cobalt)}
+.ap-score.is-dim .ap-score-name,.ap-score.is-dim .ap-score-num{color:color-mix(in oklab,var(--paper) 55%,transparent)}
+.ap-score.is-dim .ap-score-fill{background:color-mix(in oklab,var(--cobalt) 58%,transparent)}
+
+/* --- become-expert: brief stack + pipeline rail --- */
+.ap-stack-wrap{position:relative;padding-top:14px}
+.ap-stack-ghost{position:absolute;left:50%;translate:-50% 0;height:40px;border-radius:var(--r-card);border:var(--bw) solid color-mix(in oklab,var(--paper) 14%,transparent);background:color-mix(in oklab,#fff 5%,transparent)}
+.ap-stack-ghost--a{top:0;width:90%}
+.ap-stack-ghost--b{top:7px;width:95%}
+/* The stacked ghost edges sit behind this card, so unlike the other glass
+   surfaces it needs an opaque base — the same tint painted as a gradient over
+   solid ink — or the offset edges show straight through it. */
+.ap-brief{position:relative;background-color:var(--ink);background-image:linear-gradient(color-mix(in oklab,#fff 8%,transparent),color-mix(in oklab,#fff 8%,transparent))}
+.ap-brief-top{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4)}
+.ap-brief-title{margin:0;font-family:var(--font-display);font-size:17px;line-height:24px;font-weight:var(--weight-semibold);letter-spacing:-.01em;color:var(--paper)}
+.ap-brief-fee{font-family:var(--font-mono);font-size:17px;font-weight:var(--weight-medium);letter-spacing:-.02em;color:var(--paper);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ap-chips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.ap-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 20%,transparent);font-size:12.5px;line-height:18px;color:color-mix(in oklab,var(--paper) 80%,transparent)}
+.ap-chip.is-on{background:color-mix(in oklab,var(--cobalt) 30%,transparent);border-color:color-mix(in oklab,var(--cobalt) 55%,transparent);color:#fff}
+.ap-rail{list-style:none;margin:0;padding:var(--sp-1) 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.ap-rail-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:9px}
+.ap-rail-step::before{content:"";position:absolute;top:9px;left:-50%;width:100%;height:1px;background:color-mix(in oklab,var(--paper) 20%,transparent)}
+.ap-rail-step:first-child::before{display:none}
+.ap-rail-node{position:relative;z-index:1;display:grid;place-items:center;width:19px;height:19px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 32%,transparent);background:var(--ink);color:#fff}
+.ap-rail-node.is-on{background:var(--cobalt);border-color:var(--cobalt)}
+.ap-rail-label{font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 55%,transparent)}
+
+/* --- browse-experts: roster + locked profile --- */
+.ap-roster{display:flex;align-items:center;gap:10px}
+.ap-avatar{position:relative;display:grid;place-items:center;flex-shrink:0;width:52px;height:52px;border-radius:var(--r-tile);border:var(--bw) solid color-mix(in oklab,var(--paper) 22%,transparent);background:linear-gradient(150deg,color-mix(in oklab,var(--cobalt) 46%,var(--ink)),color-mix(in oklab,var(--ink) 82%,var(--paper)));font-family:var(--font-display);font-size:16px;font-weight:var(--weight-semibold);letter-spacing:-.01em;color:var(--paper)}
+.ap-avatar--sm{width:44px;height:44px;font-size:14px}
+.ap-verified{position:absolute;right:-4px;bottom:-4px;display:grid;place-items:center;width:18px;height:18px;border-radius:var(--r-full);background:var(--cobalt);border:2px solid var(--ink);color:#fff}
+.ap-roster-more{display:flex;flex-direction:column;justify-content:center;padding-left:var(--sp-1)}
+.ap-roster-count{font-family:var(--font-mono);font-size:19px;font-weight:var(--weight-medium);letter-spacing:-.02em;color:var(--paper)}
+.ap-roster-cap{font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 55%,transparent)}
+.ap-profile{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5)}
+.ap-profile-top{display:flex;align-items:center;gap:var(--sp-3)}
+.ap-profile-name{display:block;font-size:15.5px;line-height:20px;font-weight:var(--weight-semibold);color:var(--paper)}
+.ap-profile-role{display:block;font-size:13px;line-height:18px;color:color-mix(in oklab,var(--paper) 62%,transparent)}
+.ap-locked{position:relative}
+.ap-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3);margin:0;filter:blur(5px);user-select:none}
+.ap-meta dt{margin:0 0 5px;font-family:var(--font-mono);font-size:10.5px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:color-mix(in oklab,var(--paper) 50%,transparent)}
+.ap-meta dd{margin:0;font-size:15px;line-height:22px;font-weight:var(--weight-medium);color:var(--paper)}
+.ap-lock-chip{position:absolute;inset:0;margin:auto;width:max-content;height:max-content;display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:var(--r-full);border:var(--bw) solid color-mix(in oklab,var(--paper) 26%,transparent);background:color-mix(in oklab,var(--ink) 82%,transparent);font-family:var(--font-mono);font-size:11px;line-height:16px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--paper);white-space:nowrap}
+
+/* ===========================================================================
+   .mc-*  MATCH CONSOLE — the landing hero and its search card.
+
+   Previously built from the legacy `@utility` classes in globals.css
+   (`glass-card`, `label`, `display`, `blueprint`) plus one-off Tailwind
+   arbitrary values. Those utilities are near-twins of the v2 primitives, so
+   the markup now uses `.pp-glass` / `.pp-label` / `.pp-display` / `.pp-d1` and
+   everything else resolves from the tokens here — same system as the other
+   ported sections.
+   =========================================================================== */
+
+.mc-hero{position:relative;z-index:20;padding-block:var(--sp-32) var(--sp-24)}
+.mc-hero-mesh{position:absolute;right:-96px;top:-96px;width:900px;max-width:none;opacity:.45;mix-blend-mode:multiply;pointer-events:none;-webkit-mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.mc-hero-grid{display:grid;align-items:center;gap:var(--sp-12);grid-template-columns:minmax(0,1fr) minmax(0,.92fr)}
+.mc-hero-copy{min-width:0}
+.mc-hero-card{min-width:0;padding-left:var(--sp-4)}
+.mc-eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);padding:6px 12px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent)}
+.mc-proof{display:flex;align-items:center;gap:var(--sp-3)}
+.mc-proof-dots{display:flex;flex-shrink:0}
+.mc-proof-dots span{width:20px;height:20px;border-radius:var(--r-full);border:2px solid var(--paper);background:linear-gradient(135deg,var(--cobalt),var(--cobalt-deep))}
+.mc-proof-dots span+span{margin-left:-6px}
+
+/* --- the card --- */
+.mc-card{position:relative;overflow:hidden;min-width:0;scroll-margin-top:calc(var(--nav-h) + var(--sp-4));transition:box-shadow var(--d-lift) var(--ease),border-color var(--d-base) ease}
+/* Natural-language mode warms the whole card, so the mode toggle reads as a
+   change of behaviour rather than a styling detail. */
+.mc-card[data-mode="natural"]{border-color:color-mix(in oklab,var(--cobalt) 38%,var(--line));box-shadow:0 34px 80px -40px color-mix(in oklab,var(--cobalt) 60%,transparent)}
+.mc-row{display:flex;align-items:center;gap:var(--sp-3);padding:10px var(--sp-4)}
+.mc-row--head{border-bottom:var(--bw) solid var(--line);gap:6px var(--sp-2);flex-wrap:wrap}
+/* The engine name never breaks mid-phrase; the mode toggle beside it is the
+   element that gives way if the card gets narrow. */
+.mc-row--head .pp-label{white-space:nowrap}
+.mc-row--sam,.mc-row--foot{border-top:var(--bw) solid var(--line);justify-content:space-between}
+.mc-row--foot{padding-block:var(--sp-3)}
+.mc-body{padding:var(--sp-3) var(--sp-4) 0}
+/* Reserves the suggestion block's footprint so swapping suggestions for
+   results never resizes the card under the pointer. */
+.mc-min-h{min-height:14rem}
+.mc-hint{letter-spacing:.05em}
+.mc-suggest{display:flex;flex-direction:column;justify-content:center;gap:10px;padding-block:var(--sp-4)}
+.mc-search{margin-top:10px}
+.mc-suggest-list{display:flex;flex-wrap:wrap;gap:6px}
+.mc-suggestion{padding:6px 10px;border-radius:var(--r-control);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--ink-soft);font-size:13px;line-height:18px;text-align:left;cursor:pointer;transition:border-color var(--d-base) ease,color var(--d-base) ease}
+.mc-suggestion:hover{border-color:color-mix(in oklab,var(--cobalt) 40%,var(--line));color:var(--ink)}
+.mc-sam{flex-shrink:0;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--cobalt-deep);font-size:13px;font-weight:var(--weight-medium);transition:border-color var(--d-base) ease,background-color var(--d-base) ease}
+.mc-sam:hover{border-color:color-mix(in oklab,var(--cobalt) 50%,var(--line));background:color-mix(in oklab,var(--cobalt-soft) 40%,white)}
+.mc-viewall{color:var(--cobalt-deep);transition:opacity var(--d-base) ease}
+.mc-viewall:hover{opacity:.7}
+
+/* Keyword vs natural-language segmented control (SearchModeToggle's `card`
+   variant, used only here). Active state keys off `aria-pressed`, the same way
+   `.pp-chip` does, so the styling follows the accessible state rather than a
+   parallel class. Labels never wrap — the row gives the toggle its width. */
+.mc-toggle{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 90%,transparent);box-shadow:var(--shadow-xs)}
+.mc-toggle-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r-full);border:0;background:transparent;color:var(--ink-soft);font-family:var(--font-body);font-size:12px;font-weight:var(--weight-medium);white-space:nowrap;cursor:pointer;transition:background-color var(--d-base) ease,color var(--d-base) ease}
+.mc-toggle-btn:hover{background:var(--cobalt-soft);color:var(--ink)}
+.mc-toggle-btn[aria-pressed="true"]{background:var(--cobalt);color:#fff}
+.mc-toggle-btn[aria-pressed="true"]:hover{background:var(--cobalt-deep);color:#fff}
+
 @media (max-width:768px){
   .vo-rail-label{display:none}
   .vo-rail-line{top:15px}
   .vo-choice-row{flex-direction:column}
+  .vo-rail--sections{overflow-x:auto;padding-bottom:var(--sp-2);scrollbar-width:none}
+  .vo-rail--sections::-webkit-scrollbar{display:none}
+  .vo-rail--sections .vo-rail-step{flex:0 0 auto;min-width:72px}
+  .vo-rail--sections .vo-rail-label{display:block;font-size:10px}
+  .vo-grid-2{grid-template-columns:1fr}
+  .vo-photo{flex-direction:column;align-items:flex-start}
+  .vo-footer{border-radius:var(--r-control)}
 }
 
 /* ============================================================
@@ -536,6 +732,78 @@
 .pd-side{position:static}
 .pd-rail-inner{padding-block:var(--sp-2)}
 .pd-price{font-size:30px}
+.mc-hero{padding-block:var(--sp-24) var(--sp-16)}
+.mc-hero-mesh{width:560px;opacity:.4}
+}
+
+/* Wizard shell: sticky section sidebar + content column */
+.vo-layout{display:grid;grid-template-columns:272px minmax(0,1fr);gap:var(--sp-8);align-items:start}
+.vo-side{position:sticky;top:calc(var(--nav-h,72px) + var(--sp-6));display:flex;flex-direction:column;gap:var(--sp-5);padding:var(--sp-5);background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow-xs)}
+.vo-side-nav{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.vo-side-item{display:flex;align-items:center;gap:var(--sp-3);width:100%;padding:8px 10px;border:0;border-radius:var(--r-control);background:none;color:var(--ink-soft);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer;transition:background-color var(--d-base) var(--ease),color var(--d-base) var(--ease)}
+.vo-side-item:hover{background:var(--paper-deep);color:var(--ink)}
+.vo-side-item:focus-visible{box-shadow:var(--ring-brand);outline:none}
+.vo-side-item:disabled{cursor:default;opacity:.6}
+.vo-side-item[aria-current="step"]{background:var(--cobalt-soft);color:var(--cobalt-deep);font-weight:var(--weight-medium)}
+.vo-side-node{display:grid;place-items:center;width:24px;height:24px;flex-shrink:0;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:#fff;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft)}
+.vo-side-item[aria-current="step"] .vo-side-node{border-color:var(--cobalt);background:var(--cobalt);color:#fff}
+.vo-side-item[data-state="complete"] .vo-side-node{border-color:var(--color-success-200);background:var(--color-success-50);color:var(--color-success-700)}
+.vo-side-item[data-state="attention"] .vo-side-node{border-color:var(--color-warning-200);background:var(--color-warning-50);color:var(--color-warning-700)}
+.vo-side-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-side-meta{font-size:11px;color:var(--ink-soft)}
+.vo-side-foot{display:flex;flex-direction:column;gap:var(--sp-3);padding-top:var(--sp-4);border-top:var(--bw) solid var(--line)}
+.vo-side-blockers{margin:0;padding:0 0 0 18px;font-size:12.5px;line-height:18px;color:var(--ink-soft)}
+@media (max-width:900px){
+.vo-layout{grid-template-columns:1fr}
+.vo-side{position:static}
+.vo-side-nav{flex-direction:row;flex-wrap:wrap}
+.vo-side-item{width:auto}
+.vo-side-label{white-space:normal}
+}
+
+/* Socials: fixed row per platform, icon in the input */
+.vo-social{display:grid;grid-template-columns:150px minmax(0,1fr);gap:var(--sp-3);align-items:start}
+.vo-social-name{display:flex;align-items:center;gap:var(--sp-2);min-height:46px;font-size:14px;color:var(--ink)}
+.vo-social-name svg{color:var(--ink-soft);flex-shrink:0}
+.vo-social-input{position:relative}
+.vo-social-input .pp-input{padding-left:40px}
+.vo-social-input .pp-input[aria-invalid="true"]{border-color:var(--color-error-200);box-shadow:none}
+.vo-social-input .pp-input[data-valid="true"]{border-color:var(--color-success-200)}
+.vo-social-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-soft);pointer-events:none;display:grid;place-items:center}
+.vo-social-ico[data-valid="true"]{color:var(--color-success-700)}
+@media (max-width:640px){
+.vo-social{grid-template-columns:1fr;gap:4px}
+.vo-social-name{min-height:0}
+}
+
+/* Products: one card per product, because each is a separate thing to fill in
+   — years, projects, industries and certifications all belong to that product
+   and to no other. As flat rows the fields read as one long form and people
+   filled the first row and stopped. */
+.vo-prow{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4);background:#fff;border:var(--bw) solid var(--line);border-radius:var(--r-card);box-shadow:0 1px 2px rgba(10,13,18,.04);transition:border-color var(--d-base) var(--ease),box-shadow var(--d-base) var(--ease)}
+.vo-prow:focus-within{border-color:color-mix(in oklab,var(--cobalt) 45%,var(--line));box-shadow:0 0 0 3px color-mix(in oklab,var(--cobalt) 10%,transparent)}
+/* The product is the card's title, so it sits above a rule rather than inline
+   with the answers that belong to it. */
+.vo-prow-head{display:flex;align-items:center;gap:var(--sp-3);padding-bottom:var(--sp-3);border-bottom:var(--bw) solid var(--line)}
+.vo-prow-fields{display:grid;grid-template-columns:120px 120px minmax(0,1fr);gap:var(--sp-3);align-items:end}
+.vo-prow-fields .pp-field{gap:4px}
+.vo-prow-fields .pp-field label{font-size:12px;color:var(--ink-soft)}
+.vo-prow-certs-cta{justify-self:end;align-items:flex-end}
+.vo-prow .vo-logo{width:40px;height:40px;font-size:13px}
+.vo-prow-name{font-size:15px;font-weight:var(--weight-semibold,600);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vo-prow-sub{font-size:11.5px;color:var(--ink-soft)}
+.vo-prow .pp-input{height:36px;padding:0 10px;font-size:13px}
+/* Certifications hang off the product, so they are inset rather than another
+   sibling block competing with it. */
+.vo-prow-certs{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3);background:var(--paper-deep);border-radius:var(--r-tile)}
+/* White against the inset wash, so a credential still reads as its own card. */
+.vo-prow-certs .vo-cert{background:#fff}
+.vo-prow-toggle{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--cobalt);font:inherit;font-size:13px;font-weight:var(--weight-medium);cursor:pointer}
+.vo-prow-toggle:hover{text-decoration:underline}
+.vo-opt-logo{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
+@media (max-width:700px){
+.vo-prow-fields{grid-template-columns:1fr 1fr}
+.vo-prow-certs-cta{grid-column:1/-1;justify-self:start}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -600,4 +868,6 @@
 .pp-catalog-layout{grid-template-columns:minmax(0,1fr)}
 .pp-filter-side{display:none}
 .pp-filters-toggle{display:inline-flex}
+.mc-hero-grid{grid-template-columns:minmax(0,1fr);gap:var(--sp-12)}
+.mc-hero-card{padding-left:0}
 }

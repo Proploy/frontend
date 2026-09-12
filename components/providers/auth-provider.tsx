@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
+import { invalidateQueries } from '@/lib/service-apis/query-cache'
 import {
   fetchAuthSession,
   signInWithPassword,
@@ -74,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await signOutSession()
+    // Authenticated reads must not outlive the session that made them.
+    invalidateQueries('auth:')
     setUser(null)
   }, [])
 

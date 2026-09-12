@@ -78,7 +78,7 @@ export default function ProductDetailV2({ product, mediaError, onRetryMedia }: P
   }, [heroMediaIndex, dialogIndex, rotatingHeroMedia, advanceHero])
 
   const { experts, loading: expertsLoading } = useApprovedExperts({
-    platform: product.product_name,
+    productId: product.product_id,
     limit: 8,
   })
   const {

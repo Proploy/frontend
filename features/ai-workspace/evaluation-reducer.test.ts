@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import type { EvaluationDetail } from './evaluation-types'
-import { applyEvaluationStreamEvent } from './evaluation-reducer'
+import {
+  agentSelectedProducts,
+  applyEvaluationStreamEvent,
+  mergeMatches,
+} from './evaluation-reducer'
 
 const baseEvaluation: EvaluationDetail = {
   evaluation_id: 'evaluation-1',
@@ -82,5 +86,54 @@ describe('applyEvaluationStreamEvent', () => {
     ])
     expect(next.matches).toEqual([])
     expect(next.shortlist_count).toBe(1)
+  })
+})
+
+describe('agent-only product selection', () => {
+  const selectedHigh = {
+    product_id: 'linear',
+    product_name: 'Linear',
+    profile_href: '/products/linear',
+    available: true,
+    match_score: 92,
+    is_agent_selected: true,
+  }
+  const selectedLow = {
+    product_id: 'asana',
+    product_name: 'Asana',
+    profile_href: '/products/asana',
+    available: true,
+    match_score: 75,
+    is_agent_selected: true,
+  }
+  const searchedOnly = {
+    product_id: 'noise',
+    product_name: 'Noise',
+    profile_href: '/products/noise',
+    available: true,
+    match_score: 88,
+  }
+
+  it('only exposes products the agent selected, never plain catalog hits', () => {
+    expect(agentSelectedProducts([searchedOnly, selectedLow, selectedHigh]).map((p) => p.product_id))
+      .toEqual(['asana', 'linear'])
+  })
+
+  it('appends server products to the running list and refreshes repeats in place', () => {
+    const provisional = { ...selectedHigh, product_name: 'linear', reasons: ['from markdown'] }
+    expect(mergeMatches([selectedLow, provisional], [selectedHigh, searchedOnly]).map((p) => p.product_id))
+      .toEqual(['asana', 'linear', 'noise'])
+    expect(mergeMatches([provisional], [selectedHigh])[0].product_name).toBe('Linear')
+    expect(mergeMatches([selectedLow], [])).toEqual([selectedLow])
+    expect(mergeMatches([selectedLow], undefined)).toEqual([selectedLow])
+  })
+
+  it('accumulates matches across evaluation_state events', () => {
+    const next = applyEvaluationStreamEvent(
+      { ...baseEvaluation, matches: [selectedLow] },
+      { type: 'evaluation_state', data: { matches: [selectedHigh] } },
+    )
+    expect(next.matches.map((p) => p.product_id)).toEqual(['asana', 'linear'])
+    expect(next.match_count).toBe(2)
   })
 })

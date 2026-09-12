@@ -19,6 +19,7 @@ import {
   mapProductListResponseToPage,
   mapProductDetailToPageModel,
   mapProductAlternative,
+  mapProductFacets,
 } from './mappers'
 import { mergeProductListPage } from './pagination-state'
 
@@ -213,21 +214,33 @@ interface UseCatalogProductListOptions extends UseProductListOptions {
   initialData?: {
     products: ProductListResult['products']
     pagination: ProductListResult['pagination'] | null
+    facets?: ProductFacets | null
   }
+}
+
+interface UseCatalogProductListResult extends UseProductListResult {
+  /**
+   * Filter facets computed over the same id universe as the results (first
+   * page only). Load-more pages never carry facets, and a facets failure never
+   * fails the list, so this keeps the last facets received until a first-page
+   * response replaces them.
+   */
+  facets: ProductFacets | null
 }
 
 /**
  * Product list for the Explore Products page. The API expands a category to
  * its descendants and orders searched lists by relevance, so this is a single
- * request per page. `initialData` (server-rendered first page) skips the first
- * client fetch; `enabled=false` parks the hook while natural search owns the
- * results.
+ * request per page: the first page also asks for `include_facets` so the
+ * sidebar follows the search without a second round trip. `initialData`
+ * (server-rendered first page) skips the first client fetch; `enabled=false`
+ * parks the hook while natural search owns the results.
  */
 export function useCatalogProductList({
   enabled = true,
   initialData,
   ...options
-}: UseCatalogProductListOptions = {}): UseProductListResult {
+}: UseCatalogProductListOptions = {}): UseCatalogProductListResult {
   const {
     category,
     pricing_bucket,
@@ -255,6 +268,7 @@ export function useCatalogProductList({
   })
   const [products, setProducts] = useState<ProductListResult['products']>(initialData?.products ?? [])
   const [pagination, setPagination] = useState<ProductListResult['pagination'] | null>(initialData?.pagination ?? null)
+  const [facets, setFacets] = useState<ProductFacets | null>(initialData?.facets ?? null)
   const [loading, setLoading] = useState(!initialData)
   const [error, setError] = useState<NormalizedError | null>(null)
   const requestGuardRef = useRef(createLatestRequestGuard())
@@ -287,10 +301,13 @@ export function useCatalogProductList({
       void _offset
       void _append
 
+      const firstPage = requestOffset === 0
       const result = await clientCatalogApi.products.list({
         ...filters,
         limit: requestLimit,
         offset: requestOffset,
+        // Facets describe the first page's universe; appends reuse them.
+        include_facets: firstPage ? true : undefined,
       })
       if (!requestGuardRef.current.isLatest(requestId)) return
       if (!result.ok) {
@@ -302,6 +319,9 @@ export function useCatalogProductList({
         ? mergeProductListPage({ currentProducts, incomingProducts: mapped.products, offset: requestOffset })
         : mapped.products)
       setPagination(mapped.pagination)
+      if (firstPage && result.data.facets) {
+        setFacets(mapProductFacets(result.data.facets))
+      }
     } finally {
       if (requestGuardRef.current.isLatest(requestId)) {
         setLoading(false)
@@ -321,66 +341,7 @@ export function useCatalogProductList({
     }
   }, [fetch_])
 
-  return { products, pagination, loading, error, refetch: fetch_ }
-}
-
-interface UseProductFacetsResult {
-  facets: ProductFacets | null
-  error: NormalizedError | null
-}
-
-const facetsCache = new Map<string, { at: number; facets: ProductFacets }>()
-const FACETS_CLIENT_TTL_MS = 60_000
-
-/**
- * Filter options with counts. Backend: GET /api/v1/catalog/products/facets.
- *
- * Pass the active search so the options describe that result set — otherwise
- * the sidebar offers filters that have no overlap with the search and the
- * buyer lands on an empty page. The previous options stay on screen while a
- * new scope loads, so the sidebar never flickers empty.
- */
-export function useProductFacets(
-  initialData?: ProductFacets | null,
-  search?: string,
-): UseProductFacetsResult {
-  const scope = (search ?? '').trim().toLowerCase()
-  const [facets, setFacets] = useState<ProductFacets | null>(initialData ?? null)
-  const [error, setError] = useState<NormalizedError | null>(null)
-  const requestGuardRef = useRef(createLatestRequestGuard())
-
-  useEffect(() => {
-    // The server already resolved the unscoped options for the first paint.
-    if (!scope && initialData) return
-
-    const requestGuard = requestGuardRef.current
-    const requestId = requestGuard.begin()
-    let active = true
-
-    void (async () => {
-      const cached = facetsCache.get(scope)
-      if (cached && Date.now() - cached.at < FACETS_CLIENT_TTL_MS) {
-        if (active && requestGuard.isLatest(requestId)) setFacets(cached.facets)
-        return
-      }
-      const result = await clientCatalogApi.products.getFacets(scope || undefined)
-      if (!active || !requestGuard.isLatest(requestId)) return
-      if (result.ok) {
-        facetsCache.set(scope, { at: Date.now(), facets: result.data })
-        setFacets(result.data)
-        setError(null)
-      } else {
-        setError(result)
-      }
-    })()
-
-    return () => {
-      active = false
-      requestGuard.invalidate()
-    }
-  }, [scope, initialData])
-
-  return { facets, error }
+  return { products, pagination, facets, loading, error, refetch: fetch_ }
 }
 
 /**

@@ -1,3 +1,4 @@
+import { act } from 'react'
 import { render } from '@/test/render'
 import type { EvaluationDetail } from '@/features/ai-workspace'
 import { expect, vi } from 'vitest'
@@ -69,7 +70,7 @@ describe('SamConversation', () => {
       />,
     )
 
-    expect(view.container.textContent).toContain('SAM')
+    expect(view.container.textContent).toContain('Sam')
     expect(view.container.querySelector('h2')?.textContent).toBe(
       'Strong options',
     )
@@ -103,7 +104,7 @@ describe('SamConversation', () => {
       />,
     )
     expect(view.container.textContent).toMatch(
-      /Thoroughly comparing/,
+      /Comparing feature sets/,
     )
     await view.unmount()
   })
@@ -131,9 +132,9 @@ describe('SamConversation', () => {
 
     const status = view.container.querySelector('[role="status"]')
     expect(status?.textContent).toMatch(
-      /Thoroughly comparing/,
+      /Comparing feature sets/,
     )
-    expect(status?.querySelector('.animate-ping')).not.toBeNull()
+    expect(status?.querySelector('.pulse-dot')).not.toBeNull()
     await view.unmount()
   })
 
@@ -191,6 +192,46 @@ describe('SamConversation', () => {
     expect(view.container.textContent).not.toContain('Notion')
     expect(view.container.textContent).not.toContain('View evidence')
     expect(view.container.textContent).not.toContain('Add to shortlist')
+    await view.unmount()
+  })
+})
+
+describe('SamConversation nudges', () => {
+  const agentProducts = [
+    { product_id: 'asana', product_name: 'Asana', profile_href: null, available: true, match_score: 75, is_agent_selected: true },
+    { product_id: 'linear', product_name: 'Linear', profile_href: null, available: true, match_score: 92, is_agent_selected: true },
+  ]
+
+  it('keeps next-step nudges out of the transcript', async () => {
+    // The nudge lives in the results panel beside the products it refers to,
+    // so it suggests rather than interrupting the conversation.
+    const view = await render(
+      <SamConversation
+        evaluation={{ ...evaluation, matches: agentProducts }}
+        isSending={false}
+        onSend={() => undefined}
+        onConfirmRequirements={() => undefined}
+      />,
+    )
+    expect(view.container.querySelector('[data-testid="journey-nudge-compare"]')).toBeNull()
+    expect(view.container.querySelector('[data-testid="journey-nudge-implement"]')).toBeNull()
+    await view.unmount()
+  })
+
+  it('still renders generated briefs inline', async () => {
+    const view = await render(
+      <SamConversation
+        evaluation={{
+          ...evaluation,
+          matches: agentProducts,
+          documents: [{ doc_id: 'doc_bc_1', doc_type: 'battle_card', title: 'Asana vs Linear', html: '<h2>Overview</h2>' }],
+        }}
+        isSending={false}
+        onSend={() => undefined}
+        onConfirmRequirements={() => undefined}
+      />,
+    )
+    expect(view.container.querySelector('[data-testid="document-card"]')).not.toBeNull()
     await view.unmount()
   })
 })

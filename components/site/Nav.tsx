@@ -6,8 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Menu, X, LogOut, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useExpertApplication } from "@/features/experts/use-expert-application";
-import type { ExpertMe } from "@/features/experts/types";
+import { useExpertApplicationStage } from "@/features/experts/use-expert-application-stage";
 import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
 import { matchesPath } from "@/lib/nav-active";
 import { canSeeExpertJoinLink } from "@/lib/auth/roles";
@@ -74,15 +73,13 @@ const NAV_LINK_ACTIVE = "text-cobalt font-medium after:origin-left after:scale-x
 export function Nav() {
   const { user, signOut } = useAuth();
   const avatarUrl = useUserProfilePicture();
-  const { getApplication } = useExpertApplication();
-  const [expertState, setExpertState] = useState<{ userId: string; expert: ExpertMe | null } | null>(null);
+  const application = useExpertApplicationStage();
   const [scrolled, setScrolled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const userId = user?.id;
 
   useEffect(() => {
     const onScroll = () => {
@@ -96,22 +93,6 @@ export function Nav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Expert application state drives the CTA, same as the legacy Navbar.
-  useEffect(() => {
-    if (!userId) return;
-    const currentUserId = userId;
-    let cancelled = false;
-    async function loadExpertStatus() {
-      const result = await getApplication();
-      if (cancelled) return;
-      setExpertState({ userId: currentUserId, expert: result.ok ? result.data : null });
-    }
-    void loadExpertStatus();
-    return () => {
-      cancelled = true;
-    };
-  }, [getApplication, userId]);
-
   useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
       if (!profileRef.current?.contains(e.target as Node)) setProfileOpen(false);
@@ -120,33 +101,22 @@ export function Nav() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
-  const expert = expertState && expertState.userId === userId ? expertState.expert : null;
-  const status = expert?.status;
-  const showDashboard = status === "approved";
-  const showPending = status === "submitted";
-  const showComplete = status === "draft" || status === "changes_requested";
-
+  // The application stage → CTA mapping lives in useExpertApplicationStage.
   // Approved experts see their own workspace pill, matching the legacy global
   // Navbar behavior. Visitors and buyer ("user") accounts are invited to join
   // as an expert; other roles (business/admin) keep the marketplace CTA.
   const canJoinAsExpert = canSeeExpertJoinLink(user?.role, Boolean(user));
+  const showPending = application.stage === "submitted";
+  const hasApplication = application.stage !== "none";
 
-  const ctaLabel = showDashboard
-    ? "Workspace"
-    : showPending
-    ? "Application Pending"
-    : showComplete
-    ? "Complete Application"
+  const ctaLabel = hasApplication
+    ? application.label
     : canJoinAsExpert
     ? "Join as Expert"
     : "Find an Expert";
 
-  const ctaHref = showDashboard
-    ? "/workspace"
-    : showComplete
-    ? "/become-expert"
-    : showPending
-    ? "#"
+  const ctaHref = hasApplication
+    ? application.href ?? "#"
     : canJoinAsExpert
     ? "/become-expert"
     : "/experts";

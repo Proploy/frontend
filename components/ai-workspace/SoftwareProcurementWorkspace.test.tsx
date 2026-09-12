@@ -5,8 +5,10 @@ import { SoftwareProcurementWorkspace } from './SoftwareProcurementWorkspace'
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
-  selectComparison: vi.fn().mockResolvedValue(true),
-  addToShortlist: vi.fn().mockResolvedValue(true),
+  requestComparisonBrief: vi.fn().mockResolvedValue(undefined),
+  requestImplementationBrief: vi.fn().mockResolvedValue(undefined),
+  exportDocumentPdf: vi.fn().mockResolvedValue(true),
+  toggleShortlist: vi.fn().mockResolvedValue(undefined),
   saveEvaluation: vi.fn().mockResolvedValue(true),
   startEvaluation: vi.fn(),
   emptyWorkspace: false,
@@ -53,6 +55,9 @@ const evaluation: EvaluationDetail = {
       available: true,
       rank: 1,
       match_score: 89,
+      // The gateway only forwards products the agent selected; the panel
+      // ignores anything without this flag.
+      is_agent_selected: true,
     },
   ],
   shortlist: [
@@ -72,6 +77,18 @@ const evaluation: EvaluationDetail = {
     },
   ],
   recommendation: null,
+  documents: [
+    {
+      doc_id: 'doc-1',
+      doc_type: 'battle_card',
+      title: 'Notion vs Asana',
+      html: '<p>Comparison body</p>',
+    },
+  ],
+  profile: {
+    goals: [{ text: 'Find project management tools' }],
+    constraints: [{ type: 'team_size', value: '12' }],
+  },
   messages: [
     {
       id: 'assistant-1',
@@ -106,7 +123,6 @@ vi.mock('@/features/ai-workspace', async (importOriginal) => {
       activeEvaluation,
       isSending: false,
       isStartingEvaluation: false,
-      selectComparison: mocks.selectComparison,
       refresh: vi.fn(),
       selectEvaluation: vi.fn(),
       newEvaluation: vi.fn(),
@@ -117,13 +133,11 @@ vi.mock('@/features/ai-workspace', async (importOriginal) => {
       sendMessage: vi.fn(),
       startEvaluation: mocks.startEvaluation,
       confirmRequirements: vi.fn(),
-      addToShortlist: mocks.addToShortlist,
-      removeFromShortlist: vi.fn(),
-      reorderShortlist: vi.fn(),
-      generateRecommendation: vi.fn(),
-      retryRegeneration: vi.fn(),
+      toggleShortlist: mocks.toggleShortlist,
+      requestComparisonBrief: mocks.requestComparisonBrief,
+      requestImplementationBrief: mocks.requestImplementationBrief,
+      exportDocumentPdf: mocks.exportDocumentPdf,
       saveEvaluation: mocks.saveEvaluation,
-      getEvidence: vi.fn(),
       }
     },
   }
@@ -134,10 +148,9 @@ describe('SoftwareProcurementWorkspace', () => {
     mocks.emptyWorkspace = false
     mocks.startEvaluation.mockReset()
     mocks.push.mockClear()
-    mocks.selectComparison.mockClear()
-    mocks.selectComparison.mockResolvedValue(true)
-    mocks.addToShortlist.mockClear()
-    mocks.addToShortlist.mockResolvedValue(true)
+    mocks.requestComparisonBrief.mockClear()
+    mocks.requestImplementationBrief.mockClear()
+    mocks.toggleShortlist.mockClear()
     mocks.saveEvaluation.mockClear()
     mocks.saveEvaluation.mockResolvedValue(true)
   })
@@ -162,74 +175,136 @@ describe('SoftwareProcurementWorkspace', () => {
     await view.unmount()
   })
 
-  it('saves canonical shortlist IDs before opening the existing compare route', async () => {
+  it('lists the products Sam returned in the results sidebar with a catalog link', async () => {
     const view = await render(<SoftwareProcurementWorkspace />)
-    const tabs = Array.from(
-      view.container.querySelectorAll<HTMLButtonElement>(
-        'button[role="tab"]',
-      ),
+    const sidebar = view.container.querySelector('aside[aria-label="Agent results"]')
+    expect(sidebar).not.toBeNull()
+    // Sam named HubSpot this turn; Notion and Asana it named in an earlier one
+    // and the buyer kept them. All three are products the buyer is deciding
+    // between, so all three are counted.
+    expect(sidebar!.textContent).toContain('3 products')
+    expect(sidebar!.textContent).toContain('HubSpot CRM')
+    expect(sidebar!.textContent).toContain('89%')
+    expect(sidebar!.querySelector('a[href="/products/canonical-hubspot"]')).not.toBeNull()
+    // The buyer's captured requirements sit above the results.
+    expect(sidebar!.querySelector('[data-testid="requirements-panel"]')?.textContent).toContain('Find project management tools')
+    // The card itself carries no navigation away from the evaluation.
+    expect(sidebar!.textContent).not.toContain('View product')
+    await view.unmount()
+  })
+
+  it('keeps a suggestion through the workspace and compares what was kept', async () => {
+    const view = await render(<SoftwareProcurementWorkspace />)
+    const sidebar = view.container.querySelector('aside[aria-label="Agent results"]')!
+    const keep = Array.from(sidebar.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Shortlist',
     )
-    const shortlistTab = tabs.find((button) =>
-      button.textContent?.startsWith('Shortlist'),
+    expect(keep).toBeDefined()
+    await act(async () => keep?.click())
+    expect(mocks.toggleShortlist).toHaveBeenCalledWith(
+      expect.objectContaining({ product_id: 'canonical-hubspot' }),
     )
-    const comparisonTab = tabs.find(
-      (button) => button.textContent === 'Comparison',
+
+    const lane = Array.from(sidebar.querySelectorAll('button')).find(
+      (b) => b.getAttribute('role') === 'tab' && b.textContent?.startsWith('Shortlist'),
     )
+    await act(async () => lane?.click())
+    // The shortlist lane hands the existing /compare page its product ids.
+    expect(
+      sidebar.querySelector('a[href="/compare?products=canonical-notion,canonical-asana"]'),
+    ).not.toBeNull()
+    await view.unmount()
+  })
 
-    expect(shortlistTab).toBeDefined()
-    expect(comparisonTab).toBeUndefined()
-    await act(async () => shortlistTab?.click())
+  it('gives a kept product a place in Matches to be put back to', async () => {
+    // Removing a product from the shortlist returns it to Matches. Sam's
+    // latest turn named only HubSpot, so without this the buyer's kept
+    // products live in the shortlist alone, and the shortlist's remove
+    // control is indistinguishable from deleting them.
+    const view = await render(<SoftwareProcurementWorkspace />)
+    const sidebar = view.container.querySelector('aside[aria-label="Agent results"]')!
 
-    const openComparison = Array.from(
-      view.container.querySelectorAll<HTMLButtonElement>('button'),
-    ).find((button) => button.textContent === 'Compare shortlist')
-    expect(openComparison).toBeDefined()
+    expect(sidebar.textContent).toContain('Notion')
+    expect(sidebar.textContent).toContain('Asana')
 
-    await act(async () => openComparison?.click())
+    const remove = sidebar.querySelector<HTMLButtonElement>(
+      'button[aria-label="Remove Notion from the shortlist"]',
+    )
+    expect(remove).toBeNull()
 
-    expect(mocks.selectComparison).toHaveBeenCalledWith([
-      'canonical-notion',
-      'canonical-asana',
-    ])
-    expect(mocks.push).toHaveBeenCalledWith(
-      '/compare?products=canonical-notion%2Ccanonical-asana',
+    const lane = Array.from(sidebar.querySelectorAll('button')).find(
+      (b) => b.getAttribute('role') === 'tab' && b.textContent?.startsWith('Shortlist'),
+    )
+    await act(async () => lane?.click())
+
+    const removeInLane = sidebar.querySelector<HTMLButtonElement>(
+      'button[aria-label="Remove Notion from the shortlist"]',
+    )
+    expect(removeInLane).not.toBeNull()
+    await act(async () => removeInLane?.click())
+
+    // The workspace hands the same toggle the Matches lane uses, so the
+    // product moves lane rather than leaving the evaluation.
+    expect(mocks.toggleShortlist).toHaveBeenCalledWith(
+      expect.objectContaining({ product_id: 'canonical-notion' }),
     )
     await view.unmount()
   })
 
-  it('wires a desktop control that can collapse and reopen decisions', async () => {
+  it('wires a desktop control that can collapse and reopen the results sidebar', async () => {
     const view = await render(<SoftwareProcurementWorkspace />)
     const findButton = (label: string) =>
       view.container.querySelector<HTMLButtonElement>(
         `button[aria-label="${label}"]`,
       )
 
-    expect(findButton('Collapse decision workspace')).not.toBeNull()
-    await act(async () =>
-      findButton('Collapse decision workspace')?.click(),
-    )
+    expect(findButton('Collapse agent results')).not.toBeNull()
+    await act(async () => findButton('Collapse agent results')?.click())
 
-    expect(findButton('Expand decision workspace')).not.toBeNull()
-    await act(async () =>
-      findButton('Expand decision workspace')?.click(),
-    )
+    expect(findButton('Expand agent results')).not.toBeNull()
+    await act(async () => findButton('Expand agent results')?.click())
 
-    expect(findButton('Collapse decision workspace')).not.toBeNull()
+    expect(findButton('Collapse agent results')).not.toBeNull()
     await view.unmount()
   })
 
-  it('sends the canonical result ID when adding to the shortlist', async () => {
+  it('routes the shortlisted implementation brief through the workspace', async () => {
     const view = await render(<SoftwareProcurementWorkspace />)
-    const addButton = Array.from(
-      view.container.querySelectorAll<HTMLButtonElement>('button'),
-    ).find((button) => button.textContent === 'Add to shortlist')
-
-    expect(addButton).toBeDefined()
-    await act(async () => addButton?.click())
-
-    expect(mocks.addToShortlist).toHaveBeenCalledWith(
-      'canonical-hubspot',
+    const sidebar = view.container.querySelector('aside[aria-label="Agent results"]')!
+    // The brief only exists on a kept product, so open the shortlist first.
+    const lane = Array.from(sidebar.querySelectorAll('button')).find(
+      (b) => b.getAttribute('role') === 'tab' && b.textContent?.startsWith('Shortlist'),
     )
+    await act(async () => lane?.click())
+    const action = Array.from(sidebar.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Implementation brief',
+    )
+    expect(action).toBeDefined()
+    await act(async () => action?.click())
+    expect(mocks.requestImplementationBrief).toHaveBeenCalledWith(
+      expect.objectContaining({ product_id: 'canonical-notion' }),
+    )
+    await view.unmount()
+  })
+
+  it('opens a finished brief over the workspace from the board', async () => {
+    const view = await render(<SoftwareProcurementWorkspace />)
+    const sidebar = view.container.querySelector('aside[aria-label="Agent results"]')!
+    // The brief Sam finished is visible in the board, not just in the transcript.
+    expect(sidebar.textContent).toContain('Notion vs Asana')
+    expect(view.container.querySelector('[role="dialog"]')).toBeNull()
+
+    const open = sidebar.querySelector<HTMLButtonElement>('button[aria-label="Open Notion vs Asana"]')
+    expect(open).not.toBeNull()
+    await act(async () => open?.click())
+
+    const dialog = view.container.querySelector('[role="dialog"]')
+    expect(dialog).not.toBeNull()
+    expect(dialog!.textContent).toContain('Notion vs Asana')
+
+    const close = view.container.querySelector<HTMLButtonElement>('button[aria-label="Close brief"]')
+    await act(async () => close?.click())
+    expect(view.container.querySelector('[role="dialog"]')).toBeNull()
     await view.unmount()
   })
 

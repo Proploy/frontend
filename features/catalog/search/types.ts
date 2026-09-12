@@ -2,6 +2,8 @@
 // Backend: KeywordSearchRequest, KeywordSearchResponse, KeywordSearchResult, CatalogSearchRequest, CatalogSearchResponse, CatalogSearchResult, NaturalSearchRequest
 // Source: service-apis/modules/catalog/search/models.py + modules/catalog/models.py
 
+import type { ProductFacetsResponse } from '../products/types'
+
 export type SearchMode = 'keyword' | 'natural'
 
 export interface KeywordSearchRequest {
@@ -57,6 +59,8 @@ export interface NaturalSearchRequest {
   implementation_complexity?: string[]
   min_rating?: number
   max_starting_price_usd?: number
+  /** Attach facets computed over the ids the search matched. */
+  include_facets?: boolean
 }
 
 export interface CatalogSearchResult {
@@ -81,6 +85,6 @@ export interface CatalogSearchResult {
 export interface CatalogSearchResponse {
   count: number
   results: CatalogSearchResult[]
-  facets: Record<string, unknown> | null
+  facets: ProductFacetsResponse | null
   note: string | null
 }

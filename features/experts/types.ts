@@ -1,8 +1,92 @@
+export interface ExpertSummary {
+  id: string
+  displayName: string
+  profilePictureUrl: string | null
+}
+
+export interface ExpertSummaryResponse {
+  results: ExpertSummary[]
+}
+
 export type ExpertProjectFileUploadResponse = {
   storageKey: string
   fileName: string
   fileContentType: string
   fileSizeBytes: number
+}
+
+export type SocialPlatform = 'linkedin' | 'github' | 'twitter' | 'youtube' | 'website' | 'dribbble' | 'behance' | 'other'
+
+export interface SocialLink {
+  platform: SocialPlatform
+  url: string
+}
+
+// One certification held on a product. `linkId` points at an uploaded
+// expert_link(linkType=certification) when a file backs it.
+export interface ExpertCertification {
+  name: string
+  issuer?: string | null
+  year?: number | null
+  credentialUrl?: string | null
+  linkId?: string | null
+}
+
+// Source of truth for what an expert works on. The server derives
+// primaryPlatforms / secondaryPlatforms and the platform tags from it.
+export interface ExpertProductExpertiseInput {
+  id?: string | null
+  productId?: string | null
+  productName: string
+  isPrimary: boolean
+  yearsExperience?: number | null
+  projectsCompleted?: number | null
+  certifications: ExpertCertification[]
+  industryFit?: string[]
+}
+
+export interface ExpertProductExpertiseResponse extends ExpertProductExpertiseInput {
+  id: string
+  sortOrder: number
+}
+
+export type ExpertApplicationStatus =
+  | 'draft'
+  | 'submitted'
+  | 'changes_requested'
+  | 'approved'
+  | 'rejected'
+
+export type ExpertProgressSectionKey =
+  | 'identity'
+  | 'products'
+  | 'experience'
+  | 'socials'
+  | 'evidence'
+  | 'availability'
+  | 'agreements'
+
+export interface ExpertProgressSection {
+  key: ExpertProgressSectionKey
+  label: string
+  complete: boolean
+  missing: string[]
+}
+
+export interface ExpertChangeRequest {
+  id: string
+  notes?: string | null
+  createdAt: string
+}
+
+// Computed by the server on every read of the application; never stored.
+export interface ExpertProgress {
+  stage: string
+  percentComplete: number
+  sections: ExpertProgressSection[]
+  canSubmit: boolean
+  submitBlockers: string[]
+  changeRequests: ExpertChangeRequest[]
 }
 
 export type ApplicationDocumentType = 'intro_video' | 'portfolio' | 'certification'
@@ -49,6 +133,11 @@ export interface ExpertProfileUpdateRequest {
   schedulingLink?: string | null
   schedulingProvider?: string | null
   schedulingLinkEnabled?: boolean
+  productExpertise?: ExpertProductExpertiseInput[]
+  socialLinks?: SocialLink[]
+  regionsServed?: string[]
+  earliestStartDate?: string | null
+  remoteOnly?: boolean
 }
 
 // Expert application draft response
@@ -89,6 +178,14 @@ export interface ExpertApplicationResponse {
   schedulingProvider?: string | null
   schedulingLink?: string | null
   schedulingLinkEnabled?: boolean
+  socialLinks?: SocialLink[]
+  productExpertise?: ExpertProductExpertiseResponse[]
+  regionsServed?: string[]
+  earliestStartDate?: string | null
+  remoteOnly?: boolean
+  lastStepKey?: string | null
+  submittedAt?: string | null
+  progress?: ExpertProgress | null
 }
 
 // Expert dashboard response
@@ -124,6 +221,9 @@ export interface ExpertProjectInput {
   fileName?: string | null
   fileContentType?: string | null
   fileSizeBytes?: number | null
+  // Product the project was delivered on and the client's industry.
+  platform?: string | null
+  clientIndustry?: string | null
 }
 
 export interface ExpertDraftRequest {
@@ -155,6 +255,12 @@ export interface ExpertDraftRequest {
   schedulingProvider?: string | null
   schedulingLink?: string | null
   schedulingLinkEnabled?: boolean
+  socialLinks?: SocialLink[]
+  productExpertise?: ExpertProductExpertiseInput[]
+  regionsServed?: string[]
+  earliestStartDate?: string | null
+  remoteOnly?: boolean
+  lastStepKey?: string | null
 }
 
 export interface ExpertApplyRequest extends ExpertDraftRequest {
@@ -189,6 +295,8 @@ export interface ExpertProjectResponse {
   fileName?: string | null
   fileContentType?: string | null
   fileSizeBytes?: number | null
+  platform?: string | null
+  clientIndustry?: string | null
 }
 
 export interface ExpertPublic {
@@ -203,6 +311,7 @@ export interface ExpertPublic {
   yearsExperience?: number | null
   projectsCompletedTotal?: number | null
   introVideoLink?: string | null
+  availabilityHoursPerWeek?: number | null
   availabilityNotes?: string | null
   whyPlatform?: string | null
   uniqueStrength?: string | null
@@ -221,6 +330,11 @@ export interface ExpertPublic {
   schedulingLink?: string | null
   schedulingProvider?: string | null
   schedulingLinkEnabled?: boolean
+  socialLinks?: SocialLink[]
+  productExpertise?: ExpertProductExpertiseResponse[]
+  regionsServed?: string[]
+  earliestStartDate?: string | null
+  remoteOnly?: boolean
 }
 
 export interface ExpertMe {
@@ -260,6 +374,14 @@ export interface ExpertMe {
   schedulingProvider?: string | null
   schedulingLink?: string | null
   schedulingLinkEnabled?: boolean
+  socialLinks?: SocialLink[]
+  productExpertise?: ExpertProductExpertiseResponse[]
+  regionsServed?: string[]
+  earliestStartDate?: string | null
+  remoteOnly?: boolean
+  lastStepKey?: string | null
+  submittedAt?: string | null
+  progress?: ExpertProgress | null
 }
 
 // View model for expert listing (explore-experts page)
@@ -287,10 +409,45 @@ export interface ExpertListItem {
   schedulingLinkEnabled?: boolean
 }
 
+// ─── Directory facets ────────────────────────────────────────────────────
+// Mirrors experts/browse/models.py (ExpertFacets). Counts are disjunctive:
+// each group is counted with every *other* applied filter still in force.
+
+export interface ExpertFacetOption {
+  value: string
+  label: string
+  count: number
+  selected: boolean
+  logoUrl?: string | null
+  industryFit?: string[]
+}
+
+export interface ExpertFacetGroup {
+  /** `exclusive` is a single-select pair — choosing both would filter nothing. */
+  selection: 'disjunctive' | 'threshold' | 'boolean' | 'exclusive'
+  options: ExpertFacetOption[]
+}
+
+export interface ExpertFacetScope {
+  search?: string | null
+  /** Approved experts in scope (search-matched when a search is given). */
+  universe: number
+  /** Experts matching every applied filter. */
+  matched: number
+}
+
+/** Group keys are the server's: products, product_years, industries, … */
+export interface ExpertFacets {
+  scope: ExpertFacetScope
+  groups: Record<string, ExpertFacetGroup>
+}
+
 // API response wrapper for list
 export interface ExpertListResponse {
   experts: ExpertListItem[]
+  count?: number
   total?: number
   page?: number
   limit?: number
+  facets?: ExpertFacets | null
 }

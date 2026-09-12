@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowUpRight,
+  Award,
   BadgeCheck,
   Briefcase,
   CheckCircle2,
@@ -24,10 +25,16 @@ import FavoriteToggle from '@/components/personalization/FavoriteToggle'
 import { Nav } from '@/components/site/Nav'
 import { InlineVideo } from '@/components/media/InlineVideo'
 import { useExpertProfile } from '@/features/experts/use-expert-profile'
-import type { ExpertLinkResponse, ExpertProjectResponse, ExpertPublic } from '@/features/experts/types'
+import type {
+  ExpertLinkResponse,
+  ExpertProductExpertiseResponse,
+  ExpertProjectResponse,
+  ExpertPublic,
+} from '@/features/experts/types'
 import { useRecentlyViewed } from '@/features/users'
 import { useStandaloneCurrentUserRole, useWorkspace } from '@/features/workspace'
 import { resolveExpertPublicResourceUrl } from '@/features/experts/public-resource'
+import { socialRuleFor } from '@/features/experts/social-links'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
 const BUTTON_SKEUO_SHADOW =
@@ -46,8 +53,16 @@ function getExpertise(profile: ExpertPublic) {
     ...profile.industryExpertise,
     ...profile.preferredProjectTypes,
     ...profile.toolsStack,
-    ...profile.tags.map((tag) => tag.tagValue),
+    // Credentials render as their own section below, so they are excluded here
+    // rather than flattened into the expertise cloud.
+    ...profile.tags.filter((tag) => tag.tagType !== 'certification').map((tag) => tag.tagValue),
   ])
+}
+
+function getCertifications(profile: ExpertPublic) {
+  return unique(
+    profile.tags.filter((tag) => tag.tagType === 'certification').map((tag) => tag.tagValue),
+  )
 }
 
 function isSocialLink(link: ExpertLinkResponse) {
@@ -115,11 +130,32 @@ export default function ExpertProfilePage() {
   const derived = useMemo(() => {
     if (!profile) return null
     const expertise = getExpertise(profile)
+    const certifications = getCertifications(profile)
     const visibleLinks = profile.links.filter((link) => Boolean(resolveExpertPublicResourceUrl(link.url)))
     const socialLinks = visibleLinks.filter(isSocialLink)
-    const professionalLinks = visibleLinks.filter((link) => !isSocialLink(link))
+    const certificateFiles = visibleLinks.filter((link) => link.linkType === 'certification')
+    const professionalLinks = visibleLinks.filter(
+      (link) => !isSocialLink(link) && link.linkType !== 'certification',
+    )
     const portfolioLink = firstPortfolioLink(profile.links)
-    return { expertise, socialLinks, professionalLinks, portfolioLink }
+    // The wizard writes socials to the socialLinks JSONB; expert_link rows are
+    // the legacy path and still carry professional links. Merge both, keyed by
+    // URL so a link saved through either route is listed once.
+    const publicLinks: { key: string; url: string; label: string }[] = []
+    const seen = new Set<string>()
+    for (const social of profile.socialLinks ?? []) {
+      const url = resolveExpertPublicResourceUrl(social.url)
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      publicLinks.push({ key: url, url, label: socialRuleFor(social.platform).label })
+    }
+    for (const link of [...socialLinks, ...professionalLinks]) {
+      const url = resolveExpertPublicResourceUrl(link.url)
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      publicLinks.push({ key: link.id, url, label: labelForLinkType(link.linkType) })
+    }
+    return { expertise, certifications, certificateFiles, publicLinks, portfolioLink }
   }, [profile])
 
   const isOwnProfile = Boolean(profile && currentUser.expert?.id === profile.id)
@@ -205,7 +241,14 @@ export default function ExpertProfilePage() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-[30px] leading-[38px] text-[#181d27]">{profile.displayName}</h1>
+            <div className="flex flex-wrap items-center gap-[10px]">
+              <h1 className="font-semibold text-[30px] leading-[38px] text-[#181d27]">{profile.displayName}</h1>
+              {profile.entityType ? (
+                <span className="inline-flex items-center rounded-full border border-[#e9eaeb] bg-[#fafafa] px-[10px] py-[2px] text-[13px] leading-[20px] font-medium text-[#414651]">
+                  {profile.entityType}
+                </span>
+              ) : null}
+            </div>
             {profile.headline ? (
               <p className="mt-[4px] font-normal text-[18px] leading-[28px] text-[#535862]">{profile.headline}</p>
             ) : null}
@@ -281,6 +324,18 @@ export default function ExpertProfilePage() {
               <AboutGrid profile={profile} />
             </ProfileSection>
 
+            <ProfileSection title="Products & certifications">
+              {profile.productExpertise && profile.productExpertise.length > 0 ? (
+                <div className="grid grid-cols-1 gap-[14px]">
+                  {profile.productExpertise.map((product) => (
+                    <ProductExpertiseCard key={product.id ?? product.productName} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyText>No products shared yet.</EmptyText>
+              )}
+            </ProfileSection>
+
             <ProfileSection title="Expertise">
               {derived.expertise.length > 0 ? (
                 <div className="flex flex-wrap gap-[8px]">
@@ -295,9 +350,53 @@ export default function ExpertProfilePage() {
                   ))}
                 </div>
               ) : (
-                <EmptyText>No expertise tags returned by service-apis.</EmptyText>
+                <EmptyText>{profile.displayName} hasn’t listed their areas of expertise yet.</EmptyText>
               )}
             </ProfileSection>
+
+            {derived.certifications.length > 0 || derived.certificateFiles.length > 0 ? (
+              <ProfileSection title="Credentials">
+                <div className="flex flex-col gap-[14px]">
+                  {derived.certifications.length > 0 ? (
+                    <div className="flex flex-wrap gap-[8px]">
+                      {derived.certifications.map((name) => (
+                        <span
+                          key={name}
+                          className="inline-flex items-center gap-[6px] rounded-[8px] border border-[#e9eaeb] bg-[#fafafa] px-[10px] py-[6px] font-medium text-[14px] leading-[20px] text-[#414651]"
+                        >
+                          <Award size={15} className="text-[#717680]" />
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {derived.certificateFiles.map((link) => (
+                    <a
+                      key={link.id}
+                      href={resolveExpertPublicResourceUrl(link.url) ?? undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] bg-white px-[14px] py-[12px] hover:border-[#b2ccff]"
+                    >
+                      <span className="inline-flex min-w-0 items-center gap-[8px]">
+                        <BadgeCheck size={16} className="shrink-0 text-[#717680]" />
+                        <span className="truncate text-[14px] leading-[20px] font-medium text-[#414651]">
+                          {link.fileName ?? 'Certificate'}
+                        </span>
+                      </span>
+                      <ExternalLink size={16} className="shrink-0 text-[#717680]" />
+                    </a>
+                  ))}
+
+                  {derived.certifications.length > 0 ? (
+                    <p className="text-[13px] leading-[18px] text-[#717680]">
+                      Credentials listed by {profile.displayName} and not yet verified by Proploy.
+                    </p>
+                  ) : null}
+                </div>
+              </ProfileSection>
+            ) : null}
           </div>
 
           <aside className="flex flex-col gap-[24px]">
@@ -309,8 +408,12 @@ export default function ExpertProfilePage() {
                   ))}
                 </div>
               ) : (
-                <EmptyText>No projects returned by service-apis.</EmptyText>
+                <EmptyText>No portfolio projects shared yet.</EmptyText>
               )}
+            </ProfileSection>
+
+            <ProfileSection title="Availability">
+              <AvailabilityGrid profile={profile} />
             </ProfileSection>
 
             <ProfileSection title="Contact">
@@ -331,25 +434,25 @@ export default function ExpertProfilePage() {
             </ProfileSection>
 
             <ProfileSection title="Links">
-              {derived.socialLinks.length + derived.professionalLinks.length > 0 ? (
+              {derived.publicLinks.length > 0 ? (
                 <div className="flex flex-col gap-[10px]">
-                  {[...derived.socialLinks, ...derived.professionalLinks].map((link) => (
+                  {derived.publicLinks.map((link) => (
                     <a
-                      key={link.id}
-                      href={resolveExpertPublicResourceUrl(link.url) ?? undefined}
+                      key={link.key}
+                      href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] bg-white px-[14px] py-[12px] hover:border-[#b2ccff]"
                     >
                       <span className="truncate text-[14px] leading-[20px] font-medium text-[#414651] capitalize">
-                        {labelForLinkType(link.linkType)}
+                        {link.label}
                       </span>
                       <ExternalLink size={16} className="shrink-0 text-[#717680]" />
                     </a>
                   ))}
                 </div>
               ) : (
-                <EmptyText>No links returned by service-apis.</EmptyText>
+                <EmptyText>No public links shared yet.</EmptyText>
               )}
             </ProfileSection>
           </aside>
@@ -491,19 +594,135 @@ function AboutGrid({ profile }: { profile: ExpertPublic }) {
     { label: 'Ideal clients', value: profile.idealClients },
     { label: 'Biggest win', value: profile.biggestWin },
     { label: 'Availability notes', value: profile.availabilityNotes },
-  ].filter((row) => row.value)
-
-  if (rows.length === 0) return <EmptyText>No about fields returned by service-apis.</EmptyText>
+  ]
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
       {rows.map((row) => (
         <div key={row.label} className="rounded-[12px] bg-[#fafafa] p-[16px]">
           <p className="text-[13px] leading-[18px] font-medium text-[#717680]">{row.label}</p>
-          <p className="mt-[6px] whitespace-pre-line text-[15px] leading-[22px] text-[#414651]">{row.value}</p>
+          {row.value ? (
+            <p className="mt-[6px] whitespace-pre-line text-[15px] leading-[22px] text-[#414651]">{row.value}</p>
+          ) : (
+            <p className="mt-[6px]">
+              <NotSharedYet />
+            </p>
+          )}
         </div>
       ))}
     </div>
+  )
+}
+
+function ProductExpertiseCard({ product }: { product: ExpertProductExpertiseResponse }) {
+  const stats = [
+    { label: 'Years', value: product.yearsExperience },
+    { label: 'Projects', value: product.projectsCompleted },
+  ]
+
+  return (
+    <article className="rounded-[12px] border border-[#e9eaeb] bg-[#fafafa] p-[18px]">
+      <div className="flex flex-wrap items-center gap-[8px]">
+        <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{product.productName}</p>
+        <span
+          className={`inline-flex items-center rounded-full border px-[8px] py-[1px] text-[12px] leading-[18px] font-medium ${
+            product.isPrimary
+              ? 'border-[#b2ccff] bg-[#eff4ff] text-[#004eeb]'
+              : 'border-[#e9eaeb] bg-white text-[#717680]'
+          }`}
+        >
+          {product.isPrimary ? 'Primary' : 'Secondary'}
+        </span>
+      </div>
+
+      <div className="mt-[12px] flex flex-wrap gap-[24px]">
+        {stats.map((stat) => (
+          <div key={stat.label}>
+            <p className="text-[13px] leading-[18px] font-medium text-[#717680]">{stat.label}</p>
+            {typeof stat.value === 'number' ? (
+              <p className="mt-[2px] text-[15px] leading-[22px] font-semibold text-[#181d27]">{stat.value}</p>
+            ) : (
+              <p className="mt-[2px]">
+                <NotSharedYet />
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {product.industryFit && product.industryFit.length > 0 && (
+        <div className="mt-[14px]">
+          <p className="text-[13px] leading-[18px] font-medium text-[#717680]">Industries served</p>
+          <div className="mt-[6px] flex flex-wrap gap-[4px]">
+            {product.industryFit.map((industry) => (
+              <span
+                key={industry}
+                className="inline-flex items-center rounded-md border border-[#e9eaeb] bg-white px-[8px] py-[2px] text-[12px] leading-[18px] font-medium text-[#414651]"
+              >
+                {industry}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-[14px]">
+        <p className="text-[13px] leading-[18px] font-medium text-[#717680]">Certifications</p>
+        {product.certifications.length > 0 ? (
+          <ul className="mt-[6px] flex flex-col gap-[6px]">
+            {product.certifications.map((certification, index) => (
+              <li key={`${certification.name}-${index}`} className="text-[14px] leading-[20px] text-[#414651]">
+                <span className="font-medium text-[#181d27]">{certification.name}</span>
+                {certification.issuer ? <span> · {certification.issuer}</span> : null}
+                {certification.year ? <span> · {certification.year}</span> : null}
+                {certification.credentialUrl ? (
+                  <a
+                    href={certification.credentialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-[6px] inline-flex items-center gap-[4px] font-semibold text-[#004eeb] hover:underline"
+                  >
+                    Verify
+                    <ExternalLink size={13} />
+                  </a>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-[4px]">
+            <NotSharedYet />
+          </p>
+        )}
+      </div>
+    </article>
+  )
+}
+
+function AvailabilityGrid({ profile }: { profile: ExpertPublic }) {
+  const rows: { label: string; value: React.ReactNode }[] = [
+    { label: 'Timezone', value: profile.timezone },
+    {
+      label: 'Regions served',
+      value: profile.regionsServed?.length ? profile.regionsServed.join(', ') : null,
+    },
+    { label: 'Remote only', value: profile.remoteOnly ? 'Yes' : null },
+    {
+      label: 'Weekly availability',
+      value: profile.availabilityHoursPerWeek ? `${profile.availabilityHoursPerWeek} hours` : null,
+    },
+    { label: 'Earliest start', value: profile.earliestStartDate },
+  ]
+
+  return (
+    <dl className="flex flex-col gap-[12px]">
+      {rows.map((row) => (
+        <div key={row.label} className="flex items-baseline justify-between gap-[12px]">
+          <dt className="text-[13px] leading-[18px] font-medium text-[#717680]">{row.label}</dt>
+          <dd className="text-right text-[15px] leading-[22px] text-[#414651]">{row.value || <NotSharedYet />}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -550,4 +769,13 @@ function EmptyText({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[14px] leading-[20px] text-[#717680]">{children}</p>
   )
+}
+
+/**
+ * Field-level counterpart to EmptyText. A profile shows every question the
+ * onboarding asks, so a blank answer reads as "not shared yet" rather than
+ * vanishing — a buyer can tell an unanswered question from one with no answer.
+ */
+function NotSharedYet() {
+  return <span className="text-[15px] leading-[22px] italic text-[#a4a7ae]">Not shared yet</span>
 }

@@ -3,27 +3,16 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+import { cleanMarkdown } from '@/features/ai-workspace/clean-markdown'
+
 function isExternalHref(href: string | undefined): boolean {
   return Boolean(href && /^https?:\/\//i.test(href))
-}
-
-function cleanMarkdown(text: string): string {
-  if (!text) return ''
-  return text
-    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
-    .replace(/```(?:json)?\s*\{\s*"(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary)"[\s\S]*?\}\s*```/gi, '')
-    .replace(/\{\s*"(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary)"[\s\S]*?\}/gi, '')
-    .replace(/(?:SELECTED_PRODUCT_IDS|tool_name|tool_id|candidate_data|artifact_proposal|needs_profile_summary):\s*(?:\[|\{)[\s\S]*?(?:\]|\})/gi, '')
-    .replace(/```(?:json)?\s*\[\s*\{\s*"product_id"[\s\S]*?\]\s*```/gi, '')
-    .replace(/(?:,\s*)?\{\s*"product_id"[\s\S]*?\}(?:\s*,)?/gi, '')
-    .replace(/\[\s*\]/gi, '')
-    .trim()
 }
 
 export function MarkdownMessage({ content }: { content: string }) {
   const sanitized = cleanMarkdown(content)
   return (
-    <div className="min-w-0 text-[15px] leading-[24px] text-[#181d27]">
+    <div className="min-w-0 text-[15px] leading-[24px] text-ink">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -55,7 +44,7 @@ export function MarkdownMessage({ content }: { content: string }) {
           ),
           li: ({ children }) => <li className="pl-[2px]">{children}</li>,
           blockquote: ({ children }) => (
-            <blockquote className="my-[10px] border-l-2 border-[#84adff] bg-[#f5f8ff] px-[12px] py-[8px] text-[#414651]">
+            <blockquote className="my-[10px] border-l-2 border-cobalt/40 bg-cobalt-soft/50 px-[12px] py-[8px] text-ink-soft">
               {children}
             </blockquote>
           ),
@@ -66,7 +55,7 @@ export function MarkdownMessage({ content }: { content: string }) {
                 href={href}
                 target={external ? '_blank' : undefined}
                 rel={external ? 'noreferrer noopener' : undefined}
-                className="font-medium text-[#155eef] underline decoration-[#84adff] underline-offset-2 hover:text-[#0e4cc7]"
+                className="font-medium text-cobalt underline decoration-cobalt/40 underline-offset-2 hover:text-cobalt-deep"
               >
                 {children}
               </a>
@@ -79,7 +68,7 @@ export function MarkdownMessage({ content }: { content: string }) {
                 className={
                   fenced
                     ? `${className ?? ''} text-[13px] leading-[20px] text-[#f5f5f5]`
-                    : 'rounded-[4px] bg-[#f2f4f7] px-[5px] py-[2px] text-[13px] text-[#344054]'
+                    : 'rounded-[4px] bg-paper-deep px-[5px] py-[2px] text-[13px] text-ink-soft'
                 }
               >
                 {children}
@@ -87,29 +76,29 @@ export function MarkdownMessage({ content }: { content: string }) {
             )
           },
           pre: ({ children }) => (
-            <pre className="my-[10px] max-w-full overflow-x-auto rounded-[8px] bg-[#181d27] p-[12px]">
+            <pre className="my-[10px] max-w-full overflow-x-auto rounded-[8px] bg-ink p-[12px]">
               {children}
             </pre>
           ),
           table: ({ children }) => (
-            <div className="my-[10px] max-w-full overflow-x-auto rounded-[8px] border border-[#e9eaeb]">
+            <div className="my-[10px] max-w-full overflow-x-auto rounded-[8px] border border-border">
               <table className="w-full border-collapse text-left text-[13px] leading-[20px]">
                 {children}
               </table>
             </div>
           ),
-          thead: ({ children }) => <thead className="bg-[#f5f8ff]">{children}</thead>,
+          thead: ({ children }) => <thead className="bg-cobalt-soft/50">{children}</thead>,
           th: ({ children }) => (
-            <th className="border-b border-[#e9eaeb] px-[10px] py-[8px] font-semibold text-[#414651]">
+            <th className="border-b border-border px-[10px] py-[8px] font-semibold text-ink-soft">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border-b border-[#e9eaeb] px-[10px] py-[8px] align-top last:border-b-0">
+            <td className="border-b border-border px-[10px] py-[8px] align-top last:border-b-0">
               {children}
             </td>
           ),
-          hr: () => <hr className="my-[16px] border-0 border-t border-[#e9eaeb]" />,
+          hr: () => <hr className="my-[16px] border-0 border-t border-border" />,
         }}
       >
         {sanitized}

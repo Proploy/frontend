@@ -44,20 +44,20 @@ export function RequirementSummaryCard({
   )
 
   return (
-    <section className="rounded-2xl border border-[#d5d7da] bg-white shadow-[0_4px_16px_rgba(10,13,18,0.05)]">
-      <div className="flex items-start justify-between gap-4 border-b border-[#e9eaeb] px-4 py-3.5">
+    <section className="rounded-2xl border border-border bg-white shadow-[0_4px_16px_rgba(10,13,18,0.05)]">
+      <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3.5">
         <div>
           <div className="flex items-center gap-2">
             <CheckCircle2
               size={17}
-              className="text-[#079455]"
+              className="text-cobalt-deep"
               aria-hidden
             />
-            <h3 className="text-sm font-semibold text-[#181d27]">
+            <h3 className="text-sm font-semibold text-ink">
               Requirements captured
             </h3>
           </div>
-          <p className="mt-1 text-xs text-[#717680]">
+          <p className="mt-1 text-xs text-ink-soft/80">
             {missing.length
               ? `${missing.length} critical ${missing.length === 1 ? 'detail' : 'details'} still needed`
               : 'Ready to confirm'}
@@ -66,7 +66,7 @@ export function RequirementSummaryCard({
         <button
           type="button"
           onClick={onEdit}
-          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#d5d7da] px-2.5 text-xs font-semibold text-[#414651] hover:bg-[#fafafa]"
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-semibold text-ink-soft hover:bg-paper"
         >
           <Pencil size={13} />
           Edit requirements
@@ -76,10 +76,10 @@ export function RequirementSummaryCard({
         {rows.map(([key, field]) => (
           <div
             key={key}
-            className="grid grid-cols-[125px_1fr] gap-3 border-b border-[#f2f4f7] py-2.5 text-sm last:border-0"
+            className="grid grid-cols-[125px_1fr] gap-3 border-b border-border py-2.5 text-sm last:border-0"
           >
-            <dt className="text-[#717680]">{LABELS[key]}</dt>
-            <dd className="font-medium text-[#344054]">
+            <dt className="text-ink-soft/80">{LABELS[key]}</dt>
+            <dd className="font-medium text-ink-soft">
               {field.state === 'no_requirement'
                 ? 'No requirement'
                 : displayValue(field.value)}
@@ -88,14 +88,14 @@ export function RequirementSummaryCard({
         ))}
       </dl>
       {!confirmed && missing.length === 0 ? (
-        <div className="flex items-center justify-between gap-4 border-t border-[#e9eaeb] px-4 py-3">
-          <p className="text-xs text-[#535862]">
+        <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-3">
+          <p className="text-xs text-ink-soft">
             Confirm this summary to discover matching products.
           </p>
           <button
             type="button"
             onClick={onConfirm}
-            className="h-9 shrink-0 rounded-lg bg-[#155eef] px-3 text-sm font-semibold text-white hover:bg-[#0e4cc7]"
+            className="h-9 shrink-0 rounded-lg bg-cobalt px-3 text-sm font-semibold text-white hover:bg-cobalt-deep"
           >
             Confirm requirements
           </button>

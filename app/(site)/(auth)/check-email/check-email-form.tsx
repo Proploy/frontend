@@ -1,0 +1,98 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+import { resendVerification } from '@/lib/auth/browser-client'
+
+/**
+ * `email` and `redirectTo` come from the server page rather than
+ * `useSearchParams`, so the brand panel and this form both render in the
+ * initial HTML — no Suspense skeleton on first paint.
+ */
+export function CheckEmailForm({
+  email,
+  enterCodeHref,
+  signInHref,
+}: {
+  email: string
+  enterCodeHref: string
+  signInHref: string
+}) {
+  const router = useRouter()
+
+  const [isResending, setIsResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState<string | null>(null)
+
+  const handleResend = async () => {
+    if (!email || isResending) return
+    setIsResending(true)
+    setResendMessage(null)
+    
+    try {
+      const { error } = await resendVerification(email)
+      setResendMessage(
+        error
+          ? error.message
+          : 'Verification email resent. Check your inbox.',
+      )
+    } finally {
+      setIsResending(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="mb-8">
+          <h2 className="font-dm-sans font-semibold text-[30px] leading-[38px] text-[#181d27] mb-2">
+            Check your email
+          </h2>
+          <p className="font-inter text-[16px] text-[#535862]">
+            {email
+              ? `We sent a verification link to ${email}.`
+              : 'We sent a verification link to your email address.'}
+          </p>
+        </div>
+
+        {resendMessage ? (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm" role="status">
+            {resendMessage}
+          </div>
+        ) : null}
+
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => router.push(enterCodeHref)}
+            className="w-full bg-[#155eef] text-white font-inter font-semibold text-[16px] py-2.5 rounded-lg hover:bg-[#1248d4] transition"
+          >
+            Enter code manually
+          </button>
+
+          <p className="text-center font-inter text-[14px] text-[#535862]">
+            Didn&apos;t receive the email?{' '}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={!email || isResending}
+              className="text-[#004eeb] font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isResending ? 'Resending...' : 'Click to resend'}
+            </button>
+          </p>
+
+          <button
+            type="button"
+            onClick={() => router.push(signInHref)}
+            className="w-full text-[#535862] font-inter font-semibold text-[14px] py-2.5 hover:text-gray-900 transition flex items-center justify-center gap-2"
+          >
+            <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to log in
+          </button>
+        </div>
+    </>
+  )
+}
+

@@ -7,10 +7,9 @@ import { Nav } from '@/components/site/Nav'
 import { Footer } from '@/components/site/Footer'
 import { Reveal } from '@/components/site/Reveal'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { useApprovedExperts } from '@/features/experts/use-approved-experts'
-import { useExpertKeywordSearch } from '@/features/experts/use-expert-keyword-search'
+import { useExpertDirectory } from '@/features/experts/use-expert-directory'
 import { useCatalogProductMatches } from '@/features/catalog'
-import type { ExpertListItem } from '@/features/experts/types'
+import type { ExpertFacets, ExpertListItem } from '@/features/experts/types'
 import {
   ExpertCard,
   ExpertCardSkeleton,
@@ -25,17 +24,16 @@ import {
   ENTITY_TYPE_LABELS,
   EXPERT_SORT_OPTIONS,
   countActiveExpertFilters,
-  deriveExpertFilterOptions,
-  matchesExpertFilters,
-  sortExperts,
   type ExpertFilterValues,
+  type ExpertListGroupKey,
+  type ExpertThresholdKey,
 } from '@/features/experts/filter-values'
 import {
   applyExpertFilterParams,
   parseExpertFilterParams,
 } from '@/features/experts/filter-params'
 
-const DIRECTORY_LIMIT = 100
+const DIRECTORY_LIMIT = 48
 
 export default function ExpertsPage() {
   return (
@@ -131,12 +129,14 @@ type ActiveFilterChip = {
 function buildFilterChips(
   values: ExpertFilterValues,
   onChange: (values: ExpertFilterValues) => void,
+  facets: ExpertFacets | null,
 ): ActiveFilterChip[] {
   const chips: ActiveFilterChip[] = []
-  const listChips = (
-    key: 'platforms' | 'industries' | 'projectTypes' | 'countries' | 'entityTypes',
-    label: (value: string) => string,
-  ) => {
+  // Products are filtered by catalog id, so a chip has to read its name back
+  // off the facet rather than show the id the URL carries.
+  const optionLabel = (group: string, value: string) =>
+    facets?.groups?.[group]?.options.find((option) => option.value === value)?.label ?? value
+  const listChips = (key: ExpertListGroupKey, label: (value: string) => string) => {
     values[key].forEach((value) => {
       chips.push({
         label: label(value),
@@ -144,15 +144,57 @@ function buildFilterChips(
       })
     })
   }
-  listChips('platforms', (v) => v)
+  listChips('products', (v) => optionLabel('products', v))
+  // Says "on the product" for the same reason the depth thresholds do: it is
+  // a different answer from the expert-wide industry chip beside it.
+  listChips('productIndustries', (v) => `${v} on the product`)
   listChips('industries', (v) => v)
   listChips('projectTypes', (v) => v)
   listChips('entityTypes', (v) => ENTITY_TYPE_LABELS[v] ?? v)
   listChips('countries', (v) => v)
-  if (values.minimumYears > 0) {
+  listChips('regionsServed', (v) => v)
+  listChips('timezones', (v) => v)
+
+  const thresholdChip = (key: ExpertThresholdKey, suffix: string) => {
+    if (values[key] > 0) {
+      chips.push({
+        label: `${values[key]}+ ${suffix}`,
+        clear: () => onChange({ ...values, [key]: 0 }),
+      })
+    }
+  }
+  thresholdChip('minimumYears', 'years')
+  thresholdChip('minimumProjects', 'projects')
+  thresholdChip('minimumHoursPerWeek', 'hours/week')
+  // Depth reads as a qualifier, so its chips say what it is measured on.
+  thresholdChip('minimumProductYears', 'years on the product')
+  thresholdChip('minimumProductProjects', 'projects on the product')
+
+  if (values.primaryProductOnly) {
     chips.push({
-      label: `${values.minimumYears}+ years`,
-      clear: () => onChange({ ...values, minimumYears: 0 }),
+      label: 'Primary product',
+      clear: () => onChange({ ...values, primaryProductOnly: false }),
+    })
+  }
+  if (values.productCertified) {
+    chips.push({
+      label: 'Certified on the product',
+      clear: () => onChange({ ...values, productCertified: false }),
+    })
+  }
+  if (values.certificationCount) {
+    chips.push({
+      label: optionLabel('certifications', values.certificationCount),
+      clear: () => onChange({ ...values, certificationCount: '' }),
+    })
+  }
+  if (values.remoteOnly) {
+    chips.push({ label: 'Remote only', clear: () => onChange({ ...values, remoteOnly: false }) })
+  }
+  if (values.availableFrom) {
+    chips.push({
+      label: `Available from ${values.availableFrom}`,
+      clear: () => onChange({ ...values, availableFrom: '' }),
     })
   }
   return chips
@@ -185,27 +227,20 @@ function ExpertsPageContent() {
   })
   const clearAllFilters = () => applyFilters({ ...DEFAULT_EXPERT_FILTERS, sort: filters.sort })
 
-  // Load the directory once; filters are evaluated client-side so the pill
-  // options reflect the real data and every group can be multi-select.
-  const { experts, loading, error, refetch } = useApprovedExperts({ limit: DIRECTORY_LIMIT })
-  const {
-    experts: keywordExperts,
-    loading: keywordLoading,
-    error: keywordError,
-    refetch: refetchKeywordExperts,
-  } = useExpertKeywordSearch(query, DIRECTORY_LIMIT, { sort: filters.sort })
-  const showingKeywordResults = Boolean(query.trim())
+  // Filters, sort and the facet counts are all resolved by the API. Several
+  // groups (regions served, remote only, weekly availability, earliest start)
+  // are absent from ExpertListItem, so they cannot be evaluated client-side.
+  const searchTerm = query.trim()
+  const showingKeywordResults = Boolean(searchTerm)
+  const { experts, total, facets, loading, error, refetch } = useExpertDirectory({
+    filters,
+    search: searchTerm || undefined,
+    limit: DIRECTORY_LIMIT,
+  })
 
-  const filterOptions = useMemo(() => deriveExpertFilterOptions(experts), [experts])
+  const typedExperts: ExpertListItem[] = experts
 
-  const typedExperts: ExpertListItem[] = useMemo(() => {
-    const source = showingKeywordResults ? keywordExperts : experts
-    const filtered = source.filter((expert) => matchesExpertFilters(expert, filters))
-    // Keyword results are already relevance-ordered by the API.
-    return showingKeywordResults && filters.sort === 'relevance' ? filtered : sortExperts(filtered, filters.sort)
-  }, [experts, filters, keywordExperts, showingKeywordResults])
-
-  const activeChips = useMemo(() => buildFilterChips(filters, applyFilters), [filters]) // eslint-disable-line react-hooks/exhaustive-deps
+  const activeChips = useMemo(() => buildFilterChips(filters, applyFilters, facets), [filters, facets]) // eslint-disable-line react-hooks/exhaustive-deps
   const activeFilterCount = countActiveExpertFilters(filters)
 
   // Resolve the experts' platform labels to catalog products so cards can show
@@ -225,8 +260,8 @@ function ExpertsPageContent() {
     })
   }
 
-  const directoryLoading = showingKeywordResults ? keywordLoading : loading
-  const directoryError = showingKeywordResults ? keywordError : error
+  const directoryLoading = loading
+  const directoryError = error
 
   const [ctaEmail, setCtaEmail] = useState('')
   const [ctaSent, setCtaSent] = useState(false)
@@ -303,13 +338,18 @@ function ExpertsPageContent() {
 
           <div className="pp-catalog-layout">
             <aside className="pp-filter-side" aria-label="Expert filters">
-              <ExpertFilterSidebar values={filters} onChange={applyFilters} options={filterOptions} />
+              <ExpertFilterSidebar values={filters} onChange={applyFilters} facets={facets} />
             </aside>
 
             <div className="pp-stack pp-gap-6" style={{ minWidth: 0 }}>
               <div className="pp-results-head">
                 <h3 className="pp-heading-sm">
                   {showingKeywordResults ? `Experts for "${query.trim()}"` : 'All experts'}
+                  {!directoryLoading && total > 0 && (
+                    <span className="pp-small" style={{ marginLeft: 8, color: 'var(--slate-11)' }}>
+                      {total}
+                    </span>
+                  )}
                 </h3>
                 <div className="pp-flex pp-gap-3" style={{ alignItems: 'center' }}>
                   <button
@@ -355,7 +395,7 @@ function ExpertsPageContent() {
                 <div className="pp-stack pp-gap-4" style={{ alignItems: 'center', paddingBlock: 'var(--sp-16)', textAlign: 'center' }}>
                   <p className="pp-lede">We couldn&apos;t load approved experts right now.</p>
                   <p className="pp-small">{directoryError.error.message}</p>
-                  <button type="button" onClick={showingKeywordResults ? refetchKeywordExperts : refetch} className="pp-btn pp-btn--cobalt pp-btn--inline">
+                  <button type="button" onClick={refetch} className="pp-btn pp-btn--cobalt pp-btn--inline">
                     Try again
                   </button>
                 </div>
@@ -431,7 +471,7 @@ function ExpertsPageContent() {
           key={JSON.stringify(filters)}
           open={drawerOpen}
           values={filters}
-          options={filterOptions}
+          facets={facets}
           onClose={() => setDrawerOpen(false)}
           onApply={applyFilters}
         />

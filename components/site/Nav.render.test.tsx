@@ -138,7 +138,9 @@ describe('v2 Nav hover flyouts', () => {
     const products = container.querySelector('[data-testid="products-flyout"]')
     expect(products).not.toBeNull()
     expect(products!.textContent).toContain('Curated B2B software')
-    expect(products!.querySelector('a[href="/products"]')).not.toBeNull()
+    // "Search products" points at the homepage match engine, not the catalog.
+    expect(products!.querySelector('a[href="/#match-engine"]')).not.toBeNull()
+    expect(products!.textContent).toContain('Search products')
     expect(products!.querySelector('a[href="/compare"]')).not.toBeNull()
     expect(products!.textContent).not.toContain('Browse by')
 
