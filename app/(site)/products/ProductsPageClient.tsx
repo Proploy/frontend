@@ -308,10 +308,11 @@ export default function ProductsPageClient({
   // flight the previous facets stay up (dimmed) rather than emptying the
   // sidebar; the server-rendered facets seed the very first paint.
   const activeFacets = (hasActiveSearch && naturalMode) ? naturalFacets : listFacets
+  // Adjusted during render rather than from an effect: setting it in an effect
+  // commits an empty sidebar first and then re-renders the whole grid to fill
+  // it back in. React restarts this render instead, so the swap never paints.
   const [lastFacets, setLastFacets] = useState<ProductFacets | null>(initialFacets)
-  useEffect(() => {
-    if (activeFacets) setLastFacets(activeFacets)
-  }, [activeFacets])
+  if (activeFacets && activeFacets !== lastFacets) setLastFacets(activeFacets)
   const facets = activeFacets ?? lastFacets
   const facetsBusy = loading && offset === 0
   // Only blank the grid when there is nothing to show. While a filter or
