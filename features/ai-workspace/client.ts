@@ -1,7 +1,12 @@
 'use client'
 
 import { useMemo } from 'react'
-import { ServiceApisBrowserClient } from '@/lib/service-apis/browser'
+import {
+  ServiceApisBrowserClient,
+  normalizeServiceApiError,
+  serviceApisBrowserFetch,
+  type NormalizedError,
+} from '@/lib/service-apis/browser'
 import type {
   AiWorkspaceApiResult,
   AiWorkspaceCandidate,
@@ -157,6 +162,54 @@ export async function updateAiWorkspaceEvaluation(
   )
 }
 
+export type DocumentPdfResult =
+  | { ok: true; data: { blob: Blob; filename: string } }
+  | NormalizedError
+
+function filenameFromDisposition(header: string | null, fallback: string): string {
+  if (!header) return fallback
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (utf8?.[1]) {
+    try {
+      return decodeURIComponent(utf8[1])
+    } catch {
+      return utf8[1]
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header)
+  return plain?.[1] ?? fallback
+}
+
+/**
+ * Download a brief Sam generated as PDF. The harness path on the document
+ * (`pdf_url`) is not reachable from the browser; the gateway proxies it and
+ * enforces that the document belongs to the signed-in user.
+ */
+export async function exportAiWorkspaceDocumentPdf(docId: string): Promise<DocumentPdfResult> {
+  let response: Response
+  try {
+    response = await serviceApisBrowserFetch(
+      `${AI_WORKSPACE_ROOT}/documents/${encodeURIComponent(docId)}/export/pdf`,
+      { requireAuth: true, headers: { accept: 'application/pdf' } },
+    )
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      error: { code: 'NETWORK_ERROR', message: 'Unable to reach service APIs', retryable: true },
+    }
+  }
+  if (!response.ok) return normalizeServiceApiError(response)
+  const blob = await response.blob()
+  return {
+    ok: true,
+    data: {
+      blob,
+      filename: filenameFromDisposition(response.headers.get('content-disposition'), `${docId}.pdf`),
+    },
+  }
+}
+
 export const useAiWorkspaceClient = () =>
   useMemo(
     () => ({
@@ -176,6 +229,7 @@ export const useAiWorkspaceClient = () =>
       getEvaluation: getAiWorkspaceEvaluation,
       updateEvaluation: updateAiWorkspaceEvaluation,
       updateShortlist: updateAiWorkspaceShortlist,
+      exportDocumentPdf: exportAiWorkspaceDocumentPdf,
     }),
     [],
   )

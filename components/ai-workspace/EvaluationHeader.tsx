@@ -3,10 +3,13 @@
 import { Menu, PanelRight, Save, Share2 } from 'lucide-react'
 import type { EvaluationDetail } from '@/features/ai-workspace'
 
+const ICON_BUTTON =
+  'inline-flex h-9 items-center gap-2 rounded-full border border-border bg-white px-3 text-[0.8125rem] font-medium text-ink transition-colors hover:border-cobalt/50 disabled:cursor-not-allowed disabled:opacity-50'
+
 export function EvaluationHeader({
   evaluation,
   onOpenEvaluations,
-  onOpenDecisions,
+  onOpenResults,
   onShare,
   onSave,
   canSave,
@@ -17,7 +20,7 @@ export function EvaluationHeader({
 }: {
   evaluation: EvaluationDetail | null
   onOpenEvaluations: () => void
-  onOpenDecisions: () => void
+  onOpenResults: () => void
   onShare: () => void
   onSave: () => void
   canSave: boolean
@@ -27,32 +30,24 @@ export function EvaluationHeader({
   saved: boolean
 }) {
   return (
-    <header className="flex min-h-[80px] items-center justify-between gap-4 border-b border-[#e9eaeb] bg-white px-4 sm:px-6">
+    <header className="flex min-h-[80px] items-center justify-between gap-4 border-b border-border bg-paper/85 px-4 backdrop-blur-xl sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
           onClick={onOpenEvaluations}
           aria-label="Open evaluations"
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#e9eaeb] text-[#535862] lg:hidden"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-ink lg:hidden"
         >
-          <Menu size={18} />
+          <Menu size={17} />
         </button>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-lg font-semibold text-[#181d27] sm:text-xl">
-              Software Procurement
-            </h1>
-            {evaluation?.regeneration_status === 'pending' ||
-            evaluation?.regeneration_status === 'running' ? (
-              <span className="rounded-full border border-[#b2ccff] bg-[#eff4ff] px-2 py-0.5 text-[11px] font-semibold text-[#155eef]">
-                Updating
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-0.5 truncate text-xs text-[#717680] sm:text-sm">
-            Active evaluation
-            {evaluation ? ` · ${evaluation.title}` : ''}
+          <p className="label flex items-center gap-2">
+            <span className="pulse-dot size-1.5 rounded-full bg-cobalt" aria-hidden />
+            Ask Sam
           </p>
+          <h1 className="mt-1 truncate text-[1.05rem] font-semibold text-ink">
+            {evaluation ? evaluation.title : 'New evaluation'}
+          </h1>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -60,49 +55,29 @@ export function EvaluationHeader({
           type="button"
           onClick={onShare}
           disabled={!evaluation || sharing}
-          aria-label={
-            sharing
-              ? 'Sharing evaluation'
-              : shared
-                ? 'Evaluation link copied'
-                : 'Share evaluation'
-          }
-          className="flex h-9 items-center gap-2 rounded-lg border border-[#d5d7da] bg-white px-2.5 text-sm font-semibold text-[#414651] transition hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+          aria-label={sharing ? 'Sharing evaluation' : shared ? 'Evaluation link copied' : 'Share evaluation'}
+          className={ICON_BUTTON}
         >
           <Share2 size={15} />
-          <span className="hidden sm:inline">
-            {sharing ? 'Sharing…' : shared ? 'Link copied' : 'Share'}
-          </span>
+          <span className="hidden sm:inline">{sharing ? 'Sharing…' : shared ? 'Link copied' : 'Share'}</span>
         </button>
         <button
           type="button"
           onClick={onSave}
           disabled={!evaluation || !canSave || saving}
-          aria-label={
-            saving
-              ? 'Saving evaluation'
-              : saved
-                ? 'Evaluation saved'
-                : 'Save evaluation'
-          }
-          className="flex h-9 items-center gap-2 rounded-lg border border-[#d5d7da] bg-white px-2.5 text-sm font-semibold text-[#414651] transition hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+          aria-label={saving ? 'Saving evaluation' : saved ? 'Evaluation saved' : 'Save evaluation'}
+          className={ICON_BUTTON}
         >
           <Save size={15} />
-          <span className="hidden sm:inline">
-            {saving
-              ? 'Saving…'
-              : saved
-                ? 'Saved'
-                : 'Save evaluation'}
-          </span>
+          <span className="hidden sm:inline">{saving ? 'Saving…' : saved ? 'Saved' : 'Save evaluation'}</span>
         </button>
         <button
           type="button"
-          onClick={onOpenDecisions}
-          aria-label="Open decision workspace"
-          className="flex size-9 items-center justify-center rounded-lg border border-[#e9eaeb] text-[#535862] xl:hidden"
+          onClick={onOpenResults}
+          aria-label="Open agent results"
+          className="grid size-9 place-items-center rounded-full border border-border text-ink xl:hidden"
         >
-          <PanelRight size={18} />
+          <PanelRight size={17} />
         </button>
       </div>
     </header>

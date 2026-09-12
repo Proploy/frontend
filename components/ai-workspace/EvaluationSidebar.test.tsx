@@ -88,15 +88,14 @@ describe('EvaluationSidebar', () => {
     )
 
     const text = view.container.textContent || ''
-    expect(text).toContain('EVALUATIONS')
+    expect(text).toContain('Evaluations')
     expect(text.indexOf('Needs attention')).toBeLessThan(
       text.indexOf('In progress'),
     )
     expect(text.indexOf('In progress')).toBeLessThan(
       text.indexOf('Ready to decide'),
     )
-    expect(text).toContain('Building shortlist')
-    expect(text).toContain('4 shortlisted')
+        expect(view.container.querySelector('[aria-label="7 products"]')).not.toBeNull()
     expect(text).toContain('New evaluation')
     expect(text).not.toMatch(/\d{1,2}:\d{2}/)
 

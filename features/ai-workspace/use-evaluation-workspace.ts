@@ -10,6 +10,7 @@ import {
 
 import {
   createAiWorkspaceEvaluation,
+  exportAiWorkspaceDocumentPdf,
   getAiWorkspaceEvaluation,
   listAiWorkspaceEvaluations,
   updateAiWorkspaceEvaluation,
@@ -17,13 +18,19 @@ import {
 } from '@/features/ai-workspace/client'
 import { streamAiWorkspaceResearch } from '@/features/ai-workspace/stream'
 import { applyEvaluationStreamEvent, parseAssistantMarkdown, mergeMatches } from './evaluation-reducer'
+import { buildComparisonRequest, buildImplementationRequest } from './journey'
+import { placeSummary } from './evaluation-list'
+import {
+  applyResolvedProductNames,
+  productIdsMissingNames,
+  type ResolvedProductNames,
+} from './product-names'
+import { clientCatalogApi } from '@/features/catalog/shared/client-api'
 
 import type {
   EvaluationDetail,
-  EvaluationEvidence,
   EvaluationMessage,
   EvaluationProduct,
-  EvaluationRecommendation,
   EvaluationStreamEvent,
   EvaluationSummary,
   EvaluationWorkspaceState,
@@ -113,36 +120,43 @@ function createLocalMessage(
   }
 }
 
-function generateTitleFromMessage(message: string, count = 1): string {
-  if (!message) return `Software Evaluation #${count}`
-  const firstLine = message.split('\n')[0].trim()
-  if (firstLine.length > 36) {
-    return firstLine.slice(0, 32).trim() + '...'
-  }
-  return firstLine || `Software Evaluation #${count}`
+/** Placeholder until the gateway names the evaluation from Sam's captured goal. */
+const DEFAULT_EVALUATION_TITLE = 'New evaluation'
+
+function numberOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
-function normalizeStreamRecommendation(item: Record<string, unknown>, index = 0): EvaluationProduct {
+/**
+ * Shape a gateway product into an EvaluationProduct without inventing data.
+ * The gateway scores products from the agent's own 0-10 score; when it sends
+ * no score at all, the card simply shows none rather than a made-up number.
+ */
+function normalizeStreamRecommendation(item: Record<string, unknown>): EvaluationProduct {
   const productId = String(item.product_id || item.id || item.name || 'unknown')
-  const name = String(item.product_name || item.name || productId)
-  const baseScore = typeof item.fit_score === 'number'
-    ? item.fit_score
-    : (typeof item.match_score === 'number'
-        ? item.match_score
-        : (typeof item.similarity === 'number' ? Math.round(item.similarity * 100) : 94 - index * 4))
-  const fitScore = Math.max(65, Math.min(99, baseScore))
+  const name = typeof item.product_name === 'string'
+    ? item.product_name
+    : (typeof item.name === 'string' ? item.name : null)
+  const agentScore = numberOrNull(item.agent_score)
+  const matchScore = numberOrNull(item.match_score)
+    ?? (agentScore !== null ? Math.round(agentScore * 10) : null)
+  const reasons = Array.isArray(item.reasons)
+    ? item.reasons.map(String)
+    : (typeof item.agent_reason === 'string' ? [item.agent_reason] : [])
   return {
     product_id: productId,
     product_name: name,
     profile_href: typeof item.profile_href === 'string' ? item.profile_href : `/products/${productId}`,
-    available: true,
-    match_score: fitScore,
-    match_strength: typeof item.match_strength === 'string' ? item.match_strength : (fitScore >= 85 ? 'Strong match' : 'Good match'),
-    best_for: typeof item.best_for === 'string' ? item.best_for : (typeof item.short_description === 'string' ? item.short_description : (typeof item.agent_summary === 'string' ? item.agent_summary : undefined)),
-    reasons: Array.isArray(item.core_features)
-      ? item.core_features.map(String)
-      : (Array.isArray(item.reasons) ? item.reasons.map(String) : (typeof item.agent_summary === 'string' ? [item.agent_summary] : [])),
+    available: item.available !== false,
+    rank: numberOrNull(item.rank) ?? undefined,
+    match_score: matchScore,
+    match_strength: typeof item.match_strength === 'string' ? item.match_strength : undefined,
+    best_for: typeof item.best_for === 'string'
+      ? item.best_for
+      : (typeof item.short_description === 'string' ? item.short_description : undefined),
+    reasons,
     considerations: Array.isArray(item.considerations) ? item.considerations.map(String) : [],
+    is_agent_selected: item.is_agent_selected === true,
   }
 }
 
@@ -192,6 +206,10 @@ function mapAiEventToEvaluation(
         data: { matches, match_count: matches.length },
       }
     }
+    case 'profile':
+      return event.data.profile
+        ? { type: 'evaluation_state', data: { profile: event.data.profile } }
+        : null
     case 'evaluation_state':
       return event.data.evaluation
         ? { type: 'evaluation_state', data: event.data.evaluation }
@@ -255,27 +273,11 @@ export function useEvaluationWorkspace() {
   const upsertDetail = useCallback((detail: EvaluationDetail) => {
     rememberEvaluationId(detail.evaluation_id)
     setState((current) => {
-      const summary = summaryFromDetail(detail)
-      const summaries = [
-        summary,
-        ...current.summaries.filter(
-          (item) => item.evaluation_id !== detail.evaluation_id,
-        ),
-      ]
+      const summaries = placeSummary(current.summaries, summaryFromDetail(detail))
       const existingDetail = current.detailsById[detail.evaluation_id]
-      const mergedMatches = detail.matches.length > 0 
-        ? detail.matches.map(m => {
-            const existing = existingDetail?.matches.find(e => e.product_id === m.product_id)
-            if (existing) {
-              return { 
-                ...m, 
-                match_score: existing.match_score ?? m.match_score, 
-                reasons: existing.reasons ?? m.reasons 
-              }
-            }
-            return m
-          })
-        : (existingDetail?.matches ?? [])
+      // Incoming server matches are the agent's own selection and win outright;
+      // only keep what we already had when the server sent nothing.
+      const mergedMatches = mergeMatches(existingDetail?.matches ?? [], detail.matches)
 
       return {
         ...current,
@@ -338,6 +340,8 @@ export function useEvaluationWorkspace() {
               [detail.evaluation_id]: {
                 ...detail,
                 messages: processedMessages,
+                // Persisted agent selections win; the markdown extraction only
+                // covers sessions saved before the gateway persisted matches.
                 matches: mergeMatches(extraMatches, detail.matches ?? []),
               },
             },
@@ -364,6 +368,59 @@ export function useEvaluationWorkspace() {
     ? state.detailsById[state.activeEvaluationId] ?? null
     : null
 
+  // Resolve product names Sam's picks arrived without, once per product.
+  const resolvedNamesRef = useRef<ResolvedProductNames>({})
+  const pendingNamesRef = useRef<Set<string>>(new Set())
+  const activeMatches = activeEvaluation?.matches
+  const activeId = activeEvaluation?.evaluation_id
+  useEffect(() => {
+    if (!activeMatches || !activeId) return
+    const missing = productIdsMissingNames(activeMatches)
+    if (missing.length === 0) return
+
+    const known = missing.filter((id) => resolvedNamesRef.current[id])
+    if (known.length > 0) {
+      setState((current) => {
+        const detail = current.detailsById[activeId]
+        if (!detail) return current
+        const matches = applyResolvedProductNames(detail.matches, resolvedNamesRef.current)
+        if (matches === detail.matches) return current
+        return { ...current, detailsById: { ...current.detailsById, [activeId]: { ...detail, matches } } }
+      })
+    }
+
+    const toFetch = missing.filter(
+      (id) => !resolvedNamesRef.current[id] && !pendingNamesRef.current.has(id),
+    )
+    if (toFetch.length === 0) return
+    toFetch.forEach((id) => pendingNamesRef.current.add(id))
+    void Promise.all(
+      toFetch.map(async (id) => {
+        try {
+          const result = await clientCatalogApi.products.getDetail(id)
+          if (result.ok && result.data?.product_name) {
+            resolvedNamesRef.current[id] = {
+              product_name: result.data.product_name,
+              best_for: result.data.best_for ?? result.data.short_description ?? null,
+            }
+          }
+        } catch {
+          // Leave the ID in place; the card falls back to the catalog lookup.
+        } finally {
+          pendingNamesRef.current.delete(id)
+        }
+      }),
+    ).then(() => {
+      setState((current) => {
+        const detail = current.detailsById[activeId]
+        if (!detail) return current
+        const matches = applyResolvedProductNames(detail.matches, resolvedNamesRef.current)
+        if (matches === detail.matches) return current
+        return { ...current, detailsById: { ...current.detailsById, [activeId]: { ...detail, matches } } }
+      })
+    })
+  }, [activeMatches, activeId])
+
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
@@ -382,12 +439,7 @@ export function useEvaluationWorkspace() {
       const next = updater(detail)
       return {
         ...current,
-        summaries: [
-          summaryFromDetail(next),
-          ...current.summaries.filter(
-            (item) => item.evaluation_id !== next.evaluation_id,
-          ),
-        ],
+        summaries: placeSummary(current.summaries, summaryFromDetail(next)),
         detailsById: {
           ...current.detailsById,
           [next.evaluation_id]: next,
@@ -506,7 +558,7 @@ export function useEvaluationWorkspace() {
 
   const newEvaluation = useCallback(async (customTitle?: string) => {
     stopStreaming()
-    const title = customTitle || `Software Evaluation #${state.summaries.length + 1}`
+    const title = customTitle || DEFAULT_EVALUATION_TITLE
     const result = await createAiWorkspaceEvaluation({ title })
     if (result.ok) {
       upsertDetail(result.data)
@@ -523,13 +575,12 @@ export function useEvaluationWorkspace() {
 
   const startEvaluation = useCallback(
     async (message: string) => {
-      const title = generateTitleFromMessage(message, state.summaries.length + 1)
-      const detail = await newEvaluation(title)
+      const detail = await newEvaluation()
       if (detail.evaluation_id) {
         await sendEvaluationMessage(detail, message)
       }
     },
-    [newEvaluation, sendEvaluationMessage, state.summaries.length],
+    [newEvaluation, sendEvaluationMessage],
   )
 
   const sendMessage = useCallback(
@@ -611,61 +662,82 @@ export function useEvaluationWorkspace() {
     [selectEvaluation],
   )
 
-  const persistShortlist = useCallback(async (
-    detail: EvaluationDetail,
-    shortlist: EvaluationProduct[],
-  ) => {
-    const result = await updateAiWorkspaceShortlist(detail.evaluation_id, {
-      items: shortlist,
-    })
-    if (result.ok) {
-      upsertDetail(result.data)
-      return true
+  /**
+   * The buyer's own shortlist, kept beside Sam's suggestions.
+   *
+   * The lane flips under their finger and the gateway is told after, because
+   * a shortlist tap is a preference, not a turn. Only the shortlist fields
+   * move locally — a reply may be streaming into the same evaluation — and a
+   * failed write puts the previous shortlist back rather than leaving the
+   * board out of step with what was saved.
+   */
+  const toggleShortlist = useCallback(
+    async (product: EvaluationProduct) => {
+      const evaluationId = activeEvaluation?.evaluation_id
+      if (!evaluationId) return
+      const previous = activeEvaluation.shortlist ?? []
+      const items = previous.some((item) => item.product_id === product.product_id)
+        ? previous.filter((item) => item.product_id !== product.product_id)
+        : [...previous, product]
+
+      const applyShortlist = (next: EvaluationProduct[]) =>
+        updateActive((detail) =>
+          detail.evaluation_id === evaluationId
+            ? {
+                ...detail,
+                shortlist: next,
+                shortlist_count: next.length,
+                comparison_product_ids: next.map((item) => item.product_id),
+                milestones: { ...detail.milestones, shortlist_ready: next.length > 0 },
+              }
+            : detail,
+        )
+
+      applyShortlist(items)
+      const result = await updateAiWorkspaceShortlist(evaluationId, { items })
+      if (!result.ok) {
+        applyShortlist(previous)
+        setState((current) => ({ ...current, error: result.error.message }))
+        return
+      }
+      applyShortlist(result.data.shortlist ?? items)
+    },
+    [activeEvaluation, updateActive],
+  )
+
+  // Journey actions: plain chat turns Sam acts on with its document tools.
+  const requestComparisonBrief = useCallback(
+    async (products: EvaluationProduct[]) => {
+      if (products.length < 2) return
+      await sendMessage(buildComparisonRequest(products))
+    },
+    [sendMessage],
+  )
+
+  const requestImplementationBrief = useCallback(
+    async (product: EvaluationProduct) => {
+      await sendMessage(buildImplementationRequest(product))
+    },
+    [sendMessage],
+  )
+
+  const exportDocumentPdf = useCallback(async (docId: string) => {
+    const result = await exportAiWorkspaceDocumentPdf(docId)
+    if (!result.ok) {
+      setState((current) => ({ ...current, error: result.error.message }))
+      return false
     }
-    setState((current) => ({ ...current, error: result.error.message }))
-    return false
-  }, [upsertDetail])
-
-  const addToShortlist = useCallback(async (productId: string) => {
-    if (!activeEvaluation) return false
-    const product =
-      activeEvaluation.matches.find((item) => item.product_id === productId) ||
-      (activeEvaluation.recommendation?.recommended_product.product_id === productId
-        ? activeEvaluation.recommendation.recommended_product
-        : null)
-    if (!product) return false
-    if (activeEvaluation.shortlist.some((item) => item.product_id === productId)) {
-      return true
-    }
-    return await persistShortlist(activeEvaluation, [
-      ...activeEvaluation.shortlist,
-      product,
-    ])
-  }, [activeEvaluation, persistShortlist])
-
-  const removeFromShortlist = useCallback(async (productId: string) => {
-    if (!activeEvaluation) return false
-    return await persistShortlist(
-      activeEvaluation,
-      activeEvaluation.shortlist.filter((item) => item.product_id !== productId),
-    )
-  }, [activeEvaluation, persistShortlist])
-
-  const reorderShortlist = useCallback(async (productIds: string[]) => {
-    if (!activeEvaluation) return false
-    const byId = new Map(
-      activeEvaluation.shortlist.map((product) => [product.product_id, product]),
-    )
-    const next = productIds
-      .map((productId) => byId.get(productId))
-      .filter((product): product is EvaluationProduct => Boolean(product))
-    return await persistShortlist(activeEvaluation, next)
-  }, [activeEvaluation, persistShortlist])
-
-  const generateRecommendation = useCallback(async () => {
-    await sendMessage('Generate the recommendation and build the handoff document.')
+    const url = URL.createObjectURL(result.data.blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = result.data.filename
+    anchor.rel = 'noopener'
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000)
     return true
-  }, [sendMessage])
+  }, [])
 
   return useMemo(
     () => ({
@@ -684,21 +756,14 @@ export function useEvaluationWorkspace() {
         removeEvaluation(evaluationId, false),
       sendMessage,
       confirmRequirements: () => Promise.resolve(false),
-      addToShortlist,
-      removeFromShortlist,
-      reorderShortlist,
-      selectComparison: (productIds: string[]) => Promise.resolve(productIds.length >= 2),
-      generateRecommendation,
-      retryRegeneration: generateRecommendation,
+      toggleShortlist,
+      requestComparisonBrief,
+      requestImplementationBrief,
+      exportDocumentPdf,
       saveEvaluation: async () => true,
-      getEvidence: (_productId: string): Promise<EvaluationEvidence | null> =>
-        Promise.resolve(null),
       _internal: {
         mapEvent: mapAiEventToEvaluation,
         emptyDetail: emptyEvaluationDetail,
-      },
-      _suppressUnused: {
-        updateActive,
       },
     }),
     [
@@ -712,11 +777,10 @@ export function useEvaluationWorkspace() {
       duplicate,
       removeEvaluation,
       sendMessage,
-      addToShortlist,
-      removeFromShortlist,
-      reorderShortlist,
-      generateRecommendation,
-      updateActive,
+      toggleShortlist,
+      requestComparisonBrief,
+      requestImplementationBrief,
+      exportDocumentPdf,
     ],
   )
 }

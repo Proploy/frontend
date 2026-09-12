@@ -75,29 +75,32 @@ export function parseAssistantMarkdown(markdown: string) {
   return { displayMarkdown, extractedMatches }
 }
 
+/**
+ * Sam's results accumulate for the life of an evaluation. Incoming server
+ * products (the agent's selection for a turn, already persisted by the
+ * gateway) are appended to what we have; a product Sam names again keeps its
+ * place but takes the newer score and reasons. Provisional entries the client
+ * scraped while a reply was streaming are replaced by the server's copy.
+ */
 export function mergeMatches(
   localMatches: EvaluationProduct[],
   serverMatches: EvaluationProduct[] | undefined,
 ): EvaluationProduct[] {
   if (!serverMatches || serverMatches.length === 0) return localMatches
-  if (localMatches.length === 0) return serverMatches
-
-  const merged = [...serverMatches]
-  for (const local of localMatches) {
-    const existingIndex = merged.findIndex(m => m.product_id === local.product_id)
-    if (existingIndex >= 0) {
-      merged[existingIndex] = {
-        ...merged[existingIndex],
-        match_score: local.match_score ?? merged[existingIndex].match_score,
-        reasons: local.reasons ?? merged[existingIndex].reasons,
-        is_agent_selected: local.is_agent_selected || merged[existingIndex].is_agent_selected,
-      }
-    } else {
-      merged.push(local)
-    }
+  const merged = [...localMatches]
+  for (const incoming of serverMatches) {
+    const index = merged.findIndex((m) => m.product_id === incoming.product_id)
+    if (index >= 0) merged[index] = { ...merged[index], ...incoming }
+    else merged.push(incoming)
   }
   return merged
 }
+
+/** Products the agent put forward. Anything else never reaches the panel. */
+export function agentSelectedProducts(matches: EvaluationProduct[]): EvaluationProduct[] {
+  return matches.filter((match) => match.is_agent_selected === true)
+}
+
 
 function mergeMessages(
   localMessages: EvaluationMessage[],

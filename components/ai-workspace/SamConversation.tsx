@@ -1,34 +1,49 @@
 'use client'
 
-import { Download, FileCheck2, SendHorizontal } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { SendHorizontal } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { EvaluationDetail } from '@/features/ai-workspace'
+import { deriveJourney } from '@/features/ai-workspace/journey'
+import { DocumentCard } from './DocumentCard'
 import { MarkdownMessage } from './MarkdownMessage'
-import { RecommendationCard } from './RecommendationCard'
 import { RequirementSummaryCard } from './RequirementSummaryCard'
 import { RespondingStatus } from './RespondingStatus'
 import { WelcomeState } from './WelcomeState'
-
-function cleanMarkdown(content: string): string {
-  if (!content) return ''
-  return content
-    .replace(/```json\s*\{\s*"SELECTED_PRODUCT_IDS"[\s\S]*?\}\s*```/gi, '')
-    .replace(/\{\s*"SELECTED_PRODUCT_IDS"[\s\S]*?\}/gi, '')
-    .trim()
-}
 
 export function SamConversation({
   evaluation,
   isSending,
   onSend,
   onConfirmRequirements,
+  onExportDocument,
+  prefill,
 }: {
   evaluation: EvaluationDetail
   isSending: boolean
   onSend: (message: string) => void
   onConfirmRequirements: () => void
+  onExportDocument?: (docId: string) => Promise<boolean> | boolean | void
+  /** Text pushed into the composer from elsewhere (the requirement chips).
+   *  `nonce` lets the same text be sent twice in a row. */
+  prefill?: { text: string; nonce: number } | null
 }) {
   const [draft, setDraft] = useState('')
+  const composerRef = useRef<HTMLTextAreaElement | null>(null)
+  // A chip in the results panel prefills rather than sends, so the buyer
+  // finishes the sentence themselves. Focus follows the text in, and the
+  // caret goes to the end so they can just keep typing.
+  const prefillNonce = prefill?.nonce
+  useEffect(() => {
+    if (!prefill?.text) return
+    setDraft(prefill.text)
+    const node = composerRef.current
+    if (!node) return
+    node.focus()
+    node.setSelectionRange(prefill.text.length, prefill.text.length)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillNonce])
+
+  const journey = useMemo(() => deriveJourney(evaluation), [evaluation])
   const scrollRef = useRef<HTMLDivElement>(null)
   const followOutputRef = useRef(false)
   const scrollPositionsRef = useRef<Record<string, number>>({})
@@ -103,7 +118,7 @@ export function SamConversation({
               position <
             80
         }}
-        className="min-h-0 flex-1 overflow-y-auto"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
       >
         {isEmpty ? (
           <WelcomeState onPrompt={submit} />
@@ -115,16 +130,17 @@ export function SamConversation({
                   key={message.id}
                   className="flex justify-end pl-10 sm:pl-20"
                 >
-                  <div className="max-w-[620px] rounded-2xl rounded-br-md bg-[#eff4ff] px-4 py-3 text-[15px] leading-6 text-[#181d27]">
+                  <div className="max-w-[620px] rounded-2xl rounded-br-md bg-ink px-4 py-3 text-[0.9375rem] leading-6 text-paper">
                     {message.markdown}
                   </div>
                 </div>
               ) : (
                 <div key={message.id} className="pr-3 sm:pr-6">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-[#155eef]">
-                    SAM
+                  <p className="label mb-2 flex items-center gap-2 !text-cobalt-deep">
+                    <span className="pulse-dot size-1.5 rounded-full bg-cobalt" aria-hidden />
+                    Sam
                   </p>
-                  <MarkdownMessage content={cleanMarkdown(message.markdown)} />
+                  <MarkdownMessage content={message.markdown} />
                   {message.status === 'streaming' ? (
                     <span className="sr-only">SAM is typing...</span>
                   ) : null}
@@ -160,63 +176,28 @@ export function SamConversation({
               />
             ) : null}
 
-            {evaluation.recommendation ? (
-              <RecommendationCard
-                recommendation={evaluation.recommendation}
-              />
-            ) : null}
-
-            {evaluation.documents?.length ? (
+            {journey.documents.length ? (
               <div className="space-y-3">
-                {evaluation.documents.map((doc, idx) => {
-                  const docTitle = String(doc.title || 'Implementation Plan & Handoff Document')
-                  const pdfUrl = typeof doc.pdf_url === 'string' ? doc.pdf_url : null
-                  return (
-                    <div
-                      key={doc.doc_id ? String(doc.doc_id) : docTitle}
-                      className="flex items-center justify-between gap-4 rounded-2xl border border-[#84adff] bg-[#f5f8ff] p-4 shadow-sm"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#155eef] text-white">
-                          <FileCheck2 size={20} />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="truncate text-sm font-semibold text-[#181d27]">{docTitle}</h4>
-                          <p className="text-xs text-[#535862]">Generated by SAM • Ready for export</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (pdfUrl) {
-                            window.open(pdfUrl, '_blank')
-                          } else {
-                            window.print()
-                          }
-                        }}
-                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#155eef] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0e4cc7]"
-                      >
-                        <Download size={14} />
-                        Export PDF
-                      </button>
-                    </div>
-                  )
-                })}
+                {journey.documents.map((doc) => (
+                  <DocumentCard key={doc.doc_id} document={doc} onExportPdf={onExportDocument} />
+                ))}
               </div>
             ) : null}
+
           </div>
         )}
       </div>
 
-      <div className="flex min-h-[88px] w-full items-center border-t border-[#e9eaeb] bg-white px-4 sm:px-6">
+      <div className="flex min-h-[88px] w-full items-center border-t border-border bg-paper px-4 sm:px-6">
         <form
           onSubmit={(event) => {
             event.preventDefault()
             submit()
           }}
-          className="mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl border border-[#d5d7da] bg-white p-2.5 shadow-[0_4px_20px_rgba(10,13,18,0.07)] transition focus-within:border-[#84adff] focus-within:ring-4 focus-within:ring-[#155eef]/10"
+          className="glass-card mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl p-2.5 transition focus-within:border-cobalt/50"
         >
           <textarea
+            ref={composerRef}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
@@ -232,13 +213,13 @@ export function SamConversation({
             disabled={isSending}
             placeholder="Describe your team, workflow, end goal, or ask about products..."
             rows={1}
-            className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-[#181d27] outline-none placeholder:text-[#a4a7ae]"
+            className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-ink outline-none placeholder:text-ink-soft/80"
           />
           <button
             type="submit"
             disabled={!draft.trim() || isSending}
             aria-label="Send message"
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#d5d7da] text-white transition hover:bg-[#a4a7ae] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#155eef] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#e9eaeb] disabled:text-white data-[active=true]:bg-[#155eef] data-[active=true]:hover:bg-[#0e4cc7]"
+            className="grid size-10 shrink-0 place-items-center rounded-xl bg-ink text-paper transition-colors hover:bg-cobalt disabled:cursor-not-allowed disabled:opacity-40"
             data-active={draft.trim().length > 0 && !isSending}
           >
             <SendHorizontal size={17} />
