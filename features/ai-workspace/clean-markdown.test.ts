@@ -103,3 +103,26 @@ describe('cleanMarkdown', () => {
     expect(cleanMarkdown(undefined as unknown as string)).toBe('')
   })
 })
+
+describe('product ids written into the prose', () => {
+  it('removes the parenthetical and tidies the seam', () => {
+    const out = cleanMarkdown(
+      '**Jira Service Management** (Product ID: 1975e56a3a92) captures requests.',
+    )
+    expect(out).toBe('**Jira Service Management** captures requests.')
+  })
+
+  it('hides a half-written id rather than flashing it', () => {
+    const full = '**Smartsheet** (Product ID: 793085ba805e) fits.'
+    for (let i = 1; i <= full.length; i++) {
+      expect(cleanMarkdown(full.slice(0, i))).not.toMatch(/793085ba805e|Product ID/i)
+    }
+  })
+
+  it('leaves ordinary prose alone', () => {
+    expect(cleanMarkdown('The product ID scheme is internal.')).toBe(
+      'The product ID scheme is internal.',
+    )
+  })
+})
+
