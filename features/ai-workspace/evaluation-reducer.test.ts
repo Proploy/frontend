@@ -5,6 +5,7 @@ import {
   agentSelectedProducts,
   applyEvaluationStreamEvent,
   mergeMatches,
+  parseAssistantMarkdown,
 } from './evaluation-reducer'
 
 const baseEvaluation: EvaluationDetail = {
@@ -136,4 +137,111 @@ describe('agent-only product selection', () => {
     expect(next.matches.map((p) => p.product_id)).toEqual(['asana', 'linear'])
     expect(next.match_count).toBe(2)
   })
+
+  it('updates evaluation title from session_meta event', () => {
+    const next = applyEvaluationStreamEvent(baseEvaluation, {
+      type: 'session_meta',
+      data: { title: 'CRM for 50-person Sales Team' },
+    })
+    expect(next.title).toBe('CRM for 50-person Sales Team')
+  })
+
+  it('derives requirements and sets requirements_confirmed on profile update', () => {
+    const next = applyEvaluationStreamEvent(baseEvaluation, {
+      type: 'evaluation_state',
+      data: {
+        profile: {
+          goals: [{ text: 'Automate sales quotes' }],
+          pain_points: ['Slow quoting process'],
+          constraints: [{ type: 'team_size', value: '25' }, { type: 'budget', value: '$10k/yr' }],
+        },
+      },
+    })
+    expect(next.requirements).toBeDefined()
+    expect(next.requirements?.primary_use_case?.value).toBe('Automate sales quotes')
+    expect(next.requirements?.problem_frame?.value).toBe('Slow quoting process')
+    expect(next.requirements?.team_size?.value).toBe('25')
+    expect(next.requirements?.budget?.value).toBe('$10k/yr')
+    expect(next.milestones.requirements_confirmed).toBe(true)
+  })
+
+  it('prefers server requirements over the existing draft and the derived one', () => {
+    const next = applyEvaluationStreamEvent(
+      {
+        ...baseEvaluation,
+        requirements: { primary_use_case: { state: 'answered', value: 'Old draft' } },
+      },
+      {
+        type: 'evaluation_state',
+        data: {
+          requirements: { primary_use_case: { state: 'answered', value: 'Server draft' } },
+          profile: { goals: [{ text: 'Derived goal' }] },
+        },
+      },
+    )
+    expect(next.requirements?.primary_use_case?.value).toBe('Server draft')
+  })
+
+  it('keeps existing answered fields while incorporating newly derived ones', () => {
+    const next = applyEvaluationStreamEvent(
+      {
+        ...baseEvaluation,
+        requirements: { team_size: { state: 'answered', value: '42' } },
+      },
+      {
+        type: 'evaluation_state',
+        data: {
+          profile: { goals: [{ text: 'Derived goal' }] },
+        },
+      },
+    )
+    expect(next.requirements?.team_size?.value).toBe('42')
+    expect(next.requirements?.primary_use_case?.value).toBe('Derived goal')
+  })
+
+  it('falls back to derivation when the existing draft is meaningless', () => {
+    const next = applyEvaluationStreamEvent(
+      {
+        ...baseEvaluation,
+        requirements: { team_size: { state: 'unanswered' } },
+      },
+      {
+        type: 'evaluation_state',
+        data: {
+          profile: { goals: [{ text: 'Derived goal' }] },
+        },
+      },
+    )
+    expect(next.requirements?.primary_use_case?.value).toBe('Derived goal')
+  })
+
+  it('adopts agent_session_id and evaluation_id from a session event', () => {
+    const next = applyEvaluationStreamEvent(baseEvaluation, {
+      type: 'session',
+      data: { session_id: 'harness-session-9', evaluation_id: 'evaluation-9' },
+    })
+    expect(next.agent_session_id).toBe('harness-session-9')
+    expect(next.evaluation_id).toBe('evaluation-9')
+  })
 })
+
+describe('parseAssistantMarkdown', () => {
+  it('cleanly strips SELECTED_PRODUCT_IDS and extracts matches without leaving dangling markers', () => {
+    const raw = `Here are the top candidates for your team:
+- **HubSpot**: Great all-around CRM
+- **Salesforce**: Highly scalable
+
+SELECTED_PRODUCT_IDS: [
+  {"product_id": "hubspot", "agent_score": 9.2, "reason": "Best fit"},
+  {"product_id": "salesforce", "agent_score": 8.5, "reason": "Scalable"}
+]`
+    const { displayMarkdown, extractedMatches } = parseAssistantMarkdown(raw)
+    expect(displayMarkdown).not.toContain('SELECTED_PRODUCT_IDS')
+    expect(displayMarkdown).not.toContain('{"product_id"')
+    expect(displayMarkdown).toContain('HubSpot')
+    expect(extractedMatches).toHaveLength(2)
+    expect(extractedMatches[0].product_id).toBe('hubspot')
+    expect(extractedMatches[0].match_score).toBe(92)
+  })
+})
+

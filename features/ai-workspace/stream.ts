@@ -15,6 +15,7 @@ const AI_WORKSPACE_STREAM_PATH = '/api/v1/ai_workspace/research/stream'
 
 const KNOWN_EVENTS = new Set<AiWorkspaceStreamEventName>([
   'session',
+  'session_meta',
   'status',
   'message_delta',
   'message_final',

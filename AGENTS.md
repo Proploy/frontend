@@ -1,15 +1,19 @@
 # AGENTS.md — frontend/
 
-Next.js 14 public-facing app. App Router, React, Tailwind, React Query.
+Next.js 16 public-facing app. App Router, React 19, Tailwind 4, Supabase.
+No React Query or other server-state library.
 
 ## Layout
 
-- `app/` — App Router pages
+- `app/` — App Router pages. `app/api/` holds only `auth/` and the backend proxy
 - `components/` — shared UI
 - `features/` — feature modules
-- `hooks/` — shared custom hooks
-- `lib/` — utilities, API client, constants
-- `prisma/` — Prisma schema and client
+- `hooks/` — generic API layer: `types/` and `mappers/`
+- `lib/` — utilities and the `service-apis` clients
+- `proxy.ts` — CSP and the authenticated-route gate
+
+There is no `src/` directory and no `lib/api.ts`. `prisma/` holds a schema only;
+nothing at runtime imports it.
 
 ## Existing harness (kept as-is)
 

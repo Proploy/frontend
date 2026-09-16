@@ -70,6 +70,8 @@ export type AiWorkspaceResearchRequest = {
   session_id?: string
   page_context?: AiWorkspacePageContextPayload
   page_context_history?: AiWorkspacePageContextPayload[]
+  evaluation_id?: string
+  requirements?: Record<string, unknown>
   user_id?: never
 }
 
@@ -144,6 +146,7 @@ export type AiWorkspaceApiResult<T> = { ok: true; data: T } | NormalizedError
 
 export type AiWorkspaceStreamEventName =
   | 'session'
+  | 'session_meta'
   | 'status'
   | 'message_delta'
   | 'message_final'
@@ -163,6 +166,11 @@ export type AiWorkspaceStreamPayloadByEvent = {
     session_id?: string
     evaluation_id?: string
     user_id?: string
+    [key: string]: unknown
+  }
+  session_meta: {
+    title?: string
+    session_id?: string
     [key: string]: unknown
   }
   status: {

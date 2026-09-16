@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Sparkles, X } from 'lucide-react'
 import type {
   EvaluationAttentionGroup,
   EvaluationSummary,
@@ -44,19 +44,19 @@ export function EvaluationSidebar({
   onToggleCollapsed?: () => void
 }) {
   return (
-    <aside className="flex h-full min-h-0 flex-col bg-paper">
+    <aside className="flex h-full min-h-0 flex-col bg-paper/95 backdrop-blur-xl">
       <div
-        className={`flex min-h-[80px] items-center border-b border-border ${
-          collapsed ? 'justify-center px-2' : 'justify-between px-4'
+        className={`flex h-16 min-h-16 items-center border-b border-border/80 ${
+          collapsed ? 'justify-center px-2' : 'justify-between px-3.5'
         }`}
       >
         {!collapsed ? (
-          <Link href="/" className="flex items-center px-1">
+          <Link href="/" className="flex items-center rounded-lg px-1 transition-opacity hover:opacity-75">
             <Image
               src="/PROPLOY.svg"
               alt="Proploy"
-              width={121}
-              height={34}
+              width={106}
+              height={28}
               className="object-contain"
               priority
             />
@@ -67,9 +67,9 @@ export function EvaluationSidebar({
             type="button"
             onClick={onClose}
             aria-label="Close evaluations"
-            className="flex size-8 items-center justify-center rounded-lg text-ink-soft/80 transition hover:bg-cobalt-soft/50 hover:text-cobalt lg:hidden"
+            className="flex size-7.5 items-center justify-center rounded-lg text-ink-soft/80 transition hover:bg-paper-deep hover:text-ink lg:hidden"
           >
-            <X size={17} />
+            <X size={16} />
           </button>
         ) : onToggleCollapsed ? (
           <button
@@ -78,19 +78,24 @@ export function EvaluationSidebar({
             aria-label={
               collapsed ? 'Expand evaluations' : 'Collapse evaluations'
             }
-            className="flex size-8 items-center justify-center rounded-lg text-ink-soft/80 transition hover:bg-cobalt-soft/50 hover:text-cobalt"
+            className="flex size-7.5 items-center justify-center rounded-lg text-ink-soft/80 transition hover:bg-paper-deep hover:text-ink"
           >
             {collapsed ? (
-              <ChevronRight size={17} />
+              <ChevronRight size={16} />
             ) : (
-              <ChevronLeft size={17} />
+              <ChevronLeft size={16} />
             )}
           </button>
         ) : null}
       </div>
       {!collapsed ? (
         <div className="px-4 pb-3 pt-5">
-          <p className="label">Evaluations</p>
+          <div className="flex items-center justify-between px-1">
+            <p className="label">Your evaluations</p>
+            <span className="font-mono text-[0.65rem] text-ink-soft/70">
+              {evaluations.length.toString().padStart(2, '0')}
+            </span>
+          </div>
         </div>
       ) : null}
       <div
@@ -135,26 +140,33 @@ export function EvaluationSidebar({
             )
           })
         ) : !collapsed ? (
-          <div className="mx-2 mt-4 rounded-xl border border-dashed border-border bg-white px-4 py-5 text-center">
-            <p className="text-sm font-medium text-ink-soft">
-              No evaluations yet
-            </p>
-            <p className="mt-1 text-xs leading-5 text-ink-soft/80">
-              Start with the software decision you need to make.
+          <div className="mx-2 mt-3 rounded-2xl border border-dashed border-cobalt/25 bg-cobalt-soft/30 p-4 text-left">
+            <span className="grid size-8 place-items-center rounded-xl bg-white text-cobalt shadow-sm">
+              <Sparkles size={15} aria-hidden />
+            </span>
+            <p className="mt-3 text-sm font-semibold text-ink">Your first decision starts here</p>
+            <p className="mt-1 text-xs leading-5 text-ink-soft">
+              Tell Sam what you need and keep every comparison in one place.
             </p>
           </div>
         ) : null}
       </div>
-      <div className="flex min-h-[88px] items-center border-t border-border px-4">
+      <div
+        className={`flex min-h-[80px] items-center border-t border-border/80 ${
+          collapsed ? 'justify-center px-2' : 'px-3.5'
+        }`}
+      >
         <button
           type="button"
           onClick={onNew}
           aria-label="New evaluation"
-          className="group relative flex h-10 w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-ink px-3 text-[0.8125rem] font-medium text-paper transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt/30"
+          className={`group relative flex items-center justify-center overflow-hidden rounded-xl bg-ink text-paper shadow-[0_12px_24px_-16px_rgba(17,24,39,0.7)] transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt/30 ${
+            collapsed ? 'size-10 shrink-0' : 'h-10 w-full gap-2 px-3 text-[0.8125rem] font-medium'
+          }`}
         >
           <span className="absolute inset-0 -translate-x-full bg-cobalt transition-transform duration-500 group-hover:translate-x-0" aria-hidden />
-          <Plus size={16} className="relative z-10" />
-          <span className="relative z-10">{!collapsed ? 'New evaluation' : null}</span>
+          <Plus size={18} className="relative z-10 shrink-0" />
+          {!collapsed ? <span className="relative z-10">New evaluation</span> : null}
         </button>
       </div>
     </aside>

@@ -1,3 +1,25 @@
+# TODO(deploy): tag images with ${SHORT_SHA}, not :latest.
+#
+# service-apis and agent-harness both push `<image>:${SHORT_SHA}`; this
+# pipeline pushes `:latest` for both the cache and the final image. Rollback
+# is NOT at risk — Cloud Run resolves the tag to an immutable digest at deploy
+# time, so every revision stays pinned to the bits it shipped with. What you
+# lose is traceability: nothing on the Cloud Run revision says which commit is
+# running, so you have to correlate the revision's timestamp against Cloud
+# Build history to find the SHORT_SHA.
+#
+# Known deployments (recorded by hand because the tag does not carry them):
+#   proploy-frontend-00018-7xt  commit c5cfc69  build 2026-09-12 12:33
+#   proploy-frontend-00017-wm2  commit 56f0ed4  build 2026-09-04 19:23
+#
+# The fix: replace the four `:latest` occurrences on the final image with
+# `:${SHORT_SHA}` (keep `:builder` as-is — it is a cache tag and is meant to
+# be mutable), and update the `images:` block and the `--image` deploy arg to
+# match. While here, also drop DATABASE_URL from this pipeline: nothing in the
+# app reads it at build or runtime, and `ENV DATABASE_URL` in the builder
+# stage bakes the credential into the `:builder` image pushed to Artifact
+# Registry. See docs/deployment/production-readiness-review-2026-09-12.md.
+
 steps:
   # 1. Pull the previous cache images to use as a Docker cache (speeds up npm ci)
   - name: 'gcr.io/cloud-builders/docker'

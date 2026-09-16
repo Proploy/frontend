@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   saveEvaluation: vi.fn().mockResolvedValue(true),
   startEvaluation: vi.fn(),
   emptyWorkspace: false,
+  emptyMessages: false,
 }))
 
 vi.mock('next/navigation', () => ({
@@ -106,7 +107,11 @@ vi.mock('@/features/ai-workspace', async (importOriginal) => {
   return {
     ...original,
     useEvaluationWorkspace: () => {
-      const activeEvaluation = mocks.emptyWorkspace ? null : evaluation
+      const activeEvaluation = mocks.emptyWorkspace
+        ? null
+        : mocks.emptyMessages
+          ? { ...evaluation, messages: [] }
+          : evaluation
       return {
       state: {
         summaries: [],
@@ -160,7 +165,7 @@ describe('SoftwareProcurementWorkspace', () => {
     const view = await render(<SoftwareProcurementWorkspace />)
 
     expect(view.container.textContent).toContain(
-      'Describe your requirements and compare suitable products',
+      'What are you looking to make happen?',
     )
     expect(view.container.textContent).not.toContain(
       'Start your first evaluation',
@@ -290,7 +295,11 @@ describe('SoftwareProcurementWorkspace', () => {
   it('opens a finished brief over the workspace from the board', async () => {
     const view = await render(<SoftwareProcurementWorkspace />)
     const sidebar = view.container.querySelector('aside[aria-label="Agent results"]')!
-    // The brief Sam finished is visible in the board, not just in the transcript.
+    // Switch to Artifacts tab where finished briefs are rendered
+    const artifactsTab = Array.from(sidebar.querySelectorAll('button')).find(
+      (b) => b.getAttribute('role') === 'tab' && b.textContent?.startsWith('Artifacts'),
+    )
+    await act(async () => artifactsTab?.click())
     expect(sidebar.textContent).toContain('Notion vs Asana')
     expect(view.container.querySelector('[role="dialog"]')).toBeNull()
 
@@ -322,4 +331,53 @@ describe('SoftwareProcurementWorkspace', () => {
     expect(view.container.textContent).toContain('Saved')
     await view.unmount()
   })
+
+  it('hides the results sidebar until the first message is sent', async () => {
+    mocks.emptyMessages = true
+    const view = await render(<SoftwareProcurementWorkspace />)
+
+    expect(
+      view.container.querySelector('aside[aria-label="Agent results"]'),
+    ).toBeNull()
+    expect(view.container.textContent).not.toContain('Collapse agent results')
+
+    // Without a turn the conversation is still there, just no results lane.
+    expect(view.container.textContent).toContain('Sam')
+
+    const resultsButton =
+      view.container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Open agent results"]',
+      )
+    await act(async () => resultsButton?.click())
+    expect(
+      view.container.querySelector('aside[aria-label="Agent results"]'),
+    ).toBeNull()
+    await view.unmount()
+  })
+
+  it('shows the results sidebar once the evaluation has its first message', async () => {
+    mocks.emptyMessages = false
+    const view = await render(<SoftwareProcurementWorkspace />)
+
+    expect(
+      view.container.querySelector('aside[aria-label="Agent results"]'),
+    ).not.toBeNull()
+    await view.unmount()
+  })
+
+  it('opens the requirements modal from the header requirements button', async () => {
+    const view = await render(<SoftwareProcurementWorkspace />)
+
+    const reqButton = view.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="View requirements in modal"]',
+    )
+    expect(reqButton).not.toBeNull()
+    await act(async () => reqButton?.click())
+
+    expect(view.container.querySelector('[data-testid="requirements-modal"]')).not.toBeNull()
+    expect(view.container.textContent).toContain('Decision Inputs & Requirements')
+    await view.unmount()
+  })
 })
+
+

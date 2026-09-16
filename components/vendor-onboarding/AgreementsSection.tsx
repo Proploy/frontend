@@ -36,8 +36,12 @@ const summaryRows: { section: VendorSectionKey; getValue: (form: VendorOnboardin
     section: 'products',
     getValue: (form) => {
       const products = form.productExpertise.map((p) => p.productName);
+      // Manual certifications are `{ name, file }` entries, not strings, so the
+      // name is what gets trimmed — same as the per-product ones above. Calling
+      // `.trim()` on the entry itself throws for any expert who has one, and
+      // `ignoreBuildErrors` lets that type error through to production.
       const certs = form.productExpertise.reduce((n, p) => n + p.certifications.filter((c) => c.name.trim()).length, 0)
-        + form.manualCertifications.filter((c) => c.trim()).length;
+        + form.manualCertifications.filter((c) => c.name.trim()).length;
       return products.length
         ? `${joinNames(products)} · ${certs} certification${certs === 1 ? '' : 's'} · ${form.industries.length} industr${form.industries.length === 1 ? 'y' : 'ies'}`
         : 'No products added yet';

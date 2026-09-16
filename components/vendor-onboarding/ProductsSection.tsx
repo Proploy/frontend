@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Loader2, Plus, Search, Trash2, Upload } from 'lucide-react';
 import { CatalogImage } from '@/components/catalog/CatalogImage';
@@ -562,6 +561,101 @@ function ProductGroup({
     </div>
   );
 }
+/** A single row in the "Other certifications" list: text input + upload + delete. */
+function ManualCertificationRow({
+  entry,
+  onChange,
+  onRemove,
+  uploadDocument,
+  readOnly,
+}: {
+  entry: { name: string; file: UploadedApplicationFile | null };
+  onChange: (patch: Partial<{ name: string; file: UploadedApplicationFile | null }>) => void;
+  onRemove: () => void;
+  uploadDocument: ProductsSectionProps['uploadDocument'];
+  readOnly?: boolean;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File | null) => {
+    if (!file || uploading) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const result = await uploadDocument('certification', file);
+      if (!result.ok) {
+        setUploadError(result.error.message);
+        return;
+      }
+      onChange({
+        file: {
+          name: result.data.fileName,
+          size: result.data.fileSizeBytes,
+          fileContentType: result.data.fileContentType,
+          storageKey: result.data.storageKey,
+          visible: true,
+        },
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="pp-stack" style={{ gap: 4 }}>
+      <div className="pp-row pp-gap-2">
+        <input
+          type="text"
+          value={entry.name}
+          placeholder="Certified Scrum Master"
+          onChange={(event) => onChange({ name: event.target.value })}
+          className="pp-input"
+          disabled={readOnly}
+        />
+        {!readOnly && !entry.file && (
+          <label
+            className="vo-icon-btn"
+            aria-label="Attach certificate"
+            title="Attach certificate (PDF, PNG or JPG, max 25 MB)"
+            style={{ cursor: 'pointer', flexShrink: 0 }}
+          >
+            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              className="hidden"
+              disabled={uploading}
+              onChange={(event) => {
+                void handleFile(event.target.files?.[0] ?? null);
+                event.currentTarget.value = '';
+              }}
+            />
+          </label>
+        )}
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="vo-icon-btn vo-icon-btn--danger"
+            aria-label="Remove certification"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
+      {entry.file && (
+        <UploadedFileRow
+          file={entry.file}
+          onRemove={() => onChange({ file: null })}
+        />
+      )}
+      {uploadError && <p className="vo-error">{uploadError}</p>}
+    </div>
+  );
+}
 
 export default function ProductsSection({ formData, setFormData, uploadDocument, readOnly = false }: ProductsSectionProps) {
   const industries = vocabularyLabels(useExpertVocabulary(), 'industries', INDUSTRY_OPTIONS);
@@ -637,36 +731,24 @@ export default function ProductsSection({ formData, setFormData, uploadDocument,
           <p className="pp-h6">Other certifications</p>
         </div>
 
-        {otherCertifications.map((value, index) => (
-          <div key={index} className="pp-row pp-gap-2">
-            <input
-              type="text"
-              value={value}
-              placeholder="Certified Scrum Master"
-              onChange={(event) => {
-                const next = [...otherCertifications];
-                next[index] = event.target.value;
-                setFormData({ ...formData, manualCertifications: next });
-              }}
-              className="pp-input"
-              disabled={readOnly}
-            />
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={() => setFormData({
-                  ...formData,
-                  manualCertifications: otherCertifications.filter((_, i) => i !== index),
-                })}
-                className="vo-icon-btn vo-icon-btn--danger"
-                aria-label="Remove certification"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
+        {otherCertifications.map((entry, index) => (
+          <ManualCertificationRow
+            key={index}
+            entry={entry}
+            onChange={(patch) => {
+              const next = otherCertifications.map((e, i) => (i === index ? { ...e, ...patch } : e));
+              setFormData({ ...formData, manualCertifications: next });
+            }}
+            onRemove={() => setFormData({
+              ...formData,
+              manualCertifications: otherCertifications.filter((_, i) => i !== index),
+            })}
+            uploadDocument={uploadDocument}
+            readOnly={readOnly}
+          />
         ))}
 
+        {/* Legacy standalone uploads (no text name attached). */}
         {formData.certificationFiles.map((file, index) => (
           <UploadedFileRow
             key={file.id ?? file.storageKey ?? `${file.name}-${index}`}
@@ -686,7 +768,7 @@ export default function ProductsSection({ formData, setFormData, uploadDocument,
         {!readOnly && (
           <button
             type="button"
-            onClick={() => setFormData({ ...formData, manualCertifications: [...otherCertifications, ''] })}
+            onClick={() => setFormData({ ...formData, manualCertifications: [...otherCertifications, { name: '', file: null }] })}
             className="pp-link-arrow"
             style={{ alignSelf: 'flex-start' }}
           >

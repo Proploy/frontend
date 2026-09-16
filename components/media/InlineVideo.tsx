@@ -47,10 +47,34 @@ function getEmbedUrl(url: string): string | null {
       const videoId = parsed.pathname.match(/\/(?:share|embed)\/([^/]+)/)?.[1]
       return videoId ? `https://www.loom.com/embed/${videoId}` : null
     }
+
+    // Google Drive shared links → preview embed
+    if (hostname === 'drive.google.com') {
+      const fileIdMatch = parsed.pathname.match(/\/file\/d\/([^/]+)/)
+      const fileId = fileIdMatch?.[1] ?? parsed.searchParams.get('id')
+      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null
+    }
   } catch {
     return null
   }
 
+  return null
+}
+
+/** Returns a direct-play URL for Dropbox download links, or null. */
+function toDirectDownloadUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    const hostname = parsed.hostname.replace(/^www\./, '')
+
+    // Dropbox: swap dl=0 → dl=1 for raw file access
+    if (hostname === 'dropbox.com' || hostname === 'dl.dropboxusercontent.com') {
+      parsed.searchParams.set('dl', '1')
+      return parsed.toString()
+    }
+  } catch {
+    // fall through
+  }
   return null
 }
 
@@ -74,18 +98,27 @@ export function InlineVideo({
   className = '',
 }: InlineVideoProps) {
   const embedUrl = mode === 'auto' ? getEmbedUrl(url) : null
-  const canPlayDirectly = mode === 'direct' || isDirectVideoUrl(url) || isManagedExpertFileUrl(url)
-  const [videoSrc, setVideoSrc] = useState(url)
+  const directDownload = mode === 'auto' ? toDirectDownloadUrl(url) : null
+  const canPlayDirectly = mode === 'direct' || isDirectVideoUrl(url) || isManagedExpertFileUrl(url) || Boolean(directDownload)
+
+  const [videoSrc, setVideoSrc] = useState(directDownload ?? url)
+  // 'playing' = attempting <video>, 'failed' = <video> errored → show fallback
+  const [playbackState, setPlaybackState] = useState<'playing' | 'failed'>('playing')
 
   useEffect(() => {
-    setVideoSrc(url)
-  }, [url])
+    setVideoSrc(directDownload ?? url)
+    setPlaybackState('playing')
+  }, [url, directDownload])
 
   const handleVideoError = () => {
+    // Try Cloud Run fallback for local dev
     if (videoSrc.includes('localhost:8020') || videoSrc.includes('127.0.0.1:8020')) {
       const cloudRunUrl = videoSrc.replace(/http:\/\/(localhost|127\.0\.0\.1):8020/, 'https://service-apis-731353524841.australia-southeast1.run.app')
       setVideoSrc(cloudRunUrl)
+      return
     }
+    // Mark as failed so we show the link fallback
+    setPlaybackState('failed')
   }
 
   return (
@@ -100,7 +133,8 @@ export function InlineVideo({
             allowFullScreen
             className="absolute inset-0 size-full border-0"
           />
-        ) : canPlayDirectly ? (
+        ) : canPlayDirectly || playbackState === 'playing' ? (
+          // Try playing any URL directly — uploaded files, CDN links, etc.
           // Captions are rendered when the backend supplies a WebVTT URL.
           <video
             src={videoSrc}
@@ -115,8 +149,26 @@ export function InlineVideo({
             ) : null}
           </video>
         ) : (
-          <div className="flex size-full items-center justify-center px-[16px] text-center text-[14px] text-white">
-            This video provider cannot be embedded.
+          /* Graceful fallback: offer an "Open video" link instead of a dead end */
+          <div className="flex size-full flex-col items-center justify-center gap-[12px] px-[16px] text-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" />
+              <path d="m10 8 6 4-6 4Z" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" />
+            </svg>
+            <p className="text-[14px] text-white/60">
+              This video can&apos;t be played inline.
+            </p>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-[6px] rounded-full bg-white/10 px-[16px] py-[8px] text-[13px] font-medium text-white/90 transition-colors hover:bg-white/20"
+            >
+              Open video
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 17 17 7M9 7h8v8" />
+              </svg>
+            </a>
           </div>
         )}
       </div>

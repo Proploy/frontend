@@ -1,9 +1,10 @@
 'use client'
 
-import { Maximize2, PanelRightClose, PanelRightOpen, X } from 'lucide-react'
+import { PanelRightClose, PanelRightOpen, X } from 'lucide-react'
 import type { EvaluationDetail, EvaluationProduct } from '@/features/ai-workspace'
 import { deriveJourney } from '@/features/ai-workspace/journey'
 import { DecisionBoard } from './DecisionBoard'
+import { RequirementFitSection } from './RequirementFitSection'
 import { RequirementsPanel } from './RequirementsPanel'
 
 /**
@@ -22,8 +23,8 @@ export function AgentResultsSidebar({
   onRequestComparisonBrief,
   onRequestImplementationBrief,
   onOpenDocument,
+  onOpenBoard,
   onAsk,
-  onExpandBoard,
 }: {
   evaluation: EvaluationDetail
   onClose?: () => void
@@ -36,10 +37,10 @@ export function AgentResultsSidebar({
   onRequestComparisonBrief?: (products: EvaluationProduct[]) => void
   onRequestImplementationBrief?: (product: EvaluationProduct) => void
   onOpenDocument?: (docId: string) => void
+  /** Opens the expanded decision board. */
+  onOpenBoard?: () => void
   /** Prefills the conversation composer — used by the requirement chips. */
   onAsk?: (prompt: string) => void
-  /** Opens the same three lanes side by side across the whole workspace. */
-  onExpandBoard?: () => void
 }) {
   const journey = deriveJourney(evaluation)
   const products = journey.products
@@ -64,34 +65,23 @@ export function AgentResultsSidebar({
   }
 
   return (
-    <aside aria-label="Agent results" className="flex h-full min-h-0 flex-col border-l border-border bg-paper">
-      <div className="flex items-start justify-between gap-3 px-4 pb-4 pt-5">
+    <aside aria-label="Agent results" className="flex h-full min-h-0 flex-col border-l border-border bg-[#f8fafc]">
+      <div className="flex h-16 min-h-16 items-center justify-between border-b border-border/80 bg-white px-4">
         <div>
-          <p className="label">Sam&apos;s decision</p>
-          <h2 className="display mt-1.5 text-[1.25rem] text-ink">
+          <p className="label leading-none">Recommendations</p>
+          <h2 className="mt-1 text-[1.05rem] font-semibold leading-tight text-ink">
             {products.length
               ? `${products.length} ${products.length === 1 ? 'product' : 'products'}`
               : 'No products yet'}
           </h2>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {onExpandBoard && products.length ? (
-            <button
-              type="button"
-              onClick={onExpandBoard}
-              aria-label="Expand decision board"
-              title="Expand decision board"
-              className="grid size-8 place-items-center rounded-full border border-border text-ink-soft transition-colors hover:border-cobalt hover:text-cobalt"
-            >
-              <Maximize2 size={14} />
-            </button>
-          ) : null}
+        <div className="flex shrink-0 items-center gap-1.5">
           {onClose ? (
             <button
               type="button"
               onClick={onClose}
               aria-label="Close agent results"
-              className="grid size-8 place-items-center rounded-full border border-border bg-white text-ink xl:hidden"
+              className="grid size-8 place-items-center rounded-lg border border-border bg-white text-ink xl:hidden hover:bg-paper"
             >
               <X size={15} />
             </button>
@@ -101,7 +91,7 @@ export function AgentResultsSidebar({
               onClick={onToggleCollapsed}
               aria-label="Collapse agent results"
               title="Collapse agent results"
-              className="grid size-8 place-items-center rounded-full border border-border text-ink-soft transition-colors hover:border-cobalt hover:text-cobalt"
+              className="grid size-8 place-items-center rounded-lg border border-border text-ink-soft transition-colors hover:border-cobalt hover:text-cobalt"
             >
               <PanelRightClose size={15} />
             </button>
@@ -111,7 +101,21 @@ export function AgentResultsSidebar({
       <div key={evaluation.evaluation_id} className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 pb-4">
         <RequirementsPanel
           profile={evaluation.profile}
+          requirements={evaluation.requirements}
           missingCritical={evaluation.missing_critical_signals}
+          onAsk={onAsk}
+        />
+        {/* Between what Sam knows and what Sam picked, because it is the
+            bridge: the matrix is the requirements above scored against the
+            products below. */}
+        <RequirementFitSection
+          products={products}
+          profile={evaluation.profile}
+          requirements={evaluation.requirements}
+          busy={busy}
+          density="compact"
+          recommendedId={products[0]?.product_id}
+          onOpenBoard={onOpenBoard}
           onAsk={onAsk}
         />
         <DecisionBoard

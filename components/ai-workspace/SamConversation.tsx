@@ -1,18 +1,38 @@
 'use client'
 
-import { SendHorizontal } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { SendHorizontal, Sparkles } from 'lucide-react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { EvaluationDetail } from '@/features/ai-workspace'
+import {
+  COMPOSER_MAX_HEIGHT,
+  COMPOSER_MIN_HEIGHT,
+  clampComposerHeight,
+  composerOverflows,
+  scrollAdjustmentFor,
+} from '@/features/ai-workspace/composer-autogrow'
 import { deriveJourney } from '@/features/ai-workspace/journey'
 import { DocumentCard } from './DocumentCard'
 import { MarkdownMessage } from './MarkdownMessage'
-import { RequirementSummaryCard } from './RequirementSummaryCard'
-import { RespondingStatus } from './RespondingStatus'
+import { RespondingStatus, type StreamingStatusInfo } from './RespondingStatus'
 import { WelcomeState } from './WelcomeState'
+
+/** `useLayoutEffect` warns when React renders on the server, and the workspace
+ *  page is server-rendered. Measuring a textarea only means anything in a
+ *  browser, so fall back to `useEffect` where there is no layout to read. */
+const useMeasureEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export function SamConversation({
   evaluation,
   isSending,
+  streamingStatus,
   onSend,
   onConfirmRequirements,
   onExportDocument,
@@ -20,6 +40,7 @@ export function SamConversation({
 }: {
   evaluation: EvaluationDetail
   isSending: boolean
+  streamingStatus?: StreamingStatusInfo | null
   onSend: (message: string) => void
   onConfirmRequirements: () => void
   onExportDocument?: (docId: string) => Promise<boolean> | boolean | void
@@ -76,18 +97,70 @@ export function SamConversation({
     }
   }, [evaluation.evaluation_id])
 
+  // How much conversation there is, not which array holds it. The hook rebuilds
+  // `messages` on every streamed token, so keying the scroll on the array
+  // identity ran it for renders where nothing had actually been added.
+  const conversationLength = useMemo(
+    () =>
+      evaluation.messages.reduce(
+        (total, message) => total + (message.markdown?.length ?? 0),
+        0,
+      ),
+    [evaluation.messages],
+  )
+
   useEffect(() => {
     const container = scrollRef.current
     if (!container || !followOutputRef.current) return
+    // While tokens are arriving, jump. A smooth scroll is an animation, and
+    // each token started a new one before the last had finished, so the
+    // viewport never actually reached the text being written — it sat still
+    // and then lurched to the bottom once the deltas stopped. Instant
+    // per-token scrolling is what reads as smooth following.
     if (typeof container.scrollTo === 'function') {
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'smooth',
+        behavior: isSending ? 'auto' : 'smooth',
       })
     } else {
       container.scrollTop = container.scrollHeight
     }
-  }, [evaluation.messages, isSending])
+  }, [conversationLength, evaluation.messages.length, isSending])
+
+  // The composer grows with the draft rather than scrolling a one-line box.
+  // Measuring needs the height released first, which drops the textarea's own
+  // scroll offset — so it goes back afterwards, or the caret vanishes the
+  // moment the draft passes the cap.
+  const composerHeightRef = useRef(COMPOSER_MIN_HEIGHT)
+  const measureComposer = useCallback(() => {
+    const node = composerRef.current
+    if (!node) return
+    const caretAtEnd = node.selectionStart === node.value.length
+    const innerScroll = node.scrollTop
+
+    node.style.height = 'auto'
+    const contentHeight = node.scrollHeight
+    const nextHeight = clampComposerHeight(contentHeight)
+    node.style.height = `${nextHeight}px`
+    node.style.overflowY = composerOverflows(contentHeight) ? 'auto' : 'hidden'
+    node.scrollTop = caretAtEnd ? node.scrollHeight : innerScroll
+
+    const delta = scrollAdjustmentFor(composerHeightRef.current, nextHeight)
+    composerHeightRef.current = nextHeight
+    const container = scrollRef.current
+    if (!container || delta === 0) return
+    // Assigned, never animated: this runs on a keystroke, and a smooth
+    // correction would trail the typing by a line.
+    container.scrollTop += delta
+  }, [])
+
+  useMeasureEffect(measureComposer, [draft, measureComposer])
+
+  // A narrower composer rewraps the same draft onto more lines.
+  useEffect(() => {
+    window.addEventListener('resize', measureComposer)
+    return () => window.removeEventListener('resize', measureComposer)
+  }, [measureComposer])
 
   const submit = (message = draft) => {
     const value = message.trim()
@@ -103,7 +176,7 @@ export function SamConversation({
     evaluation.matches.length === 0
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col bg-white">
+    <section className="relative flex min-h-0 flex-1 flex-col bg-paper">
       <div
         ref={scrollRef}
         data-testid="sam-conversation-scroll"
@@ -130,19 +203,27 @@ export function SamConversation({
                   key={message.id}
                   className="flex justify-end pl-10 sm:pl-20"
                 >
-                  <div className="max-w-[620px] rounded-2xl rounded-br-md bg-ink px-4 py-3 text-[0.9375rem] leading-6 text-paper">
+                  <div className="max-w-[620px] rounded-2xl rounded-br-md bg-ink px-4 py-3 text-[0.9375rem] leading-6 text-paper shadow-xs">
                     {message.markdown}
                   </div>
                 </div>
               ) : (
                 <div key={message.id} className="pr-3 sm:pr-6">
-                  <p className="label mb-2 flex items-center gap-2 !text-cobalt-deep">
-                    <span className="pulse-dot size-1.5 rounded-full bg-cobalt" aria-hidden />
-                    Sam
-                  </p>
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <span
+                      data-testid="copilot-graphic-mark"
+                      className="flex size-5 items-center justify-center rounded-md bg-cobalt-soft text-cobalt-deep"
+                      aria-label="Assistant"
+                    >
+                      <Sparkles size={11} className="text-cobalt" />
+                    </span>
+                    <span className="text-[11px] font-bold tracking-wider text-ink uppercase">
+                      SAM
+                    </span>
+                  </div>
                   <MarkdownMessage content={message.markdown} />
                   {message.status === 'streaming' ? (
-                    <span className="sr-only">SAM is typing...</span>
+                    <span className="sr-only">Copilot is typing...</span>
                   ) : null}
                   {message.status === 'failed' ? (
                     <p className="mt-2 text-xs font-medium text-[#b42318]">
@@ -156,24 +237,8 @@ export function SamConversation({
 
             {isSending ? (
               <div className="pr-3 sm:pr-6">
-                <RespondingStatus seed={evaluation.messages.length} />
+                <RespondingStatus status={streamingStatus} seed={evaluation.messages.length} />
               </div>
-            ) : null}
-
-            {evaluation.requirements ? (
-              <RequirementSummaryCard
-                requirements={evaluation.requirements}
-                missing={evaluation.missing_critical_signals}
-                onEdit={() =>
-                  setDraft(
-                    'I want to update these requirements: ',
-                  )
-                }
-                confirmed={
-                  evaluation.milestones.requirements_confirmed
-                }
-                onConfirm={onConfirmRequirements}
-              />
             ) : null}
 
             {journey.documents.length ? (
@@ -188,13 +253,22 @@ export function SamConversation({
         )}
       </div>
 
-      <div className="flex min-h-[88px] w-full items-center border-t border-border bg-paper px-4 sm:px-6">
+      {/* The welcome state carries its own composer in the hero, so the bar
+          would be a second empty textbox under it. It appears with the
+          conversation, which is the point at which it has something to sit
+          under.
+
+          `shrink-0` is what anchors the composer: it always takes its natural
+          height, so the conversation above is the side that gives up the
+          pixels when the draft grows. */}
+      {isEmpty ? null : (
+      <div className="flex min-h-[88px] w-full shrink-0 items-center border-t border-line bg-paper-deep/60 px-4 py-3 backdrop-blur-xs sm:px-6">
         <form
           onSubmit={(event) => {
             event.preventDefault()
             submit()
           }}
-          className="glass-card mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl p-2.5 transition focus-within:border-cobalt/50"
+          className="glass-card mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl border-border bg-paper p-2.5 shadow-xs transition focus-within:border-cobalt/50 focus-within:shadow-sm"
         >
           <textarea
             ref={composerRef}
@@ -213,7 +287,11 @@ export function SamConversation({
             disabled={isSending}
             placeholder="Describe your team, workflow, end goal, or ask about products..."
             rows={1}
-            className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-ink outline-none placeholder:text-ink-soft/80"
+            style={{
+              minHeight: COMPOSER_MIN_HEIGHT,
+              maxHeight: COMPOSER_MAX_HEIGHT,
+            }}
+            className="min-w-0 flex-1 resize-none overflow-y-hidden bg-transparent px-2.5 py-2.5 text-[15px] leading-6 text-ink outline-none placeholder:text-ink-soft/80"
           />
           <button
             type="submit"
@@ -226,6 +304,7 @@ export function SamConversation({
           </button>
         </form>
       </div>
+      )}
     </section>
   )
 }

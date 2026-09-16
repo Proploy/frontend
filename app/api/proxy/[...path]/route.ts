@@ -39,6 +39,7 @@ async function handleProxy(request: NextRequest, context: { params: Promise<unkn
     '/api/v1/native-scheduling/',
     '/api/v1/integrations/',
     '/api/v1/ai_workspace/',
+    '/api/v1/documents/',
     '/api/v1/auth/sync',
     '/api/v1/catalog/compare',
   ]

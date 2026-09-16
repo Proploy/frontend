@@ -1,3 +1,4 @@
+import type { RequirementsDraft } from './evaluation-types'
 import { deriveRequirements, type RequirementsMatrix } from './requirements'
 import type { AiWorkspaceProfile } from './types'
 
@@ -22,17 +23,21 @@ export type RequirementGap = {
   prompt: string
 }
 
-/** Prompt starters per requirement row, keyed to `deriveRequirements` rows. */
+/**
+ * Prompt starters per requirement row, keyed to `deriveRequirements` rows.
+ *
+ * Budget and timeline are deliberately absent: nothing downstream can score
+ * them, so a chip asking for one would spend the buyer's attention on an
+ * answer that cannot change the shortlist.
+ */
 const PROMPTS: Record<string, { label: string; prompt: string }> = {
   goals: { label: 'Your goal', prompt: "What we're trying to achieve is " },
   pain_points: { label: 'Pain points', prompt: "What isn't working today is " },
   integrations: { label: 'Integrations', prompt: 'It needs to work with ' },
-  budget: { label: 'Budget', prompt: 'Our budget is around ' },
   team_size: { label: 'Team size', prompt: 'The team using this is about ' },
   industry: { label: 'Industry', prompt: "We're in " },
   compliance: { label: 'Compliance', prompt: 'We have to meet ' },
   deployment: { label: 'Deployment', prompt: 'We need it deployed as ' },
-  timeline: { label: 'Timeline', prompt: 'We want to be live by ' },
   success_criteria: { label: 'Success looks like', prompt: 'This is a success if ' },
 }
 
@@ -41,12 +46,10 @@ const PRIORITY = [
   'goals',
   'pain_points',
   'integrations',
-  'budget',
   'team_size',
   'industry',
   'compliance',
   'deployment',
-  'timeline',
   'success_criteria',
 ]
 
@@ -62,8 +65,9 @@ export type RequirementCoverage = {
 
 export function requirementCoverage(
   profile: AiWorkspaceProfile | null | undefined,
+  requirementsDraft?: RequirementsDraft | null,
 ): RequirementCoverage {
-  const matrix = deriveRequirements(profile)
+  const matrix = deriveRequirements(profile, requirementsDraft)
 
   const gaps = matrix.rows
     .filter((row) => row.missing && PROMPTS[row.key])

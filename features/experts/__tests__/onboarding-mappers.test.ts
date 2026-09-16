@@ -27,7 +27,11 @@ const form: VendorOnboardingData = {
   ],
   industries: ['Technology'],
   certificationFiles: [],
-  manualCertifications: ['HubSpot Solutions Partner', 'Salesforce Admin', ' hubspot solutions partner '],
+  manualCertifications: [
+    { name: 'HubSpot Solutions Partner', file: null },
+    { name: 'Salesforce Admin', file: null },
+    { name: ' hubspot solutions partner ', file: null },
+  ],
   yearsExperience: '6–10 years',
   totalProjects: '12',
   uniqueStrength: 'Pipeline design',

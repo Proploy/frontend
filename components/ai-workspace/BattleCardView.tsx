@@ -93,7 +93,25 @@ export function BattleCardView({ card }: { card: BattleCardData }) {
 
       {section === 'matrix' ? (
         <>
-        <RequirementFitChart card={card} />
+        {/* The battle card stores fit requirement-first; the chart reads it
+            product-first, the same way the workspace matrix does. */}
+        <RequirementFitChart
+          rows={card.requirements.map((requirement, index) => ({
+            key: String(index),
+            label: requirement.requirement,
+          }))}
+          columns={card.products.map((product) => ({
+            id: product.product_id,
+            name: product.product_name,
+            cells: Object.fromEntries(
+              card.requirements.map((requirement, index) => [
+                String(index),
+                requirement.fit[product.product_id] ?? { status: 'unknown' as const },
+              ]),
+            ),
+          }))}
+          recommendedId={card.recommendation.product_id}
+        />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-left" aria-label="Requirements fit matrix">
             <thead>

@@ -88,12 +88,34 @@ function isPartialKey(token: string): boolean {
   return token.includes('_') || (token.length >= 8 && token === token.toUpperCase())
 }
 
+/** `(Product ID: 1975e56a3a92)` written into the prose.
+ *
+ *  Sam is asked to name products and keep ids in the trailing marker, but it
+ *  sometimes writes the id beside the name as well. The control-block sweep
+ *  below only recognises ids as a JSON key, so this parenthetical form reached
+ *  the buyer. The service-apis sanitizer removes it from the stored message;
+ *  this is the same rule for text still streaming.
+ *
+ *  Left partial on purpose: while `(Product ID: 1975e5` is still arriving the
+ *  closing paren has not landed, so the holdback below hides the tail rather
+ *  than flashing a half-written id. */
+const PROSE_PRODUCT_ID =
+  /[([{]\s*product\s*[_\-\s]?id\s*[:=]\s*["']?[A-Za-z0-9_-]{6,}["']?\s*[)\]}]/gi
+
+/** An id parenthetical that has opened but not yet closed.
+ *  Matches from the opening bracket onward, before the colon has arrived, so
+ *  `(Product ID` is held back rather than shown and then retracted. */
+const PARTIAL_PROSE_PRODUCT_ID =
+  /[([{]\s*product\s*[_\-\s]?id\s*(?:[:=][^)\]}]*)?$/i
+
 export function cleanMarkdown(text: string): string {
   if (!text) return ''
 
   let out = text
     .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
     .replace(/<thinking>[\s\S]*$/i, '')
+    .replace(PROSE_PRODUCT_ID, '')
+    .replace(PARTIAL_PROSE_PRODUCT_ID, '')
 
   // --- control blocks ---------------------------------------------------
   let from = 0
@@ -180,6 +202,9 @@ export function cleanMarkdown(text: string): string {
     const cut = out.lastIndexOf(tail[1])
     out = out.slice(0, cut).replace(/[\s{[,]*"?$/, '')
   }
+
+  // Removing an id parenthetical leaves "Jira  captures" / "Jira , which".
+  out = out.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+([,.;:!?)])/g, '$1')
 
   return out.replace(/\n{3,}/g, '\n\n').trim()
 }

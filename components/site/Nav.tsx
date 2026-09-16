@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, LogOut, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
+import { Menu, X, LogOut, LayoutGrid, UserRound } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useExpertApplicationStage } from "@/features/experts/use-expert-application-stage";
 import { setServerAuthIntent } from "@/lib/utils/auth-intent-client";
@@ -22,13 +22,9 @@ const LINKS: NavLink[] = [
   // product detail pages live at /product/[id], not under /products.
   { href: "/products", label: "Products", match: ["/product"], flyout: "products" },
   { href: "/experts", label: "Experts", flyout: "experts" },
-  {
-    label: "About us",
-    items: [
-      { href: "/for-businesses", label: "For business" },
-      { href: "/for-experts", label: "For experts" },
-    ],
-  },
+  // "About us" is now a direct link — the toggle on the landing pages lets
+  // users switch between for-businesses and for-experts.
+  { href: "/for-businesses", label: "About us", match: ["/for-experts"] },
   // Branding page for Sam. The authenticated workspace itself is reached from
   // the page's CTA and from the match-engine card on the homepage.
   { href: "/ask-sam", label: "Ask SAM" },
@@ -155,51 +151,17 @@ export function Nav() {
               const active = isLinkActive(pathname, l);
               return (
               <li key={l.label} className="relative group">
-                {l.items ? (
-                  <>
-                    <button
-                      className={`${NAV_LINK_BASE} flex items-center gap-1 ${
-                        active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE
-                      }`}
-                    >
-                      {l.label}
-                      <ChevronDown className="h-3 w-3 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
-                    </button>
-                    <div className={FLYOUT_WRAP}>
-                      <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-white p-1.5 shadow-[0_24px_48px_-16px_rgba(10,13,18,0.18)] min-w-[160px]">
-                        {l.items.map((sub) => {
-                          const subActive = matchesPath(pathname, sub.href);
-                          return (
-                            <Link
-                              key={sub.href}
-                              href={sub.href}
-                              aria-current={subActive ? "page" : undefined}
-                              className={`rounded-lg px-3 py-2 text-[0.85rem] transition-colors hover:bg-cobalt-soft/50 ${
-                                subActive ? "bg-cobalt-soft/60 font-medium text-cobalt" : "text-ink"
-                              }`}
-                            >
-                              {sub.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href={l.href!}
-                      aria-current={active ? "page" : undefined}
-                      className={`${NAV_LINK_BASE} ${active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}`}
-                    >
-                      {l.label}
-                    </Link>
-                    {l.flyout && (
-                      <div className={FLYOUT_WRAP}>
-                        {l.flyout === "products" ? <ProductsFlyout /> : <ExpertsFlyout />}
-                      </div>
-                    )}
-                  </>
+                <Link
+                  href={l.href!}
+                  aria-current={active ? "page" : undefined}
+                  className={`${NAV_LINK_BASE} ${active ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}`}
+                >
+                  {l.label}
+                </Link>
+                {l.flyout && (
+                  <div className={FLYOUT_WRAP}>
+                    {l.flyout === "products" ? <ProductsFlyout /> : <ExpertsFlyout />}
+                  </div>
                 )}
               </li>
               );
@@ -304,46 +266,16 @@ export function Nav() {
                 const active = isLinkActive(pathname, l);
                 return (
                 <li key={l.label}>
-                  {l.items ? (
-                    <div className="py-2.5">
-                      <span
-                        className={`block text-[0.9375rem] font-medium mb-1 ${
-                          active ? "text-cobalt" : "text-ink"
-                        }`}
-                      >
-                        {l.label}
-                      </span>
-                      <div className="flex flex-col gap-1 pl-3 border-l-2 border-border/50 ml-1">
-                        {l.items.map(sub => {
-                          const subActive = matchesPath(pathname, sub.href);
-                          return (
-                            <Link
-                              key={sub.href}
-                              href={sub.href}
-                              onClick={() => setMenuOpen(false)}
-                              aria-current={subActive ? "page" : undefined}
-                              className={`block py-1.5 text-[0.9375rem] transition-colors hover:text-cobalt ${
-                                subActive ? "font-medium text-cobalt" : "text-ink-soft"
-                              }`}
-                            >
-                              {sub.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      href={l.href!}
-                      onClick={() => setMenuOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={`block py-2.5 text-[0.9375rem] transition-colors hover:text-cobalt ${
-                        active ? "font-medium text-cobalt" : "text-ink-soft"
-                      }`}
-                    >
-                      {l.label}
-                    </Link>
-                  )}
+                  <Link
+                    href={l.href!}
+                    onClick={() => setMenuOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`block py-2.5 text-[0.9375rem] transition-colors hover:text-cobalt ${
+                      active ? "font-medium text-cobalt" : "text-ink-soft"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
                 </li>
                 );
               })}
