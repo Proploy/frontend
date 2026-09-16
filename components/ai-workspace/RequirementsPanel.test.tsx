@@ -8,8 +8,8 @@ describe('RequirementsPanel', () => {
     // not hidden.
     const view = await render(<RequirementsPanel profile={null} onAsk={() => undefined} />)
     const text = view.container.textContent ?? ''
-    expect(text).toContain('0 of 10 captured')
-    expect(text).toContain('Tell Sam more')
+    expect(text).toContain('0 captured')
+    expect(text).toContain('Add context')
     await view.unmount()
   })
 
@@ -31,13 +31,13 @@ describe('RequirementsPanel', () => {
       />,
     )
     const text = view.container.textContent ?? ''
-    expect(text).toContain('3 of 10 captured')
+    expect(text).toContain('3 captured')
     expect(text).toContain('Replace our PM tool')
     expect(text).toContain('45')
     // An empty requirement is not a fact about the buyer: no blank rows, and
     // the row label only appears as something they can answer.
     expect(text).not.toContain('Not yet known')
-    expect(text).toContain('Tell Sam more')
+    expect(text).toContain('Add context')
     await view.unmount()
   })
 })

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Check } from 'lucide-react'
+import { Check, LoaderCircle } from 'lucide-react'
 import type { EvaluationProduct } from '@/features/ai-workspace'
 import { getProductDetailHref } from '@/features/catalog/products/product-detail-view'
 import { ProductLogo } from './ProductLogo'
@@ -12,6 +12,8 @@ export type ProductCardAction = {
   label: string
   icon?: ReactNode
   disabled?: boolean
+  /** Only the action that started a request shows progress. */
+  loading?: boolean
   /** Renders the button in its "on" state — the shortlist toggle uses it. */
   active?: boolean
   /**
@@ -182,9 +184,9 @@ export function ProductMatchCard({
             <button
               key={action.label}
               type="button"
-              disabled={action.disabled}
+              disabled={action.disabled || action.loading}
               onClick={action.onClick}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[0.78rem] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[0.78rem] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                 action.active
                   ? 'border border-cobalt bg-cobalt-soft text-cobalt-deep'
                   : action.tone === 'agent'
@@ -192,7 +194,9 @@ export function ProductMatchCard({
                     : 'border border-transparent bg-ink text-paper hover:bg-cobalt'
               }`}
             >
-              {action.icon}
+              {action.loading ? (
+                <LoaderCircle size={13} className="animate-spin motion-reduce:animate-none" aria-hidden />
+              ) : action.icon}
               {action.label}
             </button>
           ))}

@@ -88,7 +88,7 @@ describe('EvaluationSidebar', () => {
     )
 
     const text = view.container.textContent || ''
-    expect(text).toContain('Evaluations')
+    expect(text).toContain('Your evaluations')
     expect(text.indexOf('Needs attention')).toBeLessThan(
       text.indexOf('In progress'),
     )

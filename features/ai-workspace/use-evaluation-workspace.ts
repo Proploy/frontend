@@ -17,9 +17,17 @@ import {
   updateAiWorkspaceShortlist,
 } from '@/features/ai-workspace/client'
 import { streamAiWorkspaceResearch } from '@/features/ai-workspace/stream'
-import { applyEvaluationStreamEvent, parseAssistantMarkdown, mergeMatches } from './evaluation-reducer'
+import {
+  applyEvaluationStreamEvent,
+  draftFromProfile,
+  mergeMatches,
+  parseAssistantMarkdown,
+} from './evaluation-reducer'
+import { readAiWorkspaceContextHistory } from './context'
+import { asRequirementFit } from './requirement-fit'
 import { buildComparisonRequest, buildImplementationRequest } from './journey'
 import { placeSummary } from './evaluation-list'
+import type { StreamingStatusInfo } from '@/components/ai-workspace/RespondingStatus'
 import {
   applyResolvedProductNames,
   productIdsMissingNames,
@@ -157,6 +165,10 @@ function normalizeStreamRecommendation(item: Record<string, unknown>): Evaluatio
     reasons,
     considerations: Array.isArray(item.considerations) ? item.considerations.map(String) : [],
     is_agent_selected: item.is_agent_selected === true,
+    // Explicitly null rather than omitted when the turn assessed nothing:
+    // matches merge field by field, so a missing key would leave the previous
+    // turn's verdicts on screen under requirements that have since changed.
+    requirement_fit: asRequirementFit(item.requirement_fit),
   }
 }
 
@@ -164,6 +176,24 @@ function mapAiEventToEvaluation(
   event: AiWorkspaceStreamEvent,
 ): EvaluationStreamEvent | null {
   switch (event.type) {
+    case 'session':
+      return {
+        type: 'session',
+        data: {
+          session_id: typeof event.data.session_id === 'string' ? event.data.session_id : undefined,
+          evaluation_id: typeof event.data.evaluation_id === 'string' ? event.data.evaluation_id : undefined,
+          user_id: typeof event.data.user_id === 'string' ? event.data.user_id : undefined,
+          title: typeof event.data.title === 'string' ? event.data.title : undefined,
+        },
+      }
+    case 'session_meta':
+      return {
+        type: 'session_meta',
+        data: {
+          title: event.data.title,
+          session_id: event.data.session_id,
+        },
+      }
     case 'message_delta':
       return {
         type: 'message_delta',
@@ -267,6 +297,7 @@ export function useEvaluationWorkspace() {
     error: null,
   })
   const [isSending, setIsSending] = useState(false)
+  const [streamingStatus, setStreamingStatus] = useState<StreamingStatusInfo | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const isSendingRef = useRef(false)
 
@@ -426,6 +457,7 @@ export function useEvaluationWorkspace() {
     abortRef.current = null
     isSendingRef.current = false
     setIsSending(false)
+    setStreamingStatus(null)
   }, [])
 
   const updateActive = useCallback((
@@ -463,9 +495,15 @@ export function useEvaluationWorkspace() {
         error: null,
       }))
 
+      // Nothing is read out of the buyer's own sentence here. Requirements are
+      // what the agent understood, and the turn reports that back: `profile`
+      // mid-stream, then `evaluation_state` and `done` carrying the persisted
+      // draft. Guessing locally put a second, regex-shaped answer on screen the
+      // moment the message was sent, and that guess was what got sent upstream
+      // on the next turn.
       const assistantMessage = createLocalMessage('assistant', '', 'streaming')
       let assistantContent = ''
-      let currentDetail = {
+      let currentDetail: EvaluationDetail = {
         ...detail,
         messages: [
           ...detail.messages,
@@ -483,16 +521,46 @@ export function useEvaluationWorkspace() {
           {
             message,
             session_id: detail.agent_session_id,
+            evaluation_id: detail.evaluation_id,
+            requirements: (currentDetail.requirements ?? draftFromProfile(currentDetail.profile)) ?? undefined,
             page_context: {
               route: '/AI_workspace',
               page_type: 'AI_workspace',
-              title: detail.title,
+              title: currentDetail.title,
             },
+            page_context_history: readAiWorkspaceContextHistory(),
           },
           {
             onEvent: (event) => {
               const mapped = mapAiEventToEvaluation(event)
+
+              if (event.type === 'thinking') {
+                setStreamingStatus({
+                  type: 'thinking',
+                  content: event.data.content || 'Analyzing request',
+                  status: event.data.status || 'running',
+                })
+              } else if (event.type === 'tool_call') {
+                setStreamingStatus({
+                  type: 'tool_call',
+                  name: event.data.name || 'catalog',
+                  status: event.data.status === 'completed' ? 'completed' : 'calling',
+                })
+              } else if (event.type === 'message_final' || event.type === 'done') {
+                setStreamingStatus(null)
+              }
+
+              if (event.type === 'session_meta' && event.data.title) {
+                currentDetail = {
+                  ...currentDetail,
+                  title: String(event.data.title).trim(),
+                }
+              }
+
               if (event.type === 'message_delta' || event.type === 'message_final') {
+                // Immediately clear thinking status once assistant begins streaming text
+                setStreamingStatus(null)
+
                 if (event.type === 'message_delta') {
                   const delta = String(event.data.delta ?? '')
                   assistantContent += delta
@@ -501,23 +569,22 @@ export function useEvaluationWorkspace() {
                 }
 
                 const { displayMarkdown, extractedMatches } = parseAssistantMarkdown(assistantContent)
-                if (extractedMatches.length > 0) {
-                  currentDetail = { 
-                    ...currentDetail, 
-                    matches: mergeMatches(extractedMatches, currentDetail.matches) 
-                  }
-                }
-                
+
                 assistantMessage.markdown = displayMarkdown
 
+                // Requirements and profile are deliberately left alone while
+                // text streams: scraping the half-written reply made the panel
+                // flicker through phrasings the agent was still revising. The
+                // `profile` event carries the settled version.
                 currentDetail = {
                   ...currentDetail,
+                  matches: extractedMatches.length > 0 ? mergeMatches(extractedMatches, currentDetail.matches) : currentDetail.matches,
                   messages: currentDetail.messages.map((item) =>
                     item.id === assistantMessage.id
                       ? {
                           ...item,
                           markdown: displayMarkdown,
-                          status: event.type === 'message_final' ? 'complete' : 'streaming'
+                          status: event.type === 'message_final' ? 'complete' : 'streaming',
                         }
                       : item,
                   ),
@@ -527,6 +594,21 @@ export function useEvaluationWorkspace() {
               }
               if (mapped) {
                 if (mapped.type === 'error') {
+                  // A failed turn has to resolve the optimistic placeholder.
+                  // Without this it stays `streaming` with empty markdown once
+                  // `isSending` clears, so a turn that died reads as a blank
+                  // bubble that never fills — the workspace looks hung rather
+                  // than failed. Whatever streamed in before the failure is
+                  // kept; the status is what changes.
+                  currentDetail = {
+                    ...currentDetail,
+                    messages: currentDetail.messages.map((item) =>
+                      item.id === assistantMessage.id && item.status === 'streaming'
+                        ? { ...item, status: 'failed' }
+                        : item,
+                    ),
+                  }
+                  upsertDetail(currentDetail)
                   setState((current) => ({
                     ...current,
                     error: mapped.data.message,
@@ -544,6 +626,7 @@ export function useEvaluationWorkspace() {
         abortRef.current = null
         isSendingRef.current = false
         setIsSending(false)
+        setStreamingStatus(null)
         setState((current) => ({
           ...current,
           sendingById: {
@@ -739,11 +822,16 @@ export function useEvaluationWorkspace() {
     return true
   }, [])
 
+  const clearError = useCallback(() => {
+    setState((current) => ({ ...current, error: null }))
+  }, [])
+
   return useMemo(
     () => ({
       state,
       activeEvaluation,
       isSending,
+      streamingStatus,
       isStartingEvaluation: isSending,
       refresh: async () => undefined,
       selectEvaluation,
@@ -755,6 +843,7 @@ export function useEvaluationWorkspace() {
       deleteEvaluation: (evaluationId: string) =>
         removeEvaluation(evaluationId, false),
       sendMessage,
+      clearError,
       confirmRequirements: () => Promise.resolve(false),
       toggleShortlist,
       requestComparisonBrief,
@@ -770,6 +859,7 @@ export function useEvaluationWorkspace() {
       state,
       activeEvaluation,
       isSending,
+      streamingStatus,
       selectEvaluation,
       newEvaluation,
       startEvaluation,
@@ -777,6 +867,7 @@ export function useEvaluationWorkspace() {
       duplicate,
       removeEvaluation,
       sendMessage,
+      clearError,
       toggleShortlist,
       requestComparisonBrief,
       requestImplementationBrief,

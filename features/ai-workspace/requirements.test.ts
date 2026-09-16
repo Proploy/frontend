@@ -22,7 +22,8 @@ describe('deriveRequirements', () => {
     expect(byKey.compliance.missing).toBe(true)
     expect(byKey.success_criteria.missing).toBe(true)
     expect(matrix.known).toBe(5)
-    expect(matrix.total).toBe(10)
+    // Timeline is empty and unscoreable, so it is not carried as a gap.
+    expect(matrix.total).toBe(9)
   })
 
   it('reports nothing captured for an empty or missing profile', () => {
@@ -45,5 +46,39 @@ describe('deriveRequirements — harness field mapping', () => {
   it('still honours an explicit industry constraint if one is sent', () => {
     const matrix = deriveRequirements({ constraints: [{ type: 'industry', value: 'Fintech' }] })
     expect(matrix.rows.find((row) => row.key === 'industry')?.values).toEqual(['Fintech'])
+  })
+
+  it('captures numeric constraints and top-level profile fields correctly', () => {
+    const matrix = deriveRequirements({
+      team_size: 50,
+      budget_tier: '$10,000/mo',
+      industry: 'healthcare',
+      compliance: 'SOC2',
+      deployment: 'cloud-based',
+      timeline: '3 months',
+    })
+    const byKey = Object.fromEntries(matrix.rows.map((row) => [row.key, row]))
+    expect(byKey.team_size.values).toEqual(['50'])
+    expect(byKey.budget.values).toEqual(['$10,000/mo'])
+    expect(byKey.industry.values).toEqual(['healthcare'])
+    expect(byKey.compliance.values).toEqual(['SOC2'])
+    expect(byKey.deployment.values).toEqual(['cloud-based'])
+    expect(byKey.timeline.values).toEqual(['3 months'])
+    expect(matrix.known).toBe(6)
+  })
+
+  it('merges answered fields from requirementsDraft', () => {
+    const matrix = deriveRequirements(
+      { goals: [{ text: 'CRM evaluation' }] },
+      {
+        team_size: { state: 'answered', value: '50' },
+        compliance: { state: 'answered', value: 'HIPAA, SOC2' },
+      },
+    )
+    const byKey = Object.fromEntries(matrix.rows.map((row) => [row.key, row]))
+    expect(byKey.goals.values).toEqual(['CRM evaluation'])
+    expect(byKey.team_size.values).toEqual(['50'])
+    expect(byKey.compliance.values).toEqual(['HIPAA, SOC2'])
+    expect(matrix.known).toBe(3)
   })
 })

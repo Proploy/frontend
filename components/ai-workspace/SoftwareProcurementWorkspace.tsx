@@ -3,17 +3,21 @@
 import { LoaderCircle, X } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { ActionToast } from '@/components/ui/action-toast'
 import { Skeleton } from '@/components/ui/Skeleton'
 import {
   type EvaluationSummary,
   useEvaluationWorkspace,
 } from '@/features/ai-workspace'
 import { deriveJourney } from '@/features/ai-workspace/journey'
+import { requirementCoverage } from '@/features/ai-workspace/requirement-prompts'
 import { AgentResultsSidebar } from './AgentResultsSidebar'
+import { RequirementFitSection } from './RequirementFitSection'
 import { DecisionBoard } from './DecisionBoard'
 import { DocumentCard } from './DocumentCard'
 import { EvaluationHeader } from './EvaluationHeader'
 import { EvaluationSidebar } from './EvaluationSidebar'
+import { RequirementsModal } from './RequirementsModal'
 import { SamConversation } from './SamConversation'
 import { WelcomeState } from './WelcomeState'
 
@@ -29,6 +33,7 @@ export function SoftwareProcurementWorkspace() {
 
   const [resultsCollapsed, setResultsCollapsed] = useState(false)
   const [resultsOpen, setResultsOpen] = useState(false)
+  const [requirementsModalOpen, setRequirementsModalOpen] = useState(false)
   // The same three lanes as the results column, opened across the workspace.
   const [boardOpen, setBoardOpen] = useState(false)
   // A brief Sam finished, opened over the workspace. The transcript keeps its
@@ -152,11 +157,11 @@ export function SoftwareProcurementWorkspace() {
         aria-live="polite"
         className="fixed inset-0 flex min-h-0 flex-col overflow-hidden overscroll-none bg-paper font-inter text-ink"
       >
-        <div className="grid h-full min-w-0 grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_360px]">
+        <div className="grid h-full min-w-0 grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(460px,1fr)_395px]">
           {/* Sidebar skeleton */}
-          <aside className="hidden min-h-0 border-r border-border lg:flex lg:flex-col">
-            <div className="flex min-h-[80px] items-center justify-between border-b border-border px-[16px]">
-              <Skeleton className="h-[34px] w-[142px] rounded-[6px]" />
+          <aside className="hidden min-h-0 border-r border-border bg-white lg:flex lg:flex-col">
+            <div className="flex h-16 min-h-16 items-center justify-between border-b border-border px-[16px]">
+              <Skeleton className="h-[30px] w-[116px] rounded-[6px]" />
               <Skeleton shape="circle" className="size-[28px]" />
             </div>
             <div className="flex flex-col gap-[8px] p-[12px]">
@@ -174,7 +179,7 @@ export function SoftwareProcurementWorkspace() {
 
           {/* Main skeleton */}
           <main className="flex min-h-0 min-w-0 flex-col">
-            <div className="flex items-center justify-between border-b border-border px-[24px] py-[16px]">
+            <div className="flex items-center justify-between border-b border-border bg-white px-[24px] py-[16px]">
               <div className="flex flex-col gap-[6px]">
                 <Skeleton className="h-[20px] w-[200px] rounded-[6px]" />
                 <Skeleton className="h-[12px] w-[140px] rounded-[4px]" />
@@ -184,7 +189,7 @@ export function SoftwareProcurementWorkspace() {
                 <Skeleton className="h-[36px] w-[100px] rounded-[8px]" />
               </div>
             </div>
-            <div className="flex flex-1 flex-col gap-[16px] overflow-hidden bg-paper p-[24px]">
+            <div className="relative flex flex-1 flex-col gap-[16px] overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(63,110,255,0.10),transparent_34%),var(--color-paper)] p-[24px]">
               <div className="flex items-start gap-[12px]">
                 <Skeleton shape="circle" className="size-[32px]" />
                 <div className="flex max-w-[70%] flex-col gap-[6px]">
@@ -207,11 +212,14 @@ export function SoftwareProcurementWorkspace() {
                   <Skeleton className="h-[14px] w-[180px] rounded-[8px]" />
                 </div>
               </div>
-              <div className="mt-8 flex flex-col items-center justify-center gap-4 pb-12">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[#e9eaeb]">
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 pb-12 text-center">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-white shadow-[0_16px_32px_-18px_rgba(63,110,255,0.55)] ring-1 ring-[#e9eaeb]">
                   <LoaderCircle size={24} className="animate-spin text-cobalt motion-reduce:animate-none" />
                 </div>
-                <span className="text-[15px] font-medium text-ink-soft">Preparing your workspace...</span>
+                <div>
+                  <p className="text-[15px] font-semibold text-ink">Preparing your decision workspace</p>
+                  <p className="mt-1 text-[13px] text-ink-soft">Loading your evaluations, requirements, and saved research.</p>
+                </div>
               </div>
             </div>
             <div className="flex min-h-[88px] w-full items-center border-t border-border bg-white px-4 sm:px-6">
@@ -223,9 +231,10 @@ export function SoftwareProcurementWorkspace() {
           </main>
 
           {/* Results sidebar skeleton */}
-          <aside className="hidden min-h-0 border-l border-border xl:flex xl:flex-col">
-            <div className="border-b border-border px-[20px] py-[14px]">
-              <Skeleton className="h-[18px] w-[140px] rounded-[4px]" />
+          <aside className="hidden min-h-0 border-l border-border bg-[#f8fafc] xl:flex xl:flex-col">
+            <div className="border-b border-border bg-white px-[20px] py-[14px]">
+              <Skeleton className="h-[12px] w-[100px] rounded-[4px]" />
+              <Skeleton className="mt-2 h-[20px] w-[150px] rounded-[6px]" />
             </div>
             <div className="flex flex-col gap-[12px] p-[16px]">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -246,12 +255,12 @@ export function SoftwareProcurementWorkspace() {
     return (
       <div className="flex h-dvh items-center justify-center bg-paper px-4 font-inter">
         <div className="glass-card max-w-md rounded-2xl p-8 text-center">
-          <span className="label">Ask Sam</span>
+          <span className="label">Ask SAM · AI Procurement</span>
           <h1 className="display mt-3 text-[1.75rem] text-ink">
-            Sign in to work with Sam
+            Sign in to work with SAM
           </h1>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
-            Your evaluations and the products Sam recommends are saved
+            Your evaluations, requirements, and the products SAM recommends are saved
             privately to your account.
           </p>
         </div>
@@ -260,6 +269,9 @@ export function SoftwareProcurementWorkspace() {
   }
 
   const evaluation = workspace.activeEvaluation
+  // The agent-results sidebar only earns its column once a turn has run —
+  // a brand-new evaluation with no messages must look like an empty canvas.
+  const hasResults = Boolean(evaluation && evaluation.messages.length > 0)
   const openBrief = evaluation && openDocId
     ? deriveJourney(evaluation).documents.find((doc) => doc.doc_id === openDocId) ?? null
     : null
@@ -275,26 +287,27 @@ export function SoftwareProcurementWorkspace() {
     (evaluation
       ? shareStateById[evaluation.evaluation_id]
       : undefined) ?? 'idle'
-  const workspaceColumns = evaluation
+  const workspaceColumns = hasResults
     ? sidebarCollapsed
       ? resultsCollapsed
-        ? 'lg:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[72px_minmax(600px,1fr)_52px]'
-        : 'lg:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[72px_minmax(600px,1fr)_360px]'
+        ? 'lg:grid-cols-[56px_minmax(0,1fr)] xl:grid-cols-[56px_minmax(460px,1fr)_52px]'
+        : 'lg:grid-cols-[56px_minmax(0,1fr)] xl:grid-cols-[56px_minmax(460px,1fr)_395px]'
       : resultsCollapsed
-        ? 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_52px]'
-        : 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(600px,1fr)_360px]'
+        ? 'lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(460px,1fr)_52px]'
+        : 'lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(460px,1fr)_395px]'
     : sidebarCollapsed
-      ? 'lg:grid-cols-[72px_minmax(0,1fr)]'
-      : 'lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]'
+      ? 'lg:grid-cols-[56px_minmax(0,1fr)]'
+      : 'lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)]'
 
   return (
     // Pinned to the viewport so the page itself can never scroll past the
     // workspace; every scrollable region inside contains its own overscroll.
     <div className="fixed inset-0 min-h-0 overflow-hidden overscroll-none bg-paper font-inter text-ink">
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_58%_0%,rgba(45,99,255,0.04),transparent_32%)]" />
       <div
-        className={`grid h-full min-w-0 grid-cols-1 transition-[grid-template-columns] duration-300 ease-out ${workspaceColumns}`}
+        className={`relative grid h-full min-w-0 grid-cols-1 transition-[grid-template-columns] duration-300 ease-out ${workspaceColumns}`}
       >
-        <div className="hidden min-h-0 border-r border-border lg:block">
+        <div className="hidden min-h-0 border-r border-line bg-paper-deep/80 lg:block">
           <EvaluationSidebar
             evaluations={workspace.state.summaries}
             activeEvaluationId={workspace.state.activeEvaluationId}
@@ -316,11 +329,13 @@ export function SoftwareProcurementWorkspace() {
           />
         </div>
 
-        <main className="flex min-h-0 min-w-0 flex-col">
+        <main className="flex min-h-0 min-w-0 flex-col bg-paper">
           <EvaluationHeader
             evaluation={evaluation}
             onOpenEvaluations={() => setEvaluationsOpen(true)}
-            onOpenResults={() => setResultsOpen(true)}
+            onOpenResults={() => {
+              if (hasResults) setResultsOpen(true)
+            }}
             onShare={() => void shareEvaluation()}
             onSave={() => void saveEvaluation()}
             canSave={Boolean(evaluation?.messages.length) && !workspace.isSending}
@@ -328,16 +343,21 @@ export function SoftwareProcurementWorkspace() {
             shared={activeShareState === 'shared'}
             saving={activeSaveState === 'saving'}
             saved={activeSaveState === 'saved'}
+            onOpenRequirements={() => setRequirementsModalOpen(true)}
+            requirementsCount={
+              evaluation
+                ? {
+                    known: requirementCoverage(evaluation.profile, evaluation.requirements).matrix.known,
+                    total: requirementCoverage(evaluation.profile, evaluation.requirements).matrix.total,
+                  }
+                : undefined
+            }
           />
-          {workspace.state.error ? (
-            <div className="border-b border-[#fecdca] bg-[#fef3f2] px-5 py-2 text-sm text-[#b42318]">
-              {workspace.state.error}
-            </div>
-          ) : null}
           {evaluation ? (
             <SamConversation
               evaluation={evaluation}
               isSending={workspace.isSending}
+              streamingStatus={workspace.streamingStatus}
               onSend={(message) => void workspace.sendMessage(message)}
               onConfirmRequirements={() =>
                 void workspace.confirmRequirements()
@@ -346,7 +366,7 @@ export function SoftwareProcurementWorkspace() {
               prefill={prefill}
             />
           ) : (
-            <section className="flex min-h-0 flex-1 flex-col bg-white">
+            <section className="flex min-h-0 flex-1 flex-col bg-paper">
               <div className="min-h-0 flex-1 overflow-y-auto">
                 <WelcomeState
                   disabled={workspace.isStartingEvaluation}
@@ -359,8 +379,8 @@ export function SoftwareProcurementWorkspace() {
           )}
         </main>
 
-        {evaluation ? (
-          <div className="hidden min-h-0 xl:block">
+        {evaluation && evaluation.messages.length > 0 ? (
+          <div className="hidden min-h-0 border-l border-line bg-paper-deep/70 xl:block">
             <AgentResultsSidebar
               evaluation={evaluation}
               collapsed={resultsCollapsed}
@@ -368,17 +388,11 @@ export function SoftwareProcurementWorkspace() {
                 setResultsCollapsed((collapsed) => !collapsed)
               }
               busy={workspace.isSending}
-              onToggleShortlist={(product) =>
-                void workspace.toggleShortlist(product)
-              }
-              onExpandBoard={() => setBoardOpen(true)}
-              onRequestComparisonBrief={(products) =>
-                void workspace.requestComparisonBrief(products)
-              }
-              onRequestImplementationBrief={(product) =>
-                void workspace.requestImplementationBrief(product)
-              }
+              onToggleShortlist={workspace.toggleShortlist}
+              onRequestComparisonBrief={workspace.requestComparisonBrief}
+              onRequestImplementationBrief={workspace.requestImplementationBrief}
               onOpenDocument={openDocument}
+              onOpenBoard={() => setBoardOpen(true)}
               onAsk={askSam}
             />
           </div>
@@ -412,25 +426,27 @@ export function SoftwareProcurementWorkspace() {
         </div>
       ) : null}
 
-      {resultsOpen && evaluation ? (
+      {resultsOpen && evaluation && evaluation.messages.length > 0 ? (
         <div className="fixed inset-0 z-40 flex justify-end bg-ink/40 xl:hidden">
           <div className="h-full w-[min(94vw,390px)] bg-white shadow-xl">
             <AgentResultsSidebar
               evaluation={evaluation}
               onClose={() => setResultsOpen(false)}
               busy={workspace.isSending}
-              onToggleShortlist={(product) =>
-                void workspace.toggleShortlist(product)
-              }
+              onToggleShortlist={workspace.toggleShortlist}
               onRequestComparisonBrief={(products) => {
                 setResultsOpen(false)
-                void workspace.requestComparisonBrief(products)
+                return workspace.requestComparisonBrief(products)
               }}
               onRequestImplementationBrief={(product) => {
                 setResultsOpen(false)
-                void workspace.requestImplementationBrief(product)
+                return workspace.requestImplementationBrief(product)
               }}
               onOpenDocument={openDocument}
+              onOpenBoard={() => {
+                setResultsOpen(false)
+                setBoardOpen(true)
+              }}
               onAsk={(text) => {
                 setResultsOpen(false)
                 askSam(text)
@@ -445,7 +461,7 @@ export function SoftwareProcurementWorkspace() {
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-paper shadow-xl">
             <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
               <div>
-                <p className="label">Sam&apos;s decision</p>
+                <p className="label">Recommendations</p>
                 <h2 className="display mt-1 text-[1.25rem] text-ink">{evaluation.title}</h2>
               </div>
               <button
@@ -460,17 +476,30 @@ export function SoftwareProcurementWorkspace() {
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-5">
               <DecisionBoard
                 layout="columns"
+                fit={
+                  <RequirementFitSection
+                    products={deriveJourney(evaluation).products}
+                    profile={evaluation.profile}
+                    requirements={evaluation.requirements}
+                    busy={workspace.isSending}
+                    recommendedId={deriveJourney(evaluation).products[0]?.product_id}
+                    onAsk={(text) => {
+                      setBoardOpen(false)
+                      askSam(text)
+                    }}
+                  />
+                }
                 journey={deriveJourney(evaluation)}
                 shortlist={evaluation.shortlist ?? []}
                 busy={workspace.isSending}
-                onToggleShortlist={(product) => void workspace.toggleShortlist(product)}
+                onToggleShortlist={workspace.toggleShortlist}
                 onRequestComparisonBrief={(products) => {
                   setBoardOpen(false)
-                  void workspace.requestComparisonBrief(products)
+                  return workspace.requestComparisonBrief(products)
                 }}
                 onRequestImplementationBrief={(product) => {
                   setBoardOpen(false)
-                  void workspace.requestImplementationBrief(product)
+                  return workspace.requestImplementationBrief(product)
                 }}
                 onOpenDocument={openDocument}
               />
@@ -511,6 +540,27 @@ export function SoftwareProcurementWorkspace() {
         </div>
       ) : null}
 
+      <RequirementsModal
+        open={requirementsModalOpen}
+        onClose={() => setRequirementsModalOpen(false)}
+        profile={evaluation?.profile}
+        requirements={evaluation?.requirements}
+        missingCritical={evaluation?.missing_critical_signals}
+        onAsk={askSam}
+      />
+
+      <ActionToast
+        show={Boolean(workspace.state.error)}
+        toast={
+          workspace.state.error
+            ? {
+                tone: 'error',
+                title: workspace.state.error,
+              }
+            : null
+        }
+        onClose={workspace.clearError}
+      />
     </div>
   )
 }

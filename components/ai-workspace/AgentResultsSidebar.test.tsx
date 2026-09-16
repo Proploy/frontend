@@ -207,10 +207,10 @@ describe('AgentResultsSidebar next steps', () => {
     await view.unmount()
   })
 
-  it('holds the artifacts lane open without borrowing content for it', async () => {
+  it('explains where generated artifacts will appear', async () => {
     const view = await render(<AgentResultsSidebar evaluation={withProducts} />)
     await act(async () => openLane(view.container, 'Artifacts'))
-    expect(view.container.textContent).toContain('reserved for artifacts')
+    expect(view.container.textContent).toContain('Comparison and implementation briefs')
     expect(view.container.textContent).not.toContain('Implementation brief')
     await view.unmount()
   })
@@ -225,13 +225,13 @@ describe('AgentResultsSidebar requirement coverage', () => {
       <AgentResultsSidebar evaluation={{ ...base, profile }} onAsk={onAsk} />,
     )
     expect(view.container.querySelector('[data-testid="requirements-panel"]')).not.toBeNull()
-    expect(view.container.textContent).toContain('Tell Sam more')
+    expect(view.container.textContent).toContain('Add context')
 
-    const chip = buttons(view.container).find((b) => b.textContent?.includes('Budget'))
+    const chip = buttons(view.container).find((b) => b.textContent?.includes('Compliance'))
     expect(chip).toBeDefined()
     await act(async () => chip?.click())
     // A prompt starter, left mid-sentence for the buyer to finish.
-    expect(onAsk).toHaveBeenCalledWith(expect.stringContaining('budget'))
+    expect(onAsk).toHaveBeenCalledWith(expect.stringContaining('meet'))
     await view.unmount()
   })
 
@@ -240,8 +240,8 @@ describe('AgentResultsSidebar requirement coverage', () => {
     // buyer can most improve the shortlist by telling Sam something.
     const view = await render(<AgentResultsSidebar evaluation={base} onAsk={() => undefined} />)
     expect(view.container.querySelector('[data-testid="requirements-panel"]')).not.toBeNull()
-    expect(view.container.textContent).toContain('0 of')
-    expect(view.container.textContent).toContain('Tell Sam more')
+    expect(view.container.textContent).toContain('0 captured')
+    expect(view.container.textContent).toContain('Add context')
     await view.unmount()
   })
 

@@ -37,6 +37,7 @@ export function DecisionBoard({
   shortlist,
   busy = false,
   layout = 'tabs',
+  fit,
   onToggleShortlist,
   onRequestComparisonBrief,
   onRequestImplementationBrief,
@@ -48,12 +49,28 @@ export function DecisionBoard({
   busy?: boolean
   /** `tabs` for the results column, `columns` for the expanded board. */
   layout?: 'tabs' | 'columns'
-  onToggleShortlist?: (product: EvaluationProduct) => void
-  onRequestComparisonBrief?: (products: EvaluationProduct[]) => void
-  onRequestImplementationBrief?: (product: EvaluationProduct) => void
+  /**
+   * The requirements-fit band, rendered full width above the lanes in the
+   * expanded board. A slot rather than a data prop: the lanes and the matrix
+   * share nothing but the page, and the results column mounts its own compact
+   * copy above this component, so `tabs` ignores it.
+   */
+  fit?: ReactNode
+  onToggleShortlist?: (product: EvaluationProduct) => Promise<void> | void
+  onRequestComparisonBrief?: (products: EvaluationProduct[]) => Promise<void> | void
+  onRequestImplementationBrief?: (product: EvaluationProduct) => Promise<void> | void
   onOpenDocument?: (docId: string) => void
 }) {
   const [lane, setLane] = useState<BoardLane>('matches')
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
+
+  const runAction = (actionId: string, action: () => Promise<void> | void) => {
+    if (pendingAction || busy) return
+    setPendingAction(actionId)
+    void Promise.resolve(action()).finally(() => {
+      setPendingAction(null)
+    })
+  }
   const products = journey.products
   const kept = rankProducts(shortlist)
   const keptIds = new Set(kept.map((product) => product.product_id))
@@ -62,7 +79,7 @@ export function DecisionBoard({
   const counts: Record<BoardLane, number | null> = {
     matches: products.length,
     shortlist: kept.length,
-    artifacts: null,
+    artifacts: documents.length,
   }
 
   /**
@@ -80,12 +97,12 @@ export function DecisionBoard({
             label: 'Comparison brief',
             tone: 'agent' as const,
             icon: <Sparkles size={13} aria-hidden />,
-            disabled: busy,
-            onClick: () =>
+            loading: pendingAction === `comparison:${product.product_id}`,
+            onClick: () => runAction(`comparison:${product.product_id}`, () =>
               onRequestComparisonBrief([
                 product,
                 ...kept.filter((item) => item.product_id !== product.product_id),
-              ]),
+              ])),
           },
         ]
       : []),
@@ -95,8 +112,8 @@ export function DecisionBoard({
             label: 'Implementation brief',
             tone: 'agent' as const,
             icon: <Sparkles size={13} aria-hidden />,
-            disabled: busy,
-            onClick: () => onRequestImplementationBrief(product),
+            loading: pendingAction === `implementation:${product.product_id}`,
+            onClick: () => runAction(`implementation:${product.product_id}`, () => onRequestImplementationBrief(product)),
           },
         ]
       : []),
@@ -117,12 +134,13 @@ export function DecisionBoard({
                       {
                         label: on ? 'Shortlisted' : 'Shortlist',
                         active: on,
+                        loading: pendingAction === `shortlist:${product.product_id}`,
                         icon: on ? (
                           <BookmarkCheck size={13} aria-hidden />
                         ) : (
                           <Bookmark size={13} aria-hidden />
                         ),
-                        onClick: () => onToggleShortlist(product),
+                        onClick: () => runAction(`shortlist:${product.product_id}`, () => onToggleShortlist(product)),
                       },
                     ]
                   : []
@@ -176,7 +194,7 @@ export function DecisionBoard({
                   ? {
                       label: `Remove ${productDisplayName(product)} from the shortlist`,
                       icon: <X size={14} aria-hidden />,
-                      onClick: () => onToggleShortlist(product),
+                      onClick: () => runAction(`shortlist:${product.product_id}`, () => onToggleShortlist(product)),
                     }
                   : undefined
               }
@@ -192,9 +210,37 @@ export function DecisionBoard({
     />
   )
 
-  // Reserved. What the buyer creates in this lane is not designed yet, so it
-  // says so plainly rather than borrowing content from the lanes beside it.
-  const artifactsLane = <LaneEmpty title="Nothing here yet" body="This lane is reserved for artifacts." />
+  const artifactsLane = documents.length ? (
+    <ol className="space-y-2">
+      {documents.map((doc) => (
+        <li key={doc.doc_id}>
+          <article className="lift flex items-start gap-2.5 rounded-xl border border-border bg-white px-3 py-2.5">
+            <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-ink text-paper">
+              <FileCheck2 size={15} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="label block !text-[0.6rem] !text-cobalt-deep">
+                {BRIEF_LABELS[doc.kind]}
+                {doc.productName ? ` · ${doc.productName}` : ''}
+              </span>
+              <span className="block truncate text-[0.85rem] font-medium text-ink">{doc.title}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => onOpenDocument?.(doc.doc_id)}
+              aria-label={`Open ${doc.title}`}
+              title={`Open ${doc.title}`}
+              className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-ink-soft transition-colors hover:border-cobalt hover:text-cobalt"
+            >
+              <Maximize2 size={13} aria-hidden />
+            </button>
+          </article>
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <LaneEmpty title="No artifacts yet" body="Comparison and implementation briefs created with Sam will appear here." />
+  )
 
   const lanes: Record<BoardLane, ReactNode> = {
     matches: matchesLane,
@@ -202,44 +248,10 @@ export function DecisionBoard({
     artifacts: artifactsLane,
   }
 
-  // The briefs Sam has already written sit under the board rather than in a
-  // lane: they belong to the evaluation as a whole, not to one step of it.
-  const briefs = documents.length ? (
-    <section aria-label="Briefs" className="mt-6">
-      <p className="label px-1">Briefs</p>
-      <ol className="mt-2 space-y-2">
-        {documents.map((doc) => (
-          <li key={doc.doc_id}>
-            <article className="lift flex items-start gap-2.5 rounded-xl border border-border bg-white px-3 py-2.5">
-              <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-ink text-paper">
-                <FileCheck2 size={15} aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="label block !text-[0.6rem] !text-cobalt-deep">
-                  {BRIEF_LABELS[doc.kind]}
-                  {doc.productName ? ` · ${doc.productName}` : ''}
-                </span>
-                <span className="block truncate text-[0.85rem] font-medium text-ink">{doc.title}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => onOpenDocument?.(doc.doc_id)}
-                aria-label={`Open ${doc.title}`}
-                title={`Open ${doc.title}`}
-                className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-ink-soft transition-colors hover:border-cobalt hover:text-cobalt"
-              >
-                <Maximize2 size={13} aria-hidden />
-              </button>
-            </article>
-          </li>
-        ))}
-      </ol>
-    </section>
-  ) : null
-
   if (layout === 'columns') {
     return (
       <div data-testid="decision-board">
+        {fit}
         <div className="grid gap-4 md:grid-cols-3">
           {LANES.map((entry) => (
             <section key={entry.id} aria-label={entry.label} className="min-w-0">
@@ -251,7 +263,6 @@ export function DecisionBoard({
             </section>
           ))}
         </div>
-        {briefs}
       </div>
     )
   }
@@ -281,7 +292,6 @@ export function DecisionBoard({
         })}
       </div>
       {lanes[lane]}
-      {briefs}
     </div>
   )
 }
