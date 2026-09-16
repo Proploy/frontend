@@ -14,10 +14,7 @@ import { canSeeExpertJoinLink, isExpertRole } from '@/lib/auth/roles'
 import { setServerAuthIntent } from '@/lib/utils/auth-intent-client'
 import { hidesGlobalChrome } from '@/lib/site-chrome'
 
-const ABOUT_LINKS = [
-  { href: '/for-businesses', label: 'For Business', description: 'See how buyers use Proploy to choose and deploy software.' },
-  { href: '/for-experts', label: 'Join Us', description: 'Learn how implementation experts join and work on Proploy.' },
-]
+
 
 const BUTTON_SHADOW =
   'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
@@ -49,13 +46,13 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isCatalogOpen, setIsCatalogOpen] = useState(false)
   const [isExpertsOpen, setIsExpertsOpen] = useState(false)
-  const [isAboutOpen, setIsAboutOpen] = useState(false)
+
   const [isMobileCatalogOpen, setIsMobileCatalogOpen] = useState(false)
   const [isMobileExpertsOpen, setIsMobileExpertsOpen] = useState(false)
-  const [isMobileAboutOpen, setIsMobileAboutOpen] = useState(false)
+
   const catalogCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expertsCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const aboutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const profileMenuRef = useRef<HTMLDivElement>(null)
   // Suppress the global marketing Navbar on portal routes and on the homepage
   // ("/"), which ships its own Nav as part of the new design system.
@@ -124,7 +121,6 @@ export default function Navbar() {
   useEffect(() => () => {
     if (catalogCloseTimerRef.current) clearTimeout(catalogCloseTimerRef.current)
     if (expertsCloseTimerRef.current) clearTimeout(expertsCloseTimerRef.current)
-    if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current)
   }, [])
 
   if (hideOnWorkspace) return null
@@ -138,9 +134,6 @@ export default function Navbar() {
   const settingsHref = '/settings'
   const canJoinAsExpert = canSeeExpertJoinLink(user?.role, Boolean(user))
   const showAiWorkspace = !isExpertRole(user?.role)
-  const visibleAboutLinks = canJoinAsExpert
-    ? ABOUT_LINKS
-    : ABOUT_LINKS.filter((link) => link.href !== '/for-experts')
 
   const handleSignOut = async () => {
     await signOut()
@@ -175,7 +168,6 @@ export default function Navbar() {
       catalogCloseTimerRef.current = null
     }
     setIsExpertsOpen(false)
-    setIsAboutOpen(false)
     setIsCatalogOpen(true)
   }
 
@@ -193,7 +185,6 @@ export default function Navbar() {
       expertsCloseTimerRef.current = null
     }
     setIsCatalogOpen(false)
-    setIsAboutOpen(false)
     setIsExpertsOpen(true)
   }
 
@@ -205,28 +196,11 @@ export default function Navbar() {
     }, 220)
   }
 
-  const keepAboutOpen = () => {
-    if (aboutCloseTimerRef.current) {
-      clearTimeout(aboutCloseTimerRef.current)
-      aboutCloseTimerRef.current = null
-    }
-    setIsCatalogOpen(false)
-    setIsExpertsOpen(false)
-    setIsAboutOpen(true)
-  }
 
-  const scheduleAboutClose = () => {
-    if (aboutCloseTimerRef.current) clearTimeout(aboutCloseTimerRef.current)
-    aboutCloseTimerRef.current = setTimeout(() => {
-      setIsAboutOpen(false)
-      aboutCloseTimerRef.current = null
-    }, 220)
-  }
 
   const closeNavMenus = () => {
     setIsCatalogOpen(false)
     setIsExpertsOpen(false)
-    setIsAboutOpen(false)
     setIsMenuOpen(false)
   }
 
@@ -313,45 +287,13 @@ export default function Navbar() {
             )}
           </div>
 
-          <div
-            className="relative"
-            onMouseEnter={keepAboutOpen}
-            onMouseLeave={scheduleAboutClose}
+          <Link
+            href="/for-businesses"
+            onClick={() => closeNavMenus()}
+            className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
           >
-            <button
-              type="button"
-              aria-expanded={isAboutOpen}
-              aria-haspopup="menu"
-              onClick={() => setIsAboutOpen((open) => !open)}
-              onFocus={() => setIsAboutOpen(true)}
-              className="flex items-center rounded-[8px] px-[6px] py-[4px] font-[family-name:var(--font-dm-sans)] text-[16px] font-semibold leading-[24px] text-[#414651] transition-colors hover:text-[#0466e7]"
-            >
-              About Us
-            </button>
-
-            {isAboutOpen && (
-              <div
-                role="menu"
-                onMouseEnter={keepAboutOpen}
-                onMouseLeave={scheduleAboutClose}
-                className="absolute left-1/2 top-full w-[360px] -translate-x-1/2 pt-[16px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150"
-              >
-                <div className="overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white p-[8px] shadow-[0_24px_48px_-12px_rgba(10,13,18,0.2)]">
-                  {visibleAboutLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setIsAboutOpen(false)}
-                      className="block rounded-[10px] px-[12px] py-[11px] text-left transition-colors hover:bg-[#f5f8ff]"
-                    >
-                      <span className="block text-[14px] font-semibold text-[#181d27]">{link.label}</span>
-                      <span className="mt-[3px] block text-[12px] leading-[18px] text-[#717680]">{link.description}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+            About Us
+          </Link>
 
           {showAiWorkspace && (
             <Link
@@ -506,30 +448,13 @@ export default function Navbar() {
             )}
           </div>
 
-          <div>
-            <button
-              type="button"
-              aria-expanded={isMobileAboutOpen}
-              onClick={() => setIsMobileAboutOpen((open) => !open)}
-              className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
-            >
-              About Us
-            </button>
-            {isMobileAboutOpen && (
-              <div className="mt-[14px] flex flex-col gap-[8px] rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] p-[8px] animate-in fade-in-0 slide-in-from-top-1 duration-150">
-                {visibleAboutLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="rounded-[8px] bg-white px-[12px] py-[10px] text-[15px] font-semibold text-[#181d27]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+          <Link
+            href="/for-businesses"
+            onClick={() => setIsMenuOpen(false)}
+            className="w-full text-left font-[family-name:var(--font-dm-sans)] text-lg font-semibold text-[#181d27]"
+          >
+            About Us
+          </Link>
 
           {showAiWorkspace && (
             <Link

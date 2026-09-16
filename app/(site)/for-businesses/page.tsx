@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Nav } from '@/components/site/Nav'
 import { Footer } from '@/components/site/Footer'
 import { Reveal } from '@/components/site/Reveal'
+import { AboutToggle } from '@/components/site/AboutToggle'
 
 import { CaseScroller } from './CaseScroller'
 import { QuoteCarousel } from './QuoteCarousel'
@@ -225,10 +226,14 @@ export default function ForBusinessesPage() {
 
       <main className="pp-page">
         {/* ── Hero ────────────────────────────────────────────────── */}
-        <section className="pp-blueprint" style={{ paddingBlock: 'var(--sp-20) var(--sp-16)' }}>
+        <section className="pp-blueprint" style={{ paddingBlock: 'var(--sp-12) var(--sp-16)' }}>
           <div className="pp-glow" style={{ top: -120, right: -60 }} />
 
           <div className="pp-container">
+            <div className="pp-flex" style={{ justifyContent: 'center', marginBottom: 'var(--sp-5)' }}>
+              <AboutToggle />
+            </div>
+
             <Reveal className="pp-stack pp-gap-8 pp-soften">
               <p className="pp-label">For business</p>
 
