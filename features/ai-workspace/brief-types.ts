@@ -179,11 +179,23 @@ export function asProjectBrief(data: unknown): ProjectBriefData | null {
   }
 }
 
-/** Share of requirements a product meets, counting partial as half. */
-export function fitScore(card: BattleCardData, productId: string): { met: number; partial: number; missing: number; unknown: number; percent: number } {
+/**
+ * Tally a run of fit verdicts, counting partial as half.
+ *
+ * `percent` divides by the *assessed* cells, not every cell, so a product
+ * judged on one requirement out of nine reads 100% — always print the
+ * denominator beside it.
+ */
+export function fitCounts(statuses: Iterable<FitStatus>): {
+  met: number
+  partial: number
+  missing: number
+  unknown: number
+  assessed: number
+  percent: number
+} {
   const counts = { met: 0, partial: 0, missing: 0, unknown: 0 }
-  for (const requirement of card.requirements) {
-    const status = requirement.fit[productId]?.status ?? 'unknown'
+  for (const status of statuses) {
     if (status === 'yes') counts.met += 1
     else if (status === 'partial') counts.partial += 1
     else if (status === 'no') counts.missing += 1
@@ -191,5 +203,13 @@ export function fitScore(card: BattleCardData, productId: string): { met: number
   }
   const assessed = counts.met + counts.partial + counts.missing
   const percent = assessed === 0 ? 0 : Math.round(((counts.met + counts.partial * 0.5) / assessed) * 100)
-  return { ...counts, percent }
+  return { ...counts, assessed, percent }
+}
+
+/** Share of requirements a product meets, counting partial as half. */
+export function fitScore(card: BattleCardData, productId: string): { met: number; partial: number; missing: number; unknown: number; percent: number } {
+  const { met, partial, missing, unknown, percent } = fitCounts(
+    card.requirements.map((requirement) => requirement.fit[productId]?.status ?? 'unknown'),
+  )
+  return { met, partial, missing, unknown, percent }
 }

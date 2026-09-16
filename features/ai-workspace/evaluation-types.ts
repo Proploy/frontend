@@ -1,4 +1,5 @@
 import type { NormalizedError } from '@/lib/service-apis/browser'
+import type { FitStatus } from './brief-types'
 import type { AiWorkspaceProfile } from './types'
 
 export type EvaluationStatus = 'active' | 'archived' | 'deleted'
@@ -59,6 +60,34 @@ export type RequirementValue = {
 
 export type RequirementsDraft = Record<string, RequirementValue>
 
+/**
+ * Where a fit verdict came from. Catalog cells are looked up in structured
+ * product data; judgement cells are the agent's opinion. The buyer can
+ * discount them differently, so the distinction is carried on every cell
+ * rather than inferred from the requirement.
+ */
+export type FitSource = 'catalog' | 'judgement'
+
+export type FitCell = {
+  status: FitStatus
+  source: FitSource
+  note?: string
+}
+
+/**
+ * How one product fits the buyer's requirements, as the gateway assessed it.
+ *
+ * `basis` is the normalised buyer input each cell was decided from. Matches
+ * accumulate for the life of an evaluation and merge shallowly, so without it
+ * a product scored three turns ago would show verdicts indistinguishable from
+ * fresh ones under requirements that have since changed.
+ */
+export type RequirementFit = {
+  assessed_at?: string
+  basis: Record<string, string[]>
+  cells: Record<string, FitCell>
+}
+
 export type EvaluationProduct = {
   product_id: string
   product_name: string | null
@@ -75,6 +104,8 @@ export type EvaluationProduct = {
   uncertain_data?: string[]
   buyer_note?: string | null
   is_agent_selected?: boolean
+  /** Absent when the turn assessed nothing — never an empty object. */
+  requirement_fit?: RequirementFit | null
 }
 
 export type EvaluationRecommendation = {
@@ -160,6 +191,22 @@ export type EvaluationApiResult<T> =
   | NormalizedError
 
 export type EvaluationStreamEvent =
+  | {
+      type: 'session'
+      data: {
+        session_id?: string
+        evaluation_id?: string
+        user_id?: string
+        title?: string
+      }
+    }
+  | {
+      type: 'session_meta'
+      data: {
+        title?: string
+        session_id?: string
+      }
+    }
   | { type: 'message_delta'; data: { delta: string } }
   | { type: 'message_final'; data: { content: string } }
   | {
