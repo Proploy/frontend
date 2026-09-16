@@ -64,7 +64,7 @@ describe('SamConversation', () => {
     HTMLElement.prototype.scrollTo = original
   })
 
-  it('renders SAM Markdown without logos or reasoning disclosure', async () => {
+  it('renders Copilot Markdown without logos or reasoning disclosure', async () => {
     const view = await render(
       <SamConversation
         evaluation={evaluation}
@@ -74,7 +74,8 @@ describe('SamConversation', () => {
       />,
     )
 
-    expect(view.container.textContent).toContain('Sam')
+    expect(view.container.querySelector('[data-testid="copilot-graphic-mark"]')).not.toBeNull()
+    expect(view.container.textContent).toContain('SAM')
     expect(view.container.querySelector('h2')?.textContent).toBe(
       'Strong options',
     )
@@ -88,7 +89,7 @@ describe('SamConversation', () => {
     await view.unmount()
   })
 
-  it('uses an adverb while SAM is responding', async () => {
+  it('uses status while assistant is responding', async () => {
     const view = await render(
       <SamConversation
         evaluation={{
@@ -108,12 +109,12 @@ describe('SamConversation', () => {
       />,
     )
     expect(view.container.textContent).toMatch(
-      /Comparing feature sets/,
+      /Analyzing requirements/,
     )
     await view.unmount()
   })
 
-  it('keeps the adverb loader visible while response tokens are arriving', async () => {
+  it('keeps the status loader visible while response tokens are arriving', async () => {
     const view = await render(
       <SamConversation
         evaluation={{
@@ -122,7 +123,7 @@ describe('SamConversation', () => {
             {
               id: 'assistant-stream',
               role: 'assistant',
-              markdown: 'SAM has started returning recommendation tokens.',
+              markdown: 'Assistant has started returning recommendation tokens.',
               artifact_refs: [],
               status: 'streaming',
             },
@@ -136,13 +137,13 @@ describe('SamConversation', () => {
 
     const status = view.container.querySelector('[role="status"]')
     expect(status?.textContent).toMatch(
-      /Comparing feature sets/,
+      /Analyzing requirements/,
     )
     expect(status?.querySelector('.pulse-dot')).not.toBeNull()
     await view.unmount()
   })
 
-  it('offers explicit confirmation when critical requirements are complete', async () => {
+  it('removes bottom requirements nudge from the conversation', async () => {
     const view = await render(
       <SamConversation
         evaluation={{
@@ -165,7 +166,7 @@ describe('SamConversation', () => {
       />,
     )
 
-    expect(view.container.textContent).toContain(
+    expect(view.container.textContent).not.toContain(
       'Confirm requirements',
     )
     await view.unmount()

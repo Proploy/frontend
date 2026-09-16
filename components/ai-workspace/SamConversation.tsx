@@ -1,6 +1,6 @@
 'use client'
 
-import { SendHorizontal } from 'lucide-react'
+import { SendHorizontal, Sparkles } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -20,8 +20,7 @@ import {
 import { deriveJourney } from '@/features/ai-workspace/journey'
 import { DocumentCard } from './DocumentCard'
 import { MarkdownMessage } from './MarkdownMessage'
-import { RequirementSummaryCard } from './RequirementSummaryCard'
-import { RespondingStatus } from './RespondingStatus'
+import { RespondingStatus, type StreamingStatusInfo } from './RespondingStatus'
 import { WelcomeState } from './WelcomeState'
 
 /** `useLayoutEffect` warns when React renders on the server, and the workspace
@@ -33,6 +32,7 @@ const useMeasureEffect =
 export function SamConversation({
   evaluation,
   isSending,
+  streamingStatus,
   onSend,
   onConfirmRequirements,
   onExportDocument,
@@ -40,6 +40,7 @@ export function SamConversation({
 }: {
   evaluation: EvaluationDetail
   isSending: boolean
+  streamingStatus?: StreamingStatusInfo | null
   onSend: (message: string) => void
   onConfirmRequirements: () => void
   onExportDocument?: (docId: string) => Promise<boolean> | boolean | void
@@ -175,7 +176,7 @@ export function SamConversation({
     evaluation.matches.length === 0
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col bg-white">
+    <section className="relative flex min-h-0 flex-1 flex-col bg-paper">
       <div
         ref={scrollRef}
         data-testid="sam-conversation-scroll"
@@ -202,19 +203,27 @@ export function SamConversation({
                   key={message.id}
                   className="flex justify-end pl-10 sm:pl-20"
                 >
-                  <div className="max-w-[620px] rounded-2xl rounded-br-md bg-ink px-4 py-3 text-[0.9375rem] leading-6 text-paper">
+                  <div className="max-w-[620px] rounded-2xl rounded-br-md bg-ink px-4 py-3 text-[0.9375rem] leading-6 text-paper shadow-xs">
                     {message.markdown}
                   </div>
                 </div>
               ) : (
                 <div key={message.id} className="pr-3 sm:pr-6">
-                  <p className="label mb-2 flex items-center gap-2 !text-cobalt-deep">
-                    <span className="pulse-dot size-1.5 rounded-full bg-cobalt" aria-hidden />
-                    Sam
-                  </p>
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <span
+                      data-testid="copilot-graphic-mark"
+                      className="flex size-5 items-center justify-center rounded-md bg-cobalt-soft text-cobalt-deep"
+                      aria-label="Assistant"
+                    >
+                      <Sparkles size={11} className="text-cobalt" />
+                    </span>
+                    <span className="text-[11px] font-bold tracking-wider text-ink uppercase">
+                      SAM
+                    </span>
+                  </div>
                   <MarkdownMessage content={message.markdown} />
                   {message.status === 'streaming' ? (
-                    <span className="sr-only">SAM is typing...</span>
+                    <span className="sr-only">Copilot is typing...</span>
                   ) : null}
                   {message.status === 'failed' ? (
                     <p className="mt-2 text-xs font-medium text-[#b42318]">
@@ -228,24 +237,8 @@ export function SamConversation({
 
             {isSending ? (
               <div className="pr-3 sm:pr-6">
-                <RespondingStatus seed={evaluation.messages.length} />
+                <RespondingStatus status={streamingStatus} seed={evaluation.messages.length} />
               </div>
-            ) : null}
-
-            {evaluation.requirements ? (
-              <RequirementSummaryCard
-                requirements={evaluation.requirements}
-                missing={evaluation.missing_critical_signals}
-                onEdit={() =>
-                  setDraft(
-                    'I want to update these requirements: ',
-                  )
-                }
-                confirmed={
-                  evaluation.milestones.requirements_confirmed
-                }
-                onConfirm={onConfirmRequirements}
-              />
             ) : null}
 
             {journey.documents.length ? (
@@ -260,16 +253,22 @@ export function SamConversation({
         )}
       </div>
 
-      {/* `shrink-0` is what anchors the composer: it always takes its natural
+      {/* The welcome state carries its own composer in the hero, so the bar
+          would be a second empty textbox under it. It appears with the
+          conversation, which is the point at which it has something to sit
+          under.
+
+          `shrink-0` is what anchors the composer: it always takes its natural
           height, so the conversation above is the side that gives up the
           pixels when the draft grows. */}
-      <div className="flex min-h-[88px] w-full shrink-0 items-center border-t border-border bg-paper px-4 py-3 sm:px-6">
+      {isEmpty ? null : (
+      <div className="flex min-h-[88px] w-full shrink-0 items-center border-t border-line bg-paper-deep/60 px-4 py-3 backdrop-blur-xs sm:px-6">
         <form
           onSubmit={(event) => {
             event.preventDefault()
             submit()
           }}
-          className="glass-card mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl p-2.5 transition focus-within:border-cobalt/50"
+          className="glass-card mx-auto flex w-full max-w-[960px] items-end gap-2 rounded-2xl border-border bg-paper p-2.5 shadow-xs transition focus-within:border-cobalt/50 focus-within:shadow-sm"
         >
           <textarea
             ref={composerRef}
@@ -305,6 +304,7 @@ export function SamConversation({
           </button>
         </form>
       </div>
+      )}
     </section>
   )
 }
