@@ -36,6 +36,13 @@ export interface CertificationEntry {
   file?: UploadedApplicationFile | null
 }
 
+// A hand-typed certification not tied to a product. Each entry can optionally
+// carry an uploaded certificate file alongside the name.
+export interface ManualCertificationEntry {
+  name: string
+  file: UploadedApplicationFile | null
+}
+
 // One product the applicant works on. Numeric fields are kept as strings so
 // the inputs stay controlled; the mapper parses them.
 export interface ProductExpertiseEntry {
@@ -59,10 +66,11 @@ export interface VendorOnboardingData {
   // products
   productExpertise: ProductExpertiseEntry[]
   industries: string[]
-  // Certificate files not tied to a product (legacy uploads) and
-  // hand-typed credential names (stored as certification tags).
+  // Certificate files not tied to a product (legacy uploads).
   certificationFiles: UploadedApplicationFile[]
-  manualCertifications: string[]
+  // Hand-typed credential names (stored as certification tags), each with
+  // an optional attached certificate file.
+  manualCertifications: ManualCertificationEntry[]
 
   // experience
   yearsExperience: string
@@ -137,7 +145,7 @@ export const EMPTY_VENDOR_ONBOARDING_DATA: VendorOnboardingData = {
   productExpertise: [],
   industries: [],
   certificationFiles: [],
-  manualCertifications: [],
+  manualCertifications: [] as ManualCertificationEntry[],
   yearsExperience: '',
   totalProjects: '',
   uniqueStrength: '',

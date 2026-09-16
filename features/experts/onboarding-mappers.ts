@@ -263,6 +263,11 @@ export function mapVendorOnboardingToExpertDraft(
       ...form.certificationFiles
         .filter((file) => file.visible && hasStoredFile(file))
         .map((file) => fileLink('certification', file)),
+      // Files attached to hand-typed "other certifications" (independent of
+      // per-product certification files).
+      ...form.manualCertifications
+        .filter((entry) => entry.file && entry.file.visible !== false && hasStoredFile(entry.file))
+        .map((entry) => fileLink('certification', entry.file!)),
       ...productCertificationFiles.map((file) => fileLink('certification', file)),
       ...(form.introVideoFile?.visible && hasStoredFile(form.introVideoFile)
         ? [fileLink('intro_video', form.introVideoFile)]
@@ -275,7 +280,7 @@ export function mapVendorOnboardingToExpertDraft(
       ...form.preferredProjectTypes.map((tagValue) => ({ tagType: 'project_type', tagValue })),
       // Certifications typed by hand with no product behind them. Product
       // certifications travel inside productExpertise instead.
-      ...uniqueTrimmed(form.manualCertifications).map((tagValue) => ({
+      ...uniqueTrimmed(form.manualCertifications.map((entry) => entry.name)).map((tagValue) => ({
         tagType: 'certification',
         tagValue,
       })),
@@ -444,7 +449,7 @@ export function hydrateVendorOnboardingFromExpert(
     idealClients: expert.idealClients ?? '',
     manualCertifications: (expert.tags ?? [])
       .filter((tag) => tag.tagType === 'certification')
-      .map((tag) => tag.tagValue),
+      .map((tag) => ({ name: tag.tagValue, file: null })),
     regionCountry: expert.regionCountry ?? '',
     regionCity: expert.regionCity ?? '',
     timezone: expert.timezone ?? '',
@@ -535,6 +540,7 @@ export function reconcileVendorOnboardingIds(
     ...form.certificationFiles,
     ...(form.introVideoFile ? [form.introVideoFile] : []),
     ...form.productExpertise.flatMap((p) => p.certifications.map((c) => c.file)),
+    ...form.manualCertifications.map((entry) => entry.file),
   ]) {
     if (file?.id) claimed.add(file.id)
   }
@@ -598,6 +604,11 @@ export function reconcileVendorOnboardingIds(
       featuredProjects,
       portfolioFiles: form.portfolioFiles.map((file) => claimLink('portfolio', file)),
       certificationFiles: form.certificationFiles.map((file) => claimLink('certification', file)),
+      manualCertifications: form.manualCertifications.map((entry) =>
+        entry.file && !entry.file.id
+          ? { ...entry, file: claimLink('certification', entry.file) }
+          : entry,
+      ),
       introVideoFile: form.introVideoFile ? claimLink('intro_video', form.introVideoFile) : form.introVideoFile,
     },
   }
