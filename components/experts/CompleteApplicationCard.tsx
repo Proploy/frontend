@@ -54,8 +54,8 @@ export function CompleteApplicationCard({ className = '' }: { className?: string
   const isChanges = stage.stage === 'changes_requested'
   const isRejected = stage.stage === 'rejected'
   const tone = isChanges || isRejected
-    ? 'border-[#fecdca] bg-[#fef3f2] text-[#b42318]'
-    : 'border-[#b2ddff] bg-[#eff8ff] text-[#175cd3]'
+    ? 'border-danger-line bg-danger-soft text-danger'
+    : 'border-cobalt-soft bg-cobalt-soft text-cobalt-deep'
   const title = isRejected
     ? 'Your expert application was closed'
     : isChanges
@@ -84,15 +84,15 @@ export function CompleteApplicationCard({ className = '' }: { className?: string
           <p className="font-semibold">{title}</p>
 
           {stage.changeRequest?.notes ? (
-            <p className="whitespace-pre-wrap text-[#181d27]">{stage.changeRequest.notes}</p>
+            <p className="whitespace-pre-wrap text-ink">{stage.changeRequest.notes}</p>
           ) : null}
 
           {isRejected ? (
-            <p className="text-[#181d27]">
+            <p className="text-ink">
               You can restore the application and edit it before submitting again.
             </p>
           ) : stage.missingSections.length > 0 ? (
-            <ul className="flex flex-col gap-1 text-[#181d27]">
+            <ul className="flex flex-col gap-1 text-ink">
               {stage.missingSections.map((section) => (
                 <li key={section.key} className="flex flex-wrap items-baseline gap-x-2">
                   <Link
@@ -102,7 +102,7 @@ export function CompleteApplicationCard({ className = '' }: { className?: string
                     {section.label}
                   </Link>
                   {section.missing.length > 0 ? (
-                    <span className="text-[#535862]">needs {section.missing.join(', ')}</span>
+                    <span className="text-ink-soft">needs {section.missing.join(', ')}</span>
                   ) : null}
                 </li>
               ))}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
+  AlertTriangle,
   MessageSquare,
   RefreshCw,
 } from 'lucide-react'
@@ -22,7 +23,7 @@ import {
   MessageBubble,
   MessageComposer,
   MessagesLayout,
-} from '@/features/workspace/messages-ui'
+} from '@/components/messaging'
 import type { WorkspaceConversation, WorkspaceEngagement, WorkspaceMessage } from '@/features/workspace/types'
 import type { NormalizedError } from '@/lib/service-apis/error-utils'
 
@@ -169,8 +170,11 @@ export default function WorkspaceConversationsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to update messages.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to update messages.'}
+            </div>
           </div>
         )}
 
@@ -178,7 +182,7 @@ export default function WorkspaceConversationsPage() {
           threadRail={(
             <>
               <div className="border-b border-line bg-white/45 px-[16px] py-[13px] backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                <p className="pf-eyebrow">
                   Threads
                 </p>
               </div>

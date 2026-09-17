@@ -309,6 +309,56 @@
 .pf-avatar--soft { background: var(--cobalt-soft); color: var(--cobalt-deep); }
 .pf-avatar--line { background: var(--surface-sunken); color: var(--ink-soft); border: var(--bw) solid var(--line); }
 
+/* ---------------------------------------------------------- person avatar ---
+   The fallback when someone has no photo. A flat tint picked deterministically
+   from the name (so the same person is always the same colour) with mono
+   initials — quiet enough to sit in a table row and still distinguishable at a
+   glance. Replaces the yellow→purple gradient blob the portal used to ship.
+   Tints are drawn from the palette already in use; no new hues. */
+.pf-ava {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: var(--r-full);
+    background: var(--cobalt-soft);
+    color: var(--cobalt-deep);
+    font-family: var(--font-mono);
+    font-weight: var(--weight-medium);
+    letter-spacing: .02em;
+    line-height: 1;
+    text-transform: uppercase;
+    user-select: none;
+}
+/* hairline ring, inset so it never changes the element's box */
+.pf-ava::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 10%, transparent);
+    pointer-events: none;
+}
+.pf-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+.pf-ava--t1 { background: var(--cobalt-soft); color: var(--cobalt-deep); }
+.pf-ava--t2 { background: var(--violet-soft); color: var(--violet); }
+.pf-ava--t3 { background: var(--ok-soft); color: var(--ok); }
+.pf-ava--t4 { background: var(--warn-soft); color: var(--warn); }
+.pf-ava--t5 { background: var(--surface-sunken); color: var(--ink-soft); }
+.pf-ava--t6 { background: color-mix(in oklab, var(--cobalt) 16%, white); color: var(--cobalt-deep); }
+/* the "it's you" treatment — solid ink, used for the signed-in account */
+.pf-ava--self { background: var(--ink); color: var(--paper); }
+
+.pf-ava--xs { width: 24px; height: 24px; font-size: 10px; }
+.pf-ava--sm { width: 32px; height: 32px; font-size: 12px; }
+.pf-ava--md { width: 40px; height: 40px; font-size: 14px; }
+.pf-ava--lg { width: 56px; height: 56px; font-size: 18px; }
+.pf-ava--xl { width: 64px; height: 64px; font-size: 20px; }
+.pf-ava--2xl { width: 144px; height: 144px; font-size: 44px; letter-spacing: .04em; }
+
 .pf-menu {
     position: absolute;
     z-index: 50;

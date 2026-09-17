@@ -139,7 +139,7 @@ export function ExpertCard({
         <div className="pp-flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--sp-3)' }}>
           <span
             className="pp-avatar pp-avatar--lg"
-            style={{ background: 'linear-gradient(135deg,var(--cobalt),#7f56d9)', color: '#fff', overflow: pictureUrl ? 'hidden' : undefined }}
+            style={{ background: 'linear-gradient(135deg,var(--cobalt),var(--violet))', color: '#fff', overflow: pictureUrl ? 'hidden' : undefined }}
           >
             {pictureUrl ? (
               <CatalogImage

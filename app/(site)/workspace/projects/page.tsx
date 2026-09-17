@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { DragEvent, FormEvent, ReactNode } from 'react'
 import Link from 'next/link'
 import {
+  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -14,15 +15,15 @@ import {
   ListChecks,
   Maximize2,
   MessageSquare,
-  Plus,
   PenLine,
   Play,
-  Send,
+  Plus,
   RefreshCw,
   Save,
+  Send,
   Square,
-  XCircle,
   Wallet,
+  XCircle,
 } from 'lucide-react'
 import {
 
@@ -712,8 +713,11 @@ export default function WorkspaceProjectsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to refresh projects.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to refresh projects.'}
+            </div>
           </div>
         )}
 
@@ -802,7 +806,7 @@ export default function WorkspaceProjectsPage() {
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
           <section className="flex flex-col border-b border-line bg-white xl:w-[360px] xl:shrink-0 xl:border-b-0 xl:border-r">
             <div className="flex items-center justify-between gap-[12px] border-b border-line px-[16px] py-[14px]">
-              <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Shared projects</p>
+              <p className="pf-eyebrow">Shared projects</p>
               {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-cobalt" />}
             </div>
             <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
@@ -1544,7 +1548,7 @@ function ProjectStatusBadge({ status }: { status: WorkspaceProject['status'] }) 
 function FactCell({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="bg-white px-[32px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+      <p className="pf-eyebrow flex items-center gap-[6px]">
         {icon} {label}
       </p>
       <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-ink">{children}</p>
@@ -1621,7 +1625,7 @@ function TimeEntryTable({
         <thead className="bg-surface-sunken">
           <tr className="border-b border-line">
             {['Date', 'Description', 'Duration', 'Billable'].map((label) => (
-              <th key={label} className="px-[14px] py-[10px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+              <th key={label} className="pf-eyebrow px-[14px] py-[10px]">
                 {label}
               </th>
             ))}

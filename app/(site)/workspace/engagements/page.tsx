@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
+  AlertTriangle,
   ArrowRight,
   CheckCircle2,
   FolderClosed,
@@ -150,8 +151,11 @@ export default function WorkspaceEngagementsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to update engagements.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to update engagements.'}
+            </div>
           </div>
         )}
 
@@ -349,8 +353,8 @@ function StatusBadge({ status }: { status: WorkspaceEngagement['status'] }) {
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 bg-white px-[24px] py-[18px]">
-      <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</p>
-      <p className="mt-[6px] truncate text-[14px] font-semibold leading-[20px] text-ink">{value}</p>
+      <p className="pf-kpi-label">{label}</p>
+      <p className="pf-h3 mt-[6px] truncate">{value}</p>
     </div>
   )
 }

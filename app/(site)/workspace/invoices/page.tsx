@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
+  AlertTriangle,
   Plus,
   Receipt,
   RefreshCw,
@@ -16,6 +17,7 @@ import {
   WorkspaceSignInState,
 } from '@/components/workspace/WorkspaceShell'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { KpiCard } from '@/components/portal/ui'
 import {
   engagementTitle,
   longDate,
@@ -290,8 +292,11 @@ export default function WorkspaceInvoicesPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to refresh invoices.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to refresh invoices.'}
+            </div>
           </div>
         )}
 
@@ -345,7 +350,7 @@ export default function WorkspaceInvoicesPage() {
                     </div>
 
                     <div className="rounded-[8px] border border-line-soft bg-surface-sunken px-[12px] py-[10px]">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">Line items</p>
+                      <p className="pf-eyebrow">Line items</p>
                       <div className="mt-[6px] divide-y divide-line-soft">
                         {invoice.lineItems.map((item, index) => (
                           <div key={`${invoice.id}-line-${index}`} className="flex items-center justify-between gap-[12px] py-[6px] text-[13px] leading-[18px]">
@@ -412,7 +417,7 @@ export default function WorkspaceInvoicesPage() {
 function InvoiceFact({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <span>
-      <span className="block text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</span>
+      <span className="pf-eyebrow block">{label}</span>
       <span className="mt-[2px] block text-[14px] font-semibold leading-[20px] text-ink">{value}</span>
       {note && <span className="mt-[2px] block text-[12px] text-ink-muted">{note}</span>}
     </span>
@@ -490,7 +495,7 @@ function InvoiceEditor({
             </div>
             <span className="shrink-0 text-[16px] font-semibold text-ink">{invoiceMoney(total, form.currency)}</span>
           </div>
-          <div className="mt-[12px] hidden gap-[8px] px-[10px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted sm:grid sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px]">
+          <div className="pf-eyebrow mt-[12px] hidden gap-[8px] px-[10px]  sm:grid sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px]">
             <span>Description</span>
             <span>Qty</span>
             <span>Unit price</span>
@@ -524,14 +529,9 @@ function InvoiceEditor({
   )
 }
 
+/** Thin wrapper so this page keeps its title/value/note call sites. */
 function InvoiceKpiCard({ title, value, note, isLoading }: { title: string; value: string; note: string; isLoading: boolean }) {
-  return (
-    <section className="pf-card p-[20px]">
-      <p className="text-[14px] font-medium leading-[20px] text-ink-soft">{title}</p>
-      {isLoading ? <Skeleton className="mt-[12px] block h-[32px] w-[120px] rounded-[6px]" aria-label="loading" /> : <p className="mt-[10px] text-[28px] font-semibold leading-[36px] text-ink">{value}</p>}
-      <p className="mt-[2px] text-[13px] leading-[18px] text-ink-muted">{note}</p>
-    </section>
-  )
+  return <KpiCard label={title} value={value} foot={note} isLoading={isLoading} />
 }
 
 function InvoicesSkeleton() {

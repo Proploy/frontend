@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import {
   DashboardChrome,
+  type DashNavGroup,
   type DashNavItem,
   type DashboardUser,
 } from '@/components/dashboard/DashboardChrome'
@@ -44,17 +45,33 @@ function useBusinessNotifications(): NotificationItem[] {
 
 export { BUTTON_SKEUO, CARD_SHADOW } from '@/components/dashboard/DashboardChrome'
 
-const NAV_PRIMARY: DashNavItem[] = [
-  { label: 'Overview', icon: LayoutDashboard, href: '/business/dashboard' },
-  { label: 'Projects', icon: Wallet, href: '/business/dashboard/projects' },
-  { label: 'Find experts', icon: Search, href: '/business/dashboard/hire' },
-  { label: 'Approvals', icon: ClipboardCheck, href: '/business/dashboard/approvals', badge: '3' },
-  { label: 'Payments', icon: CreditCard, href: '/business/dashboard/payments' },
-  { label: 'Tax & compliance', icon: ShieldCheck, href: '/business/dashboard/compliance' },
-  { label: 'Documents', icon: FileText, href: '/business/dashboard/documents' },
-  { label: 'Team', icon: Users, href: '/business/dashboard/team' },
-  { label: 'Calendar', icon: Calendar, href: '/business/dashboard/calendar' },
-  { label: 'Messages', icon: MessageSquare, href: '/business/dashboard/messages' },
+/** Grouped to match the expert workspace rail — same portal, same wayfinding. */
+const NAV_PRIMARY: DashNavGroup[] = [
+  { items: [{ label: 'Overview', icon: LayoutDashboard, href: '/business/dashboard' }] },
+  {
+    label: 'Delivery',
+    items: [
+      { label: 'Projects', icon: Wallet, href: '/business/dashboard/projects' },
+      { label: 'Find experts', icon: Search, href: '/business/dashboard/hire' },
+      { label: 'Calendar', icon: Calendar, href: '/business/dashboard/calendar' },
+      { label: 'Messages', icon: MessageSquare, href: '/business/dashboard/messages' },
+    ],
+  },
+  {
+    label: 'Money',
+    items: [
+      { label: 'Approvals', icon: ClipboardCheck, href: '/business/dashboard/approvals', badge: '3' },
+      { label: 'Payments', icon: CreditCard, href: '/business/dashboard/payments' },
+    ],
+  },
+  {
+    label: 'Governance',
+    items: [
+      { label: 'Tax & compliance', icon: ShieldCheck, href: '/business/dashboard/compliance' },
+      { label: 'Documents', icon: FileText, href: '/business/dashboard/documents' },
+      { label: 'Team', icon: Users, href: '/business/dashboard/team' },
+    ],
+  },
 ]
 
 const NAV_SECONDARY: DashNavItem[] = [
@@ -62,7 +79,7 @@ const NAV_SECONDARY: DashNavItem[] = [
   { label: 'Support', icon: LifeBuoy, href: '/contact' },
 ]
 
-const BUSINESS_BRAND = { mark: 'p', word: 'proploy', href: '/business/dashboard', markBg: '#155eef' }
+const BUSINESS_BRAND = { mark: 'p', word: 'proploy', href: '/business/dashboard', markBg: 'var(--cobalt)' }
 
 /** Chrome identity for the signed-in account; the mock name is dev-only. */
 function useBusinessChromeUser(): DashboardUser {

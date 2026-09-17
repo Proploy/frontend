@@ -119,17 +119,17 @@ export function ProjectDocumentViewer({
 
   return (
     <>
-      <div className={`mt-[14px] rounded-[10px] border border-[#d5d7da] bg-white p-[12px] ${compact ? '' : 'w-full'}`}>
+      <div className={`mt-[14px] rounded-[10px] border border-line bg-white p-[12px] ${compact ? '' : 'w-full'}`}>
         <div className="flex flex-wrap items-center justify-between gap-[12px]">
           <div className="flex min-w-0 items-center gap-[10px]">
-            <div className="flex size-[36px] shrink-0 items-center justify-center rounded-[8px] bg-[#eff4ff] text-[#155eef]">
+            <div className="flex size-[36px] shrink-0 items-center justify-center rounded-[8px] bg-cobalt-soft text-cobalt">
               <Icon size={16} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+              <p className="truncate text-[14px] font-semibold leading-[20px] text-ink">
                 {project.fileName || 'Project document'}
               </p>
-              <p className="truncate text-[12px] leading-[18px] text-[#717680]">{fileMeta}</p>
+              <p className="truncate text-[12px] leading-[18px] text-ink-muted">{fileMeta}</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ export function ProjectDocumentViewer({
                 type="button"
                 onClick={openPreview}
                 disabled={isLoadingPreview}
-                className="inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-[#414651] hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-[6px] rounded-[8px] border border-line bg-white px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-ink-soft hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoadingPreview ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
                 Preview
@@ -149,7 +149,7 @@ export function ProjectDocumentViewer({
               type="button"
               onClick={openInNewTab}
               disabled={isOpeningFile}
-              className="inline-flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-[6px] rounded-[8px] bg-cobalt px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isOpeningFile ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
               Open
@@ -158,30 +158,30 @@ export function ProjectDocumentViewer({
         </div>
 
         {fileError ? (
-          <p className="mt-[8px] text-[13px] leading-[18px] text-[#d92d20]">{fileError}</p>
+          <p className="mt-[8px] text-[13px] leading-[18px] text-danger">{fileError}</p>
         ) : null}
       </div>
 
       {isPreviewOpen && displayUrl ? (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0d12]/70 p-[16px]"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/70 p-[16px]"
           role="dialog"
           aria-modal="true"
           aria-label={`${project.fileName || project.title} preview`}
         >
           <div className="flex h-[min(88vh,920px)] w-full max-w-[1040px] flex-col overflow-hidden rounded-[12px] bg-white shadow-xl">
-            <div className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] px-[16px] py-[12px]">
+            <div className="flex items-center justify-between gap-[12px] border-b border-line px-[16px] py-[12px]">
               <div className="min-w-0">
-                <p className="truncate text-[15px] font-semibold leading-[22px] text-[#181d27]">
+                <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">
                   {project.fileName || project.title}
                 </p>
-                <p className="truncate text-[12px] leading-[18px] text-[#717680]">{fileMeta}</p>
+                <p className="truncate text-[12px] leading-[18px] text-ink-muted">{fileMeta}</p>
               </div>
               <div className="flex shrink-0 items-center gap-[8px]">
                 <button
                   type="button"
                   onClick={openInNewTab}
-                  className="inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-[#414651] hover:bg-[#fafafa]"
+                  className="inline-flex items-center gap-[6px] rounded-[8px] border border-line bg-white px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-ink-soft hover:bg-surface-hover"
                 >
                   <Download size={14} />
                   Open file
@@ -189,7 +189,7 @@ export function ProjectDocumentViewer({
                 <button
                   type="button"
                   onClick={closePreview}
-                  className="flex size-[36px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#f5f5f5] hover:text-[#181d27]"
+                  className="flex size-[36px] items-center justify-center rounded-[8px] text-ink-muted hover:bg-surface-hover hover:text-ink"
                   aria-label="Close preview"
                 >
                   <X size={18} />
@@ -197,7 +197,7 @@ export function ProjectDocumentViewer({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 bg-[#f5f5f5]">
+            <div className="min-h-0 flex-1 bg-surface-sunken">
               {previewKind === 'image' ? (
                 <div className="flex size-full items-center justify-center overflow-auto p-[16px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Eye, FileText, PenLine, RefreshCw, Save, Send, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Eye, FileText, PenLine, RefreshCw, Save, Send, XCircle } from 'lucide-react'
 import {
 
   WorkspaceLoading,
@@ -260,13 +260,19 @@ export default function WorkspaceContractsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to refresh contracts.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to refresh contracts.'}
+            </div>
           </div>
         )}
         {errorMessage && (
-          <div className="border-b border-danger-line bg-danger-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-danger">
-            {errorMessage}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--danger">
+              <AlertTriangle size={15} />
+              {errorMessage}
+            </div>
           </div>
         )}
 
@@ -426,10 +432,10 @@ function ContractDetail({
         </div>
 
         <div className="px-[32px] py-[24px]">
-          <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Agreement</p>
+          <p className="pf-eyebrow">Agreement</p>
           {brief ? (
             <div className="mt-[12px] rounded-[10px] border border-cobalt-soft bg-cobalt-soft px-[16px] py-[14px]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-cobalt-deep">Agreement brief</p>
+              <p className="pf-eyebrow text-cobalt-deep">Agreement brief</p>
               {brief.paragraphs.map((paragraph) => <p key={paragraph} className="mt-[6px] text-[14px] leading-[22px] text-cobalt-deep">{paragraph}</p>)}
             </div>
           ) : null}
@@ -438,7 +444,7 @@ function ContractDetail({
             <div className="mt-[14px] grid gap-px overflow-hidden rounded-[10px] border border-line bg-line sm:grid-cols-3">
               {parties.bullets.map((bullet) => {
                 const [label, ...rest] = bullet.split(':')
-                return <div key={bullet} className="bg-surface-sunken px-[14px] py-[12px]"><p className="text-[10px] font-semibold uppercase tracking-[0.05em] text-ink-muted">{label}</p><p className="mt-[4px] text-[13px] font-semibold leading-[20px] text-ink">{rest.join(':').trim()}</p></div>
+                return <div key={bullet} className="bg-surface-sunken px-[14px] py-[12px]"><p className="pf-eyebrow">{label}</p><p className="mt-[4px] text-[13px] font-semibold leading-[20px] text-ink">{rest.join(':').trim()}</p></div>
               })}
             </div>
           ) : null}
@@ -618,7 +624,7 @@ function ContractDetail({
 function FactCell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="bg-white px-[20px] py-[16px]">
-      <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</p>
+      <p className="pf-eyebrow">{label}</p>
       <p className="mt-[4px] text-[14px] font-semibold leading-[20px] text-ink">{children}</p>
     </div>
   )

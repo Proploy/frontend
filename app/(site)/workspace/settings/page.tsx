@@ -284,11 +284,11 @@ function isOpenRequest(request: { status: string }): boolean {
 function SettingFact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="bg-white px-[24px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
-        <span className="text-ink-muted">{icon}</span>
+      <p className="pf-kpi-label flex items-center gap-[6px]">
+        <span className="text-ink-faint">{icon}</span>
         {label}
       </p>
-      <p className="mt-[6px] text-[20px] font-semibold leading-[30px] text-ink">{value}</p>
+      <p className="pf-num mt-[8px] text-[20px] leading-[28px]">{value}</p>
     </div>
   )
 }
@@ -392,7 +392,7 @@ function ProfileTab({
         <div className="flex items-center gap-[10px] rounded-[10px] border border-line bg-white px-[14px] py-[10px]">
           <Mail size={16} className="text-ink-muted" />
           <span className="text-[14px] leading-[20px] text-ink">{profile.email || '—'}</span>
-          <span className="ml-auto text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+          <span className="pf-eyebrow ml-auto">
             read-only
           </span>
         </div>
@@ -655,7 +655,7 @@ function DetailRow({
 }) {
   return (
     <div className="flex flex-col gap-[2px]">
-      <dt className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+      <dt className="pf-eyebrow">
         {label}
       </dt>
       <dd

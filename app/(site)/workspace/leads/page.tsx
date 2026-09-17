@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Inbox, LockKeyhole, RefreshCw, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Inbox, LockKeyhole, RefreshCw, XCircle } from 'lucide-react'
 import {
 
   WorkspaceLoading,
@@ -158,8 +158,11 @@ export default function WorkspaceLeadsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to refresh leads.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to refresh leads.'}
+            </div>
           </div>
         )}
 

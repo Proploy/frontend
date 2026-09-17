@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { LockKeyhole, RefreshCw, TrendingUp } from 'lucide-react'
+import { AlertTriangle, LockKeyhole, RefreshCw, TrendingUp } from 'lucide-react'
 import {
 
   WorkspaceLoading,
@@ -9,6 +9,7 @@ import {
   WorkspaceSignInState,
 } from '@/components/workspace/WorkspaceShell'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { KpiCard } from '@/components/portal/ui'
 import {
   money,
   statusLabel,
@@ -306,8 +307,11 @@ export default function WorkspaceSalesPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || 'Unable to refresh sales report.'}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || 'Unable to refresh sales report.'}
+            </div>
           </div>
         )}
 
@@ -375,6 +379,7 @@ export default function WorkspaceSalesPage() {
   )
 }
 
+/** Thin wrapper so this page keeps its title/value/note call sites. */
 function SalesKpiCard({
   title,
   value,
@@ -386,15 +391,5 @@ function SalesKpiCard({
   note: string
   isLoading: boolean
 }) {
-  return (
-    <section className="pf-card p-[20px]">
-      <p className="text-[14px] font-medium leading-[20px] text-ink-soft">{title}</p>
-      {isLoading ? (
-        <Skeleton className="mt-[12px] block h-[32px] w-[120px] rounded-[6px]" aria-label="loading" />
-      ) : (
-        <p className="mt-[10px] text-[26px] font-semibold leading-[34px] text-ink">{value}</p>
-      )}
-      <p className="mt-[2px] text-[13px] leading-[18px] text-ink-muted">{note}</p>
-    </section>
-  )
+  return <KpiCard label={title} value={value} foot={note} isLoading={isLoading} />
 }
