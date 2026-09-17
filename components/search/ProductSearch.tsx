@@ -191,7 +191,7 @@ export function ProductSearch({
             className="relative z-10 w-full min-w-0 bg-transparent px-3.5 py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-soft/70"
           />
         </div>
-        <button type="submit" className="mc-submit">
+        <button type="submit" className="pp-btn pp-btn--cobalt mc-submit">
           Search
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden>
             <circle cx="9" cy="9" r="5.4" stroke="currentColor" strokeWidth="1.7" />

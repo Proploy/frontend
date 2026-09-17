@@ -625,9 +625,13 @@
 /* With the manual toggle gone, the tint is how a visitor sees that the query
    was read as a described need and went to the natural endpoint. */
 .mc-card[data-mode="natural"] .mc-results{border-color:color-mix(in oklab,var(--cobalt) 38%,var(--line));box-shadow:0 34px 80px -40px color-mix(in oklab,var(--cobalt) 60%,transparent)}
-.mc-submit{flex-shrink:0;display:inline-flex;align-items:center;gap:var(--sp-2);height:40px;padding-inline:16px;border:0;border-radius:calc(var(--r-control) - 2px);background:var(--cobalt);color:#fff;font-family:var(--font-body);font-size:14px;font-weight:var(--weight-semibold);letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:background-color var(--d-base) ease}
-.mc-submit:hover{background:var(--cobalt-deep)}
-.mc-submit:active{filter:brightness(.94)}
+/* Sizing only. The fill and the light text come from .pp-btn--cobalt, whose
+   guard at the top of the button block is specific enough to clear the
+   `.pp-scope button{color:inherit}` reset. A bespoke single-class rule here
+   would lose to that reset and render near-black text on the blue. */
+.mc-submit{height:40px;padding-inline:16px;font-size:14px;border-radius:calc(var(--r-control) - 2px)}
+/* No lift: the button sits inside the bar's own border. */
+.mc-submit:hover{transform:none}
 .mc-sam-line{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-4)}
 .mc-sam{flex-shrink:0;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--cobalt-deep);font-size:13px;font-weight:var(--weight-medium);transition:border-color var(--d-base) ease,background-color var(--d-base) ease}
 .mc-sam:hover{border-color:color-mix(in oklab,var(--cobalt) 50%,var(--line));background:color-mix(in oklab,var(--cobalt-soft) 40%,white)}

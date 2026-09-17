@@ -46,4 +46,9 @@ See `docs/agent-harness/repo-commands.md` or `frontend/CLAUDE.md`.
    Figma-export slash-separated CSS variable names.
 3. Do not use `font-black` — DM Sans is loaded with weights 400/500/600/700.
 4. No inline styles. Tailwind only.
-5. Ask before installing new dependencies.
+5. Never dark text on a solid blue (or ink) fill, in any component. Use
+   `className="pp-btn pp-btn--cobalt"`, which `app/v2-pages.css` already guards
+   for the control, its children and its SVGs. A bespoke one-class rule loses
+   its `color` to the `.pp-scope button{color:inherit}` reset and renders
+   near-black on blue with no error. See "Styling" in `frontend/CLAUDE.md`.
+6. Ask before installing new dependencies.
