@@ -36,6 +36,7 @@ import {
 
 import { Sidebar as ExpertSidebar } from '@/components/experts/dashboard/ExpertDashboardFrame'
 import { FileDropzone } from '@/components/experts/dashboard/FileDropzone'
+import { Avatar } from '@/components/ui/Avatar'
 import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
 import { ConnectIntegrationModal } from '@/components/integrations/ConnectIntegrationModal'
 import { useIntegrations } from '@/lib/integrations/integrations-store'
@@ -150,37 +151,24 @@ const PORTFOLIO_FILES: PortfolioFile[] = [
 ]
 
 const FILE_TYPE_COLORS: Record<PortfolioFile['fileType'], string> = {
-  PDF: '#d92d20',
-  MP4: '#155eef',
-  FIG: '#9e77ed',
+  PDF: 'var(--danger)',
+  MP4: 'var(--cobalt)',
+  FIG: 'var(--violet)',
 }
 
 // ── Team tab data ──────────────────────────────────────────────────────────
 type TeamMember = {
   name: string
   handle: string
-  initials: string
-  gradient: string
   status: 'Active' | 'Offline'
   email: string
   teams: string[]
 }
 
-const AVATAR_GRADIENTS = [
-  'bg-gradient-to-br from-[#fde68a] via-[#fbcfe8] to-[#c084fc]',
-  'bg-gradient-to-br from-[#a5f3fc] via-[#93c5fd] to-[#818cf8]',
-  'bg-gradient-to-br from-[#fbcfe8] via-[#f9a8d4] to-[#f472b6]',
-  'bg-gradient-to-br from-[#bbf7d0] via-[#86efac] to-[#34d399]',
-  'bg-gradient-to-br from-[#fed7aa] via-[#fdba74] to-[#fb923c]',
-  'bg-gradient-to-br from-[#ddd6fe] via-[#c4b5fd] to-[#a78bfa]',
-]
-
 const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Olivia Bennett',
     handle: '@olivia',
-    initials: 'OB',
-    gradient: AVATAR_GRADIENTS[0],
     status: 'Active',
     email: 'olivia.bennett@proploy.io',
     teams: ['Strategic Sourcing', 'Category Management'],
@@ -188,8 +176,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Marcus Hale',
     handle: '@marcus',
-    initials: 'MH',
-    gradient: AVATAR_GRADIENTS[1],
     status: 'Active',
     email: 'marcus.hale@proploy.io',
     teams: ['Contract Management', 'Vendor Management'],
@@ -197,8 +183,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Priya Nair',
     handle: '@priya',
-    initials: 'PN',
-    gradient: AVATAR_GRADIENTS[2],
     status: 'Offline',
     email: 'priya.nair@proploy.io',
     teams: ['Spend Analytics', 'Category Management'],
@@ -206,8 +190,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Daniel Osei',
     handle: '@daniel',
-    initials: 'DO',
-    gradient: AVATAR_GRADIENTS[3],
     status: 'Active',
     email: 'daniel.osei@proploy.io',
     teams: ['Strategic Sourcing', 'Vendor Management', 'Risk & Compliance'],
@@ -215,8 +197,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Carla Mendez',
     handle: '@carla',
-    initials: 'CM',
-    gradient: 'bg-[#e9eaeb] !text-[#414651]',
     status: 'Offline',
     email: 'carla.mendez@proploy.io',
     teams: ['Contract Management', 'Risk & Compliance'],
@@ -224,8 +204,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Naomi Wright',
     handle: '@naomi',
-    initials: 'NW',
-    gradient: AVATAR_GRADIENTS[4],
     status: 'Active',
     email: 'naomi.wright@proploy.io',
     teams: ['Spend Analytics', 'Strategic Sourcing'],
@@ -233,8 +211,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Devon Clarke',
     handle: '@devon',
-    initials: 'DC',
-    gradient: AVATAR_GRADIENTS[5],
     status: 'Active',
     email: 'devon.clarke@proploy.io',
     teams: ['Vendor Management', 'Risk & Compliance', 'Spend Analytics'],
@@ -242,8 +218,6 @@ const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Oliver Diaz',
     handle: '@oliver',
-    initials: 'OD',
-    gradient: AVATAR_GRADIENTS[1],
     status: 'Active',
     email: 'oliver.diaz@proploy.io',
     teams: ['Category Management', 'Contract Management'],
@@ -251,12 +225,12 @@ const TEAM_MEMBERS: TeamMember[] = [
 ]
 
 const TEAM_DOT_COLORS: Record<string, string> = {
-  'Strategic Sourcing': '#155eef',
+  'Strategic Sourcing': 'var(--cobalt)',
   'Category Management': '#6938ef',
   'Contract Management': '#ee46bc',
   'Vendor Management': '#16b364',
   'Spend Analytics': '#ef6820',
-  'Risk & Compliance': '#f04438',
+  'Risk & Compliance': 'var(--danger)',
 }
 
 // ── Billing tab data ───────────────────────────────────────────────────────
@@ -318,7 +292,7 @@ export default function ExpertsAccountPage() {
   const [cancelSignal, setCancelSignal] = useState(0)
 
   return (
-    <div className="min-h-screen bg-[#fafafa] font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+    <div className="pf-scope min-h-screen font-[family-name:var(--font-dm-sans)]">
       <div className="flex">
         <ExpertSidebar />
         <div className="flex-1 min-w-0">
@@ -328,23 +302,24 @@ export default function ExpertsAccountPage() {
               {/* min-h keeps the tab bar at a constant offset whether or not
                   the header shows action buttons. */}
               <div className="flex flex-wrap items-center justify-between gap-[16px] min-h-[40px]">
-                <h1 className="font-semibold text-[24px] leading-[32px] text-[#181d27]">
-                  Settings
-                </h1>
+                <div className="pf-pagebar-text">
+                  <span className="pf-eyebrow">Expert account</span>
+                  <h1 className="pf-title">Settings</h1>
+                </div>
                 {activeTab === 'My details' &&
                   (editing ? (
                     <div className="flex items-center gap-[12px]">
                       <button
                         type="button"
                         onClick={() => setCancelSignal((n) => n + 1)}
-                        className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--secondary"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={() => setSaveSignal((n) => n + 1)}
-                        className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--primary"
                       >
                         Save
                       </button>
@@ -353,16 +328,16 @@ export default function ExpertsAccountPage() {
                     <button
                       type="button"
                       onClick={() => setEditing(true)}
-                      className={`inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+                      className="pf-btn pf-btn--secondary"
                     >
-                      <Pencil size={16} className="text-[#414651]" />
+                      <Pencil size={16} className="text-ink-soft" />
                       Edit
                     </button>
                   ))}
               </div>
 
               {/* Horizontal tabs */}
-              <div className="border-b border-[#e9eaeb]">
+              <div className="border-b border-line">
                 <div className="flex items-center gap-[12px] overflow-x-auto">
                   {TABS.map((tab) => {
                     const active = activeTab === tab
@@ -375,20 +350,18 @@ export default function ExpertsAccountPage() {
                           setActiveTab(tab)
                           setEditing(false)
                         }}
-                        className={`relative px-[4px] py-[8px] -mb-px font-semibold text-[14px] leading-[20px] whitespace-nowrap transition-colors flex items-center gap-[8px] ${
-                          active
-                            ? 'text-[#155eef]'
-                            : 'text-[#535862] hover:text-[#181d27]'
+                        className={`relative -mb-px flex items-center gap-[8px] whitespace-nowrap px-[4px] py-[10px] text-[14px] font-semibold leading-[20px] transition-colors ${
+                          active ? 'text-cobalt-deep' : 'text-ink-muted hover:text-ink'
                         }`}
                       >
                         {tab}
                         {badge && (
-                          <span className="px-[8px] py-[2px] rounded-full border border-[#e9eaeb] bg-white text-[12px] leading-[18px] font-medium text-[#414651]">
+                          <span className="px-[8px] py-[2px] rounded-full border border-line bg-white text-[12px] leading-[18px] font-medium text-ink-soft">
                             {badge}
                           </span>
                         )}
                         {active && (
-                          <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#155eef] rounded-full" />
+                          <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-cobalt" />
                         )}
                       </button>
                     )
@@ -526,8 +499,6 @@ function MyDetailsPanel({
       caseStudies: prev.caseStudies.filter((n) => n !== name),
     }))
 
-  const initial = (details.firstName.trim()[0] ?? 'O').toUpperCase()
-
   return (
     <>
       <SectionHeader
@@ -563,14 +534,14 @@ function MyDetailsPanel({
           <div className="relative">
             <Mail
               size={16}
-              className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[#717680]"
+              className="absolute left-[14px] top-1/2 -translate-y-1/2 text-ink-muted"
             />
             <input
               type="email"
               value={details.email}
               disabled={ro}
               onChange={(e) => set('email', e.target.value)}
-              className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[40px] pr-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 disabled:bg-[#fafafa] disabled:text-[#414651] disabled:cursor-default ${INPUT_SHADOW}`}
+              className={`w-full bg-white border border-line rounded-[8px] pl-[40px] pr-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-cobalt focus:ring-4 focus:ring-cobalt/24 disabled:bg-surface-sunken disabled:text-ink-soft disabled:cursor-default ${INPUT_SHADOW}`}
             />
           </div>
         </FormRow>
@@ -592,19 +563,18 @@ function MyDetailsPanel({
                   className="size-[64px] rounded-full object-cover border border-[rgba(0,0,0,0.08)]"
                 />
               ) : (
-                <div
-                  className="size-[64px] rounded-full bg-gradient-to-br from-[#fde68a] via-[#fbcfe8] to-[#c084fc] flex items-center justify-center text-white font-semibold text-[20px] border border-[rgba(0,0,0,0.08)]"
-                  aria-label={`Profile photo for ${details.firstName}`}
-                >
-                  {initial}
-                </div>
+                <Avatar
+                  name={`${details.firstName} ${details.lastName}`.trim() || 'You'}
+                  size="xl"
+                  self
+                />
               )}
               {editing && details.avatar && (
                 <button
                   type="button"
                   onClick={() => set('avatar', null)}
                   aria-label="Remove photo"
-                  className="absolute -right-[4px] -top-[4px] size-[22px] rounded-full bg-white border border-[#d5d7da] flex items-center justify-center text-[#717680] hover:text-[#181d27] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.10)]"
+                  className="absolute -right-[4px] -top-[4px] size-[22px] rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-ink shadow-[0px_1px_2px_0px_rgba(10,13,18,0.10)]"
                 >
                   <X size={13} />
                 </button>
@@ -659,7 +629,7 @@ function MyDetailsPanel({
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path
                   d="M14.667 8A6.667 6.667 0 1 1 1.333 8a6.667 6.667 0 0 1 13.334 0ZM8 4.667V8l2 1.333"
-                  stroke="#717680"
+                  stroke="var(--ink-muted)"
                   strokeWidth="1.333"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -700,7 +670,7 @@ function MyDetailsPanel({
                 {details.caseStudies.map((name) => (
                   <span
                     key={name}
-                    className="inline-flex items-center gap-[6px] max-w-full rounded-full border border-[#e9eaeb] bg-white pl-[10px] pr-[6px] py-[4px] text-[12px] leading-[18px] font-medium text-[#414651]"
+                    className="inline-flex items-center gap-[6px] max-w-full rounded-full border border-line bg-white pl-[10px] pr-[6px] py-[4px] text-[12px] leading-[18px] font-medium text-ink-soft"
                   >
                     <span className="truncate">{name}</span>
                     {editing && (
@@ -708,7 +678,7 @@ function MyDetailsPanel({
                         type="button"
                         onClick={() => removeCaseStudy(name)}
                         aria-label={`Remove ${name}`}
-                        className="flex size-[18px] shrink-0 items-center justify-center rounded-full text-[#717680] hover:bg-[#fafafa] hover:text-[#181d27]"
+                        className="flex size-[18px] shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-hover hover:text-ink"
                       >
                         <X size={12} />
                       </button>
@@ -771,7 +741,7 @@ function PasswordPanel() {
         <FormRow label="New password*" align="start">
           <div className="flex flex-col gap-[6px]">
             <PasswordInput value={next} onChange={setNext} />
-            <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+            <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
               Your new password must be more than 8 characters.
             </p>
           </div>
@@ -789,12 +759,12 @@ function PasswordPanel() {
       {/* Where you're logged in */}
       <div className="flex items-start justify-between gap-[16px] pt-[20px]">
         <div className="flex flex-col gap-[4px]">
-          <h2 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">
+          <h2 className="pf-h2">
             Where you&rsquo;re logged in
           </h2>
-          <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+          <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
             We&rsquo;ll alert you via{' '}
-            <span className="font-semibold text-[#414651]">olivia.bennett@proploy.io</span> if
+            <span className="font-semibold text-ink-soft">olivia.bennett@proploy.io</span> if
             there is any unusual activity on your account.
           </p>
         </div>
@@ -806,22 +776,22 @@ function PasswordPanel() {
           <div key={s.id}>
             {i > 0 && <Divider />}
             <div className="flex items-center gap-[16px] py-[16px]">
-              <div className="size-[40px] rounded-full bg-[#fafafa] border border-[#e9eaeb] flex items-center justify-center text-[#414651] shrink-0">
+              <div className="size-[40px] rounded-full bg-surface-sunken border border-line flex items-center justify-center text-ink-soft shrink-0">
                 <Monitor size={20} />
               </div>
               <div className="flex flex-col gap-[2px] min-w-0">
                 <div className="flex items-center gap-[8px]">
-                  <p className="font-semibold text-[14px] leading-[20px] text-[#181d27]">
+                  <p className="font-semibold text-[14px] leading-[20px] text-ink">
                     {s.device}
                   </p>
                   {s.active && (
-                    <span className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-white border border-[#d5d7da] text-[12px] leading-[18px] font-medium text-[#414651]">
-                      <span className="size-[8px] rounded-full bg-[#17b26a]" />
+                    <span className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-white border border-line text-[12px] leading-[18px] font-medium text-ink-soft">
+                      <span className="size-[8px] rounded-full bg-ok" />
                       Active now
                     </span>
                   )}
                 </div>
-                <p className="font-normal text-[14px] leading-[20px] text-[#535862] truncate">
+                <p className="font-normal text-[14px] leading-[20px] text-ink-soft truncate">
                   {s.location} &middot; {s.when}
                 </p>
               </div>
@@ -848,7 +818,7 @@ function PasswordInput({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 ${INPUT_SHADOW}`}
+      className={`w-full bg-white border border-line rounded-[8px] px-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-ink focus:outline-none focus:border-cobalt focus:ring-4 focus:ring-cobalt/24 ${INPUT_SHADOW}`}
     />
   )
 }
@@ -857,34 +827,34 @@ function PasswordInput({
 function TeamPanel() {
   return (
     <div
-      className={`bg-white border border-[#e9eaeb] rounded-[12px] overflow-hidden shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06),0px_1px_3px_0px_rgba(10,13,18,0.10)]`}
+      className={`bg-white border border-line rounded-[12px] overflow-hidden shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06),0px_1px_3px_0px_rgba(10,13,18,0.10)]`}
     >
       {/* Card header */}
       <div className="flex flex-wrap items-start justify-between gap-[16px] px-[24px] pt-[20px] pb-[20px]">
         <div className="flex flex-col gap-[4px]">
           <div className="flex items-center gap-[8px]">
-            <h2 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">
+            <h2 className="pf-h2">
               Team members
             </h2>
-            <span className="px-[8px] py-[2px] rounded-full border border-[#e9eaeb] bg-white text-[12px] leading-[18px] font-medium text-[#414651]">
+            <span className="px-[8px] py-[2px] rounded-full border border-line bg-white text-[12px] leading-[18px] font-medium text-ink-soft">
               48 users
             </span>
           </div>
-          <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+          <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
             Manage your team members and their account permissions here.
           </p>
         </div>
         <div className="flex items-center gap-[12px]">
           <button
             type="button"
-            className={`inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+            className="pf-btn pf-btn--secondary"
           >
-            <DownloadCloud size={16} className="text-[#414651]" />
+            <DownloadCloud size={16} className="text-ink-soft" />
             Download CSV
           </button>
           <button
             type="button"
-            className={`inline-flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
+            className="pf-btn pf-btn--primary"
           >
             <Plus size={16} />
             Add user
@@ -896,10 +866,10 @@ function TeamPanel() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-y border-[#e9eaeb] bg-[#fafafa]">
+            <tr className="border-y border-line bg-surface-sunken">
               <Th className="pl-[24px]">
                 <div className="flex items-center gap-[12px]">
-	                  <input type="checkbox" aria-label="Select all team members" className="size-[16px] rounded-[4px] accent-[#155eef]" />
+	                  <input type="checkbox" aria-label="Select all team members" className="size-[16px] rounded-[4px] accent-cobalt" />
                   <SortHeader label="Name" />
                 </div>
               </Th>
@@ -917,40 +887,36 @@ function TeamPanel() {
           </thead>
           <tbody>
             {TEAM_MEMBERS.map((m) => (
-              <tr key={m.handle} className="border-b border-[#e9eaeb] last:border-b-0">
+              <tr key={m.handle} className="border-b border-line last:border-b-0">
                 <Td className="pl-[24px]">
                   <div className="flex items-center gap-[12px]">
 	                    <input
 	                      type="checkbox"
 	                      aria-label={`Select ${m.name}`}
-	                      className="size-[16px] rounded-[4px] accent-[#155eef]"
+	                      className="size-[16px] rounded-[4px] accent-cobalt"
                     />
-                    <div
-                      className={`size-[40px] rounded-full flex items-center justify-center text-white font-semibold text-[14px] shrink-0 border border-black/[0.08] ${m.gradient}`}
-                    >
-                      {m.initials}
-                    </div>
+                    <Avatar name={m.name} size="md" />
                     <div className="flex flex-col">
-                      <span className="font-medium text-[14px] leading-[20px] text-[#181d27] whitespace-nowrap">
+                      <span className="font-medium text-[14px] leading-[20px] text-ink whitespace-nowrap">
                         {m.name}
                       </span>
-                      <span className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                      <span className="font-normal text-[14px] leading-[20px] text-ink-soft">
                         {m.handle}
                       </span>
                     </div>
                   </div>
                 </Td>
                 <Td>
-                  <span className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-white border border-[#d5d7da] text-[12px] leading-[18px] font-medium text-[#414651]">
+                  <span className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-white border border-line text-[12px] leading-[18px] font-medium text-ink-soft">
                     <span
                       className="size-[8px] rounded-full"
-                      style={{ backgroundColor: m.status === 'Active' ? '#17b26a' : '#a4a7ae' }}
+                      style={{ backgroundColor: m.status === 'Active' ? 'var(--ok)' : 'var(--ink-faint)' }}
                     />
                     {m.status}
                   </span>
                 </Td>
                 <Td>
-                  <span className="font-normal text-[14px] leading-[20px] text-[#535862] whitespace-nowrap">
+                  <span className="font-normal text-[14px] leading-[20px] text-ink-soft whitespace-nowrap">
                     {m.email}
                   </span>
                 </Td>
@@ -959,11 +925,11 @@ function TeamPanel() {
                     {m.teams.map((t) => (
                       <span
                         key={t}
-                        className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-white border border-[#d5d7da] text-[12px] leading-[18px] font-medium text-[#414651] whitespace-nowrap"
+                        className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-white border border-line text-[12px] leading-[18px] font-medium text-ink-soft whitespace-nowrap"
                       >
                         <span
                           className="size-[8px] rounded-full"
-                          style={{ backgroundColor: TEAM_DOT_COLORS[t] ?? '#717680' }}
+                          style={{ backgroundColor: TEAM_DOT_COLORS[t] ?? 'var(--ink-muted)' }}
                         />
                         {t}
                       </span>
@@ -987,10 +953,10 @@ function TeamPanel() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between gap-[12px] px-[24px] py-[16px] border-t border-[#e9eaeb]">
+      <div className="flex items-center justify-between gap-[12px] px-[24px] py-[16px] border-t border-line">
         <button
           type="button"
-          className={`inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+          className="pf-btn pf-btn--secondary pf-btn--sm"
         >
           <ArrowLeft size={16} />
           Previous
@@ -1002,8 +968,8 @@ function TeamPanel() {
               type="button"
               className={`size-[40px] rounded-[8px] font-medium text-[14px] leading-[20px] transition-colors ${
                 n === 1
-                  ? 'bg-[#fafafa] text-[#252b37]'
-                  : 'text-[#535862] hover:bg-[#fafafa]'
+                  ? 'bg-surface-sunken text-ink'
+                  : 'text-ink-soft hover:bg-surface-hover'
               }`}
             >
               {n}
@@ -1012,7 +978,7 @@ function TeamPanel() {
         </div>
         <button
           type="button"
-          className={`inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+          className="pf-btn pf-btn--secondary pf-btn--sm"
         >
           Next
           <ArrowRight size={16} />
@@ -1031,7 +997,7 @@ function Th({
 }) {
   return (
     <th
-      className={`text-left font-semibold text-[12px] leading-[18px] text-[#717680] px-[24px] py-[12px] ${className}`}
+      className={`text-left font-semibold text-[12px] leading-[18px] text-ink-muted px-[24px] py-[12px] ${className}`}
     >
       {children}
     </th>
@@ -1050,9 +1016,9 @@ function Td({
 
 function SortHeader({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-[4px] text-[12px] leading-[18px] font-semibold text-[#717680]">
+    <span className="inline-flex items-center gap-[4px] text-[12px] leading-[18px] font-semibold text-ink-muted">
       {label}
-      <ChevronsUpDown size={12} className="text-[#a4a7ae]" />
+      <ChevronsUpDown size={12} className="text-ink-faint" />
     </span>
   )
 }
@@ -1066,43 +1032,43 @@ function BillingPanel() {
       {/* Plan + payment method cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
         {/* Plan card */}
-        <div className="bg-white border border-[#e9eaeb] rounded-[12px] flex flex-col shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
+        <div className="bg-white border border-line rounded-[12px] flex flex-col shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
           <div className="flex items-start justify-between gap-[16px] p-[24px]">
             <div className="flex flex-col gap-[16px]">
               <div className="flex flex-col gap-[8px]">
                 <div className="flex items-center gap-[8px]">
-                  <h3 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">
+                  <h3 className="pf-h2">
                     Pro plan
                   </h3>
-                  <span className="px-[8px] py-[2px] rounded-full border border-[#d5d7da] bg-white text-[12px] leading-[18px] font-medium text-[#414651]">
+                  <span className="px-[8px] py-[2px] rounded-full border border-line bg-white text-[12px] leading-[18px] font-medium text-ink-soft">
                     Monthly
                   </span>
                 </div>
-                <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
                   Everything you need to win and run client work on Proploy.
                 </p>
               </div>
               <div className="flex flex-col gap-[8px] w-full max-w-[260px]">
-                <p className="font-semibold text-[14px] leading-[20px] text-[#414651]">
+                <p className="font-semibold text-[14px] leading-[20px] text-ink-soft">
                   14 of 20 client seats
                 </p>
-                <div className="h-[8px] rounded-full bg-[#e9eaeb] overflow-hidden">
-                  <div className="h-full rounded-full bg-[#155eef]" style={{ width: '70%' }} />
+                <div className="h-[8px] rounded-full bg-line overflow-hidden">
+                  <div className="h-full rounded-full bg-cobalt" style={{ width: '70%' }} />
                 </div>
               </div>
             </div>
-            <p className="font-semibold text-[36px] leading-[44px] text-[#181d27] whitespace-nowrap tracking-[-0.02em]">
+            <p className="font-semibold text-[36px] leading-[44px] text-ink whitespace-nowrap tracking-[-0.02em]">
               $10
-              <span className="font-normal text-[16px] leading-[24px] text-[#535862]">
+              <span className="font-normal text-[16px] leading-[24px] text-ink-soft">
                 {' '}
                 per month
               </span>
             </p>
           </div>
-          <div className="px-[24px] py-[16px] border-t border-[#e9eaeb] flex justify-end">
+          <div className="px-[24px] py-[16px] border-t border-line flex justify-end">
             <button
               type="button"
-              className="inline-flex items-center gap-[6px] font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
+              className="inline-flex items-center gap-[6px] font-semibold text-[14px] leading-[20px] text-cobalt-deep hover:underline"
             >
               Upgrade plan
               <ArrowUpRight size={16} />
@@ -1111,34 +1077,34 @@ function BillingPanel() {
         </div>
 
         {/* Payment method card */}
-        <div className="bg-white border border-[#e9eaeb] rounded-[12px] p-[24px] flex flex-col gap-[16px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
+        <div className="bg-white border border-line rounded-[12px] p-[24px] flex flex-col gap-[16px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
           <div className="flex flex-col gap-[4px]">
-            <h3 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">
+            <h3 className="pf-h2">
               Payment method
             </h3>
-            <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+            <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
               Change how you pay for your plan.
             </p>
           </div>
-          <div className="border border-[#e9eaeb] rounded-[12px] p-[16px] flex items-start gap-[16px]">
+          <div className="border border-line rounded-[12px] p-[16px] flex items-start gap-[16px]">
             <VisaLogo />
             <div className="flex-1 min-w-0 flex flex-col gap-[8px]">
               <div className="flex flex-col gap-[2px]">
-                <p className="font-semibold text-[14px] leading-[20px] text-[#181d27]">
+                <p className="font-semibold text-[14px] leading-[20px] text-ink">
                   Visa ending in 1234
                 </p>
-                <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
                   Expiry 06/2025
                 </p>
               </div>
-              <p className="inline-flex items-center gap-[6px] font-normal text-[14px] leading-[20px] text-[#535862]">
-                <Mail size={16} className="text-[#717680]" />
+              <p className="inline-flex items-center gap-[6px] font-normal text-[14px] leading-[20px] text-ink-soft">
+                <Mail size={16} className="text-ink-muted" />
                 billing@proploy.io
               </p>
             </div>
             <button
               type="button"
-              className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--secondary pf-btn--sm"
             >
               Edit
             </button>
@@ -1149,19 +1115,19 @@ function BillingPanel() {
       {/* Billing and invoicing */}
       <div className="flex flex-wrap items-start justify-between gap-[16px] pt-[20px]">
         <div className="flex flex-col gap-[4px]">
-          <h2 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">
+          <h2 className="pf-h2">
             Billing and invoicing
           </h2>
-          <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+          <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
             Pick an account plan that fits your workflow.
           </p>
         </div>
         <div className="flex items-center gap-[8px]">
           <button
             type="button"
-            className={`inline-flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+            className="pf-btn pf-btn--secondary"
           >
-            <DownloadCloud size={16} className="text-[#414651]" />
+            <DownloadCloud size={16} className="text-ink-soft" />
             Download all
           </button>
           <KebabButton />
@@ -1169,21 +1135,21 @@ function BillingPanel() {
       </div>
 
       {/* Invoices table */}
-      <div className="bg-white border border-[#e9eaeb] rounded-[12px] overflow-hidden shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
+      <div className="bg-white border border-line rounded-[12px] overflow-hidden shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-[#e9eaeb] bg-[#fafafa]">
+              <tr className="border-b border-line bg-surface-sunken">
                 <Th className="pl-[24px]">
                   <div className="flex items-center gap-[12px]">
-	                    <input type="checkbox" aria-label="Select all invoices" className="size-[16px] rounded-[4px] accent-[#155eef]" />
+	                    <input type="checkbox" aria-label="Select all invoices" className="size-[16px] rounded-[4px] accent-cobalt" />
                     <SortHeader label="Invoice" />
                   </div>
                 </Th>
                 <Th>
-                  <span className="inline-flex items-center gap-[4px] text-[12px] leading-[18px] font-semibold text-[#717680]">
+                  <span className="inline-flex items-center gap-[4px] text-[12px] leading-[18px] font-semibold text-ink-muted">
                     Billing date
-                    <ChevronDown size={12} className="text-[#a4a7ae]" />
+                    <ChevronDown size={12} className="text-ink-faint" />
                   </span>
                 </Th>
                 <Th>
@@ -1200,38 +1166,38 @@ function BillingPanel() {
             </thead>
             <tbody>
               {INVOICES.map((inv) => (
-                <tr key={inv.label} className="border-b border-[#e9eaeb] last:border-b-0">
+                <tr key={inv.label} className="border-b border-line last:border-b-0">
                   <Td className="pl-[24px]">
                     <div className="flex items-center gap-[12px]">
 	                      <input
 	                        type="checkbox"
 	                        aria-label={`Select invoice ${inv.label}`}
-	                        className="size-[16px] rounded-[4px] accent-[#155eef]"
+	                        className="size-[16px] rounded-[4px] accent-cobalt"
                       />
                       <PdfIcon />
-                      <span className="font-medium text-[14px] leading-[20px] text-[#181d27] whitespace-nowrap">
+                      <span className="font-medium text-[14px] leading-[20px] text-ink whitespace-nowrap">
                         {inv.label}
                       </span>
                     </div>
                   </Td>
                   <Td>
-                    <span className="font-normal text-[14px] leading-[20px] text-[#535862] whitespace-nowrap">
+                    <span className="font-normal text-[14px] leading-[20px] text-ink-soft whitespace-nowrap">
                       {inv.date}
                     </span>
                   </Td>
                   <Td>
-                    <span className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-[#ecfdf3] border border-[#abefc6] text-[12px] leading-[18px] font-medium text-[#067647]">
-                      <Check size={12} className="text-[#17b26a]" />
+                    <span className="inline-flex items-center gap-[6px] px-[8px] py-[2px] rounded-full bg-ok-soft border border-ok-line text-[12px] leading-[18px] font-medium text-ok">
+                      <Check size={12} className="text-ok" />
                       Paid
                     </span>
                   </Td>
                   <Td>
-                    <span className="font-normal text-[14px] leading-[20px] text-[#535862] whitespace-nowrap">
+                    <span className="font-normal text-[14px] leading-[20px] text-ink-soft whitespace-nowrap">
                       USD $10.00
                     </span>
                   </Td>
                   <Td>
-                    <span className="font-normal text-[14px] leading-[20px] text-[#535862] whitespace-nowrap">
+                    <span className="font-normal text-[14px] leading-[20px] text-ink-soft whitespace-nowrap">
                       Pro plan
                     </span>
                   </Td>
@@ -1239,7 +1205,7 @@ function BillingPanel() {
                     <div className="flex justify-end">
                       <button
                         type="button"
-                        className="font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline"
+                        className="font-semibold text-[14px] leading-[20px] text-cobalt-deep hover:underline"
                       >
                         Edit
                       </button>
@@ -1299,10 +1265,10 @@ function NotificationsPanel() {
             {i > 0 && <Divider />}
             <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-x-[32px] gap-y-[16px] py-[20px] items-start">
               <div className="flex flex-col gap-[2px]">
-                <p className="font-semibold text-[14px] leading-[20px] text-[#414651]">
+                <p className="font-semibold text-[14px] leading-[20px] text-ink-soft">
                   {row.title}
                 </p>
-                <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+                <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
                   {row.desc}
                 </p>
               </div>
@@ -1343,7 +1309,7 @@ function ToggleRow({
   return (
     <label className="flex items-center gap-[8px] cursor-pointer">
       <Toggle on={on} onChange={onChange} ariaLabel={label} />
-      <span className="font-medium text-[14px] leading-[20px] text-[#414651]">{label}</span>
+      <span className="font-medium text-[14px] leading-[20px] text-ink-soft">{label}</span>
     </label>
   )
 }
@@ -1368,17 +1334,17 @@ function IntegrationsPanel() {
     <>
       {/* Update banner */}
       {!bannerDismissed && (
-        <div className="bg-white border border-[#e9eaeb] rounded-[12px] overflow-hidden flex flex-col sm:flex-row shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
+        <div className="bg-white border border-line rounded-[12px] overflow-hidden flex flex-col sm:flex-row shadow-[0px_1px_2px_0px_rgba(10,13,18,0.06)]">
           <div
-            className="w-full sm:w-[204px] h-[140px] sm:h-auto shrink-0 bg-gradient-to-br from-[#fbcfe8] via-[#c4b5fd] to-[#93c5fd]"
+            className="blueprint w-full shrink-0 border-b border-line bg-cobalt-soft sm:h-auto sm:w-[204px] sm:border-b-0 sm:border-r"
             aria-hidden="true"
           />
           <div className="flex flex-col gap-[16px] p-[24px]">
             <div className="flex flex-col gap-[4px]">
-              <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">
+              <p className="font-semibold text-[16px] leading-[24px] text-ink">
                 Proploy just got an upgrade!
               </p>
-              <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+              <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
                 Your new workspace surfaces requests, proposals, projects, and conversations.
               </p>
             </div>
@@ -1386,13 +1352,13 @@ function IntegrationsPanel() {
               <button
                 type="button"
                 onClick={() => setBannerDismissed(true)}
-                className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--secondary"
               >
                 Dismiss
               </button>
               <a
                 href="/workspace"
-                className={`inline-flex items-center gap-[6px] bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary"
               >
                 View workspace
                 <ArrowUpRight size={16} />
@@ -1405,10 +1371,10 @@ function IntegrationsPanel() {
       {/* Connected apps header */}
       <div className="flex flex-wrap items-start justify-between gap-[16px] pt-[20px]">
         <div className="flex flex-col gap-[4px]">
-          <h2 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">
+          <h2 className="pf-h2">
             Connected apps
           </h2>
-          <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+          <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
             {connectedCount} of {INTEGRATION_CATALOG.length} connected — supercharge your workflow with
             the tools you use every day.
           </p>
@@ -1416,14 +1382,14 @@ function IntegrationsPanel() {
         <div className="relative w-full sm:w-[320px]">
           <Search
             size={16}
-            className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[#717680]"
+            className="absolute left-[14px] top-1/2 -translate-y-1/2 text-ink-muted"
           />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search integrations"
-            className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[40px] pr-[12px] py-[10px] text-[14px] leading-[20px] placeholder:text-[#717680] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 ${INPUT_SHADOW}`}
+            className={`w-full bg-white border border-line rounded-[8px] pl-[40px] pr-[12px] py-[10px] text-[14px] leading-[20px] placeholder:text-ink-muted focus:outline-none focus:border-cobalt focus:ring-4 focus:ring-cobalt/24 ${INPUT_SHADOW}`}
           />
         </div>
       </div>
@@ -1432,7 +1398,7 @@ function IntegrationsPanel() {
       <div className="flex flex-col gap-[28px] pt-[8px]">
         {groups.map((group) => (
           <div key={group.category} className="flex flex-col">
-            <p className="pb-[8px] text-[12px] font-semibold uppercase leading-[18px] tracking-[0.04em] text-[#717680]">
+            <p className="pb-[8px] text-[12px] font-semibold uppercase leading-[18px] tracking-[0.04em] text-ink-muted">
               {group.category}
             </p>
             {group.items.map((app, i) => (
@@ -1450,7 +1416,7 @@ function IntegrationsPanel() {
           </div>
         ))}
         {groups.length === 0 && (
-          <p className="py-[48px] text-center text-[14px] text-[#717680]">
+          <p className="py-[48px] text-center text-[14px] text-ink-muted">
             No integrations match “{query}”.
           </p>
         )}
@@ -1481,32 +1447,32 @@ function IntegrationRow({
       <IntegrationLogo name={def.key} />
       <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
         <div className="flex flex-wrap items-center gap-[8px]">
-          <p className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{def.name}</p>
-          <span className="rounded-full bg-[#eff4ff] px-[8px] py-[1px] text-[12px] font-medium leading-[18px] text-[#155eef]">
+          <p className="font-semibold text-[16px] leading-[24px] text-ink">{def.name}</p>
+          <span className="rounded-full bg-cobalt-soft px-[8px] py-[1px] text-[12px] font-medium leading-[18px] text-cobalt">
             Powers {def.powers}
           </span>
           {def.needsAuth && (
-            <span className="rounded-full border border-[#e9eaeb] bg-[#fafafa] px-[8px] py-[1px] text-[11px] font-medium leading-[18px] text-[#717680]">
+            <span className="rounded-full border border-line bg-surface-sunken px-[8px] py-[1px] text-[11px] font-medium leading-[18px] text-ink-muted">
               OAuth
             </span>
           )}
         </div>
-        <p className="font-normal text-[14px] leading-[20px] text-[#535862]">{def.blurb}</p>
+        <p className="font-normal text-[14px] leading-[20px] text-ink-soft">{def.blurb}</p>
         {connected && account && (
-          <p className="text-[13px] leading-[18px] text-[#717680]">
-            Connected as <span className="font-medium text-[#414651]">{account}</span>
+          <p className="text-[13px] leading-[18px] text-ink-muted">
+            Connected as <span className="font-medium text-ink-soft">{account}</span>
           </p>
         )}
       </div>
       {connected ? (
         <div className="flex items-center gap-[12px] shrink-0">
-          <span className="inline-flex items-center gap-[5px] rounded-full border border-[#abefc6] bg-[#ecfdf3] px-[10px] py-[3px] text-[13px] font-medium leading-[18px] text-[#067647]">
+          <span className="inline-flex items-center gap-[5px] rounded-full border border-ok-line bg-ok-soft px-[10px] py-[3px] text-[13px] font-medium leading-[18px] text-ok">
             <CheckCircle2 size={14} /> Connected
           </span>
           <button
             type="button"
             onClick={onDisconnect}
-            className="font-semibold text-[14px] leading-[20px] text-[#535862] hover:text-[#b42318] whitespace-nowrap"
+            className="font-semibold text-[14px] leading-[20px] text-ink-soft hover:text-danger whitespace-nowrap"
           >
             Disconnect
           </button>
@@ -1515,7 +1481,7 @@ function IntegrationRow({
         <button
           type="button"
           onClick={onConnect}
-          className={`shrink-0 inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[8px] font-semibold text-[14px] leading-[20px] text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
+          className="pf-btn pf-btn--secondary pf-btn--sm shrink-0"
         >
           <Plus size={16} /> Connect
         </button>
@@ -1529,7 +1495,7 @@ function ComingSoonPanel({ title }: { title: string }) {
     <>
       <SectionHeader title={title} subtitle={`The ${title} settings are coming soon.`} />
       <div className="flex items-center justify-center py-[64px] text-center">
-        <p className="font-normal text-[14px] leading-[20px] text-[#717680] max-w-[360px]">
+        <p className="font-normal text-[14px] leading-[20px] text-ink-muted max-w-[360px]">
           This section hasn&rsquo;t been designed yet. Pick another tab to manage your account.
         </p>
       </div>
@@ -1540,9 +1506,9 @@ function ComingSoonPanel({ title }: { title: string }) {
 // ── Shared presentational pieces ─────────────────────────────────────────────
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="flex flex-col gap-[4px] pb-[20px] border-b border-[#e9eaeb]">
-      <h2 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{title}</h2>
-      <p className="font-normal text-[14px] leading-[20px] text-[#535862]">{subtitle}</p>
+    <div className="flex flex-col gap-[4px] pb-[20px] border-b border-line">
+      <h2 className="pf-h2">{title}</h2>
+      <p className="font-normal text-[14px] leading-[20px] text-ink-soft">{subtitle}</p>
     </div>
   )
 }
@@ -1557,18 +1523,18 @@ function FooterActions({
   onPrimary?: () => void
 }) {
   return (
-    <div className="flex items-center justify-end gap-[12px] pt-[20px] border-t border-[#e9eaeb]">
+    <div className="flex items-center justify-end gap-[12px] pt-[20px] border-t border-line">
       <button
         type="button"
         onClick={onCancel}
-        className={`bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+        className="pf-btn pf-btn--secondary"
       >
         Cancel
       </button>
       <button
         type="button"
         onClick={onPrimary}
-        className={`bg-[#155eef] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white hover:bg-[#004eeb] transition-colors ${BUTTON_SKEUO}`}
+        className="pf-btn pf-btn--primary"
       >
         {primaryLabel}
       </button>
@@ -1592,8 +1558,8 @@ function Toggle({
       aria-checked={on}
       aria-label={ariaLabel}
       onClick={() => onChange(!on)}
-      className={`relative w-[36px] h-[20px] rounded-full p-[2px] transition-colors shrink-0 focus:outline-none focus:ring-4 focus:ring-[#155eef]/24 ${
-        on ? 'bg-[#155eef]' : 'bg-[#e9eaeb]'
+      className={`relative w-[36px] h-[20px] rounded-full p-[2px] transition-colors shrink-0 focus:outline-none focus:ring-4 focus:ring-cobalt/24 ${
+        on ? 'bg-cobalt' : 'bg-line'
       }`}
     >
       <span
@@ -1616,7 +1582,7 @@ function IconButton({
     <button
       type="button"
       aria-label={ariaLabel}
-      className="size-[36px] rounded-[8px] flex items-center justify-center text-[#a4a7ae] hover:bg-[#fafafa] hover:text-[#535862] transition-colors"
+      className="size-[36px] rounded-[8px] flex items-center justify-center text-ink-faint hover:bg-surface-hover hover:text-ink-soft transition-colors"
     >
       {children}
     </button>
@@ -1628,7 +1594,7 @@ function KebabButton() {
     <button
       type="button"
       aria-label="More options"
-      className="size-[36px] rounded-[8px] flex items-center justify-center text-[#a4a7ae] hover:bg-[#fafafa] hover:text-[#535862] shrink-0"
+      className="size-[36px] rounded-[8px] flex items-center justify-center text-ink-faint hover:bg-surface-hover hover:text-ink-soft shrink-0"
     >
       <MoreVertical size={20} />
     </button>
@@ -1642,13 +1608,13 @@ function PdfIcon() {
         <path
           d="M0 4a4 4 0 0 1 4-4h16l12 12v24a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4Z"
           fill="#ffffff"
-          stroke="#d5d7da"
+          stroke="var(--line)"
         />
-        <path d="M20 0v8a4 4 0 0 0 4 4h8" stroke="#d5d7da" fill="none" />
+        <path d="M20 0v8a4 4 0 0 0 4 4h8" stroke="var(--line)" fill="none" />
       </svg>
       <span
         className="absolute left-[1px] bottom-[6px] px-[3px] py-[1px] rounded-[2px] text-[10px] leading-[12px] font-bold text-white"
-        style={{ backgroundColor: '#d92d20' }}
+        style={{ backgroundColor: 'var(--danger)' }}
       >
         PDF
       </span>
@@ -1658,7 +1624,7 @@ function PdfIcon() {
 
 function VisaLogo() {
   return (
-    <div className="w-[46px] h-[32px] rounded-[6px] border border-[#e9eaeb] bg-white flex items-center justify-center shrink-0">
+    <div className="w-[46px] h-[32px] rounded-[6px] border border-line bg-white flex items-center justify-center shrink-0">
       <span className="font-bold italic text-[14px] leading-none tracking-[-0.02em] text-[#1a1f71]">
         VISA
       </span>
@@ -1682,9 +1648,9 @@ function FormRow({ label, sublabel, align = 'center', children }: FormRowProps) 
       }`}
     >
       <div className="flex flex-col gap-[2px]">
-        <p className="font-semibold text-[14px] leading-[20px] text-[#414651]">{label}</p>
+        <p className="font-semibold text-[14px] leading-[20px] text-ink-soft">{label}</p>
         {sublabel && (
-          <p className="font-normal text-[14px] leading-[20px] text-[#535862]">{sublabel}</p>
+          <p className="font-normal text-[14px] leading-[20px] text-ink-soft">{sublabel}</p>
         )}
       </div>
       <div className="max-w-[512px] w-full">{children}</div>
@@ -1693,7 +1659,7 @@ function FormRow({ label, sublabel, align = 'center', children }: FormRowProps) 
 }
 
 function Divider() {
-  return <div className="h-px bg-[#e9eaeb]" />
+  return <div className="h-px bg-line" />
 }
 
 function TextInput({
@@ -1714,7 +1680,7 @@ function TextInput({
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`w-full bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 disabled:bg-[#fafafa] disabled:text-[#414651] disabled:cursor-default ${INPUT_SHADOW}`}
+      className={`w-full bg-white border border-line rounded-[8px] px-[14px] py-[10px] font-normal text-[16px] leading-[24px] text-ink placeholder:text-ink-muted focus:outline-none focus:border-cobalt focus:ring-4 focus:ring-cobalt/24 disabled:bg-surface-sunken disabled:text-ink-soft disabled:cursor-default ${INPUT_SHADOW}`}
     />
   )
 }
@@ -1739,7 +1705,7 @@ function SelectField({
   return (
     <div className="relative">
       {leadingFlag && (
-        <span className="absolute left-[14px] top-1/2 -translate-y-1/2 size-[20px] rounded-full overflow-hidden bg-[#e9eaeb] flex items-center justify-center text-[10px] font-semibold text-[#414651]">
+        <span className="absolute left-[14px] top-1/2 -translate-y-1/2 size-[20px] rounded-full overflow-hidden bg-line flex items-center justify-center text-[10px] font-semibold text-ink-soft">
           {leadingFlag}
         </span>
       )}
@@ -1751,9 +1717,9 @@ function SelectField({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none bg-white border border-[#d5d7da] rounded-[8px] ${
+        className={`w-full appearance-none bg-white border border-line rounded-[8px] ${
           leadingFlag || leadingIcon ? 'pl-[42px]' : 'pl-[14px]'
-        } pr-[40px] py-[10px] font-normal text-[16px] leading-[24px] text-[#181d27] focus:outline-none focus:border-[#155eef] focus:ring-4 focus:ring-[#155eef]/24 disabled:bg-[#fafafa] disabled:text-[#414651] disabled:cursor-default ${INPUT_SHADOW}`}
+        } pr-[40px] py-[10px] font-normal text-[16px] leading-[24px] text-ink focus:outline-none focus:border-cobalt focus:ring-4 focus:ring-cobalt/24 disabled:bg-surface-sunken disabled:text-ink-soft disabled:cursor-default ${INPUT_SHADOW}`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -1763,7 +1729,7 @@ function SelectField({
       </select>
       <ChevronDown
         size={16}
-        className="absolute right-[14px] top-1/2 -translate-y-1/2 text-[#a4a7ae] pointer-events-none"
+        className="absolute right-[14px] top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
       />
     </div>
   )
@@ -1783,23 +1749,23 @@ function BioEditor({
   const max = 400
   return (
     <div
-      className={`bg-white border border-[#d5d7da] rounded-[8px] overflow-hidden ${
-        disabled ? 'bg-[#fafafa]' : ''
+      className={`bg-white border border-line rounded-[8px] overflow-hidden ${
+        disabled ? 'bg-surface-sunken' : ''
       } ${INPUT_SHADOW}`}
     >
       <div
-        className={`flex items-center gap-[8px] px-[14px] py-[10px] border-b border-[#e9eaeb] ${
+        className={`flex items-center gap-[8px] px-[14px] py-[10px] border-b border-line ${
           disabled ? 'opacity-50 pointer-events-none' : ''
         }`}
       >
         <button
           type="button"
-          className={`inline-flex items-center gap-[4px] px-[8px] py-[4px] rounded-[6px] text-[14px] leading-[20px] font-medium text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO} border border-[#d5d7da] bg-white`}
+          className={`inline-flex items-center gap-[4px] px-[8px] py-[4px] rounded-[6px] text-[14px] leading-[20px] font-medium text-ink-soft hover:bg-surface-hover ${BUTTON_SKEUO} border border-line bg-white`}
         >
           Normal text
-          <ChevronDown size={14} className="text-[#a4a7ae]" />
+          <ChevronDown size={14} className="text-ink-faint" />
         </button>
-        <span className="h-[20px] w-px bg-[#e9eaeb]" aria-hidden="true" />
+        <span className="h-[20px] w-px bg-line" aria-hidden="true" />
         <ToolbarBtn ariaLabel="Bold">
           <Bold size={16} />
         </ToolbarBtn>
@@ -1809,7 +1775,7 @@ function BioEditor({
         <ToolbarBtn ariaLabel="Insert link">
           <Link2 size={16} />
         </ToolbarBtn>
-        <span className="h-[20px] w-px bg-[#e9eaeb]" aria-hidden="true" />
+        <span className="h-[20px] w-px bg-line" aria-hidden="true" />
         <ToolbarBtn ariaLabel="Bulleted list">
           <List size={16} />
         </ToolbarBtn>
@@ -1823,10 +1789,10 @@ function BioEditor({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value.slice(0, max))}
         rows={5}
-        className="w-full px-[14px] py-[12px] font-normal text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none resize-y min-h-[140px] disabled:bg-[#fafafa] disabled:text-[#414651] disabled:cursor-default"
+        className="w-full px-[14px] py-[12px] font-normal text-[16px] leading-[24px] text-ink placeholder:text-ink-muted focus:outline-none resize-y min-h-[140px] disabled:bg-surface-sunken disabled:text-ink-soft disabled:cursor-default"
       />
-      <div className="px-[14px] py-[10px] border-t border-[#e9eaeb] flex justify-end">
-        <p className="font-normal text-[14px] leading-[20px] text-[#535862]">
+      <div className="px-[14px] py-[10px] border-t border-line flex justify-end">
+        <p className="font-normal text-[14px] leading-[20px] text-ink-soft">
           {max - value.length} characters left
         </p>
       </div>
@@ -1845,7 +1811,7 @@ function ToolbarBtn({
     <button
       type="button"
       aria-label={ariaLabel}
-      className="size-[28px] rounded-[6px] flex items-center justify-center text-[#535862] hover:bg-[#fafafa] hover:text-[#181d27]"
+      className="size-[28px] rounded-[6px] flex items-center justify-center text-ink-soft hover:bg-surface-hover hover:text-ink"
     >
       {children}
     </button>
@@ -1855,30 +1821,30 @@ function ToolbarBtn({
 function FileUploadItem({ file }: { file: PortfolioFile }) {
   const accent = FILE_TYPE_COLORS[file.fileType]
   return (
-    <div className="relative w-full bg-white border border-[#e9eaeb] rounded-[12px] p-[16px] flex items-start gap-[12px]">
+    <div className="relative w-full bg-white border border-line rounded-[12px] p-[16px] flex items-start gap-[12px]">
       <FileTypeIcon type={file.fileType} color={accent} />
       <div className="flex-1 min-w-0 flex flex-col gap-[4px]">
         <div className="flex flex-col gap-[2px]">
-          <p className="font-medium text-[14px] leading-[20px] text-[#414651] truncate">
+          <p className="font-medium text-[14px] leading-[20px] text-ink-soft truncate">
             {file.name}
           </p>
           <div className="flex items-center gap-[8px]">
-            <p className="font-normal text-[14px] leading-[20px] text-[#535862] truncate">
+            <p className="font-normal text-[14px] leading-[20px] text-ink-soft truncate">
               {file.size}
             </p>
-            <span className="h-[12px] w-px bg-[#e9eaeb]" aria-hidden="true" />
+            <span className="h-[12px] w-px bg-line" aria-hidden="true" />
             <div className="flex items-center gap-[4px]">
               {file.state === 'complete' ? (
                 <>
-                  <CheckCircle2 size={14} className="text-[#079455]" />
-                  <span className="font-medium text-[14px] leading-[20px] text-[#079455]">
+                  <CheckCircle2 size={14} className="text-ok" />
+                  <span className="font-medium text-[14px] leading-[20px] text-ok">
                     Complete
                   </span>
                 </>
               ) : (
                 <>
-                  <UploadCloud size={14} className="text-[#717680]" />
-                  <span className="font-medium text-[14px] leading-[20px] text-[#717680]">
+                  <UploadCloud size={14} className="text-ink-muted" />
+                  <span className="font-medium text-[14px] leading-[20px] text-ink-muted">
                     Uploading...
                   </span>
                 </>
@@ -1887,10 +1853,10 @@ function FileUploadItem({ file }: { file: PortfolioFile }) {
           </div>
         </div>
         <div className="flex items-center gap-[12px]">
-          <div className="flex-1 h-[8px] rounded-full bg-[#e9eaeb] overflow-hidden">
-            <div className="h-full rounded-full bg-[#155eef]" style={{ width: `${file.progress}%` }} />
+          <div className="flex-1 h-[8px] rounded-full bg-line overflow-hidden">
+            <div className="h-full rounded-full bg-cobalt" style={{ width: `${file.progress}%` }} />
           </div>
-          <span className="font-medium text-[14px] leading-[20px] text-[#414651] tabular-nums">
+          <span className="font-medium text-[14px] leading-[20px] text-ink-soft tabular-nums">
             {file.progress}%
           </span>
         </div>
@@ -1898,7 +1864,7 @@ function FileUploadItem({ file }: { file: PortfolioFile }) {
       <button
         type="button"
         aria-label="Remove file"
-        className="absolute right-[7px] top-[7px] size-[28px] rounded-[6px] flex items-center justify-center text-[#a4a7ae] hover:bg-[#fafafa] hover:text-[#535862]"
+        className="absolute right-[7px] top-[7px] size-[28px] rounded-[6px] flex items-center justify-center text-ink-faint hover:bg-surface-hover hover:text-ink-soft"
       >
         {file.state === 'complete' ? <Trash2 size={16} /> : <Pencil size={16} />}
       </button>
@@ -1919,9 +1885,9 @@ function FileTypeIcon({
         <path
           d="M0 4a4 4 0 0 1 4-4h16l12 12v24a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V4Z"
           fill="#ffffff"
-          stroke="#d5d7da"
+          stroke="var(--line)"
         />
-        <path d="M20 0v8a4 4 0 0 0 4 4h8" stroke="#d5d7da" fill="none" />
+        <path d="M20 0v8a4 4 0 0 0 4 4h8" stroke="var(--line)" fill="none" />
       </svg>
       <span
         className="absolute left-[1px] bottom-[6px] px-[3px] py-[1px] rounded-[2px] text-[10px] leading-[12px] font-bold text-white"

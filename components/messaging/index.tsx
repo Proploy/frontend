@@ -1,5 +1,12 @@
 'use client'
 
+/**
+ * Shared messaging primitives — thread rail, conversation header, bubbles and
+ * composer — used by both the expert workspace (/workspace/conversations) and
+ * the business portal (/business/dashboard/messages). Presentational only: each
+ * surface brings its own data and send handler.
+ */
+
 import type { FormEvent, ReactNode } from 'react'
 import { Paperclip, Send } from 'lucide-react'
 import {
@@ -7,7 +14,6 @@ import {
   relativeDate,
   timeDate,
 } from '@/components/workspace/workspace-format'
-import type { WorkspaceMessage } from '@/features/workspace/types'
 
 export function MessagesLayout({
   threadRail,
@@ -121,12 +127,23 @@ export function ConversationHeader({
   )
 }
 
+/** The minimum a bubble needs — any surface's message type structurally fits. */
+export type BubbleMessage = {
+  content?: string | null
+  body?: string | null
+  /** ISO timestamp. Omit when passing `atLabel` instead. */
+  createdAt?: string | null
+}
+
 export function MessageBubble({
   message,
   own,
+  atLabel,
 }: {
-  message: WorkspaceMessage
+  message: BubbleMessage
   own: boolean
+  /** Pre-formatted time ("18m"). Overrides formatting `message.createdAt`. */
+  atLabel?: string
 }) {
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
@@ -146,7 +163,7 @@ export function MessageBubble({
             own ? 'text-white/75' : 'text-ink-muted'
           }`}
         >
-          {timeDate(message.createdAt)}
+          {atLabel ?? (message.createdAt ? timeDate(message.createdAt) : null)}
         </p>
       </div>
     </div>

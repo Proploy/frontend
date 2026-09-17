@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import {
+  AlertTriangle,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -245,8 +246,11 @@ export default function WorkspaceRequestsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message || `Unable to refresh ${itemLabel}.`}
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message || `Unable to refresh ${itemLabel}.`}
+            </div>
           </div>
         )}
 
@@ -362,7 +366,7 @@ export default function WorkspaceRequestsPage() {
                   </div>
 
                   <div className="px-[32px] py-[24px]">
-                    <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Project scope</p>
+                    <p className="pf-eyebrow">Project scope</p>
                     <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-ink">
                       {selected.projectScope}
                     </p>
@@ -482,7 +486,7 @@ export default function WorkspaceRequestsPage() {
 function FactCell({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="bg-white px-[32px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+      <p className="pf-eyebrow flex items-center gap-[6px]">
         {icon} {label}
       </p>
       <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-ink">{children}</p>

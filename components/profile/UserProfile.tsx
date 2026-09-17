@@ -453,7 +453,7 @@ function RecentlyViewedExpertCard({
 
   return (
     <Link href={recentlyViewedHref('expert', expertId)} className="flex min-w-0 items-center gap-3 rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] px-4 py-3 hover:border-[#b2ccff]">
-      <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#dbeafe] to-[#c084fc] text-[15px] font-semibold text-white">
+      <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cobalt-soft text-[15px] font-semibold text-cobalt-deep">
         {profilePictureUrl ? <CatalogImage src={profilePictureUrl} alt={name} className="size-full object-cover" fallback={name.charAt(0).toUpperCase()} /> : name.charAt(0).toUpperCase()}
       </div>
       <span className="min-w-0">
@@ -665,7 +665,7 @@ function ProfileIdentityCard({
     <section className="rounded-[12px] border border-[#e9eaeb] bg-white p-5 shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#dbeafe] to-[#c084fc] text-[24px] font-semibold text-white">
+          <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cobalt-soft text-[24px] font-semibold text-cobalt-deep">
             {avatar ? <img src={avatar} alt={profile.name ?? 'Profile'} className="size-full object-cover" /> : displayInitial}
             {pictureLoading ? (
               <span className="absolute inset-0 flex items-center justify-center bg-[#181d27]/40">

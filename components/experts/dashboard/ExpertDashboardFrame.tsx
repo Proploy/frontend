@@ -27,6 +27,7 @@ import {
   DashboardChrome,
   DashboardEmptyState,
   DashboardSidebar,
+  type DashNavGroup,
   type DashNavItem,
   type DashboardUser,
 } from '@/components/dashboard/DashboardChrome'
@@ -60,13 +61,27 @@ export type DashboardLoadState = {
   isPending: boolean
 }
 
-const NAV_PRIMARY: DashNavItem[] = [
-  { label: 'Home', icon: Home, href: '/workspace' },
-  { label: 'Requests', icon: Inbox, href: '/workspace/requests' },
-  { label: 'Engagements', icon: Users, href: '/workspace/engagements' },
-  { label: 'Proposals', icon: Handshake, href: '/workspace/proposals' },
-  { label: 'Projects', icon: FolderClosed, href: '/workspace/projects' },
-  { label: 'Conversations', icon: MessageSquare, href: '/workspace/conversations' },
+/**
+ * Grouped to match the workspace rail — these routes are the workspace, so the
+ * two must not disagree about how the same destinations are organised.
+ */
+const NAV_PRIMARY: DashNavGroup[] = [
+  { items: [{ label: 'Home', icon: Home, href: '/workspace' }] },
+  {
+    label: 'Pipeline',
+    items: [
+      { label: 'Requests', icon: Inbox, href: '/workspace/requests' },
+      { label: 'Proposals', icon: Handshake, href: '/workspace/proposals' },
+    ],
+  },
+  {
+    label: 'Delivery',
+    items: [
+      { label: 'Projects', icon: FolderClosed, href: '/workspace/projects' },
+      { label: 'Engagements', icon: Users, href: '/workspace/engagements' },
+      { label: 'Conversations', icon: MessageSquare, href: '/workspace/conversations' },
+    ],
+  },
 ]
 
 const NAV_SECONDARY: DashNavItem[] = [
@@ -74,7 +89,7 @@ const NAV_SECONDARY: DashNavItem[] = [
   { label: 'Account', icon: LifeBuoy, href: '/experts/account' },
 ]
 
-const EXPERT_BRAND = { mark: 'p', word: 'proploy', href: '/workspace', markBg: '#155eef' }
+const EXPERT_BRAND = { mark: 'p', word: 'proploy', href: '/workspace', markBg: 'var(--cobalt)' }
 
 function useExpertChromeUser(expert?: ExpertMe): DashboardUser | undefined {
   const { user } = useAuth()
@@ -83,7 +98,6 @@ function useExpertChromeUser(expert?: ExpertMe): DashboardUser | undefined {
   return {
     name: expert?.displayName ?? effectiveUser?.name ?? 'Expert',
     email: effectiveUser?.email ?? '',
-    avatarClassName: 'bg-gradient-to-br from-[#fde68a] to-[#c084fc]',
   }
 }
 
@@ -202,7 +216,7 @@ export function DashboardLoading() {
   return (
     <DashboardShell>
       <div className="flex min-h-screen flex-1 items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-[#155eef]" />
+        <Loader2 size={32} className="animate-spin text-cobalt" />
       </div>
     </DashboardShell>
   )

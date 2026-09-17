@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
+  AlertTriangle,
   Calendar,
   ChevronDown,
   ExternalLink,
@@ -285,9 +286,12 @@ function WorkspaceMeetingsContent() {
         </header>
 
         {error && (
-          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
-            {error.error.message ||
+          <div className="px-[24px] pt-[16px]">
+            <div className="pf-note pf-note--warn">
+              <AlertTriangle size={15} />
+              {error.error.message ||
               'Unable to load meetings. Native booking controls remain available below.'}
+            </div>
           </div>
         )}
 
@@ -429,7 +433,7 @@ function WorkspaceMeetingsContent() {
                   </div>
 
                   <div className="px-[32px] py-[24px]">
-                    <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+                    <p className="pf-eyebrow flex items-center gap-[6px]">
                       <MapPin size={16} className="text-ink-muted" />
                       Location
                     </p>
@@ -444,7 +448,7 @@ function WorkspaceMeetingsContent() {
                     ) : null}
                     {selected.notes && (
                       <>
-                        <p className="mt-[20px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+                        <p className="pf-eyebrow mt-[20px]">
                           Notes
                         </p>
                         <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-ink">
@@ -550,7 +554,7 @@ function MeetingStatusBadge({ status }: { status: WorkspaceMeeting['status'] }) 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 bg-white px-[24px] py-[18px]">
-      <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</p>
+      <p className="pf-eyebrow">{label}</p>
       <p className="mt-[6px] truncate text-[14px] font-semibold leading-[20px] text-ink">{value}</p>
     </div>
   )

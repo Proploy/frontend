@@ -30,18 +30,18 @@ export function FileDropzone({
 
   if (fileName) {
     return (
-      <div className="flex items-center justify-between gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white px-[16px] py-[12px]">
+      <div className="flex items-center justify-between gap-[12px] rounded-[12px] border border-line bg-white px-[16px] py-[12px]">
         <div className="flex items-center gap-[10px] min-w-0">
-          <span className="flex size-[32px] shrink-0 items-center justify-center rounded-[8px] bg-[#eff8ff] text-[#155eef]">
+          <span className="flex size-[32px] shrink-0 items-center justify-center rounded-[8px] bg-cobalt-soft text-cobalt">
             <UploadCloud size={16} />
           </span>
-          <span className="truncate text-[14px] font-medium leading-[20px] text-[#181d27]">{fileName}</span>
+          <span className="truncate text-[14px] font-medium leading-[20px] text-ink">{fileName}</span>
         </div>
         {onClear && (
           <button
             type="button"
             onClick={onClear}
-            className="flex size-[28px] shrink-0 items-center justify-center rounded-[6px] text-[#717680] hover:bg-[#fafafa] hover:text-[#181d27] transition-colors"
+            className="flex size-[28px] shrink-0 items-center justify-center rounded-[6px] text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors"
             aria-label="Remove file"
           >
             <X size={16} />
@@ -55,17 +55,17 @@ export function FileDropzone({
     <div
       {...getRootProps()}
       className={`flex cursor-pointer flex-col items-center gap-[8px] rounded-[12px] border border-dashed px-[24px] py-[24px] text-center transition-colors ${
-        isDragActive ? 'border-[#155eef] bg-[#eff8ff]' : 'border-[#d5d7da] bg-[#fafafa] hover:border-[#155eef]'
+        isDragActive ? 'border-cobalt bg-cobalt-soft' : 'border-line bg-surface-sunken hover:border-cobalt'
       }`}
     >
       <input {...getInputProps()} />
-      <span className="flex size-[40px] items-center justify-center rounded-full bg-white text-[#155eef] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
+      <span className="flex size-[40px] items-center justify-center rounded-full bg-white text-cobalt shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]">
         <UploadCloud size={20} />
       </span>
-      <p className="text-[14px] leading-[20px] text-[#414651]">
-        <span className="font-semibold text-[#155eef]">Click to upload</span> or drag and drop
+      <p className="text-[14px] leading-[20px] text-ink-soft">
+        <span className="font-semibold text-cobalt">Click to upload</span> or drag and drop
       </p>
-      {hint && <p className="text-[12px] leading-[18px] text-[#717680]">{hint}</p>}
+      {hint && <p className="text-[12px] leading-[18px] text-ink-muted">{hint}</p>}
     </div>
   )
 }

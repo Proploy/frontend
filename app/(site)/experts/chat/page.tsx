@@ -28,6 +28,7 @@ import {
 
 import { Sidebar as ExpertSidebar } from '@/components/experts/dashboard/ExpertDashboardFrame'
 import { FileDropzone } from '@/components/experts/dashboard/FileDropzone'
+import { Avatar as SharedAvatar } from '@/components/ui/Avatar'
 import { useDemo, addMessage, notify, DEMO_BUSINESS } from '@/lib/demo/demo-store'
 
 // Conversation id for the live demo-synced thread with the business dashboard.
@@ -40,7 +41,6 @@ type Conversation = {
   id: string
   name: string
   handle: string
-  avatarBg: string
   time: string
   preview: string
   fromYou?: boolean
@@ -53,7 +53,6 @@ const CONVERSATIONS: Conversation[] = [
     id: DEMO_CONVO_ID,
     name: DEMO_BUSINESS,
     handle: 'Client · CRM migration',
-    avatarBg: '#c7d7fe',
     time: 'live',
     preview: 'Live conversation with your client.',
     unread: true,
@@ -63,7 +62,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'phoenix',
     name: 'Phoenix Baker',
     handle: '@phoenix',
-    avatarBg: '#d6cfb7',
     time: '5min ago',
     preview: 'Hey Olivia, Katherine sent me over the latest doc. I just have a quick question about the…',
     unread: true,
@@ -73,7 +71,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'andi',
     name: 'Andi Lane',
     handle: '@andi',
-    avatarBg: '#dcccbd',
     time: '20min ago',
     preview: "Sure thing, I'll have a look today. They're looking great!",
     fromYou: true,
@@ -83,7 +80,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'mollie',
     name: 'Mollie Hall',
     handle: '@mollie',
-    avatarBg: '#dfc3cd',
     time: '1hr ago',
     preview: "I've just published the site again. Looks like it fixed it. How weird! I'll keep an eye on it…",
     unread: true,
@@ -93,7 +89,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'rosalee',
     name: 'Rosalee Melvin',
     handle: '@rosalee',
-    avatarBg: '#ddd0be',
     time: '2hr ago',
     preview: 'Hey Liv just wanted to say thanks for chasing up the release for me. Really…',
   },
@@ -101,7 +96,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'anaiah',
     name: 'Anaiah Whitten',
     handle: '@analah',
-    avatarBg: '#d9d0e6',
     time: '2hr ago',
     preview: "Good news!! Jack accepted the offer. I've sent over a contract for him to review but…",
     online: true,
@@ -110,7 +104,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'koray',
     name: 'Koray Okumus',
     handle: '@koray',
-    avatarBg: '#e5cfe7',
     time: '4hr ago',
     preview: 'Thanks! Looks great!',
     unread: true,
@@ -120,7 +113,6 @@ const CONVERSATIONS: Conversation[] = [
     id: 'eva',
     name: 'Eva Bond',
     handle: '@eva',
-    avatarBg: '#e8d7ea',
     time: '4hr ago',
     preview: "The press release went out! It's been picked up by a few people… Here's the link if you…",
   },
@@ -375,23 +367,23 @@ export default function ExpertsChatPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white font-[family-name:var(--font-dm-sans)] text-[#181d27]">
+    <div className="flex h-screen overflow-hidden bg-white font-[family-name:var(--font-dm-sans)] text-ink">
       <ExpertSidebar />
 
       {/* Messages list panel */}
-      <aside className="hidden md:flex w-[360px] shrink-0 flex-col border-r border-[#e9eaeb]">
+      <aside className="hidden md:flex w-[360px] shrink-0 flex-col border-r border-line">
         <header className="flex items-center justify-between px-[20px] h-[80px] shrink-0">
           <div className="flex items-center gap-[8px]">
-            <h1 className="font-semibold text-[18px] leading-[28px] text-[#181d27]">Messages</h1>
-            <span className="inline-flex items-center gap-[4px] px-[8px] py-[2px] rounded-full bg-[#eff4ff] text-[#155eef] text-[12px] leading-[18px] font-medium">
-              <span className="size-[6px] rounded-full bg-[#155eef]" />
+            <h1 className="pf-title pf-title--sm">Messages</h1>
+            <span className="inline-flex items-center gap-[4px] px-[8px] py-[2px] rounded-full bg-cobalt-soft text-cobalt text-[12px] leading-[18px] font-medium">
+              <span className="size-[6px] rounded-full bg-cobalt" />
               40
             </span>
           </div>
           <button
             type="button"
             aria-label="New message"
-            className={`flex items-center justify-center size-[40px] rounded-[8px] bg-white border border-[#d5d7da] text-[#414651] ${BUTTON_SKEUO}`}
+            className="pf-btn pf-btn--secondary"
           >
             <SquarePen size={18} />
           </button>
@@ -399,13 +391,14 @@ export default function ExpertsChatPage() {
 
         <div className="px-[16px] pb-[12px] shrink-0">
           <div className="relative">
-            <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#717680]" />
+            <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-ink-muted" />
             <input
               type="text"
               placeholder="Search"
-              className={`w-full bg-white border border-[#d5d7da] rounded-[8px] pl-[36px] pr-[40px] py-[8px] text-[14px] leading-[20px] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
+              aria-label="Search conversations"
+              className="pf-input h-[34px] pl-[34px] pr-[44px] text-[13px]"
             />
-            <span className="absolute right-[10px] top-1/2 -translate-y-1/2 px-[6px] py-[2px] text-[12px] leading-[18px] text-[#717680] border border-[#e9eaeb] rounded-[4px] bg-white">
+            <span className="absolute right-[10px] top-1/2 -translate-y-1/2 px-[6px] py-[2px] text-[12px] leading-[18px] text-ink-muted border border-line rounded-[4px] bg-white">
               ⌘K
             </span>
           </div>
@@ -425,48 +418,48 @@ export default function ExpertsChatPage() {
 
       {/* Conversation */}
       <section className="flex-1 min-w-0 flex flex-col">
-        <header className="flex items-center justify-between gap-[16px] px-[24px] h-[97px] shrink-0 border-b border-[#e9eaeb]">
+        <header className="flex items-center justify-between gap-[16px] px-[24px] h-[97px] shrink-0 border-b border-line">
           <div className="flex items-center gap-[12px] min-w-0">
-            <Avatar name={active.name} bg={active.avatarBg} size={40} online={active.online} verified />
+            <Avatar name={active.name} size={40} online={active.online} verified />
             <div className="min-w-0">
               <div className="flex items-center gap-[8px]">
-                <span className="font-semibold text-[18px] leading-[28px] text-[#181d27] truncate">{active.name}</span>
+                <span className="font-semibold text-[18px] leading-[28px] text-ink truncate">{active.name}</span>
                 {active.online && (
-                  <span className="inline-flex items-center gap-[5px] px-[8px] py-[2px] rounded-full bg-[#ecfdf3] text-[#067647] text-[12px] leading-[18px] font-medium border border-[#abefc6]">
-                    <span className="size-[6px] rounded-full bg-[#17b26a]" />
+                  <span className="inline-flex items-center gap-[5px] px-[8px] py-[2px] rounded-full bg-ok-soft text-ok text-[12px] leading-[18px] font-medium border border-ok-line">
+                    <span className="size-[6px] rounded-full bg-ok" />
                     Online
                   </span>
                 )}
               </div>
-              <p className="text-[14px] leading-[20px] text-[#535862] truncate">{active.handle}</p>
+              <p className="text-[14px] leading-[20px] text-ink-soft truncate">{active.handle}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-[12px] shrink-0">
             <button
               type="button"
-              className={`hidden sm:flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--secondary sm:flex"
             >
               <Phone size={16} />
               Call
             </button>
             <button
               type="button"
-              className={`hidden sm:flex items-center gap-[6px] bg-white border border-[#d5d7da] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--secondary sm:flex"
             >
               <Archive size={16} />
               Archive
             </button>
             <Link
               href={`/experts/${active.id}`}
-              className="flex items-center bg-[#155eef] hover:bg-[#004eeb] border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white transition-colors"
+              className="flex items-center bg-cobalt hover:bg-cobalt-deep border-2 border-white/[0.12] rounded-[8px] px-[14px] py-[10px] font-semibold text-[14px] leading-[20px] text-white transition-colors"
             >
               View profile
             </Link>
             <button
               type="button"
               aria-label="More options"
-              className="flex items-center justify-center size-[40px] rounded-[8px] text-[#717680] hover:bg-[#fafafa]"
+              className="flex items-center justify-center size-[40px] rounded-[8px] text-ink-muted hover:bg-surface-hover"
             >
               <MoreVertical size={18} />
             </button>
@@ -499,7 +492,7 @@ export default function ExpertsChatPage() {
               onFiles={handleFiles}
             />
             <div
-              className={`relative bg-white border border-[#d5d7da] rounded-[8px] px-[14px] pt-[12px] pb-[12px] ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--secondary relative"
             >
               <input
                 ref={fileInputRef}
@@ -519,7 +512,7 @@ export default function ExpertsChatPage() {
                 }}
                 rows={2}
                 placeholder="Message"
-                className="w-full resize-none bg-transparent text-[16px] leading-[24px] text-[#181d27] placeholder:text-[#717680] focus:outline-none min-h-[56px]"
+                className="w-full resize-none bg-transparent text-[16px] leading-[24px] text-ink placeholder:text-ink-muted focus:outline-none min-h-[56px]"
               />
               <div className="flex items-center justify-between pt-[8px]">
                 <div className="flex items-center gap-[2px]">
@@ -527,7 +520,7 @@ export default function ExpertsChatPage() {
                     type="button"
                     aria-label="Attach file"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center size-[28px] rounded-[6px] text-[#a4a7ae] hover:text-[#414651] hover:bg-[#fafafa] transition-colors"
+                    className="flex items-center justify-center size-[28px] rounded-[6px] text-ink-faint hover:text-ink-soft hover:bg-surface-hover transition-colors"
                   >
                     <Paperclip size={18} />
                   </button>
@@ -539,8 +532,8 @@ export default function ExpertsChatPage() {
                       onClick={() => setEmojiOpen((v) => !v)}
                       className={`flex items-center justify-center size-[28px] rounded-[6px] transition-colors ${
                         emojiOpen
-                          ? 'text-[#155eef] bg-[#eff4ff]'
-                          : 'text-[#a4a7ae] hover:text-[#414651] hover:bg-[#fafafa]'
+                          ? 'text-cobalt bg-cobalt-soft'
+                          : 'text-ink-faint hover:text-ink-soft hover:bg-surface-hover'
                       }`}
                     >
                       <Smile size={18} />
@@ -555,14 +548,14 @@ export default function ExpertsChatPage() {
                         />
                         <div
                           role="menu"
-                          className={`absolute bottom-[36px] left-0 z-20 grid grid-cols-6 gap-[2px] rounded-[10px] border border-[#e9eaeb] bg-white p-[6px] ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--secondary absolute bottom-[36px] left-0 z-20"
                         >
                           {EMOJI.map((emoji) => (
                             <button
                               key={emoji}
                               type="button"
                               onClick={() => insertEmoji(emoji)}
-                              className="flex size-[32px] items-center justify-center rounded-[6px] text-[18px] hover:bg-[#fafafa] transition-colors"
+                              className="flex size-[32px] items-center justify-center rounded-[6px] text-[18px] hover:bg-surface-hover transition-colors"
                             >
                               {emoji}
                             </button>
@@ -576,7 +569,7 @@ export default function ExpertsChatPage() {
                   type="button"
                   onClick={sendMessage}
                   disabled={!draft.trim()}
-                  className="font-semibold text-[14px] leading-[20px] text-[#004eeb] hover:underline disabled:text-[#a4a7ae] disabled:no-underline disabled:cursor-not-allowed"
+                  className="font-semibold text-[14px] leading-[20px] text-cobalt-deep hover:underline disabled:text-ink-faint disabled:no-underline disabled:cursor-not-allowed"
                 >
                   Send
                 </button>
@@ -602,22 +595,22 @@ function ConversationRow({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full text-left flex gap-[8px] px-[16px] py-[16px] border-b border-[#f5f5f5] transition-colors ${
-        active ? 'bg-[#fafafa]' : 'hover:bg-[#fafafa]'
+      className={`w-full text-left flex gap-[8px] px-[16px] py-[16px] border-b border-surface-sunken transition-colors ${
+        active ? 'bg-surface-sunken' : 'hover:bg-surface-hover'
       }`}
     >
       <span className="w-[8px] shrink-0 flex justify-center pt-[16px]">
-        {conversation.unread && <span className="size-[8px] rounded-full bg-[#155eef]" />}
+        {conversation.unread && <span className="size-[8px] rounded-full bg-cobalt" />}
       </span>
-      <Avatar name={conversation.name} bg={conversation.avatarBg} size={40} online={conversation.online} />
+      <Avatar name={conversation.name} size={40} online={conversation.online} />
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-[8px]">
-          <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">{conversation.name}</p>
-          <span className="text-[14px] leading-[20px] text-[#535862] shrink-0">{conversation.time}</span>
+          <p className="font-semibold text-[14px] leading-[20px] text-ink truncate">{conversation.name}</p>
+          <span className="text-[14px] leading-[20px] text-ink-soft shrink-0">{conversation.time}</span>
         </div>
-        <p className="text-[14px] leading-[20px] text-[#535862]">{conversation.handle}</p>
-        <p className="mt-[8px] text-[14px] leading-[20px] text-[#535862] line-clamp-2">
-          {conversation.fromYou && <span className="text-[#414651]">You: </span>}
+        <p className="text-[14px] leading-[20px] text-ink-soft">{conversation.handle}</p>
+        <p className="mt-[8px] text-[14px] leading-[20px] text-ink-soft line-clamp-2">
+          {conversation.fromYou && <span className="text-ink-soft">You: </span>}
           {conversation.preview}
         </p>
       </div>
@@ -630,14 +623,14 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
 
   return (
     <div className={`flex gap-[12px] ${isYou ? 'flex-row-reverse' : ''}`}>
-      {!isYou && <Avatar name={sender.name} bg={sender.avatarBg} size={40} online={sender.online} />}
+      {!isYou && <Avatar name={sender.name} size={40} online={sender.online} />}
       <div className={`flex flex-col gap-[6px] max-w-[560px] min-w-0 ${isYou ? 'items-end' : 'items-start'}`}>
         <div className={`flex items-center gap-[8px] ${isYou ? 'flex-row-reverse' : ''}`}>
-          <span className="font-medium text-[14px] leading-[20px] text-[#414651]">{isYou ? 'You' : sender.name}</span>
-          <span className="inline-flex items-center gap-[4px] text-[12px] leading-[18px] text-[#535862]">
+          <span className="font-medium text-[14px] leading-[20px] text-ink-soft">{isYou ? 'You' : sender.name}</span>
+          <span className="inline-flex items-center gap-[4px] text-[12px] leading-[18px] text-ink-soft">
             {message.time}
             {isYou && (
-              <CheckCheck size={14} className={message.read ? 'text-[#155eef]' : 'text-[#a4a7ae]'} />
+              <CheckCheck size={14} className={message.read ? 'text-cobalt' : 'text-ink-faint'} />
             )}
           </span>
         </div>
@@ -646,8 +639,8 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
           <div
             className={`px-[14px] py-[10px] text-[16px] leading-[24px] ${
               isYou
-                ? 'bg-white border border-[#e9eaeb] text-[#181d27] rounded-[8px] rounded-tr-[2px]'
-                : 'bg-[#f5f5f5] text-[#181d27] rounded-[8px] rounded-tl-[2px]'
+                ? 'bg-white border border-line text-ink rounded-[8px] rounded-tr-[2px]'
+                : 'bg-surface-sunken text-ink rounded-[8px] rounded-tl-[2px]'
             }`}
           >
             {message.text}
@@ -655,20 +648,20 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
         )}
 
         {message.kind === 'file' && message.file && (
-          <div className="flex items-center gap-[12px] bg-white border border-[#e9eaeb] rounded-[8px] rounded-tl-[2px] px-[14px] py-[12px] w-[280px]">
-            <div className="flex items-center justify-center size-[40px] rounded-[6px] bg-[#fef3f2] text-[#d92d20] shrink-0">
+          <div className="flex items-center gap-[12px] bg-white border border-line rounded-[8px] rounded-tl-[2px] px-[14px] py-[12px] w-[280px]">
+            <div className="flex items-center justify-center size-[40px] rounded-[6px] bg-danger-soft text-danger shrink-0">
               <FileText size={20} />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">{message.file.name}</p>
-              <p className="text-[14px] leading-[20px] text-[#535862]">{message.file.size}</p>
+              <p className="font-semibold text-[14px] leading-[20px] text-ink truncate">{message.file.name}</p>
+              <p className="text-[14px] leading-[20px] text-ink-soft">{message.file.size}</p>
             </div>
           </div>
         )}
 
         {message.kind === 'image' && message.image && (
           <div
-            className={`overflow-hidden bg-white border border-[#e9eaeb] rounded-[8px] w-[280px] ${
+            className={`overflow-hidden bg-white border border-line rounded-[8px] w-[280px] ${
               isYou ? 'rounded-tr-[2px]' : 'rounded-tl-[2px]'
             }`}
           >
@@ -676,33 +669,33 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
             <img
               src={message.image.dataUrl}
               alt={message.image.name}
-              className="block w-full max-h-[280px] object-cover bg-[#fafafa]"
+              className="block w-full max-h-[280px] object-cover bg-surface-sunken"
             />
-            <div className="flex items-center gap-[8px] px-[12px] py-[10px] border-t border-[#e9eaeb]">
-              <span className="flex items-center justify-center size-[28px] rounded-[6px] bg-[#eff8ff] text-[#155eef] shrink-0">
+            <div className="flex items-center gap-[8px] px-[12px] py-[10px] border-t border-line">
+              <span className="flex items-center justify-center size-[28px] rounded-[6px] bg-cobalt-soft text-cobalt shrink-0">
                 <FileText size={16} />
               </span>
               <div className="min-w-0">
-                <p className="font-semibold text-[14px] leading-[20px] text-[#181d27] truncate">
+                <p className="font-semibold text-[14px] leading-[20px] text-ink truncate">
                   {message.image.name}
                 </p>
-                <p className="text-[14px] leading-[20px] text-[#535862]">{message.image.size}</p>
+                <p className="text-[14px] leading-[20px] text-ink-soft">{message.image.size}</p>
               </div>
             </div>
           </div>
         )}
 
         {message.kind === 'audio' && message.audio && (
-          <div className="flex items-center gap-[12px] bg-[#f5f5f5] rounded-[8px] rounded-tl-[2px] px-[14px] py-[12px] w-[300px]">
+          <div className="flex items-center gap-[12px] bg-surface-sunken rounded-[8px] rounded-tl-[2px] px-[14px] py-[12px] w-[300px]">
             <button
               type="button"
               aria-label="Play voice message"
-              className="flex items-center justify-center size-[40px] rounded-full bg-[#155eef] text-white shrink-0"
+              className="flex items-center justify-center size-[40px] rounded-full bg-cobalt text-white shrink-0"
             >
               <Play size={16} className="ml-[2px]" fill="currentColor" />
             </button>
             <Waveform />
-            <span className="text-[12px] leading-[18px] text-[#535862] shrink-0 tabular-nums">
+            <span className="text-[12px] leading-[18px] text-ink-soft shrink-0 tabular-nums">
               {message.audio.duration}
             </span>
           </div>
@@ -713,7 +706,7 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
             {message.reactions.map((r, i) => (
               <span
                 key={`${r}-${i}`}
-                className="inline-flex items-center justify-center size-[28px] rounded-full bg-white border border-[#e9eaeb] text-[14px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]"
+                className="inline-flex items-center justify-center size-[28px] rounded-full bg-white border border-line text-[14px] shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]"
               >
                 {r}
               </span>
@@ -728,9 +721,9 @@ function MessageBubble({ message, sender }: { message: Message; sender: Conversa
 function DayDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-[12px] py-[4px]">
-      <span className="flex-1 h-px bg-[#e9eaeb]" />
-      <span className="text-[14px] leading-[20px] font-medium text-[#535862]">{label}</span>
-      <span className="flex-1 h-px bg-[#e9eaeb]" />
+      <span className="flex-1 h-px bg-line" />
+      <span className="text-[14px] leading-[20px] font-medium text-ink-soft">{label}</span>
+      <span className="flex-1 h-px bg-line" />
     </div>
   )
 }
@@ -746,7 +739,7 @@ function Waveform() {
       {WAVE_BARS.map((h, i) => (
         <span
           key={i}
-          className="flex-1 rounded-full bg-[#155eef]/70"
+          className="flex-1 rounded-full bg-cobalt/70"
           style={{ height: `${h}px` }}
         />
       ))}
@@ -754,42 +747,30 @@ function Waveform() {
   )
 }
 
+/** Chat avatar: the shared Avatar plus this surface's presence/verified marks. */
 function Avatar({
   name,
-  bg,
   size,
   online,
   verified,
 }: {
   name: string
-  bg: string
   size: number
   online?: boolean
   verified?: boolean
 }) {
-  const initials = name
-    .split(' ')
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join('')
-
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <div
-        className="size-full rounded-full flex items-center justify-center font-semibold text-[#414651]"
-        style={{ background: bg, fontSize: size * 0.38 }}
-      >
-        {initials}
-      </div>
+    <span className="relative inline-flex shrink-0">
+      <SharedAvatar name={name} size={size >= 40 ? 'md' : 'sm'} />
       {verified && (
         <BadgeCheck
           size={16}
-          className="absolute -bottom-[1px] -right-[1px] text-[#155eef] fill-[#155eef] [&>path]:stroke-white"
+          className="absolute -bottom-[1px] -right-[1px] text-cobalt fill-cobalt [&>path]:stroke-white"
         />
       )}
       {online && !verified && (
-        <span className="absolute bottom-0 right-0 size-[10px] rounded-full bg-[#17b26a] border-[1.5px] border-white" />
+        <span className="absolute bottom-0 right-0 size-[10px] rounded-full border-[1.5px] border-white bg-ok" />
       )}
-    </div>
+    </span>
   )
 }

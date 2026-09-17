@@ -7,7 +7,7 @@ import {
   MessageBubble,
   MessageComposer,
   MessagesLayout,
-} from '@/features/workspace/messages-ui'
+} from '@/components/messaging'
 
 const message: WorkspaceMessage = {
   id: 'message-1',

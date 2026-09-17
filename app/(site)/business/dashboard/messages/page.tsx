@@ -2,8 +2,14 @@
 
 import { useState } from 'react'
 import { Send } from 'lucide-react'
-import { BusinessPage, BusinessPageHeader, BUTTON_SKEUO } from '@/components/business/dashboard/BusinessDashboardFrame'
-import { Avatar, SectionCard } from '@/components/business/dashboard/ui'
+import { BusinessPage, BusinessPageHeader } from '@/components/business/dashboard/BusinessDashboardFrame'
+import { SectionCard } from '@/components/business/dashboard/ui'
+import {
+  ConversationHeader,
+  MessageBubble,
+  MessageComposer,
+} from '@/components/messaging'
+import { Avatar } from '@/components/ui/Avatar'
 import { MOCK_BUSINESS_DASHBOARD } from '@/lib/service-apis/business-dashboard-mock'
 import { useDemo, addMessage, notify, DEMO_EXPERT } from '@/lib/demo/demo-store'
 
@@ -60,7 +66,7 @@ export default function BusinessMessagesPage() {
         <SectionCard className="overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-[300px_1fr]">
             {/* Conversation list */}
-            <ul className="divide-y divide-[#f0f0f1] border-b border-[#f0f0f1] md:border-b-0 md:border-r">
+            <ul className="divide-y divide-line-soft border-b border-line-soft md:border-b-0 md:border-r">
               {d.messages.map((m) => {
                 const isActive = m.id === activeId
                 return (
@@ -69,69 +75,49 @@ export default function BusinessMessagesPage() {
                       type="button"
                       onClick={() => setActiveId(m.id)}
                       className={`flex w-full items-start gap-[12px] px-[16px] py-[14px] text-left transition-colors ${
-                        isActive ? 'bg-[#f5f8ff]' : 'hover:bg-[#fafafa]'
+                        isActive ? 'bg-cobalt-soft' : 'hover:bg-surface-hover'
                       }`}
                     >
-                      <Avatar initial={m.from.charAt(0)} color={m.brand} />
+                      <Avatar name={m.from} size="md" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-[8px]">
-                          <p className="truncate font-semibold text-[14px] leading-[20px] text-[#181d27]">{m.from}</p>
-                          <span className="shrink-0 text-[12px] text-[#717680]">{m.when}</span>
+                          <p className="pf-row-title truncate">{m.from}</p>
+                          <span className="pf-row-meta shrink-0">{m.when}</span>
                         </div>
-                        <p className="truncate text-[12px] leading-[18px] text-[#717680]">{m.project}</p>
-                        <p className="truncate text-[13px] leading-[18px] text-[#535862]">{m.preview}</p>
+                        <p className="pf-micro truncate">{m.project}</p>
+                        <p className="pf-row-sub truncate">{m.preview}</p>
                       </div>
-                      {m.unread && <span className="mt-[6px] size-[8px] shrink-0 rounded-full bg-[#155eef]" />}
+                      {m.unread && <span className="mt-[6px] size-[8px] shrink-0 rounded-full bg-cobalt" />}
                     </button>
                   </li>
                 )
               })}
             </ul>
 
-            {/* Active thread */}
-            <div className="flex min-h-[420px] flex-col">
-              <div className="flex items-center gap-[12px] border-b border-[#f0f0f1] px-[20px] py-[14px]">
-                <Avatar initial={active.from.charAt(0)} color={active.brand} size={38} />
-                <div>
-                  <p className="font-semibold text-[14px] leading-[20px] text-[#181d27]">{active.from}</p>
-                  <p className="text-[12px] leading-[18px] text-[#717680]">{active.project}</p>
-                </div>
-              </div>
+            {/* Active thread — same primitives the expert workspace uses */}
+            <div className="flex min-h-[460px] flex-col bg-paper">
+              <ConversationHeader title={active.from} engagementLabel={active.project} />
 
-              <div className="flex flex-1 flex-col gap-[12px] overflow-y-auto bg-[#fafafa] p-[20px]">
+              <div className="flex flex-1 flex-col gap-[12px] overflow-y-auto p-[20px]">
                 {thread.map((b) => (
-                  <div key={b.id} className={`flex ${b.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-[78%] rounded-[12px] px-[14px] py-[10px] text-[14px] leading-[20px] ${
-                        b.from === 'me'
-                          ? 'bg-[#155eef] text-white'
-                          : 'border border-[#e9eaeb] bg-white text-[#181d27]'
-                      }`}
-                    >
-                      {b.text}
-                    </div>
-                  </div>
+                  <MessageBubble
+                    key={b.id}
+                    own={b.from === 'me'}
+                    message={{ content: b.text }}
+                    atLabel={b.when}
+                  />
                 ))}
               </div>
 
-              <div className="flex items-center gap-[10px] border-t border-[#f0f0f1] p-[16px]">
-                <input
-                  type="text"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && send()}
-                  placeholder={synced ? `Message ${active.from.split(' ')[0]} (live)` : `Message ${active.from.split(' ')[0]}`}
-                  className={`flex-1 rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
-                />
-                <button
-                  type="button"
-                  onClick={send}
-                  className={`flex size-[40px] items-center justify-center rounded-[8px] bg-[#155eef] text-white ${BUTTON_SKEUO}`}
-                  aria-label="Send message"
-                >
-                  <Send size={18} />
-                </button>
-              </div>
+              <MessageComposer
+                draft={draft}
+                sending={false}
+                onDraftChange={setDraft}
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  send()
+                }}
+              />
             </div>
           </div>
         </SectionCard>

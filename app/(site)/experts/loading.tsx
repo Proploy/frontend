@@ -39,7 +39,7 @@ export default function ExpertsLoading() {
 
 function ExpertCardSkeleton() {
   return (
-    <article className="rounded-[16px] border border-[#e9eaeb] bg-white p-[24px]">
+    <article className="rounded-[16px] border border-line bg-white p-[24px]">
       <div className="flex flex-col gap-[16px] md:flex-row md:items-start md:gap-[24px]">
         {/* Avatar */}
         <Skeleton shape="circle" className="size-[72px] shrink-0" />

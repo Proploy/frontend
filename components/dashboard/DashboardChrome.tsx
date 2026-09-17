@@ -561,7 +561,7 @@ export function DashboardChrome({
           onToggle={toggleSidebar}
         />
 
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
           {/* Mobile top bar */}
           <div className="pf-topbar">
             <BrandLink brand={brand} compact />
