@@ -24,6 +24,11 @@ describe('MatchConsole render smoke', () => {
     expect(container.querySelector('input')!.placeholder).toBe(
       'What are you trying to solve?',
     )
+    // A submit button sits at the right of the bar, so the bar does not rely
+    // on the visitor guessing that Enter is the only way to run a search.
+    const submit = container.querySelector('button[type="submit"]')
+    expect(submit).not.toBeNull()
+    expect(submit!.textContent).toContain('Search')
     // The manual keyword/AI toggle is gone; the mode is read off the query.
     expect(container.querySelector('[aria-label="Search mode"]')).toBeNull()
     expect(container.textContent).not.toContain('Search Software')

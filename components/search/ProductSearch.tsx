@@ -159,7 +159,7 @@ export function ProductSearch({
             handleSubmit();
           }
         }}
-        className="flex items-center rounded-2xl border border-border bg-white px-1 py-1 shadow-[0_24px_60px_-46px_color-mix(in_oklab,var(--cobalt)_80%,transparent)]"
+        className="flex items-center gap-2 rounded-2xl border border-border bg-white px-1 py-1 shadow-[0_24px_60px_-46px_color-mix(in_oklab,var(--cobalt)_80%,transparent)]"
       >
         <label htmlFor="product-search-q" className="sr-only">
           What are you trying to solve?
@@ -191,6 +191,13 @@ export function ProductSearch({
             className="relative z-10 w-full min-w-0 bg-transparent px-3.5 py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-soft/70"
           />
         </div>
+        <button type="submit" className="mc-submit">
+          Search
+          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden>
+            <circle cx="9" cy="9" r="5.4" stroke="currentColor" strokeWidth="1.7" />
+            <path d="m13.2 13.2 3.6 3.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+        </button>
       </form>
 
       {showResults && (

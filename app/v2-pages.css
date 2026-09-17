@@ -620,11 +620,14 @@
 .mc-proof-dots span+span{margin-left:-6px}
 
 /* --- the card --- */
-.mc-card{position:relative;min-width:0;scroll-margin-top:calc(var(--nav-h) + var(--sp-4))}
+.mc-card{position:relative;min-width:0;max-width:720px;margin-inline:auto;scroll-margin-top:calc(var(--nav-h) + var(--sp-4))}
 .mc-results{margin-top:10px;overflow:hidden;border-radius:var(--r-card);border:var(--bw) solid var(--line);background:#fff;box-shadow:var(--shadow-card);transition:border-color var(--d-base) ease,box-shadow var(--d-lift) var(--ease)}
 /* With the manual toggle gone, the tint is how a visitor sees that the query
    was read as a described need and went to the natural endpoint. */
 .mc-card[data-mode="natural"] .mc-results{border-color:color-mix(in oklab,var(--cobalt) 38%,var(--line));box-shadow:0 34px 80px -40px color-mix(in oklab,var(--cobalt) 60%,transparent)}
+.mc-submit{flex-shrink:0;display:inline-flex;align-items:center;gap:var(--sp-2);height:40px;padding-inline:16px;border:0;border-radius:calc(var(--r-control) - 2px);background:var(--cobalt);color:#fff;font-family:var(--font-body);font-size:14px;font-weight:var(--weight-semibold);letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:background-color var(--d-base) ease}
+.mc-submit:hover{background:var(--cobalt-deep)}
+.mc-submit:active{filter:brightness(.94)}
 .mc-sam-line{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-4)}
 .mc-sam{flex-shrink:0;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--cobalt-deep);font-size:13px;font-weight:var(--weight-medium);transition:border-color var(--d-base) ease,background-color var(--d-base) ease}
 .mc-sam:hover{border-color:color-mix(in oklab,var(--cobalt) 50%,var(--line));background:color-mix(in oklab,var(--cobalt-soft) 40%,white)}
