@@ -11,8 +11,7 @@ import {
   Users,
 } from 'lucide-react'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -41,9 +40,9 @@ const FILTERS: { id: EngagementFilter; label: string }[] = [
 ]
 
 const STATUS_CLASS: Record<WorkspaceEngagement['status'], string> = {
-  active: 'bg-[#ecfdf3] text-[#067647]',
-  paused: 'bg-[#fffaeb] text-[#b54708]',
-  closed: 'bg-[#fef3f2] text-[#b42318]',
+  active: 'bg-ok-soft text-ok',
+  paused: 'bg-warn-soft text-warn',
+  closed: 'bg-danger-soft text-danger',
 }
 
 export default function WorkspaceEngagementsPage() {
@@ -131,17 +130,18 @@ export default function WorkspaceEngagementsPage() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <div className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <Users size={22} className="text-[#155eef]" />
-              {isExpertWorkspace ? 'Clients' : 'Engagements'}
-            </h1>
+        <header className="pf-pagebar">
+          <div className="flex min-w-0 items-center gap-[14px]">
+            <span className="pf-ico pf-ico--lg pf-ico--soft"><Users size={20} /></span>
+            <div className="pf-pagebar-text">
+              <span className="pf-eyebrow">Workspace</span>
+              <h1 className="pf-title truncate">{isExpertWorkspace ? 'Clients' : 'Engagements'}</h1>
+            </div>
           </div>
           {isExpertWorkspace && (
             <Link
               href="/workspace/proposals"
-              className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--primary"
             >
               <FolderClosed size={16} />
               New proposal
@@ -150,14 +150,14 @@ export default function WorkspaceEngagementsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || 'Unable to update engagements.'}
           </div>
         )}
 
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[380px] xl:shrink-0 xl:border-b-0 xl:border-r">
-            <div className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] p-[16px]">
+          <section className="flex flex-col border-b border-line bg-white xl:w-[380px] xl:shrink-0 xl:border-b-0 xl:border-r">
+            <div className="flex items-center justify-between gap-[12px] border-b border-line p-[16px]">
               <div className="flex gap-[4px] overflow-x-auto">
                 {FILTERS.map((item) => (
                   <button
@@ -165,19 +165,19 @@ export default function WorkspaceEngagementsPage() {
                     type="button"
                     onClick={() => setFilter(item.id)}
                     className={`whitespace-nowrap rounded-[6px] px-[10px] py-[6px] text-[13px] font-semibold leading-[18px] transition-colors ${
-                      filter === item.id ? 'bg-[#eff4ff] text-[#155eef]' : 'text-[#535862] hover:bg-[#fafafa]'
+                      filter === item.id ? 'bg-cobalt-soft text-cobalt' : 'text-ink-soft hover:bg-surface-hover'
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
-              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-[#155eef]" />}
+              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-cobalt" />}
             </div>
 
             <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
               {visible.length === 0 && (
-                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">
                   No engagements in this view.
                 </p>
               )}
@@ -190,25 +190,25 @@ export default function WorkspaceEngagementsPage() {
                     type="button"
                     onClick={() => setSelectedId(engagement.id)}
                     className={`rounded-[10px] border p-[12px] text-left transition-colors ${
-                      active ? 'border-[#155eef] bg-[#f5f8ff]' : 'border-transparent hover:bg-[#fafafa]'
+                      active ? 'border-cobalt bg-cobalt-soft' : 'border-transparent hover:bg-surface-hover'
                     }`}
                   >
                     <div className="flex items-center gap-[10px]">
-                      <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#155eef] text-[12px] font-semibold text-white">
+                      <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-cobalt text-[12px] font-semibold text-white">
                         {initials(title)}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                        <span className="block truncate text-[14px] font-semibold leading-[20px] text-ink">
                           {title}
                         </span>
-                        <span className="block truncate text-[13px] leading-[18px] text-[#535862]">
+                        <span className="block truncate text-[13px] leading-[18px] text-ink-soft">
                           Updated {relativeDate(engagement.updatedAt)}
                         </span>
                       </span>
                     </div>
                     <div className="mt-[10px] flex items-center justify-between gap-[8px]">
                       <StatusBadge status={engagement.status} />
-                      <span className="text-[12px] leading-[18px] text-[#717680]">{longDate(engagement.createdAt)}</span>
+                      <span className="text-[12px] leading-[18px] text-ink-muted">{longDate(engagement.createdAt)}</span>
                     </div>
                   </button>
                 )
@@ -219,17 +219,17 @@ export default function WorkspaceEngagementsPage() {
           <section className="min-w-0 flex-1 overflow-y-auto bg-white p-[24px]">
             {selected ? (
               <div className="mx-auto flex max-w-[840px] flex-col gap-[16px]">
-                <article className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-                  <div className="flex flex-wrap items-start justify-between gap-[16px] border-b border-[#e9eaeb] px-[32px] py-[28px]">
+                <article className="pf-card">
+                  <div className="pf-pagebar !static">
                     <div className="flex items-start gap-[12px]">
-                      <span className="flex size-[48px] shrink-0 items-center justify-center rounded-[12px] bg-[#155eef] text-[16px] font-semibold text-white">
+                      <span className="flex size-[48px] shrink-0 items-center justify-center rounded-[12px] bg-cobalt text-[16px] font-semibold text-white">
                         {initials(engagementTitle(selected, state.role))}
                       </span>
                       <div>
-                        <h2 className="text-[24px] font-semibold leading-[32px] text-[#181d27]">
+                        <h2 className="pf-title">
                           {engagementTitle(selected, state.role)}
                         </h2>
-                        <p className="mt-[2px] text-[14px] leading-[20px] text-[#535862]">
+                        <p className="mt-[2px] text-[14px] leading-[20px] text-ink-soft">
                           Engagement created {longDate(selected.createdAt)}
                         </p>
                       </div>
@@ -237,7 +237,7 @@ export default function WorkspaceEngagementsPage() {
                     <StatusBadge status={selected.status} />
                   </div>
 
-                  <div className="grid grid-cols-1 gap-px bg-[#e9eaeb] md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-px bg-line md:grid-cols-3">
                     <Fact label="Expert" value={selected.expertDisplayName ?? 'Not available'} />
                     <Fact label="Buyer" value={selected.buyerDisplayName ?? 'Not available'} />
                     <Fact label="Request" value={selected.meetingIntentId ?? 'Not linked'} />
@@ -253,42 +253,42 @@ export default function WorkspaceEngagementsPage() {
                     type="button"
                     onClick={() => void openConversation(selected.id)}
                     disabled={busyId === selected.id}
-                    className={`flex items-center justify-between rounded-[12px] border border-[#e9eaeb] bg-white p-[16px] text-left transition-colors hover:border-[#155eef] disabled:cursor-not-allowed disabled:opacity-60 ${CARD_SHADOW}`}
+                    className="pf-card pf-card-link flex items-center justify-between p-[16px] text-left disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <span className="flex items-center gap-[10px]">
-                      <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
+                      <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-cobalt-soft text-cobalt">
                         <MessageSquare size={18} />
                       </span>
                       <span>
-                        <span className="block text-[14px] font-semibold leading-[20px] text-[#181d27]">Open messages</span>
-                        <span className="block text-[13px] leading-[18px] text-[#535862]">Create or open the shared thread</span>
+                        <span className="block text-[14px] font-semibold leading-[20px] text-ink">Open messages</span>
+                        <span className="block text-[13px] leading-[18px] text-ink-soft">Create or open the shared thread</span>
                       </span>
                     </span>
-                    <ArrowRight size={18} className="text-[#717680]" />
+                    <ArrowRight size={18} className="text-ink-muted" />
                   </button>
 
                   {isExpertWorkspace && (
                     <Link
                       href="/workspace/proposals"
-                      className={`flex items-center justify-between rounded-[12px] border border-[#e9eaeb] bg-white p-[16px] text-left transition-colors hover:border-[#155eef] ${CARD_SHADOW}`}
+                      className="pf-card pf-card-link flex items-center justify-between p-[16px] text-left"
                     >
                       <span className="flex items-center gap-[10px]">
-                        <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
+                        <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-cobalt-soft text-cobalt">
                           <FolderClosed size={18} />
                         </span>
                         <span>
-                          <span className="block text-[14px] font-semibold leading-[20px] text-[#181d27]">Proposal template</span>
-                          <span className="block text-[13px] leading-[18px] text-[#535862]">Scope the agreed project</span>
+                          <span className="block text-[14px] font-semibold leading-[20px] text-ink">Proposal template</span>
+                          <span className="block text-[13px] leading-[18px] text-ink-soft">Scope the agreed project</span>
                         </span>
                       </span>
-                      <ArrowRight size={18} className="text-[#717680]" />
+                      <ArrowRight size={18} className="text-ink-muted" />
                     </Link>
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[16px]">
-                  <span className="flex items-center gap-[8px] text-[13px] leading-[18px] text-[#535862]">
-                    <CheckCircle2 size={16} className="text-[#17b26a]" />
+                <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-line bg-white p-[16px]">
+                  <span className="flex items-center gap-[8px] text-[13px] leading-[18px] text-ink-soft">
+                    <CheckCircle2 size={16} className="text-ok" />
                     Status changes sync to the workspace engagement.
                   </span>
                   <div className="flex flex-wrap items-center gap-[8px]">
@@ -297,7 +297,7 @@ export default function WorkspaceEngagementsPage() {
                         type="button"
                         onClick={() => void updateStatus(selected.id, 'closed')}
                         disabled={busyId === selected.id}
-                        className={`rounded-[8px] border border-[#fecdca] bg-[#fef3f2] px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-[#b42318] transition-colors hover:bg-[#fee4e2] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--danger pf-btn--sm"
                       >
                         Unlink connection
                       </button>
@@ -310,7 +310,7 @@ export default function WorkspaceEngagementsPage() {
                           type="button"
                           onClick={() => void updateStatus(selected.id, status)}
                           disabled={selected.status === status || busyId === selected.id}
-                          className={`rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-[#414651] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--secondary pf-btn--sm"
                         >
                           {statusLabel(status)}
                         </button>
@@ -322,9 +322,9 @@ export default function WorkspaceEngagementsPage() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-[360px] text-center">
-                  <Users size={32} className="mx-auto text-[#d5d7da]" />
-                  <h2 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">No engagement selected</h2>
-                  <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  <Users size={32} className="mx-auto text-line" />
+                  <h2 className="pf-h2 mt-[12px]">No engagement selected</h2>
+                  <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                     Accept a request to start a shared engagement.
                   </p>
                 </div>
@@ -349,8 +349,8 @@ function StatusBadge({ status }: { status: WorkspaceEngagement['status'] }) {
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 bg-white px-[24px] py-[18px]">
-      <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">{label}</p>
-      <p className="mt-[6px] truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{value}</p>
+      <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</p>
+      <p className="mt-[6px] truncate text-[14px] font-semibold leading-[20px] text-ink">{value}</p>
     </div>
   )
 }

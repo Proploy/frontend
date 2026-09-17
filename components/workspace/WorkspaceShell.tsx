@@ -11,8 +11,11 @@ import {
   Inbox,
   Loader2,
   MessageSquare,
+  Receipt,
+  Settings,
   TrendingUp,
   Users,
+  Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import {
@@ -21,6 +24,7 @@ import {
   DashboardChrome,
   DashboardEmptyState,
   type DashboardUser,
+  type DashNavGroup,
   type DashNavItem,
 } from '@/components/dashboard/DashboardChrome'
 import type { WorkspaceRole } from '@/features/workspace/types'
@@ -33,26 +37,57 @@ type WorkspaceNavItem = DashNavItem & {
   roles?: WorkspaceRole[]
 }
 
-const NAV_PRIMARY: WorkspaceNavItem[] = [
-  { label: 'Home', icon: Home, href: '/workspace' },
-  { label: 'Sales', icon: TrendingUp, href: '/workspace/sales', roles: ['expert'] },
-  { label: 'Leads', icon: Inbox, href: '/workspace/leads', roles: ['expert'] },
-  { label: 'Requests', icon: Inbox, href: '/workspace/requests', roles: ['buyer'] },
-  { label: 'Proposals', icon: Handshake, href: '/workspace/proposals' },
-  { label: 'Contracts', icon: FileText, href: '/workspace/contracts' },
-  { label: 'Projects', icon: FolderClosed, href: '/workspace/projects' },
-  { label: 'Invoices', icon: FileText, href: '/workspace/invoices' },
-  { label: 'Earnings', icon: TrendingUp, href: '/workspace/earnings', roles: ['expert'] },
-  { label: 'Messages', icon: MessageSquare, href: '/workspace/messages' },
-  { label: 'Clients', icon: Users, href: '/workspace/engagements', roles: ['expert'] },
-  { label: 'Meetings', icon: Calendar, href: '/workspace/meetings' },
+type WorkspaceNavGroup = {
+  label?: string
+  items: WorkspaceNavItem[]
+}
+
+/**
+ * Grouped so the rail reads as a workflow rather than a flat 12-item list:
+ * money-in at the top (pipeline), the work in the middle (delivery), and the
+ * money-out at the bottom. Group labels render as mono eyebrows.
+ */
+const NAV_GROUPS: WorkspaceNavGroup[] = [
+  {
+    items: [{ label: 'Home', icon: Home, href: '/workspace' }],
+  },
+  {
+    label: 'Pipeline',
+    items: [
+      { label: 'Sales', icon: TrendingUp, href: '/workspace/sales', roles: ['expert'] },
+      { label: 'Leads', icon: Inbox, href: '/workspace/leads', roles: ['expert'] },
+      { label: 'Requests', icon: Inbox, href: '/workspace/requests', roles: ['buyer'] },
+      { label: 'Proposals', icon: Handshake, href: '/workspace/proposals' },
+      { label: 'Contracts', icon: FileText, href: '/workspace/contracts' },
+    ],
+  },
+  {
+    label: 'Delivery',
+    items: [
+      { label: 'Projects', icon: FolderClosed, href: '/workspace/projects' },
+      { label: 'Clients', icon: Users, href: '/workspace/engagements', roles: ['expert'] },
+      { label: 'Meetings', icon: Calendar, href: '/workspace/meetings' },
+      { label: 'Messages', icon: MessageSquare, href: '/workspace/messages' },
+    ],
+  },
+  {
+    label: 'Money',
+    items: [
+      { label: 'Invoices', icon: Receipt, href: '/workspace/invoices' },
+      { label: 'Earnings', icon: Wallet, href: '/workspace/earnings', roles: ['expert'] },
+    ],
+  },
+]
+
+const NAV_SECONDARY: WorkspaceNavItem[] = [
+  { label: 'Settings', icon: Settings, href: '/workspace/settings' },
 ]
 
 const WORKSPACE_BRAND = {
   mark: 'p',
   word: 'Proploy',
   href: '/',
-  markBg: '#155eef',
+  markBg: 'var(--cobalt)',
   logoSrc: '/PROPLOY.svg',
   logoAlt: 'Proploy',
   logoWidth: 192,
@@ -69,22 +104,38 @@ function useWorkspaceUser(): DashboardUser | undefined {
     name: user.name ?? 'Workspace',
     email: user.email ?? '',
     avatarUrl: avatarUrl ?? undefined,
-    avatarClassName: 'bg-gradient-to-br from-[#fde68a] to-[#c084fc]',
+    avatarClassName: 'bg-gradient-to-br from-warn-line to-violet-line',
   }
 }
 
 
-function visibleNavItems(items: WorkspaceNavItem[], role?: WorkspaceRole | null): DashNavItem[] {
-  return items.filter((item) => {
-    if (!item.roles) return true
-    return Boolean(role && item.roles.includes(role))
-  }).map((item) => ({
+function isVisible(item: WorkspaceNavItem, role?: WorkspaceRole | null): boolean {
+  if (!item.roles) return true
+  return Boolean(role && item.roles.includes(role))
+}
+
+function toDashItem(item: WorkspaceNavItem): DashNavItem {
+  return {
     label: item.label,
     icon: item.icon,
     href: item.href,
     badge: item.badge,
     disabled: item.disabled,
-  }))
+  }
+}
+
+/** Drops role-gated entries, then any group left empty by that filtering. */
+function visibleNavGroups(groups: WorkspaceNavGroup[], role?: WorkspaceRole | null): DashNavGroup[] {
+  return groups
+    .map((group) => ({
+      label: group.label,
+      items: group.items.filter((item) => isVisible(item, role)).map(toDashItem),
+    }))
+    .filter((group) => group.items.length > 0)
+}
+
+function visibleNavItems(items: WorkspaceNavItem[], role?: WorkspaceRole | null): DashNavItem[] {
+  return items.filter((item) => isVisible(item, role)).map(toDashItem)
 }
 
 export function WorkspaceShell({
@@ -97,7 +148,8 @@ export function WorkspaceShell({
   const user = useWorkspaceUser()
   return (
     <DashboardChrome
-      nav={visibleNavItems(NAV_PRIMARY, role)}
+      nav={visibleNavGroups(NAV_GROUPS, role)}
+      secondaryNav={visibleNavItems(NAV_SECONDARY, role)}
       user={user}
       brand={WORKSPACE_BRAND}
       notificationTrigger={<WorkspaceNotificationTrigger />}
@@ -111,7 +163,7 @@ export function WorkspaceLoading({ role }: { role?: WorkspaceRole | null } = {})
   return (
     <WorkspaceShell role={role}>
       <div className="flex min-h-screen flex-1 items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-[#155eef]" />
+        <Loader2 size={32} className="animate-spin text-cobalt" />
       </div>
     </WorkspaceShell>
   )

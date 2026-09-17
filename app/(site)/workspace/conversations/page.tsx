@@ -155,21 +155,21 @@ export default function WorkspaceConversationsPage() {
   if (!state.user) return <WorkspaceSignInState redirect="/workspace/messages" />
   return (
     <WorkspaceShell role={state.role}>
-      <main className="flex min-h-[calc(100dvh-65px)] min-w-0 flex-1 flex-col overflow-hidden bg-[#f8f9ff] lg:h-dvh lg:min-h-0">
-        <header className="relative z-20 flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e5e7f2] bg-white/95 px-[20px] py-[16px] backdrop-blur-xl sm:px-[24px]">
+      <main className="flex min-h-[calc(100dvh-65px)] min-w-0 flex-1 flex-col overflow-hidden bg-paper lg:h-dvh lg:min-h-0">
+        <header className="relative z-20 flex flex-wrap items-center justify-between gap-[16px] border-b border-line bg-white/95 px-[20px] py-[16px] backdrop-blur-xl sm:px-[24px]">
           <div className="flex items-center gap-[11px]">
-            <span className="flex size-[38px] items-center justify-center rounded-[12px] bg-gradient-to-br from-[#eaf1ff] to-[#f0eaff] text-[#155eef]">
+            <span className="flex size-[38px] items-center justify-center rounded-[12px] bg-gradient-to-br from-cobalt-soft to-violet-soft text-cobalt">
               <MessageSquare size={20} />
             </span>
-            <h1 className="text-[23px] font-semibold leading-[30px] text-[#181d27]">
+            <h1 className="pf-title">
               Messages
             </h1>
           </div>
-          {loadingConversations && <RefreshCw size={18} className="animate-spin text-[#155eef]" />}
+          {loadingConversations && <RefreshCw size={18} className="animate-spin text-cobalt" />}
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || 'Unable to update messages.'}
           </div>
         )}
@@ -177,14 +177,14 @@ export default function WorkspaceConversationsPage() {
         <MessagesLayout
           threadRail={(
             <>
-              <div className="border-b border-[#e5e7f2] bg-white/45 px-[16px] py-[13px] backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#667085]">
+              <div className="border-b border-line bg-white/45 px-[16px] py-[13px] backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
                   Threads
                 </p>
               </div>
               <div className="flex min-h-0 flex-1 flex-col gap-[6px] overflow-y-auto p-[10px]">
                 {conversations.length === 0 && (
-                  <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                  <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">
                     No messages yet.
                   </p>
                 )}
@@ -220,19 +220,19 @@ export default function WorkspaceConversationsPage() {
               {loadingMessages ? (
                 <div className="flex flex-1 items-center justify-center">
                   <span className="flex size-[52px] items-center justify-center rounded-[16px] bg-white/75 shadow-sm backdrop-blur-sm">
-                    <RefreshCw size={22} className="animate-spin text-[#155eef]" />
+                    <RefreshCw size={22} className="animate-spin text-cobalt" />
                   </span>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center">
                   <div className="max-w-[360px] text-center">
-                    <span className="mx-auto flex size-[54px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[#e8f0ff] to-[#efe7ff] text-[#155eef] shadow-sm">
+                    <span className="mx-auto flex size-[54px] items-center justify-center rounded-[18px] bg-gradient-to-br from-cobalt-soft to-violet-soft text-cobalt shadow-sm">
                       <MessageSquare size={24} />
                     </span>
-                    <h3 className="mt-[14px] text-[18px] font-semibold text-[#181d27]">
+                    <h3 className="pf-h2 mt-[14px]">
                       No messages yet
                     </h3>
-                    <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                    <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                       Start a shared project message thread below.
                     </p>
                   </div>
@@ -253,13 +253,13 @@ export default function WorkspaceConversationsPage() {
           ) : (
             <div className="flex min-h-full items-center justify-center px-[24px] py-[48px]">
               <div className="max-w-[360px] text-center">
-                <span className="mx-auto flex size-[54px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[#e8f0ff] to-[#efe7ff] text-[#155eef] shadow-sm">
+                <span className="mx-auto flex size-[54px] items-center justify-center rounded-[18px] bg-gradient-to-br from-cobalt-soft to-violet-soft text-cobalt shadow-sm">
                   <MessageSquare size={24} />
                 </span>
-                <h2 className="mt-[14px] text-[18px] font-semibold text-[#181d27]">
+                <h2 className="pf-h2 mt-[14px]">
                   No message thread selected
                 </h2>
-                <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                   Accept a request to start messaging.
                 </p>
               </div>

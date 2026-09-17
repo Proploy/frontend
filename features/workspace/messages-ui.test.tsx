@@ -33,7 +33,7 @@ describe('Messages UI', () => {
     )
 
     const thread = view.container.querySelector('button')
-    expect(thread?.className).toContain('bg-[#eef4ff]')
+    expect(thread?.className).toContain('bg-cobalt-soft')
     await act(async () => thread?.click())
     expect(selected).toBe(true)
     await view.unmount()
@@ -49,8 +49,8 @@ describe('Messages UI', () => {
 
     const sent = view.container.querySelector('[data-message-direction="sent"]')
     const received = view.container.querySelector('[data-message-direction="received"]')
-    expect(sent?.className).toContain('from-[#155eef]')
-    expect(sent?.className).toContain('to-[#7f56d9]')
+    expect(sent?.className).toContain('from-cobalt')
+    expect(sent?.className).toContain('to-violet')
     expect(received?.className).toContain('bg-white')
     await view.unmount()
   })

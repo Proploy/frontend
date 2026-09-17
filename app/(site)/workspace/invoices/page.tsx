@@ -10,8 +10,7 @@ import {
   X,
 } from 'lucide-react'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -43,11 +42,11 @@ import { useWorkspaceQueryParam } from '@/features/workspace/use-workspace-query
 const OUTSTANDING_STATUSES = new Set<InvoiceStatus>(['draft', 'sent', 'overdue'])
 
 function invoiceStatusClass(status: InvoiceStatus): string {
-  if (status === 'paid') return 'bg-[#ecfdf3] text-[#067647]'
-  if (status === 'sent') return 'bg-[#eff4ff] text-[#155eef]'
-  if (status === 'overdue') return 'bg-[#fef3f2] text-[#b42318]'
-  if (status === 'cancelled' || status === 'refunded') return 'bg-[#fef3f2] text-[#b42318]'
-  return 'bg-[#fafafa] text-[#535862]'
+  if (status === 'paid') return 'bg-ok-soft text-ok'
+  if (status === 'sent') return 'bg-cobalt-soft text-cobalt'
+  if (status === 'overdue') return 'bg-danger-soft text-danger'
+  if (status === 'cancelled' || status === 'refunded') return 'bg-danger-soft text-danger'
+  return 'bg-surface-sunken text-ink-soft'
 }
 
 function invoiceMoney(cents: number, currency: string): string {
@@ -266,19 +265,22 @@ export default function WorkspaceInvoicesPage() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-            <Receipt size={22} className="text-[#155eef]" />
-            Invoices
-          </h1>
+        <header className="pf-pagebar">
+          <div className="flex min-w-0 items-center gap-[14px]">
+            <span className="pf-ico pf-ico--lg pf-ico--soft"><Receipt size={20} /></span>
+            <div className="pf-pagebar-text">
+              <span className="pf-eyebrow">Workspace</span>
+              <h1 className="pf-title truncate">Invoices</h1>
+            </div>
+          </div>
           <div className="flex items-center gap-[12px]">
-            {loading && <RefreshCw size={18} className="animate-spin text-[#155eef]" />}
+            {loading && <RefreshCw size={18} className="animate-spin text-cobalt" />}
             {isExpertWorkspace && (
               <button
                 type="button"
                 onClick={openCreate}
                 disabled={engagements.length === 0}
-                className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary"
               >
                 <Plus size={16} />
                 New invoice
@@ -288,7 +290,7 @@ export default function WorkspaceInvoicesPage() {
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || 'Unable to refresh invoices.'}
           </div>
         )}
@@ -299,17 +301,17 @@ export default function WorkspaceInvoicesPage() {
           <InvoiceKpiCard title="Paid" value={invoiceAggregateMoney(invoices, (invoice) => invoice.status === 'paid')} note="collected to date" isLoading={loading} />
         </div>
 
-        <section className={`mx-[24px] mb-[24px] rounded-[12px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-          <div className="border-b border-[#e9eaeb] px-[20px] py-[16px]">
-            <h2 className="text-[18px] font-semibold leading-[28px] text-[#181d27]">All invoices</h2>
-            <p className="mt-[2px] text-[13px] leading-[18px] text-[#717680]">
+        <section className="pf-card mx-[24px] mb-[24px]">
+          <div className="border-b border-line px-[20px] py-[16px]">
+            <h2 className="pf-h2">All invoices</h2>
+            <p className="mt-[2px] text-[13px] leading-[18px] text-ink-muted">
               {sorted.length === 0 ? 'No invoices yet.' : `${sorted.length} invoice${sorted.length === 1 ? '' : 's'} on file.`}
             </p>
           </div>
           {loading ? <InvoicesSkeleton /> : sorted.length === 0 ? (
-            <div className="px-[20px] py-[40px] text-center text-[14px] leading-[20px] text-[#717680]">No invoices to display yet.</div>
+            <div className="px-[20px] py-[40px] text-center text-[14px] leading-[20px] text-ink-muted">No invoices to display yet.</div>
           ) : (
-            <ul className="divide-y divide-[#f0f1f1]">
+            <ul className="divide-y divide-line-soft">
               {sorted.map((invoice) => {
                 const engagement = engagementMap.get(invoice.engagementId)
                 return (
@@ -317,15 +319,15 @@ export default function WorkspaceInvoicesPage() {
                     id={`invoice-${invoice.id}`}
                     key={invoice.id}
                     className={`flex flex-col gap-[12px] px-[20px] py-[16px] ${
-                      requestedInvoiceId === invoice.id ? 'bg-[#f5f8ff]' : ''
+                      requestedInvoiceId === invoice.id ? 'bg-cobalt-soft' : ''
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-[12px]">
                       <div className="min-w-0">
-                        <p className="truncate text-[15px] font-semibold leading-[22px] text-[#181d27]">
+                        <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">
                           {invoice.title || invoice.invoiceNumber}
                         </p>
-                        <p className="mt-[2px] truncate text-[13px] leading-[18px] text-[#535862]">
+                        <p className="mt-[2px] truncate text-[13px] leading-[18px] text-ink-soft">
                           {invoice.invoiceNumber} · {engagement ? engagementTitle(engagement, state.role) : 'Engagement'}
                         </p>
                       </div>
@@ -335,33 +337,33 @@ export default function WorkspaceInvoicesPage() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-[8px] text-[13px] leading-[18px] text-[#535862] sm:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-[8px] text-[13px] leading-[18px] text-ink-soft sm:grid-cols-4">
                       <InvoiceFact label="Total" value={invoiceMoney(invoice.totalCents, invoice.currency)} />
                       <InvoiceFact label="Due" value={longDate(invoice.dueAt)} note={relativeDate(invoice.dueAt)} />
                       <InvoiceFact label="Paid" value={invoice.paidAt ? longDate(invoice.paidAt) : '—'} note={invoice.paidAt ? relativeDate(invoice.paidAt) : 'awaiting payment'} />
                       <InvoiceFact label="Issued" value={longDate(invoice.createdAt)} note={relativeDate(invoice.createdAt)} />
                     </div>
 
-                    <div className="rounded-[8px] border border-[#f0f1f1] bg-[#fcfcfd] px-[12px] py-[10px]">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#717680]">Line items</p>
-                      <div className="mt-[6px] divide-y divide-[#f0f1f1]">
+                    <div className="rounded-[8px] border border-line-soft bg-surface-sunken px-[12px] py-[10px]">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">Line items</p>
+                      <div className="mt-[6px] divide-y divide-line-soft">
                         {invoice.lineItems.map((item, index) => (
                           <div key={`${invoice.id}-line-${index}`} className="flex items-center justify-between gap-[12px] py-[6px] text-[13px] leading-[18px]">
-                            <span className="min-w-0 truncate text-[#535862]">{item.description} × {item.quantity}</span>
-                            <span className="shrink-0 font-semibold text-[#181d27]">{invoiceMoney(item.quantity * item.unitCents, invoice.currency)}</span>
+                            <span className="min-w-0 truncate text-ink-soft">{item.description} × {item.quantity}</span>
+                            <span className="shrink-0 font-semibold text-ink">{invoiceMoney(item.quantity * item.unitCents, invoice.currency)}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {isExpertWorkspace && (
-                      <div className="flex flex-wrap items-center justify-end gap-[8px] border-t border-[#f0f1f1] pt-[12px]">
+                      <div className="flex flex-wrap items-center justify-end gap-[8px] border-t border-line-soft pt-[12px]">
                         {invoice.status === 'draft' && (
                           <>
-                            <button type="button" onClick={() => openEdit(invoice)} className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-[#414651] hover:bg-[#fafafa]">
+                            <button type="button" onClick={() => openEdit(invoice)} className="rounded-[8px] border border-line bg-white px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-ink-soft hover:bg-surface-hover">
                               Edit draft
                             </button>
-                            <button type="button" onClick={() => void sendInvoice(invoice.id)} disabled={sendingId === invoice.id} className={`inline-flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-white disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_SKEUO}`}>
+                            <button type="button" onClick={() => void sendInvoice(invoice.id)} disabled={sendingId === invoice.id} className="pf-btn pf-btn--primary pf-btn--sm">
                               <Send size={14} />
                               {sendingId === invoice.id ? 'Sending…' : 'Send invoice'}
                             </button>
@@ -371,12 +373,12 @@ export default function WorkspaceInvoicesPage() {
                     )}
 
                     {canBuyerSettleInvoice(invoice.status, state.role) && (
-                      <div className="flex flex-wrap items-center justify-end gap-[8px] border-t border-[#f0f1f1] pt-[12px]">
+                      <div className="flex flex-wrap items-center justify-end gap-[8px] border-t border-line-soft pt-[12px]">
                         <button
                           type="button"
                           onClick={() => void markInvoiceSettled(invoice)}
                           disabled={settlingId === invoice.id}
-                          className={`inline-flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[12px] py-[8px] text-[13px] font-semibold leading-[18px] text-white disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--primary pf-btn--sm"
                         >
                           <Receipt size={14} />
                           {settlingId === invoice.id ? 'Settling…' : 'Mark as settled'}
@@ -410,9 +412,9 @@ export default function WorkspaceInvoicesPage() {
 function InvoiceFact({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <span>
-      <span className="block text-[11px] font-medium uppercase tracking-[0.04em] text-[#717680]">{label}</span>
-      <span className="mt-[2px] block text-[14px] font-semibold leading-[20px] text-[#181d27]">{value}</span>
-      {note && <span className="mt-[2px] block text-[12px] text-[#717680]">{note}</span>}
+      <span className="block text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</span>
+      <span className="mt-[2px] block text-[14px] font-semibold leading-[20px] text-ink">{value}</span>
+      {note && <span className="mt-[2px] block text-[12px] text-ink-muted">{note}</span>}
     </span>
   )
 }
@@ -444,51 +446,51 @@ function InvoiceEditor({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#101828]/40 p-[16px] sm:items-center">
-      <div role="dialog" aria-modal="true" aria-labelledby="invoice-editor-title" className="max-h-[90vh] w-full max-w-[720px] overflow-y-auto rounded-[16px] border border-[#e9eaeb] bg-white p-[24px] shadow-[0_24px_48px_rgba(16,24,40,0.18)]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-[16px] sm:items-center">
+      <div role="dialog" aria-modal="true" aria-labelledby="invoice-editor-title" className="max-h-[90vh] w-full max-w-[720px] overflow-y-auto rounded-[16px] border border-line bg-white p-[24px] shadow-[0_24px_48px_rgba(16,24,40,0.18)]">
         <div className="flex items-start justify-between gap-[16px]">
           <div>
-            <h2 id="invoice-editor-title" className="text-[20px] font-semibold leading-[28px] text-[#181d27]">{isEditing ? 'Edit invoice draft' : 'New invoice'}</h2>
-            <p className="mt-[4px] text-[13px] leading-[18px] text-[#717680]">Create a draft for the selected engagement, then send it to the buyer.</p>
+            <h2 id="invoice-editor-title" className="text-[20px] font-semibold leading-[28px] text-ink">{isEditing ? 'Edit invoice draft' : 'New invoice'}</h2>
+            <p className="mt-[4px] text-[13px] leading-[18px] text-ink-muted">Create a draft for the selected engagement, then send it to the buyer.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close invoice editor" className="rounded-[8px] p-[6px] text-[#717680] hover:bg-[#f9fafb]"><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label="Close invoice editor" className="rounded-[8px] p-[6px] text-ink-muted hover:bg-surface-hover"><X size={18} /></button>
         </div>
 
         <div className="mt-[20px] grid gap-[16px] sm:grid-cols-2">
-          <label className="text-[13px] font-medium leading-[18px] text-[#414651] sm:col-span-2">
+          <label className="text-[13px] font-medium leading-[18px] text-ink-soft sm:col-span-2">
             Engagement
-            <select value={form.engagementId} disabled={isEditing} onChange={(event) => onChange({ ...form, engagementId: event.target.value })} className="mt-[6px] h-[42px] w-full rounded-[8px] border border-[#d5d7da] bg-white px-[12px] text-[14px] font-normal text-[#181d27] disabled:bg-[#f9fafb]">
+            <select value={form.engagementId} disabled={isEditing} onChange={(event) => onChange({ ...form, engagementId: event.target.value })} className="mt-[6px] h-[42px] w-full rounded-[8px] border border-line bg-white px-[12px] text-[14px] font-normal text-ink disabled:bg-surface-sunken">
               <option value="">Choose an engagement</option>
               {engagements.map((engagement) => <option key={engagement.id} value={engagement.id}>{engagementTitle(engagement, 'expert')}</option>)}
             </select>
-            {selectedEngagement && <span className="mt-[4px] block text-[12px] font-normal text-[#717680]">{statusLabel(selectedEngagement.status)} engagement</span>}
+            {selectedEngagement && <span className="mt-[4px] block text-[12px] font-normal text-ink-muted">{statusLabel(selectedEngagement.status)} engagement</span>}
           </label>
-          <label className="text-[13px] font-medium leading-[18px] text-[#414651] sm:col-span-2">
+          <label className="text-[13px] font-medium leading-[18px] text-ink-soft sm:col-span-2">
             Invoice title
-            <input value={form.title} onChange={(event) => onChange({ ...form, title: event.target.value })} placeholder="Implementation services" className="mt-[6px] h-[42px] w-full rounded-[8px] border border-[#d5d7da] px-[12px] text-[14px] font-normal text-[#181d27] placeholder:text-[#98a2b3]" />
+            <input value={form.title} onChange={(event) => onChange({ ...form, title: event.target.value })} placeholder="Implementation services" className="mt-[6px] h-[42px] w-full rounded-[8px] border border-line px-[12px] text-[14px] font-normal text-ink placeholder:text-ink-faint" />
           </label>
-          <label className="text-[13px] font-medium leading-[18px] text-[#414651]">
+          <label className="text-[13px] font-medium leading-[18px] text-ink-soft">
             Due date
-            <input type="datetime-local" value={form.dueAt} onChange={(event) => onChange({ ...form, dueAt: event.target.value })} className="mt-[6px] h-[42px] w-full rounded-[8px] border border-[#d5d7da] px-[12px] text-[14px] font-normal text-[#181d27]" />
+            <input type="datetime-local" value={form.dueAt} onChange={(event) => onChange({ ...form, dueAt: event.target.value })} className="mt-[6px] h-[42px] w-full rounded-[8px] border border-line px-[12px] text-[14px] font-normal text-ink" />
           </label>
-          <label className="text-[13px] font-medium leading-[18px] text-[#414651]">
+          <label className="text-[13px] font-medium leading-[18px] text-ink-soft">
             Currency
-            <select value={form.currency} onChange={(event) => onChange({ ...form, currency: event.target.value })} className="mt-[6px] h-[42px] w-full rounded-[8px] border border-[#d5d7da] bg-white px-[12px] text-[14px] font-normal text-[#181d27]">
+            <select value={form.currency} onChange={(event) => onChange({ ...form, currency: event.target.value })} className="mt-[6px] h-[42px] w-full rounded-[8px] border border-line bg-white px-[12px] text-[14px] font-normal text-ink">
               {getInvoiceCurrencyOptions().map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}
               {!getInvoiceCurrencyOptions().some((option) => option.code === form.currency) && <option value={form.currency}>{form.currency}</option>}
             </select>
           </label>
         </div>
 
-        <div className="mt-[20px] rounded-[12px] border border-[#e9eaeb] p-[16px]">
+        <div className="mt-[20px] rounded-[12px] border border-line p-[16px]">
           <div className="flex items-center justify-between gap-[12px]">
             <div>
-              <h3 className="text-[14px] font-semibold leading-[20px] text-[#181d27]">Line items</h3>
-              <p className="mt-[2px] text-[12px] leading-[18px] text-[#717680]">Edit the breakdown; the total updates automatically.</p>
+              <h3 className="text-[14px] font-semibold leading-[20px] text-ink">Line items</h3>
+              <p className="mt-[2px] text-[12px] leading-[18px] text-ink-muted">Edit the breakdown; the total updates automatically.</p>
             </div>
-            <span className="shrink-0 text-[16px] font-semibold text-[#181d27]">{invoiceMoney(total, form.currency)}</span>
+            <span className="shrink-0 text-[16px] font-semibold text-ink">{invoiceMoney(total, form.currency)}</span>
           </div>
-          <div className="mt-[12px] hidden gap-[8px] px-[10px] text-[11px] font-medium uppercase tracking-[0.04em] text-[#717680] sm:grid sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px]">
+          <div className="mt-[12px] hidden gap-[8px] px-[10px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted sm:grid sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px]">
             <span>Description</span>
             <span>Qty</span>
             <span>Unit price</span>
@@ -497,22 +499,22 @@ function InvoiceEditor({
           </div>
           <div className="mt-[8px] flex flex-col gap-[10px]">
             {form.lineItems.map((item, index) => (
-              <div key={item.id} className="grid gap-[8px] rounded-[8px] border border-[#f0f1f1] p-[8px] sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px] sm:border-0 sm:p-0">
-                <input value={item.description} onChange={(event) => updateLineItem(index, { description: event.target.value })} placeholder="Description" aria-label={`Line item ${index + 1} description`} className="h-[40px] rounded-[8px] border border-[#d5d7da] px-[10px] text-[13px] text-[#181d27] placeholder:text-[#98a2b3]" />
-                <input type="number" min={1} step={1} value={item.quantity} onChange={(event) => updateLineItem(index, { quantity: Number(event.target.value) })} aria-label={`Line item ${index + 1} quantity`} className="h-[40px] rounded-[8px] border border-[#d5d7da] px-[10px] text-[13px] text-[#181d27]" />
-                <input type="number" min={0} step="0.01" value={item.unitCents === 0 ? '' : String(item.unitCents / 100)} onChange={(event) => updateLineItem(index, { unitCents: Math.round(Number(event.target.value || 0) * 100) })} placeholder="0.00" aria-label={`Line item ${index + 1} unit price`} className="h-[40px] rounded-[8px] border border-[#d5d7da] px-[10px] text-[13px] text-[#181d27] placeholder:text-[#98a2b3]" />
-                <div className="flex h-[40px] items-center justify-end rounded-[8px] bg-[#f9fafb] px-[10px] text-[13px] font-semibold text-[#181d27]" aria-label={`Line item ${index + 1} amount`}>{invoiceMoney(invoiceLineItemTotalCents(item), form.currency)}</div>
-                <button type="button" onClick={() => onChange({ ...form, lineItems: form.lineItems.filter((_, itemIndex) => itemIndex !== index) })} disabled={form.lineItems.length === 1} aria-label={`Remove line item ${index + 1}`} className="flex h-[40px] items-center justify-center rounded-[8px] border border-[#d5d7da] text-[#b42318] disabled:cursor-not-allowed disabled:opacity-40"><Trash2 size={15} /></button>
+              <div key={item.id} className="grid gap-[8px] rounded-[8px] border border-line-soft p-[8px] sm:grid-cols-[minmax(0,1fr)_90px_120px_120px_36px] sm:border-0 sm:p-0">
+                <input value={item.description} onChange={(event) => updateLineItem(index, { description: event.target.value })} placeholder="Description" aria-label={`Line item ${index + 1} description`} className="h-[40px] rounded-[8px] border border-line px-[10px] text-[13px] text-ink placeholder:text-ink-faint" />
+                <input type="number" min={1} step={1} value={item.quantity} onChange={(event) => updateLineItem(index, { quantity: Number(event.target.value) })} aria-label={`Line item ${index + 1} quantity`} className="h-[40px] rounded-[8px] border border-line px-[10px] text-[13px] text-ink" />
+                <input type="number" min={0} step="0.01" value={item.unitCents === 0 ? '' : String(item.unitCents / 100)} onChange={(event) => updateLineItem(index, { unitCents: Math.round(Number(event.target.value || 0) * 100) })} placeholder="0.00" aria-label={`Line item ${index + 1} unit price`} className="h-[40px] rounded-[8px] border border-line px-[10px] text-[13px] text-ink placeholder:text-ink-faint" />
+                <div className="flex h-[40px] items-center justify-end rounded-[8px] bg-surface-sunken px-[10px] text-[13px] font-semibold text-ink" aria-label={`Line item ${index + 1} amount`}>{invoiceMoney(invoiceLineItemTotalCents(item), form.currency)}</div>
+                <button type="button" onClick={() => onChange({ ...form, lineItems: form.lineItems.filter((_, itemIndex) => itemIndex !== index) })} disabled={form.lineItems.length === 1} aria-label={`Remove line item ${index + 1}`} className="flex h-[40px] items-center justify-center rounded-[8px] border border-line text-danger disabled:cursor-not-allowed disabled:opacity-40"><Trash2 size={15} /></button>
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => onChange({ ...form, lineItems: [...form.lineItems, { id: crypto.randomUUID(), description: '', quantity: 1, unitCents: 0 }] })} className="mt-[12px] inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold text-[#414651] hover:bg-[#fafafa]"><Plus size={14} /> Add line item</button>
+          <button type="button" onClick={() => onChange({ ...form, lineItems: [...form.lineItems, { id: crypto.randomUUID(), description: '', quantity: 1, unitCents: 0 }] })} className="mt-[12px] inline-flex items-center gap-[6px] rounded-[8px] border border-line bg-white px-[10px] py-[7px] text-[13px] font-semibold text-ink-soft hover:bg-surface-hover"><Plus size={14} /> Add line item</button>
         </div>
 
-        {error && <p className="mt-[12px] rounded-[8px] bg-[#fef3f2] px-[12px] py-[10px] text-[13px] leading-[18px] text-[#b42318]">{error}</p>}
-        <div className="mt-[20px] flex justify-end gap-[8px] border-t border-[#e9eaeb] pt-[16px]">
-          <button type="button" onClick={onClose} className="rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[9px] text-[14px] font-semibold text-[#414651] hover:bg-[#fafafa]">Cancel</button>
-          <button type="button" onClick={onSave} disabled={saving} className={`inline-flex items-center gap-[7px] rounded-[8px] bg-[#155eef] px-[14px] py-[9px] text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_SKEUO}`}>
+        {error && <p className="mt-[12px] rounded-[8px] bg-danger-soft px-[12px] py-[10px] text-[13px] leading-[18px] text-danger">{error}</p>}
+        <div className="mt-[20px] flex justify-end gap-[8px] border-t border-line pt-[16px]">
+          <button type="button" onClick={onClose} className="rounded-[8px] border border-line bg-white px-[14px] py-[9px] text-[14px] font-semibold text-ink-soft hover:bg-surface-hover">Cancel</button>
+          <button type="button" onClick={onSave} disabled={saving} className="pf-btn pf-btn--primary pf-btn--sm">
             {saving ? <RefreshCw size={15} className="animate-spin" /> : <Receipt size={15} />}
             {saving ? 'Saving…' : 'Save draft'}
           </button>
@@ -524,17 +526,17 @@ function InvoiceEditor({
 
 function InvoiceKpiCard({ title, value, note, isLoading }: { title: string; value: string; note: string; isLoading: boolean }) {
   return (
-    <section className={`rounded-[12px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
-      <p className="text-[14px] font-medium leading-[20px] text-[#535862]">{title}</p>
-      {isLoading ? <Skeleton className="mt-[12px] block h-[32px] w-[120px] rounded-[6px]" aria-label="loading" /> : <p className="mt-[10px] text-[28px] font-semibold leading-[36px] text-[#181d27]">{value}</p>}
-      <p className="mt-[2px] text-[13px] leading-[18px] text-[#717680]">{note}</p>
+    <section className="pf-card p-[20px]">
+      <p className="text-[14px] font-medium leading-[20px] text-ink-soft">{title}</p>
+      {isLoading ? <Skeleton className="mt-[12px] block h-[32px] w-[120px] rounded-[6px]" aria-label="loading" /> : <p className="mt-[10px] text-[28px] font-semibold leading-[36px] text-ink">{value}</p>}
+      <p className="mt-[2px] text-[13px] leading-[18px] text-ink-muted">{note}</p>
     </section>
   )
 }
 
 function InvoicesSkeleton() {
   return (
-    <ul className="divide-y divide-[#f0f1f1]" aria-label="loading">
+    <ul className="divide-y divide-line-soft" aria-label="loading">
       {Array.from({ length: 3 }).map((_, index) => (
         <li key={index} className="flex flex-col gap-[10px] px-[20px] py-[16px]">
           <Skeleton className="h-[16px] w-[200px] rounded-[4px]" />

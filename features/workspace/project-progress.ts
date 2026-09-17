@@ -21,9 +21,9 @@ export function getMilestonePresentation(
     return {
       key: 'cancelled',
       label: 'Cancelled',
-      badgeClass: 'bg-[#fef3f2] text-[#b42318]',
-      dotClass: 'border-[#fda29b] bg-[#fff5f4] text-[#b42318]',
-      connectorClass: 'bg-[#fecdca]',
+      badgeClass: 'bg-danger-soft text-danger',
+      dotClass: 'border-danger-line bg-danger-soft text-danger',
+      connectorClass: 'bg-danger-line',
     }
   }
 
@@ -34,9 +34,9 @@ export function getMilestonePresentation(
     return {
       key: 'approved',
       label: 'Approved',
-      badgeClass: 'bg-[#ecfdf3] text-[#067647]',
-      dotClass: 'border-[#12b76a] bg-[#ecfdf3] text-[#067647]',
-      connectorClass: 'bg-[#12b76a]',
+      badgeClass: 'bg-ok-soft text-ok',
+      dotClass: 'border-ok bg-ok-soft text-ok',
+      connectorClass: 'bg-ok',
     }
   }
 
@@ -50,17 +50,17 @@ export function getMilestonePresentation(
     return {
       key: 'in_review',
       label: 'In review',
-      badgeClass: 'bg-[#fffaeb] text-[#b54708]',
-      dotClass: 'border-[#f79009] bg-[#fffaeb] text-[#b54708]',
-      connectorClass: 'bg-[#eaecf0]',
+      badgeClass: 'bg-warn-soft text-warn',
+      dotClass: 'border-warn bg-warn-soft text-warn',
+      connectorClass: 'bg-line',
     }
   }
 
   return {
     key: 'upcoming',
     label: 'Upcoming',
-    badgeClass: 'bg-[#f2f4f7] text-[#667085]',
-    dotClass: 'border-[#d0d5dd] bg-white text-[#98a2b3]',
-    connectorClass: 'bg-[#eaecf0]',
+    badgeClass: 'bg-line-soft text-ink-muted',
+    dotClass: 'border-ink-faint bg-white text-ink-faint',
+    connectorClass: 'bg-line',
   }
 }

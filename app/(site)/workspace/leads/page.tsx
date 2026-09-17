@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, Inbox, LockKeyhole, RefreshCw, XCircle } from 'lucide-react'
 import {
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -123,15 +123,15 @@ export default function WorkspaceLeadsPage() {
       <WorkspaceShell role={state.role}>
         <main className="flex min-h-[60vh] items-center justify-center px-[24px] py-[48px]">
           <div
-            className={`max-w-[440px] rounded-[16px] border border-[#e9eaeb] bg-white p-[32px] text-center ${CARD_SHADOW}`}
+            className="pf-card max-w-[440px] p-[32px] text-center"
           >
-            <span className="mx-auto flex size-[56px] items-center justify-center rounded-full bg-[#eff4ff] text-[#155eef]">
+            <span className="mx-auto flex size-[56px] items-center justify-center rounded-full bg-cobalt-soft text-cobalt">
               <LockKeyhole size={28} />
             </span>
-            <h1 className="mt-[16px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
+            <h1 className="pf-title mt-[16px]">
               Leads
             </h1>
-            <p className="mt-[8px] text-[15px] leading-[24px] text-[#535862]">
+            <p className="mt-[8px] text-[15px] leading-[24px] text-ink-soft">
               This section is for approved expert accounts.
             </p>
           </div>
@@ -143,46 +143,47 @@ export default function WorkspaceLeadsPage() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <div className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <Inbox size={22} className="text-[#155eef]" />
-              Leads
-            </h1>
+        <header className="pf-pagebar">
+          <div className="flex min-w-0 items-center gap-[14px]">
+            <span className="pf-ico pf-ico--lg pf-ico--soft"><Inbox size={20} /></span>
+            <div className="pf-pagebar-text">
+              <span className="pf-eyebrow">Workspace</span>
+              <h1 className="pf-title truncate">Leads</h1>
+            </div>
           </div>
-          <span className="inline-flex items-center gap-[8px] rounded-full bg-[#eff8ff] px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-[#175cd3]">
-            <span className="size-[8px] rounded-full bg-[#175cd3]" />
+          <span className="inline-flex items-center gap-[8px] rounded-full bg-cobalt-soft px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-cobalt-deep">
+            <span className="size-[8px] rounded-full bg-cobalt-deep" />
             {openLeads.length} open
           </span>
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || 'Unable to refresh leads.'}
           </div>
         )}
 
-        <section className={`m-[24px] rounded-[12px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-          <div className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] px-[20px] py-[16px]">
+        <section className="pf-card m-[24px]">
+          <div className="flex items-center justify-between gap-[12px] border-b border-line px-[20px] py-[16px]">
             <div>
-              <h2 className="text-[18px] font-semibold leading-[28px] text-[#181d27]">
+              <h2 className="pf-h2">
                 Open leads
               </h2>
-              <p className="mt-[2px] text-[13px] leading-[18px] text-[#717680]">
+              <p className="mt-[2px] text-[13px] leading-[18px] text-ink-muted">
                 New requests wait here until you accept or decline them.
               </p>
             </div>
-            {loading && <RefreshCw size={16} className="animate-spin text-[#155eef]" />}
+            {loading && <RefreshCw size={16} className="animate-spin text-cobalt" />}
           </div>
 
           {loading ? (
             <LeadsSkeleton />
           ) : openLeads.length === 0 ? (
-            <div className="px-[20px] py-[40px] text-center text-[14px] leading-[20px] text-[#717680]">
+            <div className="px-[20px] py-[40px] text-center text-[14px] leading-[20px] text-ink-muted">
               No open leads right now.
             </div>
           ) : (
-            <ul className="divide-y divide-[#f0f1f1]">
+            <ul className="divide-y divide-line-soft">
               {openLeads.map((intent) => (
                 <li
                   key={intent.id}
@@ -190,10 +191,10 @@ export default function WorkspaceLeadsPage() {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-[12px]">
                     <div className="min-w-0">
-                      <p className="truncate text-[15px] font-semibold leading-[22px] text-[#181d27]">
+                      <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">
                         {intent.requesterName || `Lead ${shortId(intent.id)}`}
                       </p>
-                      <p className="mt-[2px] truncate text-[13px] leading-[18px] text-[#535862]">
+                      <p className="mt-[2px] truncate text-[13px] leading-[18px] text-ink-soft">
                         {eventTypeLabel(intent)}
                       </p>
                     </div>
@@ -205,7 +206,7 @@ export default function WorkspaceLeadsPage() {
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-[8px] text-[13px] leading-[18px] text-[#535862]">
+                  <div className="flex flex-wrap items-center justify-between gap-[8px] text-[13px] leading-[18px] text-ink-soft">
                     <span>
                       Received {longDate(intent.createdAt)} · {relativeDate(intent.createdAt)}
                     </span>
@@ -215,7 +216,7 @@ export default function WorkspaceLeadsPage() {
                           type="button"
                           onClick={() => void decide(intent.id, 'decline')}
                           disabled={busyId === intent.id}
-                          className="inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold text-[#414651] hover:bg-[#fef3f2] hover:text-[#d92d20] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center gap-[6px] rounded-[8px] border border-line bg-white px-[10px] py-[7px] text-[13px] font-semibold text-ink-soft hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <XCircle size={15} /> Decline
                         </button>
@@ -223,7 +224,7 @@ export default function WorkspaceLeadsPage() {
                           type="button"
                           onClick={() => void decide(intent.id, 'accept')}
                           disabled={busyId === intent.id}
-                          className="inline-flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[10px] py-[7px] text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center gap-[6px] rounded-[8px] bg-cobalt px-[10px] py-[7px] text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <CheckCircle2 size={15} />
                           {busyId === intent.id ? 'Saving…' : 'Accept'}
@@ -232,7 +233,7 @@ export default function WorkspaceLeadsPage() {
                     ) : (
                       <Link
                         href="/workspace/engagements"
-                        className="inline-flex items-center gap-[6px] text-[13px] font-semibold text-[#155eef] hover:underline"
+                        className="inline-flex items-center gap-[6px] text-[13px] font-semibold text-cobalt hover:underline"
                       >
                         <CheckCircle2 size={15} /> Open engagement
                       </Link>
@@ -250,7 +251,7 @@ export default function WorkspaceLeadsPage() {
 
 function LeadsSkeleton() {
   return (
-    <ul className="divide-y divide-[#f0f1f1]" aria-label="loading">
+    <ul className="divide-y divide-line-soft" aria-label="loading">
       {Array.from({ length: 3 }).map((_, idx) => (
         <li key={idx} className="flex flex-col gap-[10px] px-[20px] py-[16px]">
           <Skeleton className="h-[16px] w-[200px] rounded-[4px]" />

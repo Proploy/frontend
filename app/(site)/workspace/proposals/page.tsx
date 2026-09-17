@@ -14,8 +14,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -247,23 +246,24 @@ export default function WorkspaceProposalsPage() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <div className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <Handshake size={22} className="text-[#155eef]" />
-              Proposals
-            </h1>
+        <header className="pf-pagebar">
+          <div className="flex min-w-0 items-center gap-[14px]">
+            <span className="pf-ico pf-ico--lg pf-ico--soft"><Handshake size={20} /></span>
+            <div className="pf-pagebar-text">
+              <span className="pf-eyebrow">Workspace</span>
+              <h1 className="pf-title truncate">Proposals</h1>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-[10px]">
-            <span className="inline-flex items-center gap-[8px] rounded-full bg-[#eff8ff] px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-[#175cd3]">
-              <span className="size-[8px] rounded-full bg-[#175cd3]" />
+            <span className="inline-flex items-center gap-[8px] rounded-full bg-cobalt-soft px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-cobalt-deep">
+              <span className="size-[8px] rounded-full bg-cobalt-deep" />
               {sentCount} sent
             </span>
             {isExpertWorkspace && (
               <button
                 type="button"
                 onClick={() => setShowTemplate((open) => !open)}
-                className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary"
               >
                 <FileText size={16} />
                 New proposal
@@ -273,18 +273,18 @@ export default function WorkspaceProposalsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || 'Unable to update proposals.'}
           </div>
         )}
         {isExpertWorkspace && showTemplate && (
-          <form onSubmit={createProposal} className="border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
+          <form onSubmit={createProposal} className="border-b border-line bg-white px-[24px] py-[20px]">
             <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-[12px] lg:grid-cols-[1fr_1fr_160px_160px]">
               <Field label="Engagement">
                 <select
                   value={form.engagementId}
                   onChange={(event) => setForm((current) => ({ ...current, engagementId: event.target.value }))}
-                  className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  className="w-full rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-ink focus:outline-none focus:ring-2 focus:ring-cobalt/30"
                 >
                   <option value="">Select engagement</option>
                   {engagements.map((engagement) => (
@@ -296,7 +296,7 @@ export default function WorkspaceProposalsPage() {
                 <input
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                  className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  className="w-full rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-cobalt/30"
                   placeholder="Implementation proposal"
                 />
               </Field>
@@ -307,7 +307,7 @@ export default function WorkspaceProposalsPage() {
                   type="number"
                   min="0"
                   step="100"
-                  className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  className="w-full rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-cobalt/30"
                   placeholder="40000"
                 />
               </Field>
@@ -316,7 +316,7 @@ export default function WorkspaceProposalsPage() {
                   value={form.validUntil}
                   onChange={(event) => setForm((current) => ({ ...current, validUntil: event.target.value }))}
                   type="date"
-                  className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  className="w-full rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-cobalt/30"
                 />
               </Field>
             </div>
@@ -326,7 +326,7 @@ export default function WorkspaceProposalsPage() {
                   value={form.summary}
                   onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))}
                   rows={3}
-                  className="w-full resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  className="w-full resize-y rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-cobalt/30"
                   placeholder="Short outcome-oriented summary"
                 />
               </Field>
@@ -335,17 +335,17 @@ export default function WorkspaceProposalsPage() {
                   value={form.scope}
                   onChange={(event) => setForm((current) => ({ ...current, scope: event.target.value }))}
                   rows={3}
-                  className="w-full resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30"
+                  className="w-full resize-y rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] leading-[20px] text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-cobalt/30"
                   placeholder="Deliverables, timeline, assumptions, and acceptance criteria"
                 />
               </Field>
             </div>
             <div className="mx-auto mt-[12px] flex max-w-[1180px] flex-wrap items-center justify-between gap-[10px]">
-              <p className="text-[13px] leading-[18px] text-[#b42318]">{formError}</p>
+              <p className="text-[13px] leading-[18px] text-danger">{formError}</p>
               <button
                 type="submit"
                 disabled={busyId === 'new'}
-                className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary"
               >
                 <FileText size={18} />
                 Create draft
@@ -355,8 +355,8 @@ export default function WorkspaceProposalsPage() {
         )}
 
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[420px] xl:shrink-0 xl:border-b-0 xl:border-r">
-            <div className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] p-[16px]">
+          <section className="flex flex-col border-b border-line bg-white xl:w-[420px] xl:shrink-0 xl:border-b-0 xl:border-r">
+            <div className="flex items-center justify-between gap-[12px] border-b border-line p-[16px]">
               <div className="flex gap-[4px] overflow-x-auto">
                 {filters.map((item) => (
                   <button
@@ -364,19 +364,19 @@ export default function WorkspaceProposalsPage() {
                     type="button"
                     onClick={() => setFilter(item.id)}
                     className={`whitespace-nowrap rounded-[6px] px-[10px] py-[6px] text-[13px] font-semibold leading-[18px] transition-colors ${
-                      filter === item.id ? 'bg-[#eff4ff] text-[#155eef]' : 'text-[#535862] hover:bg-[#fafafa]'
+                      filter === item.id ? 'bg-cobalt-soft text-cobalt' : 'text-ink-soft hover:bg-surface-hover'
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
-              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-[#155eef]" />}
+              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-cobalt" />}
             </div>
 
             <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
               {visible.length === 0 && (
-                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">
                   No proposals in this view.
                 </p>
               )}
@@ -389,25 +389,25 @@ export default function WorkspaceProposalsPage() {
                     type="button"
                     onClick={() => setSelectedId(proposal.id)}
                     className={`rounded-[10px] border p-[12px] text-left transition-colors ${
-                      active ? 'border-[#155eef] bg-[#f5f8ff]' : 'border-transparent hover:bg-[#fafafa]'
+                      active ? 'border-cobalt bg-cobalt-soft' : 'border-transparent hover:bg-surface-hover'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-[8px]">
                       <span className="min-w-0">
-                        <span className="block truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                        <span className="block truncate text-[14px] font-semibold leading-[20px] text-ink">
                           {proposal.title}
                         </span>
-                        <span className="mt-[2px] block truncate text-[13px] leading-[18px] text-[#535862]">
+                        <span className="mt-[2px] block truncate text-[13px] leading-[18px] text-ink-soft">
                           {engagement ? engagementTitle(engagement, state.role) : 'Workspace engagement'}
                         </span>
                       </span>
-                      <span className="shrink-0 text-[13px] font-semibold leading-[18px] text-[#181d27]">
+                      <span className="shrink-0 text-[13px] font-semibold leading-[18px] text-ink">
                         {money(proposal.budgetCents)}
                       </span>
                     </div>
                     <div className="mt-[10px] flex items-center justify-between gap-[8px]">
                       <ProposalStatusBadge status={proposal.status} viewerRole={state.role} />
-                      <span className="text-[12px] leading-[18px] text-[#717680]">{relativeDate(proposal.updatedAt)}</span>
+                      <span className="text-[12px] leading-[18px] text-ink-muted">{relativeDate(proposal.updatedAt)}</span>
                     </div>
                   </button>
                 )
@@ -434,9 +434,9 @@ export default function WorkspaceProposalsPage() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-[360px] text-center">
-                  <Handshake size={32} className="mx-auto text-[#d5d7da]" />
-                  <h2 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">No proposal selected</h2>
-                  <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  <Handshake size={32} className="mx-auto text-line" />
+                  <h2 className="pf-h2 mt-[12px]">No proposal selected</h2>
+                  <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                     Create a proposal draft from an accepted engagement.
                   </p>
                 </div>
@@ -484,73 +484,73 @@ export function ProposalDetail({
 
   return (
     <div className="mx-auto flex max-w-[820px] flex-col gap-[16px]">
-      <article className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-        <div className="border-b border-[#e9eaeb] px-[32px] pb-[24px] pt-[32px]">
+      <article className="pf-card">
+        <div className="border-b border-line px-[32px] pb-[24px] pt-[32px]">
           <div className="flex items-center justify-between gap-[12px]">
             <ProposalStatusBadge status={proposal.status} viewerRole={viewerRole} />
-            <span className="text-[12px] font-medium text-[#717680]">Updated {relativeDate(proposal.updatedAt)}</span>
+            <span className="text-[12px] font-medium text-ink-muted">Updated {relativeDate(proposal.updatedAt)}</span>
           </div>
           <div className="mt-[16px] flex items-start gap-[12px]">
-            <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[12px] bg-[#155eef] text-[14px] font-semibold text-white">
+            <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[12px] bg-cobalt text-[14px] font-semibold text-white">
               {initials(proposal.title)}
             </span>
             <div className="min-w-0">
-              <h2 className="text-[24px] font-semibold leading-[32px] text-[#181d27]">{proposal.title}</h2>
-              <p className="mt-[2px] text-[14px] leading-[20px] text-[#535862]">
+              <h2 className="pf-title">{proposal.title}</h2>
+              <p className="mt-[2px] text-[14px] leading-[20px] text-ink-soft">
                 {engagement ? engagementTitle(engagement, viewerRole) : 'Workspace engagement'}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-px border-b border-[#e9eaeb] bg-[#e9eaeb] sm:grid-cols-2">
-          <FactCell icon={<Wallet size={16} className="text-[#717680]" />} label="Budget">
+        <div className="grid grid-cols-1 gap-px border-b border-line bg-line sm:grid-cols-2">
+          <FactCell icon={<Wallet size={16} className="text-ink-muted" />} label="Budget">
             {money(proposal.budgetCents)}
           </FactCell>
-          <FactCell icon={<CalendarDays size={16} className="text-[#717680]" />} label="Valid until">
+          <FactCell icon={<CalendarDays size={16} className="text-ink-muted" />} label="Valid until">
             {longDate(proposal.validUntil)}
           </FactCell>
         </div>
 
         <div className="px-[32px] py-[24px]">
-          <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">Summary</p>
-          <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-[#252b37]">{proposal.summary}</p>
-          <p className="mt-[20px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">Scope</p>
-          <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-[#252b37]">{proposal.scope}</p>
-          <p className="mt-[16px] text-[13px] leading-[18px] text-[#717680]">
+          <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Summary</p>
+          <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-ink">{proposal.summary}</p>
+          <p className="mt-[20px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Scope</p>
+          <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-ink">{proposal.scope}</p>
+          <p className="mt-[16px] text-[13px] leading-[18px] text-ink-muted">
             Created {longDate(proposal.createdAt)}
           </p>
         </div>
 
         {canManage && (proposal.status === 'draft' || proposal.status === 'declined') ? (
-          <div className="border-t border-[#e9eaeb] bg-[#f8fbff] px-[32px] py-[20px]">
+          <div className="border-t border-line bg-cobalt-soft px-[32px] py-[20px]">
             <div className="flex flex-wrap items-start justify-between gap-[10px]">
               <div>
-                <h3 className="text-[15px] font-semibold text-[#181d27]">
+                <h3 className="pf-h2">
                   {proposal.status === 'declined' ? 'Revise and resubmit' : 'Edit proposal'}
                 </h3>
-                <p className="mt-[3px] text-[13px] leading-[19px] text-[#535862]">
+                <p className="mt-[3px] text-[13px] leading-[19px] text-ink-soft">
                   Update the scope, then save and use the same send button below to resubmit it to the buyer.
                 </p>
               </div>
-              <span className="rounded-full bg-[#e0edff] px-[9px] py-[3px] text-[11px] font-semibold text-[#1d4ed8]">Expert editor</span>
+              <span className="rounded-full bg-cobalt-soft px-[9px] py-[3px] text-[11px] font-semibold text-cobalt-deep">Expert editor</span>
             </div>
             <div className="mt-[14px] grid gap-[12px] md:grid-cols-2">
               <Field label="Title">
-                <input value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-[#181d27]" />
+                <input value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-ink" />
               </Field>
               <Field label="Budget USD">
-                <input type="number" min="0" step="100" value={editForm.budget} onChange={(event) => setEditForm((current) => ({ ...current, budget: event.target.value }))} className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-[#181d27]" />
+                <input type="number" min="0" step="100" value={editForm.budget} onChange={(event) => setEditForm((current) => ({ ...current, budget: event.target.value }))} className="w-full rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-ink" />
               </Field>
               <Field label="Valid until">
-                <input type="date" value={editForm.validUntil} onChange={(event) => setEditForm((current) => ({ ...current, validUntil: event.target.value }))} className="w-full rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-[#181d27]" />
+                <input type="date" value={editForm.validUntil} onChange={(event) => setEditForm((current) => ({ ...current, validUntil: event.target.value }))} className="w-full rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-ink" />
               </Field>
               <Field label="Summary">
-                <textarea rows={3} value={editForm.summary} onChange={(event) => setEditForm((current) => ({ ...current, summary: event.target.value }))} className="w-full resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-[#181d27]" />
+                <textarea rows={3} value={editForm.summary} onChange={(event) => setEditForm((current) => ({ ...current, summary: event.target.value }))} className="w-full resize-y rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-ink" />
               </Field>
               <div className="md:col-span-2">
                 <Field label="Scope">
-                  <textarea rows={4} value={editForm.scope} onChange={(event) => setEditForm((current) => ({ ...current, scope: event.target.value }))} className="w-full resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-[#181d27]" />
+                  <textarea rows={4} value={editForm.scope} onChange={(event) => setEditForm((current) => ({ ...current, scope: event.target.value }))} className="w-full resize-y rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] leading-[20px] text-ink" />
                 </Field>
               </div>
             </div>
@@ -565,7 +565,7 @@ export function ProposalDetail({
                   validUntil: editForm.validUntil ? `${editForm.validUntil}T23:59:59` : null,
                 })}
                 disabled={busy || !editForm.title.trim() || !editForm.summary.trim() || !editForm.scope.trim()}
-                className={`inline-flex items-center gap-[7px] rounded-[8px] bg-[#155eef] px-[13px] py-[9px] text-[13px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary pf-btn--sm"
               >
                 Save proposal changes
               </button>
@@ -574,9 +574,9 @@ export function ProposalDetail({
         ) : null}
       </article>
 
-      <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[16px]">
-        <span className="flex items-center gap-[8px] text-[13px] leading-[18px] text-[#535862]">
-          <CheckCircle2 size={16} className="text-[#17b26a]" />
+      <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-line bg-white p-[16px]">
+        <span className="flex items-center gap-[8px] text-[13px] leading-[18px] text-ink-soft">
+          <CheckCircle2 size={16} className="text-ok" />
           Confirming this proposal opens the shared workspace for both parties.
         </span>
         <div className="flex flex-wrap items-center gap-[8px]">
@@ -585,7 +585,7 @@ export function ProposalDetail({
               type="button"
               onClick={onSubmit}
               disabled={busy}
-              className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--primary"
             >
               <Send size={18} />
               {proposal.status === 'declined' ? 'Resubmit proposal' : 'Send proposal'}
@@ -597,7 +597,7 @@ export function ProposalDetail({
                 type="button"
                 onClick={onDecline}
                 disabled={busy}
-                className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] transition-colors hover:bg-[#fef3f2] hover:text-[#d92d20] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--danger"
               >
                 <XCircle size={18} />
                 Decline
@@ -606,7 +606,7 @@ export function ProposalDetail({
                 type="button"
                 onClick={onAccept}
                 disabled={busy}
-                className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary"
               >
                 <Eye size={18} />
                 Accept
@@ -618,7 +618,7 @@ export function ProposalDetail({
               type="button"
               onClick={onWithdraw}
               disabled={busy}
-              className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] transition-colors hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--secondary"
             >
               Withdraw
             </button>
@@ -632,7 +632,7 @@ export function ProposalDetail({
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex min-w-0 flex-col gap-[6px]">
-      <span className="text-[13px] font-medium leading-[18px] text-[#414651]">{label}</span>
+      <span className="text-[13px] font-medium leading-[18px] text-ink-soft">{label}</span>
       {children}
     </label>
   )
@@ -656,10 +656,10 @@ function ProposalStatusBadge({
 function FactCell({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="bg-white px-[32px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
         {icon} {label}
       </p>
-      <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-[#181d27]">{children}</p>
+      <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-ink">{children}</p>
     </div>
   )
 }

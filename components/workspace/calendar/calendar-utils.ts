@@ -21,13 +21,13 @@ export interface EventColor {
 }
 
 export const EVENT_COLORS: Record<EventColorKey, EventColor> = {
-  gray: { bg: '#ffffff', border: '#e9eaeb', text: '#414651', dot: '#717680' },
-  blue: { bg: '#eff8ff', border: '#b2ddff', text: '#175cd3', dot: '#1570ef' },
-  brand: { bg: '#eff4ff', border: '#b2ccff', text: '#004eeb', dot: '#155eef' },
-  indigo: { bg: '#eef4ff', border: '#c7d7fe', text: '#3538cd', dot: '#444ce7' },
-  pink: { bg: '#fdf2fa', border: '#fcceee', text: '#c11574', dot: '#dd2590' },
-  green: { bg: '#edfcf2', border: '#aaf0c4', text: '#087443', dot: '#099250' },
-  orange: { bg: '#fef6ee', border: '#f9dbaf', text: '#b93815', dot: '#e04f16' },
+  gray: { bg: 'var(--surface)', border: 'var(--line)', text: 'var(--ink-soft)', dot: 'var(--ink-muted)' },
+  blue: { bg: 'var(--cobalt-soft)', border: 'var(--cobalt-soft)', text: 'var(--cobalt-deep)', dot: 'var(--cobalt)' },
+  brand: { bg: 'var(--cobalt-soft)', border: 'var(--cobalt-soft)', text: 'var(--cobalt-deep)', dot: 'var(--cobalt)' },
+  indigo: { bg: 'var(--cobalt-soft)', border: 'var(--cobalt-soft)', text: 'var(--cobalt-deep)', dot: 'var(--cobalt)' },
+  pink: { bg: 'var(--violet-soft)', border: 'var(--violet-line)', text: 'var(--violet)', dot: 'var(--violet)' },
+  green: { bg: 'var(--ok-soft)', border: 'var(--ok-line)', text: 'var(--ok)', dot: 'var(--ok)' },
+  orange: { bg: 'var(--warn-soft)', border: 'var(--warn-line)', text: 'var(--warn)', dot: 'var(--warn)' },
 }
 
 // Colours assigned to real (non-cancelled) events. Cancelled/completed fall

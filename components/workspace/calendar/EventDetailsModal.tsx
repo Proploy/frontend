@@ -11,9 +11,9 @@ import { BUTTON_SKEUO } from '@/components/workspace/WorkspaceShell'
 import { EVENT_COLORS, formatDayLong, formatTime, type CalendarEvent } from './calendar-utils'
 
 const STATUS_STYLES: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  scheduled: { bg: '#ecfdf3', border: '#abefc6', text: '#067647', label: 'Scheduled' },
-  completed: { bg: '#f5f5f5', border: '#e9eaeb', text: '#414651', label: 'Completed' },
-  cancelled: { bg: '#fef3f2', border: '#fecdca', text: '#b42318', label: 'Cancelled' },
+  scheduled: { bg: 'var(--ok-soft)', border: 'var(--ok-line)', text: 'var(--ok)', label: 'Scheduled' },
+  completed: { bg: 'var(--surface-sunken)', border: 'var(--line)', text: 'var(--ink-soft)', label: 'Completed' },
+  cancelled: { bg: 'var(--danger-soft)', border: 'var(--danger-line)', text: 'var(--danger)', label: 'Cancelled' },
 }
 
 function durationLabel(event: CalendarEvent): string {
@@ -45,19 +45,19 @@ export function EventDetailsModal({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-[16px]">
-      <div className="absolute inset-0 bg-[#0a0d12]/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="event-details-title"
-        className="relative w-full max-w-[460px] overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)]"
+        className="relative w-full max-w-[460px] overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)]"
       >
         <div className="h-[6px] w-full" style={{ backgroundColor: color.dot }} />
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-[16px] top-[16px] inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#fafafa]"
+          className="absolute right-[16px] top-[16px] inline-flex size-[32px] items-center justify-center rounded-[8px] text-ink-muted hover:bg-surface-hover"
         >
           <X size={18} />
         </button>
@@ -70,7 +70,7 @@ export function EventDetailsModal({
             {status.label}
           </span>
 
-          <h2 id="event-details-title" className="mt-[12px] font-semibold text-[20px] leading-[28px] text-[#181d27]">
+          <h2 id="event-details-title" className="mt-[12px] font-semibold text-[20px] leading-[28px] text-ink">
             {event.title}
           </h2>
 
@@ -90,7 +90,7 @@ export function EventDetailsModal({
               <button
                 type="button"
                 onClick={() => onCancelMeeting(event)}
-                className={`rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#b42318] ${BUTTON_SKEUO}`}
+                className={`rounded-[8px] border border-line bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-danger ${BUTTON_SKEUO}`}
               >
                 Cancel meeting
               </button>
@@ -102,7 +102,7 @@ export function EventDetailsModal({
                 href={event.meetingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-[6px] rounded-[8px] border-2 border-white/[0.12] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                className={`inline-flex items-center gap-[6px] rounded-[8px] border-2 border-white/[0.12] bg-cobalt px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
               >
                 <Video size={16} />
                 Join call
@@ -111,7 +111,7 @@ export function EventDetailsModal({
               <button
                 type="button"
                 onClick={onClose}
-                className={`rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+                className={`rounded-[8px] border border-line bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-ink-soft ${BUTTON_SKEUO}`}
               >
                 Close
               </button>
@@ -125,8 +125,8 @@ export function EventDetailsModal({
 
 function Row({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-[10px] text-[14px] leading-[20px] text-[#414651]">
-      <span className="shrink-0 text-[#717680]">{icon}</span>
+    <div className="flex items-center gap-[10px] text-[14px] leading-[20px] text-ink-soft">
+      <span className="shrink-0 text-ink-muted">{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
     </div>
   )

@@ -13,8 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -231,21 +230,22 @@ export default function WorkspaceRequestsPage() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <div className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <Inbox size={22} className="text-[#155eef]" />
-              {pageTitle}
-            </h1>
+        <header className="pf-pagebar">
+          <div className="flex min-w-0 items-center gap-[14px]">
+            <span className="pf-ico pf-ico--lg pf-ico--soft"><Inbox size={20} /></span>
+            <div className="pf-pagebar-text">
+              <span className="pf-eyebrow">Workspace</span>
+              <h1 className="pf-title truncate">{pageTitle}</h1>
+            </div>
           </div>
-          <span className="inline-flex items-center gap-[8px] rounded-full bg-[#eff8ff] px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-[#175cd3]">
-            <span className="size-[8px] rounded-full bg-[#175cd3]" />
+          <span className="inline-flex items-center gap-[8px] rounded-full bg-cobalt-soft px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-cobalt-deep">
+            <span className="size-[8px] rounded-full bg-cobalt-deep" />
             {newCount} awaiting
           </span>
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || `Unable to refresh ${itemLabel}.`}
           </div>
         )}
@@ -258,8 +258,8 @@ export default function WorkspaceRequestsPage() {
         />
 
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[420px] xl:shrink-0 xl:border-b-0 xl:border-r">
-            <div className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] p-[16px]">
+          <section className="flex flex-col border-b border-line bg-white xl:w-[420px] xl:shrink-0 xl:border-b-0 xl:border-r">
+            <div className="flex items-center justify-between gap-[12px] border-b border-line p-[16px]">
               <div className="flex gap-[4px] overflow-x-auto">
                 {FILTERS.map((item) => (
                   <button
@@ -267,19 +267,19 @@ export default function WorkspaceRequestsPage() {
                     type="button"
                     onClick={() => setFilter(item.id)}
                     className={`whitespace-nowrap rounded-[6px] px-[10px] py-[6px] text-[13px] font-semibold leading-[18px] transition-colors ${
-                      filter === item.id ? 'bg-[#eff4ff] text-[#155eef]' : 'text-[#535862] hover:bg-[#fafafa]'
+                      filter === item.id ? 'bg-cobalt-soft text-cobalt' : 'text-ink-soft hover:bg-surface-hover'
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
-              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-[#155eef]" />}
+              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-cobalt" />}
             </div>
 
             <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
               {visible.length === 0 && (
-                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">
                   No {itemLabel} in this view.
                 </p>
               )}
@@ -291,20 +291,20 @@ export default function WorkspaceRequestsPage() {
                     type="button"
                     onClick={() => setSelectedId(request.id)}
                     className={`rounded-[10px] border p-[12px] text-left transition-colors ${
-                      active ? 'border-[#155eef] bg-[#f5f8ff]' : 'border-transparent hover:bg-[#fafafa]'
+                      active ? 'border-cobalt bg-cobalt-soft' : 'border-transparent hover:bg-surface-hover'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-[8px]">
                       <span className="min-w-0">
                         <span className="flex items-center gap-[6px]">
-                          <span className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                          <span className="truncate text-[14px] font-semibold leading-[20px] text-ink">
                             {requestTitle(request)}
                           </span>
                           {(request.source === 'meeting_intent' || request.expertId === expertId) && (
-                            <ShieldCheck size={14} className="shrink-0 text-[#155eef]" aria-label="Verified request" />
+                            <ShieldCheck size={14} className="shrink-0 text-cobalt" aria-label="Verified request" />
                           )}
                         </span>
-                        <span className="mt-[2px] block line-clamp-2 text-[13px] leading-[18px] text-[#535862]">
+                        <span className="mt-[2px] block line-clamp-2 text-[13px] leading-[18px] text-ink-soft">
                           {request.projectScope}
                         </span>
                       </span>
@@ -314,7 +314,7 @@ export default function WorkspaceRequestsPage() {
                         <span className="size-[6px] rounded-full bg-current" />
                         {statusLabel(request.status)}
                       </span>
-                      <span className="text-[12px] leading-[18px] text-[#717680]">{relativeDate(request.createdAt)}</span>
+                      <span className="text-[12px] leading-[18px] text-ink-muted">{relativeDate(request.createdAt)}</span>
                     </div>
                   </button>
                 )
@@ -325,54 +325,54 @@ export default function WorkspaceRequestsPage() {
           <section className="min-w-0 flex-1 overflow-y-auto bg-white p-[24px]">
             {selected ? (
               <div className="mx-auto flex max-w-[760px] flex-col gap-[16px]">
-                <article className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-                  <div className="border-b border-[#e9eaeb] px-[32px] pb-[24px] pt-[32px]">
+                <article className="pf-card">
+                  <div className="border-b border-line px-[32px] pb-[24px] pt-[32px]">
                     <div className="flex items-center justify-between gap-[12px]">
                       <span className={`inline-flex items-center gap-[6px] rounded-full px-[10px] py-[3px] text-[12px] font-medium leading-[18px] ${intentStatusClass(selected.status)}`}>
                         <span className="size-[6px] rounded-full bg-current" />
                         {statusLabel(selected.status)}
                       </span>
                       {selected.correlationToken && (
-                        <span className="text-[12px] font-medium text-[#717680]">Token {selected.correlationToken}</span>
+                        <span className="text-[12px] font-medium text-ink-muted">Token {selected.correlationToken}</span>
                       )}
                     </div>
 
                     <div className="mt-[16px] flex items-start gap-[12px]">
-                      <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[12px] bg-[#155eef] text-[16px] font-semibold text-white">
+                      <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[12px] bg-cobalt text-[16px] font-semibold text-white">
                         {requestTitle(selected).charAt(0).toUpperCase()}
                       </span>
                       <div className="min-w-0">
-                        <h2 className="text-[24px] font-semibold leading-[32px] text-[#181d27]">
+                        <h2 className="pf-title">
                           {requestTitle(selected)}
                         </h2>
-                        <p className="mt-[2px] text-[14px] leading-[20px] text-[#535862]">
+                        <p className="mt-[2px] text-[14px] leading-[20px] text-ink-soft">
                           {isExpertWorkspace ? 'Incoming buyer request' : 'Outgoing expert request'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-px border-b border-[#e9eaeb] bg-[#e9eaeb] sm:grid-cols-2">
-                    <FactCell icon={<CalendarDays size={16} className="text-[#717680]" />} label="Received">
+                  <div className="grid grid-cols-1 gap-px border-b border-line bg-line sm:grid-cols-2">
+                    <FactCell icon={<CalendarDays size={16} className="text-ink-muted" />} label="Received">
                       {longDate(selected.createdAt)}
                     </FactCell>
-                    <FactCell icon={<Building2 size={16} className="text-[#717680]" />} label="Expires">
+                    <FactCell icon={<Building2 size={16} className="text-ink-muted" />} label="Expires">
                       {longDate(selected.expiresAt)}
                     </FactCell>
                   </div>
 
                   <div className="px-[32px] py-[24px]">
-                    <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">Project scope</p>
-                    <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-[#252b37]">
+                    <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Project scope</p>
+                    <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-ink">
                       {selected.projectScope}
                     </p>
                   </div>
                 </article>
 
                 {canDecide || canCancel ? (
-                  <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[16px]">
-                    <span className="flex items-center gap-[8px] text-[13px] leading-[18px] text-[#535862]">
-                      {canDecide ? <CheckCircle2 size={16} className="text-[#17b26a]" /> : <RefreshCw size={16} className="text-[#717680]" />}
+                  <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-line bg-white p-[16px]">
+                    <span className="flex items-center gap-[8px] text-[13px] leading-[18px] text-ink-soft">
+                      {canDecide ? <CheckCircle2 size={16} className="text-ok" /> : <RefreshCw size={16} className="text-ink-muted" />}
                       {canDecide ? 'Accepting creates the engagement. The buyer must confirm the expert proposal before shared work opens.' : 'You can cancel this request while it is still pending.'}
                     </span>
                     <div className="flex flex-wrap items-center gap-[8px]">
@@ -381,7 +381,7 @@ export default function WorkspaceRequestsPage() {
                           type="button"
                           onClick={() => void cancel(selected.id)}
                           disabled={busyId === selected.id}
-                          className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] transition-colors hover:bg-[#fef3f2] hover:text-[#d92d20] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--danger"
                         >
                           <XCircle size={18} /> Cancel request
                         </button>
@@ -392,7 +392,7 @@ export default function WorkspaceRequestsPage() {
                         type="button"
                         onClick={() => void decide(selected.id, 'decline')}
                         disabled={busyId === selected.id}
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] transition-colors hover:bg-[#fef3f2] hover:text-[#d92d20] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--danger"
                       >
                         <XCircle size={18} /> Decline
                       </button>
@@ -400,7 +400,7 @@ export default function WorkspaceRequestsPage() {
                         type="button"
                         onClick={() => void decide(selected.id, 'accept')}
                         disabled={busyId === selected.id}
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#004eeb] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--primary"
                       >
                         <CheckCircle2 size={18} /> Accept request
                       </button>
@@ -411,44 +411,44 @@ export default function WorkspaceRequestsPage() {
                 ) : null}
 
                 {canBook ? (
-                  <section className={`rounded-[12px] border border-[#e9eaeb] bg-white p-[16px] ${CARD_SHADOW}`}>
+                  <section className="pf-card p-[16px]">
                     <div className="flex flex-wrap items-center justify-between gap-[12px]">
                       <div>
-                        <h3 className="text-[15px] font-semibold leading-[22px] text-[#181d27]">Schedule the shared meeting</h3>
-                        <p className="mt-[2px] text-[13px] leading-[18px] text-[#535862]">Available after the buyer confirms the expert proposal.</p>
+                        <h3 className="pf-h2">Schedule the shared meeting</h3>
+                        <p className="mt-[2px] text-[13px] leading-[18px] text-ink-soft">Available after the buyer confirms the expert proposal.</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setBookingOpen((open) => !open)}
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--primary"
                       >
                         <CalendarDays size={17} /> {bookingOpen ? 'Close' : 'Schedule meeting'}
                       </button>
                     </div>
                     {bookingOpen ? (
-                      <form onSubmit={bookMeeting} className="mt-[16px] grid grid-cols-1 gap-[12px] border-t border-[#e9eaeb] pt-[16px] md:grid-cols-2">
+                      <form onSubmit={bookMeeting} className="mt-[16px] grid grid-cols-1 gap-[12px] border-t border-line pt-[16px] md:grid-cols-2">
                         <label className="flex flex-col gap-[6px]">
-                          <span className="text-[13px] font-semibold text-[#414651]">Start</span>
-                          <input required type="datetime-local" value={booking.startsAt} onChange={(event) => setBooking((current) => ({ ...current, startsAt: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                          <span className="text-[13px] font-semibold text-ink-soft">Start</span>
+                          <input required type="datetime-local" value={booking.startsAt} onChange={(event) => setBooking((current) => ({ ...current, startsAt: event.target.value }))} className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
                         </label>
                         <label className="flex flex-col gap-[6px]">
-                          <span className="text-[13px] font-semibold text-[#414651]">End</span>
-                          <input required type="datetime-local" value={booking.endsAt} onChange={(event) => setBooking((current) => ({ ...current, endsAt: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                          <span className="text-[13px] font-semibold text-ink-soft">End</span>
+                          <input required type="datetime-local" value={booking.endsAt} onChange={(event) => setBooking((current) => ({ ...current, endsAt: event.target.value }))} className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
                         </label>
                         <label className="flex flex-col gap-[6px]">
-                          <span className="text-[13px] font-semibold text-[#414651]">Title</span>
-                          <input value={booking.title} onChange={(event) => setBooking((current) => ({ ...current, title: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                          <span className="text-[13px] font-semibold text-ink-soft">Title</span>
+                          <input value={booking.title} onChange={(event) => setBooking((current) => ({ ...current, title: event.target.value }))} className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
                         </label>
                         <label className="flex flex-col gap-[6px]">
-                          <span className="text-[13px] font-semibold text-[#414651]">Meeting link</span>
-                          <input type="url" value={booking.locationUrl} onChange={(event) => setBooking((current) => ({ ...current, locationUrl: event.target.value }))} placeholder="https://meet.google.com/..." className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                          <span className="text-[13px] font-semibold text-ink-soft">Meeting link</span>
+                          <input type="url" value={booking.locationUrl} onChange={(event) => setBooking((current) => ({ ...current, locationUrl: event.target.value }))} placeholder="https://meet.google.com/..." className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
                         </label>
                         <label className="flex flex-col gap-[6px] md:col-span-2">
-                          <span className="text-[13px] font-semibold text-[#414651]">Notes</span>
-                          <textarea rows={2} value={booking.notes} onChange={(event) => setBooking((current) => ({ ...current, notes: event.target.value }))} className="resize-y rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                          <span className="text-[13px] font-semibold text-ink-soft">Notes</span>
+                          <textarea rows={2} value={booking.notes} onChange={(event) => setBooking((current) => ({ ...current, notes: event.target.value }))} className="resize-y rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
                         </label>
                         <div className="flex justify-end md:col-span-2">
-                          <button type="submit" disabled={busyId === selected.id} className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                          <button type="submit" disabled={busyId === selected.id} className="pf-btn pf-btn--primary">
                             {busyId === selected.id ? 'Scheduling…' : 'Confirm meeting'}
                           </button>
                         </div>
@@ -460,11 +460,11 @@ export default function WorkspaceRequestsPage() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-[360px] text-center">
-                  <Inbox size={32} className="mx-auto text-[#d5d7da]" />
-                  <h2 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">
+                  <Inbox size={32} className="mx-auto text-line" />
+                  <h2 className="pf-h2 mt-[12px]">
                     No {isExpertWorkspace ? 'lead' : 'request'} selected
                   </h2>
-                  <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                     {isExpertWorkspace
                       ? 'Leads appear here when a buyer asks to work with you.'
                       : 'Requests appear here after you ask to work with an expert.'}
@@ -482,10 +482,10 @@ export default function WorkspaceRequestsPage() {
 function FactCell({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="bg-white px-[32px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
         {icon} {label}
       </p>
-      <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-[#181d27]">{children}</p>
+      <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-ink">{children}</p>
     </div>
   )
 }

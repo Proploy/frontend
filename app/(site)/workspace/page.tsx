@@ -16,7 +16,7 @@ import {
   Handshake,
   Inbox,
   Info,
-  Plus,
+  MessageSquare,
   TrendingUp,
   Users,
 } from 'lucide-react'
@@ -24,9 +24,9 @@ import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { CompleteApplicationCard } from '@/components/experts/CompleteApplicationCard'
 import { KpiCard, SectionCard, usd } from '@/components/dashboard/ui'
+import { Note, PageHeader } from '@/components/portal/ui'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -78,50 +78,41 @@ export default function WorkspaceHomePage() {
   }
 
   const isExpert = state.role === 'expert'
-  const roleLabel = isExpert
-    ? 'Expert workspace'
-    : statusLabel(state.role ?? 'buyer')
+  const roleLabel = isExpert ? 'Expert workspace' : `${statusLabel(state.role ?? 'buyer')} workspace`
 
   return (
     <LazyMotion features={domAnimation}>
     <WorkspaceShell role={state.role}>
-      <div className="mx-auto w-full max-w-[1200px] px-[20px] py-[24px] md:px-[32px] md:py-[32px]">
-        {/* Hero */}
-        <div className="flex flex-wrap items-start justify-between gap-[16px]">
-          <div className="flex flex-col gap-[6px]">
-            <div className="flex flex-wrap items-center gap-[10px]">
-              <h1 className="font-semibold text-[28px] leading-[36px] tracking-normal text-[#181d27]">
-                Welcome back, {firstName}
-              </h1>
-              <span className="inline-flex items-center gap-[4px] rounded-full border border-[#abefc6] bg-[#ecfdf3] px-[8px] py-[2px] text-[12px] font-semibold leading-[18px] text-[#067647]">
-                <CheckCircle size={14} />
-                {roleLabel}
-              </span>
-              {home.serviceUnavailable && (
-                <span className="inline-flex items-center gap-[4px] rounded-full border border-[#fda29b] bg-[#fef3f2] px-[8px] py-[2px] text-[12px] font-semibold leading-[18px] text-[#b42318]">
-                  <AlertTriangle size={14} />
-                  {SERVICE_UNAVAILABLE_LABEL}
-                </span>
-              )}
-            </div>
-          </div>
-          <QuickActions
-            isExpert={isExpert}
-            unreadNotifications={workspaceExperience.unreadCount}
-            onOpenNotifications={workspaceExperience.openNotifications}
-          />
-        </div>
+      <div className="pf-main">
+        <PageHeader
+          eyebrow={roleLabel}
+          title={`Welcome back, ${firstName}`}
+          lede="Everything waiting on you, in one view."
+          actions={
+            <QuickActions
+              isExpert={isExpert}
+              unreadNotifications={workspaceExperience.unreadCount}
+              onOpenNotifications={workspaceExperience.openNotifications}
+            />
+          }
+        />
 
         {/* Per-endpoint error banner (collapses when empty) */}
         {home.errors.length > 0 && !home.serviceUnavailable && (
-          <div className="mt-[18px] rounded-[12px] border border-[#fedf89] bg-[#fffaeb] px-[16px] py-[12px] text-[13px] leading-[18px] text-[#b54708]">
-            Some workspace sections could not refresh: {home.errors.slice(0, 2).map((err) => `${err.endpoint} (${err.message})`).join('; ')}
+          <div className="mt-[20px]">
+            <Note tone="warn" icon={<AlertTriangle size={15} />}>
+              Some workspace sections could not refresh:{' '}
+              {home.errors.slice(0, 2).map((err) => `${err.endpoint} (${err.message})`).join('; ')}
+            </Note>
           </div>
         )}
 
         {home.serviceUnavailable && (
-          <div className="mt-[18px] rounded-[12px] border border-[#fda29b] bg-[#fef3f2] px-[16px] py-[12px] text-[13px] leading-[18px] text-[#b42318]">
-            The workspace API is currently unreachable. Counts and activity below are stale or empty until it recovers.
+          <div className="mt-[20px]">
+            <Note tone="danger" icon={<AlertTriangle size={15} />}>
+              The workspace API is currently unreachable. Counts and activity below are stale or empty
+              until it recovers.
+            </Note>
           </div>
         )}
 
@@ -319,9 +310,9 @@ function attentionEntries(home: WorkspaceHomeSnapshot): AttentionEntry[] {
 }
 
 const ATTENTION_STYLES: Record<AttentionSeverity, { icon: ReactNode; bg: string; fg: string }> = {
-  blocked: { icon: <Ban size={16} />, bg: '#fef3f2', fg: '#b42318' },
-  risk: { icon: <AlertTriangle size={16} />, bg: '#fffaeb', fg: '#b54708' },
-  info: { icon: <Info size={16} />, bg: '#eff4ff', fg: '#004eeb' },
+  blocked: { icon: <Ban size={16} />, bg: 'var(--danger-soft)', fg: 'var(--danger)' },
+  risk: { icon: <AlertTriangle size={16} />, bg: 'var(--warn-soft)', fg: 'var(--warn)' },
+  info: { icon: <Info size={16} />, bg: 'var(--cobalt-soft)', fg: 'var(--cobalt-deep)' },
 }
 
 function NeedsAttention({ home }: { home: WorkspaceHomeSnapshot }) {
@@ -329,7 +320,7 @@ function NeedsAttention({ home }: { home: WorkspaceHomeSnapshot }) {
   return (
     <SectionCard title="Needs attention">
       {entries.length === 0 ? (
-        <p className="px-[20px] py-[24px] text-[13px] leading-[20px] text-[#717680]">
+        <p className="px-[20px] py-[24px] text-[13px] leading-[20px] text-ink-muted">
           {home.isLoading ? 'Checking for anything that needs a decision…' : 'Nothing is waiting on you right now.'}
         </p>
       ) : (
@@ -337,8 +328,8 @@ function NeedsAttention({ home }: { home: WorkspaceHomeSnapshot }) {
           {entries.map((entry) => {
             const style = ATTENTION_STYLES[entry.severity]
             return (
-              <li key={entry.id} className="border-b border-[#f0f0f1] last:border-b-0">
-                <Link href={entry.href} className="flex items-start gap-[12px] px-[20px] py-[14px] hover:bg-[#fafafa]">
+              <li key={entry.id} className="border-b border-line-soft last:border-b-0">
+                <Link href={entry.href} className="flex items-start gap-[12px] px-[20px] py-[14px] hover:bg-surface-hover">
                   <span
                     className="mt-[1px] flex size-[28px] shrink-0 items-center justify-center rounded-[8px]"
                     style={{ background: style.bg, color: style.fg }}
@@ -346,8 +337,8 @@ function NeedsAttention({ home }: { home: WorkspaceHomeSnapshot }) {
                     {style.icon}
                   </span>
                   <span className="flex min-w-0 flex-col gap-[2px]">
-                    <span className="truncate text-[14px] font-medium leading-[20px] text-[#181d27]">{entry.title}</span>
-                    <span className="truncate text-[12px] leading-[18px] text-[#717680]">{entry.detail}</span>
+                    <span className="truncate text-[14px] font-medium leading-[20px] text-ink">{entry.title}</span>
+                    <span className="truncate text-[12px] leading-[18px] text-ink-muted">{entry.detail}</span>
                   </span>
                 </Link>
               </li>
@@ -368,25 +359,25 @@ function CurrentStatement({ home }: { home: WorkspaceHomeSnapshot }) {
     <SectionCard title="Current statement" action={{ label: 'Invoices', href: '/workspace/invoices' }}>
       <div className="flex flex-col gap-[14px] px-[20px] py-[18px]">
         <div className="flex flex-col gap-[2px]">
-          <p className="text-[13px] leading-[18px] text-[#535862]">Outstanding</p>
-          <p className="font-semibold text-[28px] leading-[36px] tracking-[-0.02em] text-[#181d27]">
+          <p className="text-[13px] leading-[18px] text-ink-soft">Outstanding</p>
+          <p className="font-semibold text-[28px] leading-[36px] tracking-[-0.02em] text-ink">
             {usd(total)}
           </p>
-          <p className="text-[12px] leading-[18px] text-[#717680]">
+          <p className="text-[12px] leading-[18px] text-ink-muted">
             {outstanding.length === 0
               ? 'No open invoices'
               : `${outstanding.length} open invoice${outstanding.length === 1 ? '' : 's'}`}
           </p>
         </div>
         {latest && (
-          <div className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] px-[14px] py-[12px]">
+          <div className="flex items-center justify-between gap-[12px] rounded-[10px] border border-line px-[14px] py-[12px]">
             <span className="flex min-w-0 flex-col gap-[2px]">
-              <span className="truncate text-[13px] font-medium leading-[18px] text-[#181d27]">
+              <span className="truncate text-[13px] font-medium leading-[18px] text-ink">
                 {latest.invoiceNumber}
               </span>
-              <span className="text-[12px] leading-[18px] text-[#717680]">due {longDate(latest.dueAt)}</span>
+              <span className="text-[12px] leading-[18px] text-ink-muted">due {longDate(latest.dueAt)}</span>
             </span>
-            <span className="shrink-0 text-[14px] font-semibold leading-[20px] text-[#181d27]">
+            <span className="shrink-0 text-[14px] font-semibold leading-[20px] text-ink">
               {usd(latest.totalCents)}
             </span>
           </div>
@@ -408,46 +399,33 @@ function QuickActions({
   onOpenNotifications: () => void
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-[10px]">
-      <Link
-        href="/workspace/messages"
-        className={`flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
-      >
-        <Plus size={16} />
-        Open messages
+    <>
+      <Link href="/workspace/messages" className="pf-btn pf-btn--secondary">
+        <MessageSquare size={15} />
+        Messages
       </Link>
       {isExpert && (
-        <Link
-          href="/workspace/proposals"
-          className={`flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
-        >
-          <FileText size={16} />
-          Create proposal
+        <Link href="/workspace/proposals" className="pf-btn pf-btn--secondary">
+          <FileText size={15} />
+          New proposal
         </Link>
       )}
       {isExpert && (
-        <Link
-          href="/workspace/sales"
-          className={`flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
-        >
-          <TrendingUp size={16} />
-          View sales
+        <Link href="/workspace/sales" className="pf-btn pf-btn--secondary">
+          <TrendingUp size={15} />
+          Sales
         </Link>
       )}
-      <button
-        type="button"
-        onClick={onOpenNotifications}
-        className={`relative flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
-      >
-        <Bell size={16} />
+      <button type="button" onClick={onOpenNotifications} className="pf-btn pf-btn--primary">
+        <Bell size={15} />
         Notifications
         {unreadNotifications > 0 && (
-          <span className="ml-[4px] inline-flex min-w-[18px] items-center justify-center rounded-full bg-white px-[6px] text-[11px] font-semibold text-[#155eef]">
+          <span className="ml-[2px] inline-flex min-w-[18px] items-center justify-center rounded-full bg-white/20 px-[5px] font-[family-name:var(--font-ibm-plex-mono)] text-[11px] leading-[16px]">
             {unreadNotifications}
           </span>
         )}
       </button>
-    </div>
+    </>
   )
 }
 
@@ -490,19 +468,19 @@ export function RecentActivity({
       ) : items.length === 0 ? (
         <EmptyRows message="No recent activity yet." />
       ) : (
-        <ul className="divide-y divide-[#f0f0f1]">
+        <ul className="divide-y divide-line-soft">
           {items.map((item) => {
             const content = (
               <>
-                <span className="mt-[2px] flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#f5f8ff] text-[#155eef]">
+                <span className="mt-[2px] flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-cobalt-soft text-cobalt">
                   {activityIcon(item.kind)}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-[8px]">
-                    <p className="truncate font-semibold text-[14px] leading-[20px] text-[#181d27]">{item.title}</p>
-                    <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">{relativeDate(item.createdAt)}</span>
+                    <p className="truncate font-semibold text-[14px] leading-[20px] text-ink">{item.title}</p>
+                    <span className="shrink-0 text-[12px] leading-[18px] text-ink-muted">{relativeDate(item.createdAt)}</span>
                   </div>
-                  {item.detail && <p className="mt-[2px] truncate text-[13px] leading-[18px] text-[#717680]">{item.detail}</p>}
+                  {item.detail && <p className="mt-[2px] truncate text-[13px] leading-[18px] text-ink-muted">{item.detail}</p>}
                 </div>
               </>
             )
@@ -511,7 +489,7 @@ export function RecentActivity({
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="flex items-start gap-[12px] px-[20px] py-[14px] hover:bg-[#fafafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#155eef]"
+                    className="flex items-start gap-[12px] px-[20px] py-[14px] hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cobalt"
                   >
                     {content}
                   </Link>
@@ -529,7 +507,7 @@ export function RecentActivity({
 
 function ActivitySkeleton() {
   return (
-    <ul className="divide-y divide-[#f0f0f1]" aria-label="loading">
+    <ul className="divide-y divide-line-soft" aria-label="loading">
       {Array.from({ length: 4 }).map((_, idx) => (
         <li key={idx} className="flex items-center gap-[12px] px-[20px] py-[14px]">
           <Skeleton className="size-[30px] rounded-[8px]" />
@@ -572,15 +550,15 @@ function ActiveProjects({
       {projects.length === 0 ? (
         <EmptyRows message="No active projects yet." />
       ) : (
-        <ul className="divide-y divide-[#f0f0f1]">
+        <ul className="divide-y divide-line-soft">
           {projects.slice(0, 5).map((project) => {
             const engagement = engagementMap.get(project.engagementId)
             return (
               <li key={project.id} className="flex flex-col gap-[12px] px-[20px] py-[16px]">
                 <div className="flex flex-wrap items-start justify-between gap-[8px]">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-[15px] leading-[22px] text-[#181d27]">{project.title}</p>
-                    <p className="text-[13px] leading-[18px] text-[#717680]">
+                    <p className="truncate font-semibold text-[15px] leading-[22px] text-ink">{project.title}</p>
+                    <p className="text-[13px] leading-[18px] text-ink-muted">
                       {engagement ? engagementTitle(engagement, viewerRole) : 'Workspace engagement'}
                     </p>
                   </div>
@@ -589,7 +567,7 @@ function ActiveProjects({
                     {statusLabel(project.status)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-[12px] text-[12px] leading-[18px] text-[#717680]">
+                <div className="flex items-center justify-between gap-[12px] text-[12px] leading-[18px] text-ink-muted">
                   <span className="truncate">{project.summary || project.scope}</span>
                   <span className="shrink-0">{longDate(project.createdAt)}</span>
                 </div>
@@ -619,26 +597,26 @@ function MessagesCard({
       {conversations.length === 0 ? (
         <EmptyRows message="No messages yet." />
       ) : (
-        <ul className="divide-y divide-[#f0f0f1]">
+        <ul className="divide-y divide-line-soft">
           {conversations.slice(0, 5).map((conversation) => {
             const engagement = engagementMap.get(conversation.engagementId)
             const engagementLabel = engagement ? engagementTitle(engagement, viewerRole) : 'Engagement'
             const title = conversation.subject ?? engagementLabel
             return (
             <li key={conversation.id} className="flex items-start gap-[12px] px-[20px] py-[14px]">
-              <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-[#155eef] text-[13px] font-semibold text-white">
+              <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-cobalt text-[13px] font-semibold text-white">
                 {initials(title)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-[8px]">
-                  <p className="truncate font-semibold text-[14px] leading-[20px] text-[#181d27]">
+                  <p className="truncate font-semibold text-[14px] leading-[20px] text-ink">
                     {title}
                   </p>
-                  <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">
+                  <span className="shrink-0 text-[12px] leading-[18px] text-ink-muted">
                     {relativeDate(conversation.lastMessageAt ?? conversation.createdAt)}
                   </span>
                 </div>
-                <p className="truncate text-[13px] leading-[18px] text-[#717680]">
+                <p className="truncate text-[13px] leading-[18px] text-ink-muted">
                   {engagementLabel}
                 </p>
               </div>
@@ -678,15 +656,15 @@ function UpcomingMeetingsCard({ meetings }: { meetings: UpcomingItem[] }) {
       {meetings.length === 0 ? (
         <EmptyRows message="No upcoming meetings." />
       ) : (
-        <ul className="divide-y divide-[#f0f0f1]">
+        <ul className="divide-y divide-line-soft">
           {meetings.map((item) => (
             <li key={item.id} className="flex items-start gap-[12px] px-[20px] py-[14px]">
-              <span className="mt-[2px] flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#f5f8ff] text-[#155eef]">
+              <span className="mt-[2px] flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-cobalt-soft text-cobalt">
                 <CalendarClock size={15} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-[14px] leading-[20px] text-[#181d27]">{item.title}</p>
-                <p className="text-[13px] leading-[18px] text-[#717680]">{item.subtitle}</p>
+                <p className="truncate font-semibold text-[14px] leading-[20px] text-ink">{item.title}</p>
+                <p className="text-[13px] leading-[18px] text-ink-muted">{item.subtitle}</p>
               </div>
             </li>
           ))}
@@ -699,7 +677,7 @@ function UpcomingMeetingsCard({ meetings }: { meetings: UpcomingItem[] }) {
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function EmptyRows({ message }: { message: string }) {
-  return <p className="px-[20px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">{message}</p>
+  return <p className="px-[20px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">{message}</p>
 }
 
 function findEndpointError(

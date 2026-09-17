@@ -31,11 +31,11 @@ export function NotificationsBell({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-        className="relative inline-flex size-[36px] items-center justify-center rounded-[8px] text-[#414651] transition-colors hover:bg-[#fafafa]"
+        className="pf-btn pf-btn--ghost pf-btn--icon pf-btn--sm relative"
       >
         <Bell size={19} />
         {unreadCount > 0 && (
-          <span className="absolute right-[6px] top-[5px] flex min-w-[16px] items-center justify-center rounded-full bg-[#d92d20] px-[4px] text-[10px] font-semibold leading-[16px] text-white">
+          <span className="absolute right-[3px] top-[2px] flex min-w-[15px] items-center justify-center rounded-full bg-[color:var(--danger)] px-[4px] font-[family-name:var(--font-ibm-plex-mono)] text-[10px] leading-[15px] text-white">
             {unreadCount}
           </span>
         )}
@@ -45,17 +45,17 @@ export function NotificationsBell({
         <>
           <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden />
           <div
-            className={`fixed z-[61] top-[64px] w-[360px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[12px] border border-[#e9eaeb] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)] ${
+            className={`pf-card fixed z-[61] top-[64px] w-[360px] max-w-[calc(100vw-24px)] overflow-hidden shadow-[var(--shadow-pop)] ${
               align === 'right' ? 'right-[12px]' : 'left-[16px]'
             }`}
           >
-            <div className="flex items-center justify-between border-b border-[#f0f0f1] px-[16px] py-[12px]">
-              <p className="font-semibold text-[15px] leading-[22px] text-[#181d27]">Notifications</p>
+            <div className="flex items-center justify-between border-b border-[color:var(--line-soft)] px-[16px] py-[12px]">
+              <p className="pf-h2">Notifications</p>
               {unreadCount > 0 && (
                 <button
                   type="button"
                   onClick={markAll}
-                  className="inline-flex items-center gap-[4px] text-[13px] font-semibold text-[#004eeb] hover:text-[#155eef]"
+                  className="pf-linkarrow"
                 >
                   <Check size={14} />
                   Mark all read
@@ -63,27 +63,27 @@ export function NotificationsBell({
               )}
             </div>
 
-            <ul className="max-h-[380px] divide-y divide-[#f0f0f1] overflow-y-auto">
+            <ul className="max-h-[380px] divide-y divide-[color:var(--line-soft)] overflow-y-auto">
               {items.map((n) => {
                 const unread = isUnread(n)
                 const inner = (
                   <div className="flex items-start gap-[10px] px-[16px] py-[12px]">
                     <span
-                      className={`mt-[6px] size-[8px] shrink-0 rounded-full ${unread ? 'bg-[#155eef]' : 'bg-transparent'}`}
+                      className={`mt-[7px] size-[7px] shrink-0 rounded-full ${unread ? 'bg-[color:var(--cobalt)]' : 'bg-transparent'}`}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-[8px]">
-                        <p className={`truncate text-[14px] leading-[20px] ${unread ? 'font-semibold text-[#181d27]' : 'font-medium text-[#414651]'}`}>
+                        <p className={`truncate text-[14px] leading-[20px] ${unread ? 'font-semibold text-[color:var(--ink)]' : 'font-medium text-[color:var(--ink-soft)]'}`}>
                           {n.title}
                         </p>
-                        <span className="shrink-0 text-[12px] leading-[18px] text-[#717680]">{n.when}</span>
+                        <span className="pf-row-meta shrink-0">{n.when}</span>
                       </div>
-                      <p className="text-[13px] leading-[18px] text-[#717680]">{n.body}</p>
+                      <p className="pf-small">{n.body}</p>
                     </div>
                   </div>
                 )
                 return (
-                  <li key={n.id} className="transition-colors hover:bg-[#fafafa]">
+                  <li key={n.id} className="transition-colors hover:bg-[color:var(--surface-hover)]">
                     {n.href ? (
                       <Link href={n.href} onClick={() => setOpen(false)}>
                         {inner}

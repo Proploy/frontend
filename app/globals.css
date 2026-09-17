@@ -2,6 +2,10 @@
 /* layer(components) so Tailwind utilities (@layer utilities) can still override
    pp-* styles — unlayered CSS would beat every utility regardless of specificity */
 @import "./v2-pages.css";
+/* Internal portal (/workspace, /business/dashboard, /experts/*) on the same V2
+   tokens — see app/portal.css. Imported after v2-pages.css because it defines
+   --shadow-xs and the extra ink tiers that both layers use. */
+@import "./portal.css";
 
 /* Tailwind v4 doesn't auto-scan arbitrary source directories in monorepo-ish
    layouts; explicitly add the components/site tree so V2 homepage utilities
@@ -284,6 +288,30 @@
     --color-line: var(--line);
     /* border-border resolves to the v2 line color (unused by legacy components) */
     --color-border: var(--line);
+
+    /* ---- Portal layer (app/portal.css) ----------------------------------
+       Registered here so the internal portal can use plain utilities
+       (text-ink-muted, bg-ok-soft, border-line-soft) instead of the legacy
+       arbitrary hex values it used to hard-code. Raw values live in
+       app/portal.css :root. */
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-faint: var(--ink-faint);
+    --color-surface: var(--surface);
+    --color-surface-sunken: var(--surface-sunken);
+    --color-surface-hover: var(--surface-hover);
+    --color-line-soft: var(--line-soft);
+    --color-ok: var(--ok);
+    --color-ok-soft: var(--ok-soft);
+    --color-ok-line: var(--ok-line);
+    --color-warn: var(--warn);
+    --color-warn-soft: var(--warn-soft);
+    --color-warn-line: var(--warn-line);
+    --color-danger: var(--danger);
+    --color-danger-soft: var(--danger-soft);
+    --color-danger-line: var(--danger-line);
+    --color-violet: var(--violet);
+    --color-violet-soft: var(--violet-soft);
+    --color-violet-line: var(--violet-line);
 
     --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
 }
