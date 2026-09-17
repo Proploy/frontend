@@ -608,37 +608,31 @@
 .mc-hero{position:relative;z-index:20;padding-block:var(--sp-32) var(--sp-24)}
 .mc-hero-mesh{position:absolute;right:-96px;top:-96px;width:900px;max-width:none;opacity:.45;mix-blend-mode:multiply;pointer-events:none;-webkit-mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .mc-hero-grid{display:grid;gap:var(--sp-10);grid-template-columns:minmax(0,1fr)}
-.mc-hero-copy{min-width:0}
+.mc-hero-copy{min-width:0;text-align:center}
+.mc-hero-lede{max-width:52ch;margin-inline:auto;text-wrap:balance}
+.mc-hero-lede-em{color:var(--ink)}
 .mc-hero-word{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.14em}
 .mc-hero-card{min-width:0}
 .mc-eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);padding:6px 12px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent)}
-.mc-proof{display:flex;align-items:center;gap:var(--sp-3)}
+.mc-proof{display:flex;align-items:center;justify-content:center;gap:var(--sp-3);text-align:center}
 .mc-proof-dots{display:flex;flex-shrink:0}
 .mc-proof-dots span{width:20px;height:20px;border-radius:var(--r-full);border:2px solid var(--paper);background:linear-gradient(135deg,var(--cobalt),var(--cobalt-deep))}
 .mc-proof-dots span+span{margin-left:-6px}
 
 /* --- the card --- */
-.mc-card{position:relative;overflow:hidden;min-width:0;scroll-margin-top:calc(var(--nav-h) + var(--sp-4));transition:box-shadow var(--d-lift) var(--ease),border-color var(--d-base) ease}
-/* Natural-language mode warms the whole card, so the mode toggle reads as a
-   change of behaviour rather than a styling detail. */
-.mc-card[data-mode="natural"]{border-color:color-mix(in oklab,var(--cobalt) 38%,var(--line));box-shadow:0 34px 80px -40px color-mix(in oklab,var(--cobalt) 60%,transparent)}
-.mc-row{display:flex;align-items:center;gap:var(--sp-3);padding:10px var(--sp-4)}
-.mc-row--head{border-bottom:var(--bw) solid var(--line);gap:6px var(--sp-2);flex-wrap:wrap}
-/* The engine name never breaks mid-phrase; the mode toggle beside it is the
-   element that gives way if the card gets narrow. */
-.mc-row--head .pp-label{white-space:nowrap}
-.mc-row--sam,.mc-row--foot{border-top:var(--bw) solid var(--line);justify-content:space-between}
-.mc-row--foot{padding-block:var(--sp-3)}
-.mc-body{padding:var(--sp-3) var(--sp-4) 0}
-/* Reserves the suggestion block's footprint so swapping suggestions for
-   results never resizes the card under the pointer. */
-.mc-min-h{min-height:14rem}
-.mc-hint{letter-spacing:.05em}
-.mc-suggest{display:flex;flex-direction:column;justify-content:center;gap:10px;padding-block:var(--sp-4)}
-.mc-search{margin-top:10px}
-.mc-suggest-list{display:flex;flex-wrap:wrap;gap:6px}
-.mc-suggestion{padding:6px 10px;border-radius:var(--r-control);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--ink-soft);font-size:13px;line-height:18px;text-align:left;cursor:pointer;transition:border-color var(--d-base) ease,color var(--d-base) ease}
-.mc-suggestion:hover{border-color:color-mix(in oklab,var(--cobalt) 40%,var(--line));color:var(--ink)}
+.mc-card{position:relative;min-width:0;max-width:720px;margin-inline:auto;scroll-margin-top:calc(var(--nav-h) + var(--sp-4))}
+.mc-results{margin-top:10px;overflow:hidden;border-radius:var(--r-card);border:var(--bw) solid var(--line);background:#fff;box-shadow:var(--shadow-card);transition:border-color var(--d-base) ease,box-shadow var(--d-lift) var(--ease)}
+/* With the manual toggle gone, the tint is how a visitor sees that the query
+   was read as a described need and went to the natural endpoint. */
+.mc-card[data-mode="natural"] .mc-results{border-color:color-mix(in oklab,var(--cobalt) 38%,var(--line));box-shadow:0 34px 80px -40px color-mix(in oklab,var(--cobalt) 60%,transparent)}
+/* Sizing only. The fill and the light text come from .pp-btn--cobalt, whose
+   guard at the top of the button block is specific enough to clear the
+   `.pp-scope button{color:inherit}` reset. A bespoke single-class rule here
+   would lose to that reset and render near-black text on the blue. */
+.mc-submit{height:40px;padding-inline:16px;font-size:14px;border-radius:calc(var(--r-control) - 2px)}
+/* No lift: the button sits inside the bar's own border. */
+.mc-submit:hover{transform:none}
+.mc-sam-line{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-4)}
 .mc-sam{flex-shrink:0;padding:4px 10px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent);color:var(--cobalt-deep);font-size:13px;font-weight:var(--weight-medium);transition:border-color var(--d-base) ease,background-color var(--d-base) ease}
 .mc-sam:hover{border-color:color-mix(in oklab,var(--cobalt) 50%,var(--line));background:color-mix(in oklab,var(--cobalt-soft) 40%,white)}
 .mc-viewall{color:var(--cobalt-deep);transition:opacity var(--d-base) ease}

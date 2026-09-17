@@ -9,6 +9,9 @@ import {
   useNaturalSearch,
 } from "@/features/catalog";
 import type { SearchMode } from "@/features/catalog";
+import { useTypedPlaceholder } from "./use-typed-placeholder";
+
+const EMPTY_PHRASES: readonly string[] = [];
 
 /**
  * The real catalog search: keyword typeahead (spell correction + ghost
@@ -27,6 +30,7 @@ export function ProductSearch({
   variant = "popover",
   className = "",
   listClassName = "",
+  placeholderPhrases,
 }: {
   query: string
   onQueryChange: (query: string) => void
@@ -35,10 +39,13 @@ export function ProductSearch({
   variant?: "popover" | "embedded"
   className?: string
   listClassName?: string
+  /** Example queries to type into the placeholder while the field is idle. */
+  placeholderPhrases?: readonly string[]
 }) {
   const router = useRouter();
   const [resultsOpen, setResultsOpen] = React.useState(false);
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
+  const [focused, setFocused] = React.useState(false);
   const searchRef = React.useRef<HTMLDivElement>(null);
 
   const {
@@ -68,6 +75,11 @@ export function ProductSearch({
   const displayedError = isNatural ? naturalError : error;
 
   const embedded = variant === "embedded";
+  /** Idle means: nothing typed and the caret is elsewhere. */
+  const typedPlaceholder = useTypedPlaceholder(
+    placeholderPhrases ?? EMPTY_PHRASES,
+    query.length === 0 && !focused,
+  );
   const hasQuery = query.trim().length > 1;
   /** The dropdown is gated on focus in popover mode; embedded always shows. */
   const showResults = embedded ? hasQuery : resultsOpen && hasQuery;
@@ -159,7 +171,7 @@ export function ProductSearch({
             handleSubmit();
           }
         }}
-        className="flex items-center rounded-2xl border border-border bg-white px-1 py-1 shadow-[0_24px_60px_-46px_color-mix(in_oklab,var(--cobalt)_80%,transparent)]"
+        className="flex items-center gap-2 rounded-2xl border border-border bg-white px-1 py-1 shadow-[0_24px_60px_-46px_color-mix(in_oklab,var(--cobalt)_80%,transparent)]"
       >
         <label htmlFor="product-search-q" className="sr-only">
           What are you trying to solve?
@@ -185,12 +197,21 @@ export function ProductSearch({
             }}
             onKeyDown={handleKeyDown}
             onFocus={() => {
+              setFocused(true);
               if (query.trim().length > 1) setResultsOpen(true);
             }}
-            placeholder="What are you trying to solve?"
+            onBlur={() => setFocused(false)}
+            placeholder={typedPlaceholder ?? "What are you trying to solve?"}
             className="relative z-10 w-full min-w-0 bg-transparent px-3.5 py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-soft/70"
           />
         </div>
+        <button type="submit" className="pp-btn pp-btn--cobalt mc-submit">
+          Search
+          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden>
+            <circle cx="9" cy="9" r="5.4" stroke="currentColor" strokeWidth="1.7" />
+            <path d="m13.2 13.2 3.6 3.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+        </button>
       </form>
 
       {showResults && (

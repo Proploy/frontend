@@ -130,6 +130,40 @@ grep -rEn "font-family\\\\/|font-weight\\\\/|'DM_Sans:|'Inter:" app components f
 Tailwind only. No inline styles. Fonts via `var(--font-dm-sans)` and
 `var(--font-inter)`. Never `font-black`.
 
+### Never dark text on a solid blue fill
+
+Any control with a solid cobalt or ink fill carries light text. Never black,
+near-black, `var(--ink)`, or inherited body colour. This holds for every
+component, including nested spans, icons and links inside the control.
+
+**Use the design system's classes and this is handled for you:**
+
+```jsx
+<button className="pp-btn pp-btn--cobalt">Search</button>
+```
+
+`app/v2-pages.css` already guards `.pp-btn--cobalt`, `.pp-btn--primary` and
+`.pp-btn--soft[aria-pressed="true"]` with a `color:#fff` rule, a `*` rule for
+children, and `stroke:currentColor` for SVGs. Add sizing overrides in your own
+class, never the fill or the text colour.
+
+**Why a bespoke button silently breaks.** The element reset near the top of
+`app/v2-pages.css`:
+
+```css
+.pp-scope button, .pp-scope input, .pp-scope textarea, .pp-scope select { color: inherit; }
+```
+
+is specificity (0,1,1). A one-class rule like `.my-button { background: var(--cobalt); color: #fff }`
+is (0,1,0), so the reset wins and the button renders near-black text on blue.
+Nothing errors and the background still applies, so it looks intentional. The
+guarded `.pp-btn.pp-btn--cobalt` is (0,2,0), which clears the reset.
+
+If you genuinely cannot use `.pp-btn`, the bespoke rule needs at least two
+classes of specificity plus its own `*` and `svg` child rules. Verify with
+`getComputedStyle(el).color` rather than by eye: on a mid-blue fill, near-black
+text reads as "dark" in a screenshot and is easy to wave through.
+
 ## Deployment
 
 Cloud Run service `proploy-frontend` in `australia-southeast1`, built by

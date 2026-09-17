@@ -85,10 +85,13 @@ function submitForm(container: HTMLElement) {
 }
 
 describe('ProductSearch — keyword mode', () => {
-  it('has no search button — results appear as you type', async () => {
+  it('offers a submit button without making it the only way to search', async () => {
+    // Results still land as you type; the button is a second, explicit route
+    // for anyone who does not assume Enter will do it.
     const { container, unmount } = await render(<Harness />)
-    expect(container.querySelector('button[type="submit"]')).toBeNull()
-    expect(container.textContent).not.toContain('Find your software')
+    const submit = container.querySelector('button[type="submit"]')
+    expect(submit).not.toBeNull()
+    expect(submit!.textContent).toContain('Search')
     await unmount()
   })
 
