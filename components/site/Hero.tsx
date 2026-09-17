@@ -56,12 +56,9 @@ export function Hero() {
           </h1>
 
           <Reveal delay={120}>
-            <p className="pp-lede pp-mt-6" style={{ maxWidth: "46ch" }}>
-              An AI marketplace that matches your business with the right software —{" "}
-              <span style={{ color: "var(--ink)" }}>
-                and the vetted experts who make it land.
-              </span>{" "}
-              Because buying the tool was never the hard part.
+            <p className="pp-lede mc-hero-lede pp-mt-6">
+              The right software for your business,{" "}
+              <span className="mc-hero-lede-em">and the vetted experts who make it land.</span>
             </p>
           </Reveal>
 

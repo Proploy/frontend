@@ -16,30 +16,30 @@ describe('MatchConsole render smoke', () => {
     authState.user = null
   })
 
-  it('shows the bar, toggle and suggestions without any interaction', async () => {
+  it('renders one bare search bar, with no mode toggle and no results panel', async () => {
     const { container, unmount } = await render(<MatchConsole />)
 
-    expect(container.textContent).toContain('Proploy match engine')
-    // Toggle lives at the top of the card with both modes visible.
-    const toggle = container.querySelector('[aria-label="Search mode"]')
-    expect(toggle).not.toBeNull()
-    expect(toggle!.textContent).toContain('Search Software')
-    expect(toggle!.textContent).toContain('Get Recommendations')
     // The search bar is always mounted.
     expect(container.querySelector('input')).not.toBeNull()
     expect(container.querySelector('input')!.placeholder).toBe(
       'What are you trying to solve?',
     )
-    // Suggestions are visible before a query exists.
-    expect(container.textContent).toContain('Start typing — or try one')
-    // With no query there is nothing to link to, so the card ends on the
-    // search body rather than a footer strip.
-    expect(container.textContent).not.toContain('Top rated matches')
+    // The manual keyword/AI toggle is gone; the mode is read off the query.
+    expect(container.querySelector('[aria-label="Search mode"]')).toBeNull()
+    expect(container.textContent).not.toContain('Search Software')
+    expect(container.textContent).not.toContain('Get Recommendations')
+    // So is the old card chrome: header label, hint line and suggestion chips.
+    expect(container.textContent).not.toContain('Proploy match engine')
+    expect(container.textContent).not.toContain('Start typing')
+    // Nothing typed yet, so the panel has not expanded.
+    expect(container.querySelector('.mc-results')).toBeNull()
+    // An empty bar reads as keyword, so it never fires the natural endpoint.
+    expect(container.querySelector('[data-mode]')!.getAttribute('data-mode')).toBe('keyword')
     // Subtle guided route into the authenticated Sam workspace.
     const askSam = container.querySelector('a[href="/AI_workspace"]')
     expect(askSam).not.toBeNull()
     expect(askSam!.textContent).toContain('Ask Sam')
-    expect(container.textContent).toContain('Sam asks a few questions')
+    expect(container.textContent).toContain('Not sure what to search?')
 
     await unmount()
   })
@@ -51,7 +51,7 @@ describe('MatchConsole render smoke', () => {
     // The search bar stays; only the guided route into Sam is withheld.
     expect(container.querySelector('input')).not.toBeNull()
     expect(container.querySelector('a[href="/AI_workspace"]')).toBeNull()
-    expect(container.textContent).not.toContain('Sam asks a few questions')
+    expect(container.textContent).not.toContain('Not sure what to search?')
 
     await unmount()
   })

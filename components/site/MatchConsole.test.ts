@@ -1,10 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import {
-  MIN_QUERY_LENGTH,
-  isTypeThroughKey,
-} from './MatchConsole'
+import { isTypeThroughKey } from './MatchConsole'
 
 function readSource(file: string) {
   return fs.readFileSync(path.join(process.cwd(), file), 'utf8')
@@ -37,58 +34,58 @@ describe('isTypeThroughKey', () => {
 describe('MatchConsole interaction contract', () => {
   const source = readSource('components/site/MatchConsole.tsx')
 
-  it('hosts the real catalog search rather than the demo fixtures', () => {
-    // The hosted bar is the shared ProductSearch; the old products/ui list is gone.
+  it('hosts the real catalog search rather than demo fixtures', () => {
     expect(source).toContain('ProductSearch')
     expect(source).not.toContain('useProductList')
     expect(source).not.toContain('products/ui')
   })
 
-  it('places the mode toggle inside the card header so it drives the natural endpoint', () => {
-    expect(source).toContain('SearchModeToggle')
-    // "Describe what you need" must switch the real API — not be gated behind a
-    // rollout flag that silently keeps calling keyword search.
+  it('has no manual mode toggle — the mode is read off the query', () => {
+    // The toggle still exists for the products page; the landing bar must not
+    // ask the visitor to classify their own query.
+    expect(source).not.toContain('SearchModeToggle')
+    expect(source).toContain('detectSearchMode(query)')
+    // Derived, never stored: a stale mode state would keep calling the wrong
+    // endpoint after the query changed underneath it.
+    expect(source).not.toMatch(/useState[^\n]*mode/i)
+  })
+
+  it('still switches the real API rather than sitting behind a rollout flag', () => {
     expect(source).not.toContain('isNaturalSearchEnabled')
-    expect(source).toContain('value={mode}')
-    expect(source).toContain('onChange={setMode}')
+    expect(source).toContain('mode={mode}')
   })
 
-  it('keeps the search bar visible and shows suggestions until a real query exists', () => {
-    expect(source).toContain('!hasQuery && (')
-    expect(MIN_QUERY_LENGTH).toBeGreaterThan(1)
+  it('is one bar with the results expanding beneath it, not a floating dropdown', () => {
+    // `embedded` keeps results in normal flow, so the panel grows the page.
+    expect(source).toContain('variant="embedded"')
+    expect(source).toContain('listClassName="mc-results"')
+    // The old card chrome is gone: no header row, hint line or suggestion chips.
+    expect(source).not.toContain('mc-row')
+    expect(source).not.toContain('mc-suggest')
+    expect(source).not.toContain('BODY_MIN_H')
   })
 
-  it('lets the hosted search own debouncing and fallback handling', () => {
+  it('surfaces the detected mode so the switch is visible without a toggle', () => {
+    // `.mc-card[data-mode="natural"] .mc-results` tints the panel.
+    expect(source).toContain('data-mode={mode}')
+    const css = readSource('app/v2-pages.css')
+    expect(css).toContain('.mc-card[data-mode="natural"] .mc-results')
+  })
+
+  it('lets the hosted search own debouncing, fallback and the view-all link', () => {
     const searchSource = readSource('components/search/ProductSearch.tsx')
     expect(searchSource).toContain('useKeywordSearch')
     expect(searchSource).toContain('useNaturalSearch')
+    // The link into /products moved to ProductSearch with the card footer.
+    expect(searchSource).toContain('/products?search=${encodeURIComponent(value)}')
+    expect(searchSource).toContain('&mode=natural')
     // Debounce and the never-silent keyword fallback live in the shared hooks.
     const hooksSource = readSource('features/catalog/search/hooks.ts')
     expect(hooksSource).toContain('setTimeout(resolve, 200)')
   })
 
-  it('reserves the suggestion footprint so results never resize the card', () => {
-    const bodyStates = source.match(/BODY_MIN_H/g) ?? []
-    // One definition plus the embedded results list and the suggestions block.
-    expect(bodyStates.length).toBe(3)
-  })
-
-  it('uses a persistent mode state instead of demo-reel live gating', () => {
-    expect(source).not.toContain('data-live')
-    expect(source).not.toContain('if (live) return;')
-    // The card reflects the mode through `data-mode`, which `.mc-card` styles
-    // in v2-pages.css. Previously the card carried a `data-[mode=natural]`
-    // Tailwind variant but never set the attribute, so it never applied.
-    expect(source).toContain('data-mode={mode}')
-  })
-
   it('keeps hover-then-type flowing into the hosted input', () => {
     expect(source).toContain('document.addEventListener("keydown", onKeyDown)')
     expect(source).toContain('isTypeThroughKey(event.key, event)')
-  })
-
-  it('sends the view-all link to the products page in the active mode', () => {
-    expect(source).toContain('/products?search=${encodeURIComponent(trimmed)}')
-    expect(source).toContain('&mode=natural')
   })
 })
