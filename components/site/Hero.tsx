@@ -1,5 +1,7 @@
 'use client'
 
+import { Fragment } from "react";
+
 import { MatchConsole } from "./MatchConsole";
 import { Reveal } from "./Reveal";
 
@@ -11,6 +13,9 @@ const WORDS = ["Discover.", "Decide.", "Deploy.", "Done."];
  * resets, `.pp-blueprint` for the grid motif, `.pp-glow` for the ambient
  * bloom, and the `.pp-display` / `.pp-d1` / `.pp-lede` type scale. Layout and
  * the search card live in the `.mc-*` block of app/v2-pages.css.
+ *
+ * The four beats run horizontally across the container and the match console
+ * sits full width beneath them, with the social proof under that.
  */
 export function Hero() {
   return (
@@ -32,17 +37,21 @@ export function Hero() {
 
           <h1 className="pp-display pp-d1 pp-mt-6">
             {WORDS.map((w, i) => (
-              <span key={w} className="block overflow-hidden">
-                <span
-                  className="block animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both]"
-                  style={{
-                    animationDelay: `${i * 110}ms`,
-                    color: i === 3 ? "var(--cobalt)" : undefined,
-                  }}
-                >
-                  {w}
+              <Fragment key={w}>
+                <span className="mc-hero-word">
+                  <span
+                    className="block animate-[fade-in_0.9s_cubic-bezier(0.22,1,0.36,1)_both]"
+                    style={{
+                      animationDelay: `${i * 110}ms`,
+                      color: i === 3 ? "var(--cobalt)" : undefined,
+                    }}
+                  >
+                    {w}
+                  </span>
                 </span>
-              </span>
+                {/* Real whitespace, so the line can still break between beats. */}
+                {i < WORDS.length - 1 ? " " : null}
+              </Fragment>
             ))}
           </h1>
 
@@ -56,26 +65,27 @@ export function Hero() {
             </p>
           </Reveal>
 
-          <Reveal delay={280}>
-            <p className="pp-small mc-proof pp-mt-8">
-              <span className="mc-proof-dots" aria-hidden="true">
-                {[0, 1, 2, 3].map((i) => (
-                  <span key={i} style={{ opacity: 1 - i * 0.18 }} />
-                ))}
-              </span>
-              <span>
-                Join{" "}
-                <strong style={{ color: "var(--ink)", fontWeight: "var(--weight-semibold)" }}>
-                  4,000+ companies
-                </strong>{" "}
-                already growing with Proploy
-              </span>
-            </p>
-          </Reveal>
         </div>
 
         <Reveal delay={160} className="mc-hero-card">
           <MatchConsole />
+        </Reveal>
+
+        <Reveal delay={280}>
+          <p className="pp-small mc-proof">
+            <span className="mc-proof-dots" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} style={{ opacity: 1 - i * 0.18 }} />
+              ))}
+            </span>
+            <span>
+              Join{" "}
+              <strong style={{ color: "var(--ink)", fontWeight: "var(--weight-semibold)" }}>
+                4,000+ companies
+              </strong>{" "}
+              already growing with Proploy
+            </span>
+          </p>
         </Reveal>
       </div>
     </section>
