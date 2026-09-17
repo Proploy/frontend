@@ -3,11 +3,14 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { AlertTriangle, ArrowUpRight } from 'lucide-react'
-import { CARD_SHADOW } from '@/components/dashboard/DashboardChrome'
 
 /**
  * Shared dashboard primitives, used by the workspace surfaces and the
  * business design reference. Presentational only — no data source.
+ *
+ * Styling comes from the portal design system (`app/portal.css`, .pf-*), which
+ * sits on the same V2 tokens as the marketing site. The public API here is
+ * unchanged; only the rendering moved off the legacy hex palette.
  */
 export type EngagementStatus =
   | 'On track'
@@ -28,31 +31,53 @@ export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
 }
 
+/** Status → the .pf-pill tone that carries its tint, border and text colour. */
+export const STATUS_TONE: Record<EngagementStatus, string> = {
+  'On track': 'pf-pill--ok',
+  'At risk': 'pf-pill--warn',
+  Blocked: 'pf-pill--danger',
+  'In review': 'pf-pill--info',
+  Launched: 'pf-pill--violet',
+}
+
+/**
+ * Raw per-status colours, kept for callers that need a bare value (an avatar
+ * background, a progress fill) rather than a pill class. Now expressed as
+ * portal tokens instead of the legacy hex literals.
+ */
 export const STATUS_STYLES: Record<EngagementStatus, { dot: string; text: string; bg: string }> = {
-  'On track': { dot: '#17b26a', text: '#067647', bg: '#ecfdf3' },
-  'At risk': { dot: '#f79009', text: '#b54708', bg: '#fffaeb' },
-  Blocked: { dot: '#f04438', text: '#b42318', bg: '#fef3f2' },
-  'In review': { dot: '#155eef', text: '#004eeb', bg: '#eff4ff' },
-  Launched: { dot: '#7f56d9', text: '#6941c6', bg: '#f4f3ff' },
+  'On track': { dot: 'var(--ok)', text: 'var(--ok)', bg: 'var(--ok-soft)' },
+  'At risk': { dot: 'var(--warn)', text: 'var(--warn)', bg: 'var(--warn-soft)' },
+  Blocked: { dot: 'var(--danger)', text: 'var(--danger)', bg: 'var(--danger-soft)' },
+  'In review': { dot: 'var(--cobalt)', text: 'var(--cobalt-deep)', bg: 'var(--cobalt-soft)' },
+  Launched: { dot: 'var(--violet)', text: 'var(--violet)', bg: 'var(--violet-soft)' },
 }
 
 export function StatusPill({ status }: { status: EngagementStatus }) {
-  const s = STATUS_STYLES[status]
-  return (
-    <span
-      className="inline-flex shrink-0 items-center gap-[6px] rounded-full px-[10px] py-[3px] text-[12px] font-semibold leading-[18px]"
-      style={{ background: s.bg, color: s.text }}
-    >
-      <span className="size-[6px] rounded-full" style={{ background: s.dot }} />
-      {status}
-    </span>
-  )
+  return <span className={`pf-pill pf-pill--dot ${STATUS_TONE[status]}`}>{status}</span>
 }
 
-export function ProgressBar({ value, color = '#155eef' }: { value: number; color?: string }) {
+export function ProgressBar({
+  value,
+  tone = '',
+  color,
+}: {
+  value: number
+  /** A `.pf-bar--*` modifier. */
+  tone?: string
+  /** Explicit fill colour; overrides `tone`. */
+  color?: string
+}) {
+  const clamped = Math.max(0, Math.min(100, value))
   return (
-    <div className="h-[6px] w-full overflow-hidden rounded-full bg-[#f0f0f1]">
-      <div className="h-full rounded-full" style={{ width: `${value}%`, background: color }} />
+    <div
+      className={`pf-bar ${tone}`}
+      role="progressbar"
+      aria-valuenow={clamped}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <span style={{ width: `${clamped}%`, ...(color ? { background: color } : null) }} />
     </div>
   )
 }
@@ -69,25 +94,18 @@ export function SectionCard({
   className?: string
 }) {
   return (
-    <section className={`rounded-[12px] border border-[#e9eaeb] bg-white ${CARD_SHADOW} ${className}`}>
+    <section className={`pf-card overflow-hidden ${className}`}>
       {(title || action) && (
-        <div className="flex items-center justify-between gap-[12px] border-b border-[#f0f0f1] px-[20px] py-[16px]">
-          {title && <h2 className="font-semibold text-[16px] leading-[24px] text-[#181d27]">{title}</h2>}
+        <div className="pf-card-head">
+          {title && <h2 className="pf-h2 truncate">{title}</h2>}
           {action?.href && (
-            <Link
-              href={action.href}
-              className="inline-flex items-center gap-[4px] text-[13px] font-semibold leading-[18px] text-[#004eeb] hover:text-[#155eef]"
-            >
+            <Link href={action.href} className="pf-linkarrow shrink-0">
               {action.label}
               <ArrowUpRight size={14} />
             </Link>
           )}
-          {action?.onClick && (
-            <button
-              type="button"
-              onClick={action.onClick}
-              className="inline-flex items-center gap-[4px] text-[13px] font-semibold leading-[18px] text-[#004eeb] hover:text-[#155eef]"
-            >
+          {action?.onClick && !action.href && (
+            <button type="button" onClick={action.onClick} className="pf-linkarrow shrink-0">
               {action.label}
               <ArrowUpRight size={14} />
             </button>
@@ -122,45 +140,42 @@ export function KpiCard({
 }) {
   const inner = (
     <>
-      <div className="flex items-center justify-between">
-        <span className="flex size-[36px] items-center justify-center rounded-[8px] bg-[#eff4ff] text-[#155eef]">
-          {icon}
-        </span>
+      <div className="pf-kpi-top">
+        <span className="pf-kpi-label">{label}</span>
         {error ? (
-          <span title={error.message} className="text-[#b42318]" aria-label="error">
-            <AlertTriangle size={16} />
+          <span title={error.message} className="text-danger" aria-label="error">
+            <AlertTriangle size={15} />
           </span>
         ) : (
-          href && <ArrowUpRight size={16} className="text-[#a4a7ae] transition-colors group-hover:text-[#155eef]" />
+          <span className="pf-ico pf-ico--sm pf-ico--soft">{icon}</span>
         )}
       </div>
-      <div className="flex flex-col gap-[2px]">
-        <p className="text-[14px] font-medium leading-[20px] text-[#535862]">{label}</p>
-        {isLoading && loadingSlot ? (
-          loadingSlot
-        ) : (
-          <p className="font-semibold text-[28px] leading-[36px] text-[#181d27] tracking-[-0.02em]">{value}</p>
-        )}
-        <p className="text-[12px] leading-[18px] text-[#717680]">{sub}</p>
+      <div>
+        {isLoading && loadingSlot ? loadingSlot : <span className="pf-kpi-value block">{value}</span>}
+        <span className="pf-kpi-foot mt-[6px]">{sub}</span>
       </div>
     </>
   )
-  const cls = `group flex h-full flex-col gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`
   if (href) {
     return (
-      <Link href={href} className={`${cls} transition-colors hover:border-[#d5d7da]`}>
+      <Link href={href} className="pf-kpi">
         {inner}
       </Link>
     )
   }
-  return <div className={cls}>{inner}</div>
+  return <div className="pf-kpi">{inner}</div>
 }
 
-export function Avatar({ initial, color, size = 34 }: { initial: string; color: string; size?: number }) {
+export function Avatar({ initial, color, size = 34 }: { initial: string; color?: string; size?: number }) {
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
-      style={{ background: color, width: size, height: size, fontSize: size * 0.4 }}
+      className={`pf-avatar ${color ? '' : 'pf-avatar--soft'}`}
+      style={{
+        ...(color ? { background: color } : null),
+        width: size,
+        height: size,
+        fontSize: size * 0.4,
+      }}
     >
       {initial}
     </span>

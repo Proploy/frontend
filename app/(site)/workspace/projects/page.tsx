@@ -25,8 +25,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -67,30 +66,30 @@ const SUBITEM_COLUMNS: Array<{
   {
     status: 'open',
     label: 'Open',
-    panelClass: 'border-[#b2ccff] bg-[#f5f8ff]',
-    headerClass: 'bg-[#eaf2ff] text-[#155eef]',
-    dotClass: 'bg-[#155eef]',
+    panelClass: 'border-cobalt-soft bg-cobalt-soft',
+    headerClass: 'bg-cobalt-soft text-cobalt',
+    dotClass: 'bg-cobalt',
   },
   {
     status: 'in_progress',
     label: 'In progress',
-    panelClass: 'border-[#fedf89] bg-[#fffcf5]',
-    headerClass: 'bg-[#fff4cc] text-[#b54708]',
-    dotClass: 'bg-[#b54708]',
+    panelClass: 'border-warn-line bg-warn-soft',
+    headerClass: 'bg-warn-soft text-warn',
+    dotClass: 'bg-warn',
   },
   {
     status: 'completed',
     label: 'Completed',
-    panelClass: 'border-[#a6f4c5] bg-[#f3fdf7]',
-    headerClass: 'bg-[#dcfae6] text-[#067647]',
-    dotClass: 'bg-[#067647]',
+    panelClass: 'border-ok-line bg-ok-soft',
+    headerClass: 'bg-ok-soft text-ok',
+    dotClass: 'bg-ok',
   },
   {
     status: 'cancelled',
     label: 'Cancelled',
-    panelClass: 'border-[#fecdca] bg-[#fff8f7]',
-    headerClass: 'bg-[#fee4e2] text-[#b42318]',
-    dotClass: 'bg-[#b42318]',
+    panelClass: 'border-danger-line bg-danger-soft',
+    headerClass: 'bg-danger-soft text-danger',
+    dotClass: 'bg-danger',
   },
 ]
 
@@ -685,17 +684,18 @@ export default function WorkspaceProjectsPage() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
-          <div className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <FolderClosed size={22} className="text-[#155eef]" />
-              Projects
-            </h1>
+        <header className="pf-pagebar">
+          <div className="flex min-w-0 items-center gap-[14px]">
+            <span className="pf-ico pf-ico--lg pf-ico--soft"><FolderClosed size={20} /></span>
+            <div className="pf-pagebar-text">
+              <span className="pf-eyebrow">Workspace</span>
+              <h1 className="pf-title truncate">Projects</h1>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-[8px]">
             <Link
               href="/workspace/proposals"
-              className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] ${BUTTON_SKEUO}`}
+              className="pf-btn pf-btn--secondary"
             >
               {proposalCount} proposals awaiting review
             </Link>
@@ -703,7 +703,7 @@ export default function WorkspaceProjectsPage() {
               <button
                 type="button"
                 onClick={() => setShowCreate((open) => !open)}
-                className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--primary"
               >
                 <FolderClosed size={16} /> {showCreate ? 'Close' : 'New project'}
               </button>
@@ -712,78 +712,78 @@ export default function WorkspaceProjectsPage() {
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message || 'Unable to refresh projects.'}
           </div>
         )}
 
         {showCreate && (
-          <form onSubmit={createProject} className="border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
+          <form onSubmit={createProject} className="border-b border-line bg-white px-[24px] py-[20px]">
             <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-[12px] lg:grid-cols-[1fr_1fr_180px_180px]">
               <Field label="Confirmed engagement">
-                <select value={form.engagementId} onChange={(event) => setForm((current) => ({ ...current, engagementId: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px]">
+                <select value={form.engagementId} onChange={(event) => setForm((current) => ({ ...current, engagementId: event.target.value }))} className="rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px]">
                   <option value="">Select engagement</option>
                   {eligibleEngagements.map((engagement) => <option key={engagement.id} value={engagement.id}>{engagementTitle(engagement, state.role)}</option>)}
                 </select>
               </Field>
               <Field label="Title">
-                <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Website implementation" className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Website implementation" className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
               </Field>
               <Field label="Budget USD">
-                <input type="number" min="0" step="100" value={form.budget} onChange={(event) => setForm((current) => ({ ...current, budget: event.target.value }))} placeholder="40000" className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                <input type="number" min="0" step="100" value={form.budget} onChange={(event) => setForm((current) => ({ ...current, budget: event.target.value }))} placeholder="40000" className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
               </Field>
               <Field label="Duration">
-                <input value={form.estimatedDuration} onChange={(event) => setForm((current) => ({ ...current, estimatedDuration: event.target.value }))} placeholder="6 weeks" className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                <input value={form.estimatedDuration} onChange={(event) => setForm((current) => ({ ...current, estimatedDuration: event.target.value }))} placeholder="6 weeks" className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
               </Field>
             </div>
             <div className="mx-auto mt-[12px] grid max-w-[1180px] grid-cols-1 gap-[12px] lg:grid-cols-2">
               <Field label="Summary">
-                <textarea rows={2} value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Outcome for this project" className="resize-y rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                <textarea rows={2} value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Outcome for this project" className="resize-y rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
               </Field>
               <Field label="Scope">
-                <textarea rows={2} value={form.scope} onChange={(event) => setForm((current) => ({ ...current, scope: event.target.value }))} placeholder="Deliverables and acceptance criteria" className="resize-y rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]" />
+                <textarea rows={2} value={form.scope} onChange={(event) => setForm((current) => ({ ...current, scope: event.target.value }))} placeholder="Deliverables and acceptance criteria" className="resize-y rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]" />
               </Field>
             </div>
-            <div className="mx-auto mt-[16px] max-w-[1180px] rounded-[12px] border border-[#dbeafe] bg-[#f8fbff] p-[16px]">
+            <div className="mx-auto mt-[16px] max-w-[1180px] rounded-[12px] border border-cobalt-soft bg-cobalt-soft p-[16px]">
               <div className="flex flex-wrap items-start justify-between gap-[10px]">
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#181d27]">Milestone breakdown</h3>
+                  <h3 className="pf-h2">Milestone breakdown</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setForm((current) => ({ ...current, milestones: [...current.milestones, { id: crypto.randomUUID(), title: '', summary: '', dueAt: '' }] }))}
-                  className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#bfd4ff] bg-white px-[10px] py-[7px] text-[12px] font-semibold text-[#155eef] ${BUTTON_SKEUO}`}
+                  className="pf-btn pf-btn--secondary pf-btn--sm"
                 >
                   <Plus size={14} /> Add milestone
                 </button>
               </div>
               <div className="mt-[12px] flex flex-col gap-[10px]">
                 {form.milestones.map((milestone, index) => (
-                  <div key={milestone.id} className="grid gap-[10px] rounded-[10px] border border-[#e4e7ec] bg-white p-[12px] md:grid-cols-[1fr_1fr_190px_auto]">
+                  <div key={milestone.id} className="grid gap-[10px] rounded-[10px] border border-line bg-white p-[12px] md:grid-cols-[1fr_1fr_190px_auto]">
                     <input
                       value={milestone.title}
                       onChange={(event) => setForm((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) }))}
                       placeholder="Milestone title"
-                      className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[9px] text-[13px]"
+                      className="rounded-[8px] border border-line px-[10px] py-[9px] text-[13px]"
                     />
                     <input
                       value={milestone.summary}
                       onChange={(event) => setForm((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, summary: event.target.value } : item) }))}
                       placeholder="What will be delivered"
-                      className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[9px] text-[13px]"
+                      className="rounded-[8px] border border-line px-[10px] py-[9px] text-[13px]"
                     />
 	                    <input
 	                      type="datetime-local"
 	                      aria-label={`Milestone ${index + 1} due date`}
 	                      value={milestone.dueAt}
                       onChange={(event) => setForm((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, dueAt: event.target.value } : item) }))}
-                      className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[9px] text-[13px]"
+                      className="rounded-[8px] border border-line px-[10px] py-[9px] text-[13px]"
                     />
                     <button
                       type="button"
                       onClick={() => setForm((current) => ({ ...current, milestones: current.milestones.length === 1 ? [{ id: crypto.randomUUID(), title: '', summary: '', dueAt: '' }] : current.milestones.filter((_, itemIndex) => itemIndex !== index) }))}
                       aria-label={`Remove milestone ${index + 1}`}
-                      className={`inline-flex items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white px-[9px] py-[8px] text-[#b42318] ${BUTTON_SKEUO}`}
+                      className="pf-btn pf-btn--danger pf-btn--sm"
                     >
                       <XCircle size={16} />
                     </button>
@@ -792,7 +792,7 @@ export default function WorkspaceProjectsPage() {
               </div>
             </div>
             <div className="mx-auto mt-[12px] flex max-w-[1180px] justify-end">
-              <button type="submit" disabled={busyId === 'new'} className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+              <button type="submit" disabled={busyId === 'new'} className="pf-btn pf-btn--primary">
                 <FolderClosed size={17} /> {busyId === 'new' ? 'Creating…' : 'Create draft project'}
               </button>
             </div>
@@ -800,14 +800,14 @@ export default function WorkspaceProjectsPage() {
         )}
 
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[360px] xl:shrink-0 xl:border-b-0 xl:border-r">
-            <div className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] px-[16px] py-[14px]">
-              <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">Shared projects</p>
-              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-[#155eef]" />}
+          <section className="flex flex-col border-b border-line bg-white xl:w-[360px] xl:shrink-0 xl:border-b-0 xl:border-r">
+            <div className="flex items-center justify-between gap-[12px] border-b border-line px-[16px] py-[14px]">
+              <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">Shared projects</p>
+              {loading && <RefreshCw size={16} className="shrink-0 animate-spin text-cobalt" />}
             </div>
             <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
               {projects.length === 0 && (
-                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">
                   No projects yet. Create one from a confirmed engagement.
                 </p>
               )}
@@ -819,18 +819,18 @@ export default function WorkspaceProjectsPage() {
                     type="button"
                     onClick={() => selectProject(project.id)}
                     className={`rounded-[10px] border p-[12px] text-left transition-colors ${
-                      active ? 'border-[#155eef] bg-[#f5f8ff]' : 'border-transparent hover:bg-[#fafafa]'
+                      active ? 'border-cobalt bg-cobalt-soft' : 'border-transparent hover:bg-surface-hover'
                     }`}
                   >
-                    <span className="block truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                    <span className="block truncate text-[14px] font-semibold leading-[20px] text-ink">
                       {project.title}
                     </span>
-                    <span className="mt-[2px] block line-clamp-2 text-[13px] leading-[18px] text-[#535862]">
+                    <span className="mt-[2px] block line-clamp-2 text-[13px] leading-[18px] text-ink-soft">
                       {project.summary}
                     </span>
                     <div className="mt-[10px] flex items-center justify-between gap-[8px]">
                       <ProjectStatusBadge status={project.status} />
-                      <span className="text-[12px] leading-[18px] text-[#717680]">{relativeDate(project.updatedAt)}</span>
+                      <span className="text-[12px] leading-[18px] text-ink-muted">{relativeDate(project.updatedAt)}</span>
                     </div>
                   </button>
                 )
@@ -841,17 +841,17 @@ export default function WorkspaceProjectsPage() {
           <section className="min-w-0 flex-1 overflow-y-auto bg-white p-[24px]">
             {selected ? (
               <div className="mx-auto flex max-w-[920px] flex-col gap-[16px]">
-                <article className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-                  <div className="flex flex-wrap items-start justify-between gap-[16px] border-b border-[#e9eaeb] px-[32px] py-[28px]">
+                <article className="pf-card">
+                  <div className="pf-pagebar !static">
                     <div>
                       <ProjectStatusBadge status={selected.status} />
-                      <h2 className="mt-[12px] text-[24px] font-semibold leading-[32px] text-[#181d27]">{selected.title}</h2>
-                      <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">{selected.summary}</p>
+                      <h2 className="pf-title mt-[12px]">{selected.title}</h2>
+                      <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">{selected.summary}</p>
                     </div>
                     {selected.status === 'accepted' && (
                       <Link
                         href="/workspace/messages"
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--primary"
                       >
                         <MessageSquare size={16} />
                         Open messages
@@ -859,32 +859,32 @@ export default function WorkspaceProjectsPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 gap-px border-b border-[#e9eaeb] bg-[#e9eaeb] sm:grid-cols-3">
-                    <FactCell icon={<Wallet size={16} className="text-[#717680]" />} label="Budget">
+                  <div className="grid grid-cols-1 gap-px border-b border-line bg-line sm:grid-cols-3">
+                    <FactCell icon={<Wallet size={16} className="text-ink-muted" />} label="Budget">
                       {money(selected.budgetCents)}
                     </FactCell>
-                    <FactCell icon={<CalendarDays size={16} className="text-[#717680]" />} label="Duration">
+                    <FactCell icon={<CalendarDays size={16} className="text-ink-muted" />} label="Duration">
                       {selected.estimatedDuration || 'Not set'}
                     </FactCell>
-                    <FactCell icon={<CheckCircle2 size={16} className="text-[#717680]" />} label="Accepted">
+                    <FactCell icon={<CheckCircle2 size={16} className="text-ink-muted" />} label="Accepted">
                       {longDate(selected.buyerAcceptedAt ?? selected.expertAcceptedAt)}
                     </FactCell>
                   </div>
 
                 </article>
 
-                <section className={`rounded-[16px] border border-[#dbeafe] bg-[#f8fbff] p-[16px] ${CARD_SHADOW}`}>
+                <section className="pf-card !bg-cobalt-soft !border-cobalt-soft p-[16px]">
                   <div className="flex flex-wrap items-center justify-between gap-[12px]">
                     <div>
-                      <h3 className="flex items-center gap-[8px] text-[15px] font-semibold leading-[22px] text-[#181d27]"><FileText size={17} className="text-[#155eef]" /> Signed contract</h3>
-                      <p className="mt-[3px] text-[13px] leading-[19px] text-[#535862]">The private signed contract for this engagement is available to both project parties.</p>
+                      <h3 className="pf-h2 flex items-center gap-[8px]"><FileText size={17} className="text-cobalt" /> Signed contract</h3>
+                      <p className="mt-[3px] text-[13px] leading-[19px] text-ink-soft">The private signed contract for this engagement is available to both project parties.</p>
                     </div>
                     {signedDocumentUrl ? (
-                      <button type="button" onClick={() => setSignedDocumentPreviewOpen(true)} className={`inline-flex items-center gap-[7px] rounded-[8px] bg-white px-[11px] py-[8px] text-[13px] font-semibold text-[#155eef] ${BUTTON_SKEUO}`}>
+                      <button type="button" onClick={() => setSignedDocumentPreviewOpen(true)} className="pf-btn pf-btn--secondary pf-btn--sm">
                         <Eye size={15} /> Open signed document
                       </button>
                     ) : (
-                      <button type="button" onClick={() => void loadSignedDocument(selected.id)} disabled={documentLoading} className={`inline-flex items-center gap-[7px] rounded-[8px] bg-white px-[11px] py-[8px] text-[13px] font-semibold text-[#155eef] disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                      <button type="button" onClick={() => void loadSignedDocument(selected.id)} disabled={documentLoading} className="pf-btn pf-btn--secondary pf-btn--sm">
                         <Eye size={15} /> {documentLoading ? 'Loading…' : 'View signed document'}
                       </button>
                     )}
@@ -892,22 +892,22 @@ export default function WorkspaceProjectsPage() {
                 </section>
 
                 {selected.status !== 'accepted' && (
-                  <div className={`flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[16px] ${CARD_SHADOW}`}>
-                    <p className="text-[13px] leading-[18px] text-[#535862]">
+                  <div className="pf-card flex flex-wrap items-center justify-between gap-[12px] p-[16px]">
+                    <p className="text-[13px] leading-[18px] text-ink-soft">
                       {selected.status === 'draft' ? 'The expert can submit this draft so the buyer can review it.' : selected.status === 'proposed' ? 'The buyer must approve this submitted project before delivery begins.' : selected.status === 'declined' ? 'The buyer declined this project. Revise the draft and resubmit it for review.' : 'This project is not currently active.'}
                     </p>
                     <div className="flex flex-wrap gap-[8px]">
                       {(selected.status === 'draft' || selected.status === 'declined') && state.role === 'expert' && selected.createdByUserId === state.user.id && (
-                        <button type="button" onClick={() => void submitProject(selected.id)} disabled={busyId === selected.id} className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                        <button type="button" onClick={() => void submitProject(selected.id)} disabled={busyId === selected.id} className="pf-btn pf-btn--primary">
                           <Send size={16} /> {selected.status === 'declined' ? 'Resubmit project' : 'Submit project'}
                         </button>
                       )}
                       {selected.status === 'proposed' && state.role === 'buyer' && (
                         <>
-                          <button type="button" onClick={() => void decideProject(selected.id, 'decline')} disabled={busyId === selected.id} className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold text-[#414651] disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                          <button type="button" onClick={() => void decideProject(selected.id, 'decline')} disabled={busyId === selected.id} className="pf-btn pf-btn--secondary">
                             <XCircle size={16} /> Decline
                           </button>
-                          <button type="button" onClick={() => void decideProject(selected.id, 'accept')} disabled={busyId === selected.id} className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                          <button type="button" onClick={() => void decideProject(selected.id, 'accept')} disabled={busyId === selected.id} className="pf-btn pf-btn--primary">
                             <CheckCircle2 size={16} /> Accept
                           </button>
                         </>
@@ -917,51 +917,51 @@ export default function WorkspaceProjectsPage() {
                 )}
 
                 {canEditSelectedProject ? (
-                  <section className={`rounded-[16px] border border-[#dbeafe] bg-[#f8fbff] p-[20px] ${CARD_SHADOW}`}>
+                  <section className="pf-card !bg-cobalt-soft !border-cobalt-soft p-[20px]">
                     <div className="flex flex-wrap items-start justify-between gap-[10px]">
                       <div>
-                        <h3 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">{selected.status === 'declined' ? 'Revise and resubmit project' : 'Edit project draft'}</h3>
-                        <p className="mt-[3px] text-[13px] leading-[19px] text-[#535862]">Save your changes, then use the same {selected.status === 'declined' ? 'resubmit' : 'submit'} button above to send the project back to the buyer.</p>
+                        <h3 className="pf-h2">{selected.status === 'declined' ? 'Revise and resubmit project' : 'Edit project draft'}</h3>
+                        <p className="mt-[3px] text-[13px] leading-[19px] text-ink-soft">Save your changes, then use the same {selected.status === 'declined' ? 'resubmit' : 'submit'} button above to send the project back to the buyer.</p>
                       </div>
-                      <button type="button" onClick={() => beginProjectEdit(selected)} className={`inline-flex items-center gap-[7px] rounded-[8px] border border-[#b2ccff] bg-white px-[11px] py-[8px] text-[13px] font-semibold text-[#155eef] ${BUTTON_SKEUO}`}>
+                      <button type="button" onClick={() => beginProjectEdit(selected)} className="pf-btn pf-btn--secondary pf-btn--sm">
                         <PenLine size={15} /> {editingProjectId === selected.id ? 'Editing' : 'Edit project'}
                       </button>
                     </div>
                     {editingProjectId === selected.id ? (
                       <div className="mt-[14px] grid gap-[12px] md:grid-cols-2">
-                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-[#414651]">Title<input value={projectEditForm.title} onChange={(event) => setProjectEditForm((current) => ({ ...current, title: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] font-normal text-[#181d27]" /></label>
-                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-[#414651]">Budget USD<input type="number" min="0" step="100" value={projectEditForm.budget} onChange={(event) => setProjectEditForm((current) => ({ ...current, budget: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] font-normal text-[#181d27]" /></label>
-                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-[#414651]">Duration<input value={projectEditForm.estimatedDuration} onChange={(event) => setProjectEditForm((current) => ({ ...current, estimatedDuration: event.target.value }))} className="rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] font-normal text-[#181d27]" /></label>
-                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-[#414651]">Summary<textarea rows={3} value={projectEditForm.summary} onChange={(event) => setProjectEditForm((current) => ({ ...current, summary: event.target.value }))} className="resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] font-normal text-[#181d27]" /></label>
-                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-[#414651] md:col-span-2">Scope<textarea rows={4} value={projectEditForm.scope} onChange={(event) => setProjectEditForm((current) => ({ ...current, scope: event.target.value }))} className="resize-y rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[9px] text-[13px] font-normal text-[#181d27]" /></label>
-                        <div className="flex justify-end gap-[8px] md:col-span-2"><button type="button" onClick={() => setEditingProjectId(null)} className={`rounded-[8px] border border-[#d5d7da] bg-white px-[11px] py-[8px] text-[13px] font-semibold text-[#414651] ${BUTTON_SKEUO}`}>Cancel</button><button type="button" onClick={() => void saveProjectChanges()} disabled={busyId === `project-edit:${selected.id}`} className={`inline-flex items-center gap-[7px] rounded-[8px] bg-[#155eef] px-[12px] py-[8px] text-[13px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}><Save size={15} /> {busyId === `project-edit:${selected.id}` ? 'Saving…' : 'Save changes'}</button></div>
+                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-ink-soft">Title<input value={projectEditForm.title} onChange={(event) => setProjectEditForm((current) => ({ ...current, title: event.target.value }))} className="rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] font-normal text-ink" /></label>
+                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-ink-soft">Budget USD<input type="number" min="0" step="100" value={projectEditForm.budget} onChange={(event) => setProjectEditForm((current) => ({ ...current, budget: event.target.value }))} className="rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] font-normal text-ink" /></label>
+                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-ink-soft">Duration<input value={projectEditForm.estimatedDuration} onChange={(event) => setProjectEditForm((current) => ({ ...current, estimatedDuration: event.target.value }))} className="rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] font-normal text-ink" /></label>
+                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-ink-soft">Summary<textarea rows={3} value={projectEditForm.summary} onChange={(event) => setProjectEditForm((current) => ({ ...current, summary: event.target.value }))} className="resize-y rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] font-normal text-ink" /></label>
+                        <label className="flex flex-col gap-[6px] text-[12px] font-semibold text-ink-soft md:col-span-2">Scope<textarea rows={4} value={projectEditForm.scope} onChange={(event) => setProjectEditForm((current) => ({ ...current, scope: event.target.value }))} className="resize-y rounded-[8px] border border-line bg-white px-[11px] py-[9px] text-[13px] font-normal text-ink" /></label>
+                        <div className="flex justify-end gap-[8px] md:col-span-2"><button type="button" onClick={() => setEditingProjectId(null)} className="pf-btn pf-btn--secondary pf-btn--sm">Cancel</button><button type="button" onClick={() => void saveProjectChanges()} disabled={busyId === `project-edit:${selected.id}`} className="pf-btn pf-btn--primary pf-btn--sm"><Save size={15} /> {busyId === `project-edit:${selected.id}` ? 'Saving…' : 'Save changes'}</button></div>
                       </div>
                     ) : null}
                   </section>
                 ) : null}
 
-                <section className={`rounded-[16px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
+                <section className="pf-card p-[20px]">
                   <div className="flex items-center justify-between gap-[12px]">
                     <div>
-                      <h3 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">Progress</h3>
+                      <h3 className="pf-h2">Progress</h3>
                     </div>
-                    <span className="inline-flex items-center gap-[6px] rounded-full bg-[#ecfdf3] px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-[#067647]">
+                    <span className="inline-flex items-center gap-[6px] rounded-full bg-ok-soft px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-ok">
                       <span className="size-[6px] rounded-full bg-current" />
                       Active
                     </span>
                   </div>
                 </section>
 
-                <section className={`rounded-[16px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
+                <section className="pf-card p-[20px]">
                   <div className="flex flex-wrap items-start justify-between gap-[12px]">
                     <div>
-                      <h3 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">Milestones</h3>
+                      <h3 className="pf-h2">Milestones</h3>
                     </div>
                     {canCreateMilestone && (
                       <button
                         type="button"
                         onClick={() => setShowMilestoneCreate((open) => !open)}
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[12px] py-[9px] text-[13px] font-semibold text-white ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--primary pf-btn--sm"
                       >
                         <Plus size={16} /> {showMilestoneCreate ? 'Close' : 'New milestone'}
                       </button>
@@ -969,13 +969,13 @@ export default function WorkspaceProjectsPage() {
                   </div>
 
                   {showMilestoneCreate && (
-                    <form onSubmit={createMilestone} className="mt-[16px] grid gap-[10px] border-t border-[#e9eaeb] pt-[16px]">
+                    <form onSubmit={createMilestone} className="mt-[16px] grid gap-[10px] border-t border-line pt-[16px]">
                       <Field label="Milestone title">
                         <input
                           value={milestoneForm.title}
                           onChange={(event) => setMilestoneForm((current) => ({ ...current, title: event.target.value }))}
                           placeholder="Data migration complete"
-                          className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]"
+                          className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]"
                         />
                       </Field>
                       <div className="grid gap-[10px] sm:grid-cols-[1fr_220px]">
@@ -985,7 +985,7 @@ export default function WorkspaceProjectsPage() {
                             value={milestoneForm.summary}
                             onChange={(event) => setMilestoneForm((current) => ({ ...current, summary: event.target.value }))}
                             placeholder="What will be delivered"
-                            className="resize-y rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]"
+                            className="resize-y rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]"
                           />
                         </Field>
                         <Field label="Due date">
@@ -993,7 +993,7 @@ export default function WorkspaceProjectsPage() {
                             type="datetime-local"
                             value={milestoneForm.dueAt}
                             onChange={(event) => setMilestoneForm((current) => ({ ...current, dueAt: event.target.value }))}
-                            className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]"
+                            className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]"
                           />
                         </Field>
                       </div>
@@ -1001,7 +1001,7 @@ export default function WorkspaceProjectsPage() {
                         <button
                           type="submit"
                           disabled={busyId === 'milestone:new'}
-                          className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[13px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--primary pf-btn--sm"
                         >
                           <Plus size={16} /> {busyId === 'milestone:new' ? 'Creating…' : 'Create milestone'}
                         </button>
@@ -1011,7 +1011,7 @@ export default function WorkspaceProjectsPage() {
 
                   <div className="mt-[16px] flex flex-col gap-[10px]">
                     {visibleMilestones.length === 0 && (
-                      <p className="rounded-[10px] border border-dashed border-[#d5d7da] bg-white px-[12px] py-[16px] text-[13px] leading-[18px] text-[#717680]">
+                      <p className="rounded-[10px] border border-dashed border-line bg-white px-[12px] py-[16px] text-[13px] leading-[18px] text-ink-muted">
                         No milestones yet. Add the first deliverable for this project.
                       </p>
                     )}
@@ -1029,27 +1029,27 @@ export default function WorkspaceProjectsPage() {
                             </span>
                             {milestoneIndex < visibleMilestones.length - 1 && <span className={`absolute left-1/2 top-[28px] h-[calc(100%+10px)] w-[2px] -translate-x-1/2 ${presentation.connectorClass}`} />}
                           </div>
-                          <div className="min-w-0 flex-1 rounded-[12px] border border-[#e9eaeb] bg-white p-[14px]">
+                          <div className="min-w-0 flex-1 rounded-[12px] border border-line bg-white p-[14px]">
                             <div className="flex flex-wrap items-start justify-between gap-[10px]">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-[8px]">
-                                  <p className="text-[14px] font-semibold leading-[20px] text-[#181d27]">{milestone.title}</p>
+                                  <p className="text-[14px] font-semibold leading-[20px] text-ink">{milestone.title}</p>
                                   <span className={`inline-flex items-center gap-[6px] rounded-full px-[8px] py-[2px] text-[12px] font-medium leading-[18px] ${presentation.badgeClass}`}>
                                     <span className="size-[6px] rounded-full bg-current" />
                                     {presentation.label}
                                   </span>
                                 </div>
-                                {milestone.summary && <p className="mt-[3px] text-[13px] leading-[18px] text-[#535862]">{milestone.summary}</p>}
-                                {milestone.dueAt && <p className="mt-[6px] text-[12px] leading-[18px] text-[#717680]">Due {longDate(milestone.dueAt)}</p>}
+                                {milestone.summary && <p className="mt-[3px] text-[13px] leading-[18px] text-ink-soft">{milestone.summary}</p>}
+                                {milestone.dueAt && <p className="mt-[6px] text-[12px] leading-[18px] text-ink-muted">Due {longDate(milestone.dueAt)}</p>}
                               </div>
                             </div>
                           {editingMilestoneId === milestone.id && canEdit && (
-                            <div className="mt-[12px] grid gap-[10px] border-t border-[#f2f4f7] pt-[12px]">
+                            <div className="mt-[12px] grid gap-[10px] border-t border-line-soft pt-[12px]">
                               <Field label="Milestone title">
                                 <input
                                   value={milestoneEditForm.title}
                                   onChange={(event) => setMilestoneEditForm((current) => ({ ...current, title: event.target.value }))}
-                                  className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[8px] text-[13px]"
+                                  className="rounded-[8px] border border-line px-[10px] py-[8px] text-[13px]"
                                 />
                               </Field>
                               <div className="grid gap-[10px] sm:grid-cols-[1fr_220px]">
@@ -1058,7 +1058,7 @@ export default function WorkspaceProjectsPage() {
                                     rows={2}
                                     value={milestoneEditForm.summary}
                                     onChange={(event) => setMilestoneEditForm((current) => ({ ...current, summary: event.target.value }))}
-                                    className="resize-y rounded-[8px] border border-[#d5d7da] px-[10px] py-[8px] text-[13px]"
+                                    className="resize-y rounded-[8px] border border-line px-[10px] py-[8px] text-[13px]"
                                   />
                                 </Field>
                                 <Field label="Due date">
@@ -1066,34 +1066,34 @@ export default function WorkspaceProjectsPage() {
                                     type="datetime-local"
                                     value={milestoneEditForm.dueAt}
                                     onChange={(event) => setMilestoneEditForm((current) => ({ ...current, dueAt: event.target.value }))}
-                                    className="rounded-[8px] border border-[#d5d7da] px-[10px] py-[8px] text-[13px]"
+                                    className="rounded-[8px] border border-line px-[10px] py-[8px] text-[13px]"
                                   />
                                 </Field>
                               </div>
                               <div className="flex justify-end gap-[8px]">
-                                <button type="button" onClick={() => setEditingMilestoneId(null)} className={`rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[12px] font-semibold text-[#414651] ${BUTTON_SKEUO}`}>Cancel</button>
-                                <button type="button" onClick={() => void updateMilestone(milestone.id)} disabled={busyId === `milestone-edit:${milestone.id}`} className={`inline-flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[10px] py-[7px] text-[12px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                                <button type="button" onClick={() => setEditingMilestoneId(null)} className="pf-btn pf-btn--secondary pf-btn--sm">Cancel</button>
+                                <button type="button" onClick={() => void updateMilestone(milestone.id)} disabled={busyId === `milestone-edit:${milestone.id}`} className="pf-btn pf-btn--primary pf-btn--sm">
                                   <Save size={14} /> {busyId === `milestone-edit:${milestone.id}` ? 'Saving…' : 'Save changes'}
                                 </button>
                               </div>
                             </div>
                           )}
-                          <div className="mt-[12px] flex flex-wrap items-center justify-between gap-[10px] border-t border-[#f2f4f7] pt-[10px]">
-                            <p className="text-[12px] leading-[18px] text-[#717680]">
+                          <div className="mt-[12px] flex flex-wrap items-center justify-between gap-[10px] border-t border-line-soft pt-[10px]">
+                            <p className="text-[12px] leading-[18px] text-ink-muted">
                               {acceptedByBoth ? 'Both parties accepted this milestone.' : currentDecision?.decision === 'accepted' ? 'Your acceptance is recorded. Waiting for the other party.' : currentDecision?.decision === 'declined' ? 'You declined this milestone.' : selected.status !== 'accepted' ? 'Pending project approval. The buyer can edit this milestone before approval.' : 'Review the deliverable and record your decision.'}
                             </p>
                             <div className="flex flex-wrap gap-[8px]">
                               {canEdit && !editingMilestoneId && (
-                                <button type="button" onClick={() => beginMilestoneEdit(milestone)} className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[12px] font-semibold text-[#414651] ${BUTTON_SKEUO}`}>
+                                <button type="button" onClick={() => beginMilestoneEdit(milestone)} className="pf-btn pf-btn--secondary pf-btn--sm">
                                   <PenLine size={14} /> Edit milestone
                                 </button>
                               )}
                               {canDecide && (
                                 <div className="flex gap-[8px]">
-                                <button type="button" onClick={() => void decideMilestone(milestone.id, 'decline')} disabled={busyId === `milestone:${milestone.id}`} className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[12px] font-semibold text-[#414651] disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                                <button type="button" onClick={() => void decideMilestone(milestone.id, 'decline')} disabled={busyId === `milestone:${milestone.id}`} className="pf-btn pf-btn--secondary pf-btn--sm">
                                   <XCircle size={14} /> Decline
                                 </button>
-                                <button type="button" onClick={() => void decideMilestone(milestone.id, 'accept')} disabled={busyId === `milestone:${milestone.id}`} className={`inline-flex items-center gap-[6px] rounded-[8px] bg-[#155eef] px-[10px] py-[7px] text-[12px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                                <button type="button" onClick={() => void decideMilestone(milestone.id, 'accept')} disabled={busyId === `milestone:${milestone.id}`} className="pf-btn pf-btn--primary pf-btn--sm">
                                   <CheckCircle2 size={14} /> Accept
                                 </button>
                                 </div>
@@ -1107,16 +1107,16 @@ export default function WorkspaceProjectsPage() {
                   </div>
                 </section>
 
-                <section className={`rounded-[16px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
+                <section className="pf-card p-[20px]">
                   <div className="flex flex-wrap items-start justify-between gap-[12px]">
                     <div>
-                      <h3 className="flex items-center gap-[8px] text-[16px] font-semibold leading-[24px] text-[#181d27]"><ListChecks size={18} className="text-[#155eef]" /> Work board</h3>
+                      <h3 className="pf-h2 flex items-center gap-[8px]"><ListChecks size={18} className="text-cobalt" /> Work board</h3>
                     </div>
                     <div className="flex flex-wrap gap-[8px]">
                       <button
                         type="button"
                         onClick={() => setWorkBoardModalOpen(true)}
-                        className={`inline-flex items-center gap-[7px] rounded-[8px] border border-[#b2ccff] bg-white px-[11px] py-[8px] text-[13px] font-semibold text-[#155eef] ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--secondary pf-btn--sm"
                       >
                         <Maximize2 size={15} /> Full view
                       </button>
@@ -1124,7 +1124,7 @@ export default function WorkspaceProjectsPage() {
                         <button
                           type="button"
                           onClick={() => setShowSubitemCreate((open) => !open)}
-                          className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[12px] py-[9px] text-[13px] font-semibold text-white ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--primary pf-btn--sm"
                         >
                           <Plus size={16} /> {showSubitemCreate ? 'Close' : 'Add work item'}
                         </button>
@@ -1133,27 +1133,27 @@ export default function WorkspaceProjectsPage() {
                   </div>
 
                   {!canManageDelivery && (
-                    <p className="mt-[16px] rounded-[10px] bg-[#fffaeb] px-[12px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+                    <p className="mt-[16px] rounded-[10px] bg-warn-soft px-[12px] py-[10px] text-[13px] leading-[18px] text-warn">
                       The work board opens after both parties accept the project.
                     </p>
                   )}
 
                   {showSubitemCreate && canManageDelivery && (
-                    <form onSubmit={createSubitem} className="mt-[16px] grid gap-[10px] border-t border-[#e9eaeb] pt-[16px]">
+                    <form onSubmit={createSubitem} className="mt-[16px] grid gap-[10px] border-t border-line pt-[16px]">
                       <div className="grid gap-[10px] sm:grid-cols-[1fr_220px]">
                         <Field label="Work item title">
                           <input
                             value={subitemForm.title}
                             onChange={(event) => setSubitemForm((current) => ({ ...current, title: event.target.value }))}
                             placeholder="Prepare client data mapping"
-                            className="rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]"
+                            className="rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]"
                           />
                         </Field>
                         <Field label="Milestone (optional)">
                           <select
                             value={subitemForm.milestoneId}
                             onChange={(event) => setSubitemForm((current) => ({ ...current, milestoneId: event.target.value }))}
-                            className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px]"
+                            className="rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px]"
                           >
                             <option value="">No milestone</option>
                             {visibleMilestones.filter((milestone) => milestone.status !== 'cancelled').map((milestone) => (
@@ -1168,14 +1168,14 @@ export default function WorkspaceProjectsPage() {
                           value={subitemForm.description}
                           onChange={(event) => setSubitemForm((current) => ({ ...current, description: event.target.value }))}
                           placeholder="What needs to be done"
-                          className="resize-y rounded-[8px] border border-[#d5d7da] px-[12px] py-[10px] text-[14px]"
+                          className="resize-y rounded-[8px] border border-line px-[12px] py-[10px] text-[14px]"
                         />
                       </Field>
                       <div className="flex justify-end">
                         <button
                           type="submit"
                           disabled={busyId === 'subitem:new'}
-                          className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[13px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}
+                          className="pf-btn pf-btn--primary pf-btn--sm"
                         >
                           <Plus size={16} /> {busyId === 'subitem:new' ? 'Adding…' : 'Add work item'}
                         </button>
@@ -1189,7 +1189,7 @@ export default function WorkspaceProjectsPage() {
                       return (
                         <div
                           key={column.status}
-                          className={`min-h-[180px] rounded-[12px] border p-[12px] transition-colors ${column.panelClass} ${dragOverTarget?.status === column.status && dragOverTarget.index === items.length ? 'ring-2 ring-[#84adff]' : ''}`}
+                          className={`min-h-[180px] rounded-[12px] border p-[12px] transition-colors ${column.panelClass} ${dragOverTarget?.status === column.status && dragOverTarget.index === items.length ? 'ring-2 ring-cobalt' : ''}`}
                           onDragOver={(event) => handleSubitemDragOver(event, column.status, items.length)}
                           onDrop={(event) => void handleSubitemDrop(event, column.status, items.length)}
                         >
@@ -1198,7 +1198,7 @@ export default function WorkspaceProjectsPage() {
                             <span className="rounded-full bg-white/80 px-[8px] py-[2px] text-[12px] font-semibold">{items.length}</span>
                           </div>
                           <div className="mt-[10px] flex min-h-[100px] flex-col gap-[8px]">
-                            {items.length === 0 && <p className="rounded-[8px] border border-dashed border-current/30 bg-white/60 px-[10px] py-[12px] text-[12px] leading-[18px] text-[#98a2b3]">Drop work items here</p>}
+                            {items.length === 0 && <p className="rounded-[8px] border border-dashed border-current/30 bg-white/60 px-[10px] py-[12px] text-[12px] leading-[18px] text-ink-faint">Drop work items here</p>}
                             {items.map((item, itemIndex) => (
                               <div
                                 key={item.id}
@@ -1207,15 +1207,15 @@ export default function WorkspaceProjectsPage() {
                                 onDragEnd={() => { setDraggedSubitemId(null); setDragOverTarget(null) }}
                                 onDragOver={(event) => handleSubitemDragOver(event, column.status, itemIndex)}
                                 onDrop={(event) => void handleSubitemDrop(event, column.status, itemIndex)}
-                                className={`cursor-grab rounded-[10px] border border-[#e9eaeb] bg-white p-[12px] shadow-[0_1px_2px_rgba(16,24,40,0.05)] active:cursor-grabbing ${draggedSubitemId === item.id ? 'opacity-50' : ''} ${dragOverTarget?.status === column.status && dragOverTarget.index === itemIndex ? 'ring-2 ring-[#84adff]' : ''}`}
+                                className={`cursor-grab rounded-[10px] border border-line bg-white p-[12px] shadow-[0_1px_2px_rgba(16,24,40,0.05)] active:cursor-grabbing ${draggedSubitemId === item.id ? 'opacity-50' : ''} ${dragOverTarget?.status === column.status && dragOverTarget.index === itemIndex ? 'ring-2 ring-cobalt' : ''}`}
                               >
                                 <div className="flex items-start gap-[7px]">
-                                  <GripVertical size={15} className="mt-[1px] shrink-0 text-[#98a2b3]" aria-hidden="true" />
+                                  <GripVertical size={15} className="mt-[1px] shrink-0 text-ink-faint" aria-hidden="true" />
                                   <div className="min-w-0 flex-1">
-                                <p className="text-[13px] font-semibold leading-[18px] text-[#181d27]">{item.title}</p>
-                                {item.description && <p className="mt-[4px] line-clamp-2 text-[12px] leading-[18px] text-[#535862]">{item.description}</p>}
+                                <p className="text-[13px] font-semibold leading-[18px] text-ink">{item.title}</p>
+                                {item.description && <p className="mt-[4px] line-clamp-2 text-[12px] leading-[18px] text-ink-soft">{item.description}</p>}
                                 {item.milestoneId && (
-                                  <p className="mt-[7px] truncate text-[11px] leading-[16px] text-[#717680]">
+                                  <p className="mt-[7px] truncate text-[11px] leading-[16px] text-ink-muted">
                                     {visibleMilestones.find((milestone) => milestone.id === item.milestoneId)?.title ?? 'Milestone linked'}
                                   </p>
                                 )}
@@ -1224,7 +1224,7 @@ export default function WorkspaceProjectsPage() {
                                     type="button"
                                     onClick={() => void updateSubitemStatus(item, column.status === 'open' ? 'in_progress' : 'completed')}
                                     disabled={busyId === `subitem:${item.id}`}
-                                    className={`mt-[10px] inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[9px] py-[6px] text-[12px] font-semibold text-[#414651] disabled:opacity-50 ${BUTTON_SKEUO}`}
+                                    className="pf-btn pf-btn--secondary pf-btn--sm mt-[10px]"
                                   >
                                     {column.status === 'open' ? 'Start work' : 'Mark complete'}
                                   </button>
@@ -1240,20 +1240,20 @@ export default function WorkspaceProjectsPage() {
                   </div>
                 </section>
 
-                <section className={`rounded-[16px] border border-[#e9eaeb] bg-white p-[20px] ${CARD_SHADOW}`}>
+                <section className="pf-card p-[20px]">
                   <div className="flex flex-wrap items-start justify-between gap-[12px]">
                     <div>
-                      <h3 className="flex items-center gap-[8px] text-[16px] font-semibold leading-[24px] text-[#181d27]"><Clock3 size={18} className="text-[#155eef]" /> Time tracking</h3>
+                      <h3 className="pf-h2 flex items-center gap-[8px]"><Clock3 size={18} className="text-cobalt" /> Time tracking</h3>
                     </div>
                     <div className="flex flex-wrap items-center gap-[8px]">
                       <button
                         type="button"
                         onClick={() => setTimeLogModalOpen(true)}
-                        className={`inline-flex items-center gap-[7px] rounded-[8px] border border-[#b2ccff] bg-white px-[11px] py-[8px] text-[13px] font-semibold text-[#155eef] ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--secondary pf-btn--sm"
                       >
                         <Maximize2 size={15} /> Full view
                       </button>
-                      <span className="inline-flex items-center gap-[6px] rounded-full bg-[#ecfdf3] px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-[#067647]">
+                      <span className="inline-flex items-center gap-[6px] rounded-full bg-ok-soft px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-ok">
                         <span className="size-[6px] rounded-full bg-current" />
                         {activeTimer ? 'You are tracking' : otherActiveTimers.length > 0 ? 'Other party is tracking' : 'No active timer'}
                       </span>
@@ -1261,14 +1261,14 @@ export default function WorkspaceProjectsPage() {
                   </div>
 
                   {state.role === 'expert' ? (
-                    <div className="mt-[16px] flex flex-col gap-[10px] rounded-[12px] border border-[#d5d7da] bg-white p-[12px] sm:flex-row sm:items-end">
+                    <div className="mt-[16px] flex flex-col gap-[10px] rounded-[12px] border border-line bg-white p-[12px] sm:flex-row sm:items-end">
                       <Field label="What are you working on?">
                         <input
                           value={timerNote}
                           onChange={(event) => setTimerNote(event.target.value)}
                           placeholder="Client workshop and implementation"
                           disabled={!canManageTimer || Boolean(activeTimer)}
-                          className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] disabled:bg-[#f2f4f7]"
+                          className="rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] disabled:bg-line-soft"
                         />
                       </Field>
                       <Field label="Work item (optional)">
@@ -1276,7 +1276,7 @@ export default function WorkspaceProjectsPage() {
                           value={selectedTimerSubitemId}
                           onChange={(event) => setTimerSubitemId(event.target.value)}
                           disabled={!canManageTimer || Boolean(activeTimer)}
-                          className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] disabled:bg-[#f2f4f7]"
+                          className="rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] disabled:bg-line-soft"
                         >
                           <option value="">General project work</option>
                           {visibleSubitems.filter((item) => item.status !== 'completed' && item.status !== 'cancelled').map((item) => (
@@ -1286,7 +1286,7 @@ export default function WorkspaceProjectsPage() {
                       </Field>
                       <div className="flex shrink-0 items-center gap-[10px]">
                         {activeTimer && (
-                          <span className="whitespace-nowrap text-[18px] font-bold tabular-nums leading-[24px] text-[#181d27]" aria-live="polite">
+                          <span className="whitespace-nowrap text-[18px] font-bold tabular-nums leading-[24px] text-ink" aria-live="polite">
                             {formatElapsedSeconds(elapsedSeconds(activeTimer.startedAt, clock))}
                           </span>
                         )}
@@ -1295,7 +1295,7 @@ export default function WorkspaceProjectsPage() {
                             type="button"
                             onClick={() => void stopProjectTimer()}
                             disabled={busyId === `timer:${activeTimer.id}`}
-                            className={`inline-flex shrink-0 items-center justify-center gap-[8px] rounded-[8px] bg-[#b42318] px-[14px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}
+                            className="pf-btn pf-btn--danger shrink-0"
                           >
                             <Square size={15} /> {busyId === `timer:${activeTimer.id}` ? 'Stopping…' : 'Stop timer'}
                           </button>
@@ -1304,7 +1304,7 @@ export default function WorkspaceProjectsPage() {
                             type="button"
                             onClick={() => void startProjectTimer()}
                             disabled={!canManageTimer || busyId === 'timer:start'}
-                            className={`inline-flex shrink-0 items-center justify-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}
+                            className="pf-btn pf-btn--primary shrink-0"
                           >
                             <Play size={15} /> {busyId === 'timer:start' ? 'Starting…' : 'Start timer'}
                           </button>
@@ -1312,16 +1312,16 @@ export default function WorkspaceProjectsPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-[16px] rounded-[12px] border border-[#d5d7da] bg-[#f8fafc] px-[12px] py-[12px] text-[13px] leading-[18px] text-[#535862]">
+                    <p className="mt-[16px] rounded-[12px] border border-line bg-surface-sunken px-[12px] py-[12px] text-[13px] leading-[18px] text-ink-soft">
                       Time is logged by the expert and shared with you for this project.
                     </p>
                   )}
 
                   <div className="mt-[12px] grid grid-cols-1 gap-[10px] sm:grid-cols-2">
-                    <FactCell icon={<Clock3 size={16} className="text-[#717680]" />} label="Total tracked">
+                    <FactCell icon={<Clock3 size={16} className="text-ink-muted" />} label="Total tracked">
                       {formatMinutes(visibleTimeEntries.length ? liveTimeTotalMinutes : (visibleTimeSummary?.totalMinutes ?? 0))}
                     </FactCell>
-                    <FactCell icon={<ListChecks size={16} className="text-[#717680]" />} label="Entries">
+                    <FactCell icon={<ListChecks size={16} className="text-ink-muted" />} label="Entries">
                       {visibleTimeSummary?.entryCount ?? visibleTimeEntries.length}
                     </FactCell>
                   </div>
@@ -1337,9 +1337,9 @@ export default function WorkspaceProjectsPage() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-[360px] text-center">
-                  <FolderClosed size={32} className="mx-auto text-[#d5d7da]" />
-                  <h2 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">No active project selected</h2>
-                  <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  <FolderClosed size={32} className="mx-auto text-line" />
+                  <h2 className="pf-h2 mt-[12px]">No active project selected</h2>
+                  <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                     Confirmed engagements can create shared projects here.
                   </p>
                 </div>
@@ -1354,14 +1354,14 @@ export default function WorkspaceProjectsPage() {
             onClose={() => setWorkBoardModalOpen(false)}
           >
             <div className="flex flex-wrap items-center justify-between gap-[10px]">
-              <p className="text-[13px] leading-[20px] text-[#535862]">
+              <p className="text-[13px] leading-[20px] text-ink-soft">
                 {canManageDelivery ? 'Drag a card to change its position or advance its status.' : 'This board is shared with both parties.'}
               </p>
               {canManageDelivery && (
                 <button
                   type="button"
                   onClick={() => { setWorkBoardModalOpen(false); setShowSubitemCreate(true) }}
-                  className={`inline-flex items-center gap-[7px] rounded-[8px] bg-[#155eef] px-[12px] py-[8px] text-[13px] font-semibold text-white ${BUTTON_SKEUO}`}
+                  className="pf-btn pf-btn--primary pf-btn--sm"
                 >
                   <Plus size={15} /> Add work item
                 </button>
@@ -1373,7 +1373,7 @@ export default function WorkspaceProjectsPage() {
                 return (
                   <div
                     key={column.status}
-                    className={`min-h-[420px] rounded-[14px] border p-[14px] ${column.panelClass} ${dragOverTarget?.status === column.status && dragOverTarget.index === items.length ? 'ring-2 ring-[#84adff]' : ''}`}
+                    className={`min-h-[420px] rounded-[14px] border p-[14px] ${column.panelClass} ${dragOverTarget?.status === column.status && dragOverTarget.index === items.length ? 'ring-2 ring-cobalt' : ''}`}
                     onDragOver={(event) => handleSubitemDragOver(event, column.status, items.length)}
                     onDrop={(event) => void handleSubitemDrop(event, column.status, items.length)}
                   >
@@ -1382,7 +1382,7 @@ export default function WorkspaceProjectsPage() {
                       <span className="rounded-full bg-white/80 px-[9px] py-[3px] text-[12px] font-semibold">{items.length}</span>
                     </div>
                     <div className="mt-[12px] flex min-h-[340px] flex-col gap-[10px]">
-                      {items.length === 0 && <p className="rounded-[10px] border border-dashed border-current/30 bg-white/60 px-[12px] py-[16px] text-[13px] leading-[20px] text-[#98a2b3]">Drop work items here</p>}
+                      {items.length === 0 && <p className="rounded-[10px] border border-dashed border-current/30 bg-white/60 px-[12px] py-[16px] text-[13px] leading-[20px] text-ink-faint">Drop work items here</p>}
                       {items.map((item, itemIndex) => (
                         <div
                           key={item.id}
@@ -1391,20 +1391,20 @@ export default function WorkspaceProjectsPage() {
                           onDragEnd={() => { setDraggedSubitemId(null); setDragOverTarget(null) }}
                           onDragOver={(event) => handleSubitemDragOver(event, column.status, itemIndex)}
                           onDrop={(event) => void handleSubitemDrop(event, column.status, itemIndex)}
-                          className={`cursor-grab rounded-[12px] border border-[#e4e7ec] bg-white p-[14px] shadow-[0_1px_3px_rgba(16,24,40,0.08)] active:cursor-grabbing ${draggedSubitemId === item.id ? 'opacity-50' : ''} ${dragOverTarget?.status === column.status && dragOverTarget.index === itemIndex ? 'ring-2 ring-[#84adff]' : ''}`}
+                          className={`cursor-grab rounded-[12px] border border-line bg-white p-[14px] shadow-[0_1px_3px_rgba(16,24,40,0.08)] active:cursor-grabbing ${draggedSubitemId === item.id ? 'opacity-50' : ''} ${dragOverTarget?.status === column.status && dragOverTarget.index === itemIndex ? 'ring-2 ring-cobalt' : ''}`}
                         >
                           <div className="flex items-start gap-[8px]">
-                            <GripVertical size={16} className="mt-[2px] shrink-0 text-[#98a2b3]" aria-hidden="true" />
+                            <GripVertical size={16} className="mt-[2px] shrink-0 text-ink-faint" aria-hidden="true" />
                             <div className="min-w-0 flex-1">
-                              <p className="text-[14px] font-semibold leading-[20px] text-[#181d27]">{item.title}</p>
-                              {item.description && <p className="mt-[5px] text-[13px] leading-[19px] text-[#535862]">{item.description}</p>}
-                              {item.milestoneId && <p className="mt-[8px] truncate text-[12px] leading-[18px] text-[#717680]">{visibleMilestones.find((milestone) => milestone.id === item.milestoneId)?.title ?? 'Milestone linked'}</p>}
+                              <p className="text-[14px] font-semibold leading-[20px] text-ink">{item.title}</p>
+                              {item.description && <p className="mt-[5px] text-[13px] leading-[19px] text-ink-soft">{item.description}</p>}
+                              {item.milestoneId && <p className="mt-[8px] truncate text-[12px] leading-[18px] text-ink-muted">{visibleMilestones.find((milestone) => milestone.id === item.milestoneId)?.title ?? 'Milestone linked'}</p>}
                               {canManageDelivery && (column.status === 'open' || column.status === 'in_progress') && (
                                 <button
                                   type="button"
                                   onClick={() => void updateSubitemStatus(item, column.status === 'open' ? 'in_progress' : 'completed')}
                                   disabled={busyId === `subitem:${item.id}` || busyId === 'subitems:reorder'}
-                                  className={`mt-[12px] inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[12px] font-semibold text-[#414651] disabled:opacity-50 ${BUTTON_SKEUO}`}
+                                  className="pf-btn pf-btn--secondary pf-btn--sm mt-[12px]"
                                 >
                                   {column.status === 'open' ? 'Start work' : 'Mark complete'}
                                 </button>
@@ -1427,23 +1427,23 @@ export default function WorkspaceProjectsPage() {
             onClose={() => setTimeLogModalOpen(false)}
           >
             <div className="grid gap-[12px] sm:grid-cols-3">
-              <FactCell icon={<Clock3 size={16} className="text-[#717680]" />} label="Total tracked">
+              <FactCell icon={<Clock3 size={16} className="text-ink-muted" />} label="Total tracked">
                 {formatMinutes(visibleTimeEntries.length ? liveTimeTotalMinutes : (visibleTimeSummary?.totalMinutes ?? 0))}
               </FactCell>
-              <FactCell icon={<ListChecks size={16} className="text-[#717680]" />} label="Entries">
+              <FactCell icon={<ListChecks size={16} className="text-ink-muted" />} label="Entries">
                 {visibleTimeSummary?.entryCount ?? visibleTimeEntries.length}
               </FactCell>
             </div>
 
             {state.role === 'expert' ? (
-              <div className="mt-[16px] flex flex-col gap-[10px] rounded-[12px] border border-[#d5d7da] bg-[#f8fafc] p-[14px] sm:flex-row sm:items-end">
+              <div className="mt-[16px] flex flex-col gap-[10px] rounded-[12px] border border-line bg-surface-sunken p-[14px] sm:flex-row sm:items-end">
                 <Field label="What are you working on?">
                   <input
                     value={timerNote}
                     onChange={(event) => setTimerNote(event.target.value)}
                     placeholder="Client workshop and implementation"
                     disabled={!canManageTimer || Boolean(activeTimer)}
-                    className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] text-[14px] disabled:bg-[#f2f4f7]"
+                    className="rounded-[8px] border border-line bg-white px-[12px] py-[10px] text-[14px] disabled:bg-line-soft"
                   />
                 </Field>
                 <Field label="Work item (optional)">
@@ -1451,43 +1451,43 @@ export default function WorkspaceProjectsPage() {
                     value={selectedTimerSubitemId}
                     onChange={(event) => setTimerSubitemId(event.target.value)}
                     disabled={!canManageTimer || Boolean(activeTimer)}
-                    className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[10px] disabled:bg-[#f2f4f7]"
+                    className="rounded-[8px] border border-line bg-white px-[12px] py-[10px] disabled:bg-line-soft"
                   >
                     <option value="">General project work</option>
                     {visibleSubitems.filter((item) => item.status !== 'completed' && item.status !== 'cancelled').map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                   </select>
                 </Field>
                 <div className="flex shrink-0 items-center gap-[10px]">
-                  {activeTimer && <span className="whitespace-nowrap text-[20px] font-bold tabular-nums text-[#181d27]" aria-live="polite">{formatElapsedSeconds(elapsedSeconds(activeTimer.startedAt, clock))}</span>}
+                  {activeTimer && <span className="whitespace-nowrap text-[20px] font-bold tabular-nums text-ink" aria-live="polite">{formatElapsedSeconds(elapsedSeconds(activeTimer.startedAt, clock))}</span>}
                   {activeTimer ? (
-                    <button type="button" onClick={() => void stopProjectTimer()} disabled={busyId === `timer:${activeTimer.id}`} className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#b42318] px-[14px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                    <button type="button" onClick={() => void stopProjectTimer()} disabled={busyId === `timer:${activeTimer.id}`} className="pf-btn pf-btn--danger">
                       <Square size={15} /> {busyId === `timer:${activeTimer.id}` ? 'Stopping…' : 'Stop timer'}
                     </button>
                   ) : (
-                    <button type="button" onClick={() => void startProjectTimer()} disabled={!canManageTimer || busyId === 'timer:start'} className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold text-white disabled:opacity-50 ${BUTTON_SKEUO}`}>
+                    <button type="button" onClick={() => void startProjectTimer()} disabled={!canManageTimer || busyId === 'timer:start'} className="pf-btn pf-btn--primary">
                       <Play size={15} /> {busyId === 'timer:start' ? 'Starting…' : 'Start timer'}
                     </button>
                   )}
                 </div>
               </div>
             ) : (
-              <p className="mt-[16px] rounded-[12px] border border-[#d5d7da] bg-[#f8fafc] px-[14px] py-[12px] text-[13px] leading-[20px] text-[#535862]">Time is logged by the expert and shared with you for this project.</p>
+              <p className="mt-[16px] rounded-[12px] border border-line bg-surface-sunken px-[14px] py-[12px] text-[13px] leading-[20px] text-ink-soft">Time is logged by the expert and shared with you for this project.</p>
             )}
 
             <div className="mt-[18px] flex flex-col gap-[18px]">
-              {groupedTimeEntries.length === 0 && <p className="rounded-[10px] border border-dashed border-[#d5d7da] px-[14px] py-[24px] text-center text-[13px] text-[#717680]">No time entries yet.</p>}
+              {groupedTimeEntries.length === 0 && <p className="rounded-[10px] border border-dashed border-line px-[14px] py-[24px] text-center text-[13px] text-ink-muted">No time entries yet.</p>}
               {groupedTimeEntries.map((period) => (
                 <section key={period.key}>
-                  <div className="flex items-center justify-between border-b border-[#d5d7da] bg-[#eef4f8] px-[14px] py-[10px]">
-                    <p className="text-[14px] font-semibold text-[#344054]">{period.label}</p>
-                    <p className="text-[13px] font-semibold text-[#344054]">Total: {formatMinutes(Math.floor(period.totalSeconds / 60))}</p>
+                  <div className="flex items-center justify-between border-b border-line bg-surface-sunken px-[14px] py-[10px]">
+                    <p className="text-[14px] font-semibold text-ink-soft">{period.label}</p>
+                    <p className="text-[13px] font-semibold text-ink-soft">Total: {formatMinutes(Math.floor(period.totalSeconds / 60))}</p>
                   </div>
                   <div className="flex flex-col gap-[10px] pt-[10px]">
                     {period.days.map((day) => (
-                      <div key={day.key} className="overflow-hidden rounded-[10px] border border-[#e4e7ec]">
-                        <div className="flex items-center justify-between bg-[#f8fafc] px-[14px] py-[9px]">
-                          <p className="text-[13px] font-semibold text-[#535862]">{day.label}</p>
-                          <p className="text-[12px] font-semibold text-[#717680]">Total: {formatMinutes(Math.floor(day.totalSeconds / 60))}</p>
+                      <div key={day.key} className="overflow-hidden rounded-[10px] border border-line">
+                        <div className="flex items-center justify-between bg-surface-sunken px-[14px] py-[9px]">
+                          <p className="text-[13px] font-semibold text-ink-soft">{day.label}</p>
+                          <p className="text-[12px] font-semibold text-ink-muted">Total: {formatMinutes(Math.floor(day.totalSeconds / 60))}</p>
                         </div>
                         <TimeEntryTable
                           entries={day.entries}
@@ -1505,24 +1505,24 @@ export default function WorkspaceProjectsPage() {
         ) : null}
         {signedDocumentUrl && signedDocumentPreviewOpen ? (
           <div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-[#101828]/70 p-[16px] sm:p-[28px]"
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/70 p-[16px] sm:p-[28px]"
             role="dialog"
             aria-modal="true"
             aria-label="Signed contract preview"
             onClick={() => setSignedDocumentPreviewOpen(false)}
           >
             <div className="flex h-[min(90vh,900px)] w-full max-w-[980px] flex-col overflow-hidden rounded-[14px] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-              <div className="flex items-center justify-between gap-[12px] border-b border-[#e4e7ec] px-[16px] py-[12px] sm:px-[20px]">
+              <div className="flex items-center justify-between gap-[12px] border-b border-line px-[16px] py-[12px] sm:px-[20px]">
                 <div>
-                  <p className="text-[14px] font-semibold text-[#181d27]">Signed contract preview</p>
-                  <p className="mt-[2px] text-[12px] text-[#717680]">Available only to the parties on this engagement.</p>
+                  <p className="text-[14px] font-semibold text-ink">Signed contract preview</p>
+                  <p className="mt-[2px] text-[12px] text-ink-muted">Available only to the parties on this engagement.</p>
                 </div>
-                <button type="button" onClick={() => setSignedDocumentPreviewOpen(false)} className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold text-[#414651] ${BUTTON_SKEUO}`}>
+                <button type="button" onClick={() => setSignedDocumentPreviewOpen(false)} className="pf-btn pf-btn--secondary pf-btn--sm">
                   <XCircle size={16} /> Close
                 </button>
               </div>
-              <div className="min-h-0 flex-1 bg-[#f2f4f7] p-[8px] sm:p-[16px]">
-                <iframe src={signedDocumentUrl} title="Signed contract document" className="h-full w-full rounded-[8px] border border-[#d5d7da] bg-white" />
+              <div className="min-h-0 flex-1 bg-line-soft p-[8px] sm:p-[16px]">
+                <iframe src={signedDocumentUrl} title="Signed contract document" className="h-full w-full rounded-[8px] border border-line bg-white" />
               </div>
             </div>
           </div>
@@ -1544,10 +1544,10 @@ function ProjectStatusBadge({ status }: { status: WorkspaceProject['status'] }) 
 function FactCell({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="bg-white px-[32px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
         {icon} {label}
       </p>
-      <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-[#181d27]">{children}</p>
+      <p className="mt-[6px] text-[16px] font-semibold leading-[24px] text-ink">{children}</p>
     </div>
   )
 }
@@ -1555,7 +1555,7 @@ function FactCell({ icon, label, children }: { icon: ReactNode; label: string; c
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex min-w-0 flex-col gap-[6px]">
-      <span className="text-[13px] font-semibold leading-[18px] text-[#414651]">{label}</span>
+      <span className="text-[13px] font-semibold leading-[18px] text-ink-soft">{label}</span>
       {children}
     </label>
   )
@@ -1574,23 +1574,23 @@ function WorkspaceFullViewDialog({
 }) {
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#101828]/70 p-[12px] sm:p-[24px]"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/70 p-[12px] sm:p-[24px]"
       role="dialog"
       aria-modal="true"
       aria-label={title}
       onClick={onClose}
     >
       <div className="flex h-[min(94vh,980px)] w-full max-w-[1440px] flex-col overflow-hidden rounded-[16px] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-        <div className="flex flex-wrap items-start justify-between gap-[12px] border-b border-[#e4e7ec] px-[18px] py-[15px] sm:px-[24px]">
+        <div className="flex flex-wrap items-start justify-between gap-[12px] border-b border-line px-[18px] py-[15px] sm:px-[24px]">
           <div>
-            <h2 className="text-[18px] font-semibold leading-[26px] text-[#181d27]">{title}</h2>
-            <p className="mt-[3px] text-[13px] leading-[19px] text-[#535862]">{subtitle}</p>
+            <h2 className="pf-h2">{title}</h2>
+            <p className="mt-[3px] text-[13px] leading-[19px] text-ink-soft">{subtitle}</p>
           </div>
-          <button type="button" onClick={onClose} className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[10px] py-[7px] text-[13px] font-semibold text-[#414651] ${BUTTON_SKEUO}`}>
+          <button type="button" onClick={onClose} className="pf-btn pf-btn--secondary pf-btn--sm">
             <XCircle size={16} /> Close
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8fafc] p-[14px] sm:p-[24px]">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto bg-surface-sunken p-[14px] sm:p-[24px]">{children}</div>
       </div>
     </div>
   )
@@ -1609,25 +1609,25 @@ function TimeEntryTable({
 }) {
   if (entries.length === 0) {
     return (
-      <p className="rounded-[10px] border border-dashed border-[#d5d7da] bg-white px-[12px] py-[20px] text-center text-[13px] leading-[18px] text-[#717680]">
+      <p className="rounded-[10px] border border-dashed border-line bg-white px-[12px] py-[20px] text-center text-[13px] leading-[18px] text-ink-muted">
         No time entries yet. Start the first timer when work begins.
       </p>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-[#e4e7ec] bg-white">
+    <div className="overflow-x-auto rounded-[10px] border border-line bg-white">
       <table className="w-full min-w-[620px] border-collapse text-left">
-        <thead className="bg-[#f8fafc]">
-          <tr className="border-b border-[#e4e7ec]">
+        <thead className="bg-surface-sunken">
+          <tr className="border-b border-line">
             {['Date', 'Description', 'Duration', 'Billable'].map((label) => (
-              <th key={label} className="px-[14px] py-[10px] text-[11px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+              <th key={label} className="px-[14px] py-[10px] text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">
                 {label}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#f2f4f7]">
+        <tbody className="divide-y divide-line-soft">
           {entries.map((entry) => {
             const linkedSubitem = subitems.find((item) => item.id === entry.subitemId)
             const duration = entry.endedAt
@@ -1635,22 +1635,22 @@ function TimeEntryTable({
               : `${formatElapsedSeconds(elapsedSeconds(entry.startedAt, clock))} running`
             return (
               <tr key={entry.id}>
-                <td className="whitespace-nowrap px-[14px] py-[12px] text-[13px] text-[#535862]">
+                <td className="whitespace-nowrap px-[14px] py-[12px] text-[13px] text-ink-soft">
                   {longDate(entry.startedAt)}
                 </td>
                 <td className="min-w-[260px] px-[14px] py-[12px]">
-                  <p className="truncate text-[13px] font-semibold leading-[19px] text-[#181d27]">
+                  <p className="truncate text-[13px] font-semibold leading-[19px] text-ink">
                     {entry.note || linkedSubitem?.title || 'Project work'}
                   </p>
-                  <p className="mt-[2px] truncate text-[12px] leading-[18px] text-[#717680]">
+                  <p className="mt-[2px] truncate text-[12px] leading-[18px] text-ink-muted">
                     {linkedSubitem?.title || 'General project work'} · {entry.userId === currentUserId ? 'You' : 'Other party'}
                   </p>
                 </td>
-                <td className="whitespace-nowrap px-[14px] py-[12px] text-[14px] font-bold tabular-nums text-[#181d27]">
+                <td className="whitespace-nowrap px-[14px] py-[12px] text-[14px] font-bold tabular-nums text-ink">
                   {duration}
                 </td>
                 <td className="px-[14px] py-[12px]">
-                  <span className={`inline-flex items-center gap-[6px] rounded-full px-[9px] py-[3px] text-[12px] font-medium ${entry.endedAt ? 'bg-[#ecfdf3] text-[#067647]' : 'bg-[#fffaeb] text-[#b54708]'}`}>
+                  <span className={`inline-flex items-center gap-[6px] rounded-full px-[9px] py-[3px] text-[12px] font-medium ${entry.endedAt ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`}>
                     <span className="size-[6px] rounded-full bg-current" />
                     Billable
                   </span>

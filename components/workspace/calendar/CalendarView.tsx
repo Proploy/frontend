@@ -135,9 +135,9 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
     <>
         {/* Page header */}
         <header className="flex flex-col gap-[4px]">
-          <p className="text-[13px] font-semibold leading-[20px] text-[#155eef]">Scheduled calls</p>
-          <h1 className="font-semibold text-[24px] leading-[32px] text-[#181d27]">Meetings</h1>
-          <p className="max-w-[720px] text-[16px] leading-[24px] text-[#535862]">
+          <p className="text-[13px] font-semibold leading-[20px] text-cobalt">Scheduled calls</p>
+          <h1 className="font-semibold text-[24px] leading-[32px] text-ink">Meetings</h1>
+          <p className="max-w-[720px] text-[16px] leading-[24px] text-ink-soft">
             Schedule and manage calls with your clients and businesses. Book a time, and both parties get
             a calendar invite and a video link.
           </p>
@@ -147,7 +147,7 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
         <SchedulingProviders />
 
         {/* Tabs */}
-        <div className="inline-flex w-fit items-center gap-[2px] rounded-[10px] border border-[#e9eaeb] bg-[#fafafa] p-[4px]">
+        <div className="inline-flex w-fit items-center gap-[2px] rounded-[10px] border border-line bg-surface-sunken p-[4px]">
           {TABS.map((tab) => {
             const isActive = tab.key === activeTab
             return (
@@ -158,8 +158,8 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
                 className={[
                   'rounded-[6px] px-[12px] py-[6px] text-[14px] font-semibold leading-[20px] transition-colors',
                   isActive
-                    ? `bg-white text-[#252b37] ${CARD_SHADOW}`
-                    : 'text-[#717680] hover:text-[#252b37]',
+                    ? `bg-white text-ink ${CARD_SHADOW}`
+                    : 'text-ink-muted hover:text-ink',
                 ].join(' ')}
               >
                 {tab.label}
@@ -169,26 +169,26 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
         </div>
 
         {/* Calendar */}
-        <section className={`overflow-hidden rounded-[12px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
+        <section className={`overflow-hidden rounded-[12px] border border-line bg-white ${CARD_SHADOW}`}>
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] px-[20px] py-[16px]">
+          <div className="flex flex-wrap items-center justify-between gap-[16px] border-b border-line px-[20px] py-[16px]">
             <div className="flex items-center gap-[16px]">
-              <div className="flex size-[48px] flex-col items-center justify-center rounded-[10px] border border-[#e9eaeb] bg-white">
-                <span className="text-[10px] font-semibold uppercase leading-[14px] tracking-[0.04em] text-[#717680]">
+              <div className="flex size-[48px] flex-col items-center justify-center rounded-[10px] border border-line bg-white">
+                <span className="text-[10px] font-semibold uppercase leading-[14px] tracking-[0.04em] text-ink-muted">
                   {formatMonthShort(today)}
                 </span>
-                <span className="text-[18px] font-semibold leading-[22px] text-[#181d27]">{today.getDate()}</span>
+                <span className="text-[18px] font-semibold leading-[22px] text-ink">{today.getDate()}</span>
               </div>
               <div className="flex flex-col gap-[2px]">
                 <div className="flex items-center gap-[8px]">
-                  <h2 className="font-semibold text-[18px] leading-[26px] text-[#181d27]">
+                  <h2 className="font-semibold text-[18px] leading-[26px] text-ink">
                     {formatMonthYear(reference)}
                   </h2>
-                  <span className="rounded-[6px] border border-[#e9eaeb] bg-white px-[6px] py-[1px] text-[12px] font-medium leading-[18px] text-[#414651]">
+                  <span className="rounded-[6px] border border-line bg-white px-[6px] py-[1px] text-[12px] font-medium leading-[18px] text-ink-soft">
                     Week {weekOfMonth(today)}
                   </span>
                 </div>
-                <p className="text-[13px] leading-[18px] text-[#717680]">{formatRange(reference)}</p>
+                <p className="text-[13px] leading-[18px] text-ink-muted">{formatRange(reference)}</p>
               </div>
             </div>
 
@@ -197,24 +197,24 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
                 type="button"
                 onClick={() => void load()}
                 aria-label="Refresh"
-                className={`inline-flex size-[36px] items-center justify-center rounded-full border border-[#d5d7da] bg-white text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
+                className={`inline-flex size-[36px] items-center justify-center rounded-full border border-line bg-white text-ink-soft hover:bg-surface-hover ${BUTTON_SKEUO}`}
               >
                 <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
               </button>
 
-              <div className={`inline-flex items-center rounded-[8px] border border-[#d5d7da] bg-white ${BUTTON_SKEUO}`}>
+              <div className={`inline-flex items-center rounded-[8px] border border-line bg-white ${BUTTON_SKEUO}`}>
                 <button
                   type="button"
                   onClick={goPrev}
                   aria-label="Previous month"
-                  className="inline-flex size-[36px] items-center justify-center rounded-l-[8px] text-[#414651] hover:bg-[#fafafa]"
+                  className="inline-flex size-[36px] items-center justify-center rounded-l-[8px] text-ink-soft hover:bg-surface-hover"
                 >
                   <ArrowLeft size={16} />
                 </button>
                 <button
                   type="button"
                   onClick={goToday}
-                  className="border-x border-[#d5d7da] px-[14px] py-[8px] text-[14px] font-semibold leading-[20px] text-[#414651] hover:bg-[#fafafa]"
+                  className="border-x border-line px-[14px] py-[8px] text-[14px] font-semibold leading-[20px] text-ink-soft hover:bg-surface-hover"
                 >
                   Today
                 </button>
@@ -222,7 +222,7 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
                   type="button"
                   onClick={goNext}
                   aria-label="Next month"
-                  className="inline-flex size-[36px] items-center justify-center rounded-r-[8px] text-[#414651] hover:bg-[#fafafa]"
+                  className="inline-flex size-[36px] items-center justify-center rounded-r-[8px] text-ink-soft hover:bg-surface-hover"
                 >
                   <ArrowRight size={16} />
                 </button>
@@ -233,7 +233,7 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
               <button
                 type="button"
                 onClick={() => setScheduleDate(today)}
-                className={`inline-flex items-center gap-[6px] rounded-[8px] border-2 border-white/[0.12] bg-[#155eef] px-[14px] py-[9px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                className={`inline-flex items-center gap-[6px] rounded-[8px] border-2 border-white/[0.12] bg-cobalt px-[14px] py-[9px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
               >
                 <Plus size={16} />
                 Schedule call
@@ -245,11 +245,11 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
           <div className="relative p-[20px]">
             {error ? (
               <div className="flex flex-col items-center gap-[12px] py-[64px] text-center">
-                <p className="text-[14px] leading-[20px] text-[#b42318]">{error}</p>
+                <p className="text-[14px] leading-[20px] text-danger">{error}</p>
                 <button
                   type="button"
                   onClick={() => void load()}
-                  className={`rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[8px] text-[14px] font-semibold text-[#414651] ${BUTTON_SKEUO}`}
+                  className={`rounded-[8px] border border-line bg-white px-[14px] py-[8px] text-[14px] font-semibold text-ink-soft ${BUTTON_SKEUO}`}
                 >
                   Retry
                 </button>
@@ -266,7 +266,7 @@ export function CalendarView({ padded = true }: { padded?: boolean } = {}) {
                 />
                 {loading && events.length === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center rounded-[12px] bg-white/60">
-                    <Loader2 size={28} className="animate-spin text-[#155eef]" />
+                    <Loader2 size={28} className="animate-spin text-cobalt" />
                   </div>
                 )}
               </>
@@ -334,7 +334,7 @@ function ViewMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`inline-flex items-center gap-[6px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[8px] text-[14px] font-semibold leading-[20px] text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
+        className={`inline-flex items-center gap-[6px] rounded-[8px] border border-line bg-white px-[14px] py-[8px] text-[14px] font-semibold leading-[20px] text-ink-soft hover:bg-surface-hover ${BUTTON_SKEUO}`}
       >
         Month view
         <ChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -342,24 +342,24 @@ function ViewMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-20 w-[160px] overflow-hidden rounded-[8px] border border-[#e9eaeb] bg-white py-[4px] shadow-[0px_8px_16px_-4px_rgba(10,13,18,0.12)]"
+          className="absolute right-0 top-[calc(100%+6px)] z-20 w-[160px] overflow-hidden rounded-[8px] border border-line bg-white py-[4px] shadow-[0px_8px_16px_-4px_rgba(10,13,18,0.12)]"
         >
           <button
             type="button"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex w-full items-center justify-between px-[12px] py-[8px] text-left text-[14px] font-medium text-[#252b37] hover:bg-[#fafafa]"
+            className="flex w-full items-center justify-between px-[12px] py-[8px] text-left text-[14px] font-medium text-ink hover:bg-surface-hover"
           >
             Month view
-            <Check size={16} className="text-[#155eef]" />
+            <Check size={16} className="text-cobalt" />
           </button>
           {['Week view', 'Day view'].map((label) => (
             <span
               key={label}
-              className="flex w-full cursor-not-allowed items-center justify-between px-[12px] py-[8px] text-left text-[14px] font-medium text-[#a4a7ae]"
+              className="flex w-full cursor-not-allowed items-center justify-between px-[12px] py-[8px] text-left text-[14px] font-medium text-ink-faint"
             >
               {label}
-              <span className="text-[11px] font-medium text-[#a4a7ae]">Soon</span>
+              <span className="text-[11px] font-medium text-ink-faint">Soon</span>
             </span>
           ))}
         </div>

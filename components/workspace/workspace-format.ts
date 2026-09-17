@@ -88,34 +88,34 @@ export function statusLabelForViewer(
 }
 
 export function intentStatusClass(status: string): string {
-  if (status === 'awaiting_acceptance') return 'bg-[#eff4ff] text-[#155eef]'
-  if (status === 'scheduling_open' || status === 'booked') return 'bg-[#ecfdf3] text-[#067647]'
-  if (status === 'declined' || status === 'expired' || status === 'cancelled') return 'bg-[#fef3f2] text-[#b42318]'
-  return 'bg-[#fafafa] text-[#535862]'
+  if (status === 'awaiting_acceptance') return 'pf-pill pf-pill--info'
+  if (status === 'scheduling_open' || status === 'booked') return 'pf-pill pf-pill--ok'
+  if (status === 'declined' || status === 'expired' || status === 'cancelled') return 'pf-pill pf-pill--danger'
+  return 'pf-pill'
 }
 
 export function projectStatusClass(status: ProjectStatus): string {
-  if (status === 'accepted') return 'bg-[#ecfdf3] text-[#067647]'
-  if (status === 'proposed') return 'bg-[#eff4ff] text-[#155eef]'
-  if (status === 'draft') return 'bg-[#fafafa] text-[#535862]'
-  if (status === 'declined' || status === 'withdrawn' || status === 'cancelled') return 'bg-[#fef3f2] text-[#b42318]'
-  return 'bg-[#fafafa] text-[#535862]'
+  if (status === 'accepted') return 'pf-pill pf-pill--ok'
+  if (status === 'proposed') return 'pf-pill pf-pill--info'
+  if (status === 'draft') return 'pf-pill'
+  if (status === 'declined' || status === 'withdrawn' || status === 'cancelled') return 'pf-pill pf-pill--danger'
+  return 'pf-pill'
 }
 
 export function proposalStatusClass(status: ProposalStatus): string {
-  if (status === 'sent') return 'bg-[#eff4ff] text-[#155eef]'
-  if (status === 'accepted') return 'bg-[#ecfdf3] text-[#067647]'
-  if (status === 'draft') return 'bg-[#fafafa] text-[#535862]'
+  if (status === 'sent') return 'pf-pill pf-pill--info'
+  if (status === 'accepted') return 'pf-pill pf-pill--ok'
+  if (status === 'draft') return 'pf-pill'
   if (status === 'declined' || status === 'withdrawn' || status === 'archived') {
-    return 'bg-[#fef3f2] text-[#b42318]'
+    return 'pf-pill pf-pill--danger'
   }
-  return 'bg-[#fffaeb] text-[#b54708]'
+  return 'pf-pill pf-pill--warn'
 }
 
 export function contractStatusClass(status: ContractStatus): string {
-  if (status === 'completed') return 'bg-[#ecfdf3] text-[#067647]'
-  if (status === 'buyer_signed' || status === 'expert_signed') return 'bg-[#eff4ff] text-[#155eef]'
-  if (status === 'sent') return 'bg-[#fffaeb] text-[#b54708]'
-  if (status === 'cancelled' || status === 'declined') return 'bg-[#fef3f2] text-[#b42318]'
-  return 'bg-[#fafafa] text-[#535862]'
+  if (status === 'completed') return 'pf-pill pf-pill--ok'
+  if (status === 'buyer_signed' || status === 'expert_signed') return 'pf-pill pf-pill--info'
+  if (status === 'sent') return 'pf-pill pf-pill--warn'
+  if (status === 'cancelled' || status === 'declined') return 'pf-pill pf-pill--danger'
+  return 'pf-pill'
 }

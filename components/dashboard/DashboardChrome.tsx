@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -21,17 +21,24 @@ import type { NotificationItem } from '@/features/workspace/types'
 
 /**
  * Generic, role-agnostic dashboard chrome shared by the expert and business
- * workspaces. Provides the sticky desktop sidebar, a mobile top bar + slide-in
- * drawer, a working nav filter (⌘K focuses it), and the content frame.
+ * workspaces: sticky desktop sidebar, mobile top bar + slide-in drawer, a
+ * working nav filter (⌘K focuses it), and the content frame.
  *
- * Colors follow the established dashboard convention of inline hex that mirrors
- * the `--color-*` tokens in globals.css (e.g. #155eef = brand-600,
- * #181d27 = text-primary), kept consistent with the surrounding components.
+ * Styling lives in `app/portal.css` (.pf-*), which is built on the same V2
+ * runtime tokens as the marketing site (--paper / --ink / --cobalt / --line,
+ * DM Sans display, IBM Plex Mono labels). Pages should reach for the .pf-*
+ * primitives rather than re-declaring hex values.
  */
 
-export const BUTTON_SKEUO =
-  'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18),inset_0px_-2px_0px_0px_rgba(10,13,18,0.05)]'
-export const CARD_SHADOW = 'shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)]'
+/**
+ * Kept for source compatibility with pages not yet migrated. Both are now
+ * no-ops: the portal uses hairline borders and a single cobalt lift instead of
+ * the old inset "skeuomorphic" shadows. Prefer `.pf-btn` / `.pf-card`.
+ * @deprecated
+ */
+export const BUTTON_SKEUO = ''
+/** @deprecated use the `.pf-card` class */
+export const CARD_SHADOW = ''
 
 export type DashNavItem = {
   label: string
@@ -40,6 +47,14 @@ export type DashNavItem = {
   badge?: string
   disabled?: boolean
 }
+
+/** A labelled cluster of nav items. The label is rendered as a mono eyebrow. */
+export type DashNavGroup = {
+  label?: string
+  items: DashNavItem[]
+}
+
+export type DashNav = DashNavItem[] | DashNavGroup[]
 
 export type DashboardUser = {
   name: string
@@ -69,7 +84,15 @@ const DEFAULT_BRAND: DashboardBrand = {
   mark: 'p',
   word: 'proploy',
   href: '/',
-  markBg: '#155eef',
+  markBg: 'var(--cobalt)',
+}
+
+function isGrouped(nav: DashNav): nav is DashNavGroup[] {
+  return nav.length > 0 && 'items' in nav[0]
+}
+
+function toGroups(nav: DashNav): DashNavGroup[] {
+  return isGrouped(nav) ? nav : [{ items: nav }]
 }
 
 function BrandLink({
@@ -83,13 +106,13 @@ function BrandLink({
 }) {
   if (brand.logoSrc) {
     return (
-      <Link href={brand.href} className="px-[8px] flex items-center" onClick={onNavigate}>
+      <Link href={brand.href} className="flex items-center" onClick={onNavigate}>
         <Image
           src={brand.logoSrc}
           alt={brand.logoAlt ?? brand.word}
           width={brand.logoWidth ?? 152}
           height={brand.logoHeight ?? 42}
-          className={`${compact ? 'h-[32px]' : 'h-[34px]'} w-auto object-contain`}
+          className={`${compact ? 'h-[28px]' : 'h-[30px]'} w-auto object-contain`}
           priority
         />
       </Link>
@@ -97,34 +120,36 @@ function BrandLink({
   }
 
   return (
-    <Link href={brand.href} className="px-[8px] flex items-center gap-[10px]" onClick={onNavigate}>
-      <div
-        className="size-[32px] rounded-[8px] flex items-center justify-center text-white font-bold text-[14px]"
-        style={{ background: brand.markBg ?? '#155eef' }}
+    <Link href={brand.href} className="flex items-center gap-[9px]" onClick={onNavigate}>
+      <span
+        className="flex size-[28px] items-center justify-center rounded-[8px] text-[13px] font-semibold text-white"
+        style={{ background: brand.markBg ?? 'var(--cobalt)' }}
       >
         {brand.mark}
-      </div>
-      <span className="font-semibold text-[18px] leading-[28px] text-[#181d27]">{brand.word}</span>
+      </span>
+      <span className="pf-h2">{brand.word}</span>
     </Link>
   )
 }
 
-function NavLink({ item, onNavigate, collapsed = false }: { item: DashNavItem; onNavigate?: () => void; collapsed?: boolean }) {
+function NavLink({
+  item,
+  onNavigate,
+  collapsed = false,
+}: {
+  item: DashNavItem
+  onNavigate?: () => void
+  collapsed?: boolean
+}) {
   const pathname = usePathname()
   const Icon = item.icon
   const isActive = item.href === pathname
-  const className = `flex w-full items-center ${collapsed ? 'justify-center gap-0 px-[8px]' : 'gap-[12px] px-[12px]'} py-[8px] rounded-[6px] text-left font-semibold text-[14px] leading-[20px] transition-colors ${
-    isActive ? 'bg-[#eff4ff] text-[#155eef]' : 'text-[#414651]'
-  } ${item.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f8ff]'}`
+
   const content = (
     <>
-      <Icon size={20} className={`shrink-0 ${isActive ? 'text-[#155eef]' : 'text-[#717680]'}`} />
-      {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
-      {!collapsed && item.badge && (
-        <span className="px-[8px] py-[2px] rounded-full border border-[#e9eaeb] bg-white text-[12px] leading-[18px] font-semibold text-[#414651]">
-          {item.badge}
-        </span>
-      )}
+      <Icon size={18} />
+      {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+      {!collapsed && item.badge && <span className="pf-nav-badge">{item.badge}</span>}
     </>
   )
 
@@ -133,7 +158,7 @@ function NavLink({ item, onNavigate, collapsed = false }: { item: DashNavItem; o
       <Link
         href={item.href}
         onClick={onNavigate}
-        className={className}
+        className="pf-nav-link"
         title={collapsed ? item.label : undefined}
         aria-current={isActive ? 'page' : undefined}
       >
@@ -143,7 +168,13 @@ function NavLink({ item, onNavigate, collapsed = false }: { item: DashNavItem; o
   }
 
   return (
-    <button type="button" disabled={item.disabled} title={collapsed ? item.label : undefined} className={className}>
+    <button
+      type="button"
+      disabled={item.disabled}
+      data-disabled={item.disabled ? 'true' : undefined}
+      title={collapsed ? item.label : undefined}
+      className="pf-nav-link"
+    >
       {content}
     </button>
   )
@@ -202,29 +233,26 @@ export function WorkspaceAccountMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="workspace-account-menu"
-        className={`flex w-full items-center gap-[12px] rounded-[8px] p-[8px] text-left transition-colors hover:bg-[#f5f8ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#155eef]/40 ${collapsed ? 'justify-center' : ''}`}
+        className="pf-account"
         title={collapsed ? name : undefined}
       >
-        <div
-          className={`flex size-[40px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[14px] font-semibold text-white ${
-            user?.avatarClassName ?? 'bg-gradient-to-br from-[#84adff] to-[#155eef]'
-          }`}
-        >
+        <span className={`pf-avatar overflow-hidden ${user?.avatarClassName ?? ''}`}>
           {user?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.avatarUrl} alt="" className="size-full object-cover" />
           ) : (
             initial
           )}
-        </div>
+        </span>
         {!collapsed && (
           <>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{name}</p>
-            </div>
+            <span className="min-w-0 flex-1">
+              <span className="pf-h3 block truncate">{name}</span>
+              {user?.email ? <span className="pf-micro block truncate">{user.email}</span> : null}
+            </span>
             <ChevronDown
-              size={16}
-              className={`shrink-0 text-[#717680] transition-transform ${open ? 'rotate-180' : ''}`}
+              size={15}
+              className={`shrink-0 text-[color:var(--ink-faint)] transition-transform ${open ? 'rotate-180' : ''}`}
             />
           </>
         )}
@@ -235,32 +263,23 @@ export function WorkspaceAccountMenu({
           id="workspace-account-menu"
           role="menu"
           aria-label="Account"
-          className={`absolute bottom-full z-50 mb-[8px] min-w-[220px] rounded-[8px] border border-[#e9eaeb] bg-white p-[6px] shadow-[0px_12px_24px_-8px_rgba(10,13,18,0.18)] ${
-            collapsed ? 'left-full ml-[8px]' : 'inset-x-0'
-          }`}
+          className={`pf-menu bottom-full mb-[8px] ${collapsed ? 'left-full ml-[8px]' : 'inset-x-0'}`}
         >
-          <div className="border-b border-[#e9eaeb] px-[10px] py-[8px]">
-            <p className="truncate text-[13px] font-semibold leading-[18px] text-[#181d27]">{name}</p>
-            {user?.email ? (
-              <p className="mt-[2px] truncate text-[12px] leading-[18px] text-[#717680]">{user.email}</p>
-            ) : null}
+          <div className="border-b border-[color:var(--line-soft)] px-[10px] pb-[8px] pt-[6px]">
+            <p className="pf-h3 truncate">{name}</p>
+            {user?.email ? <p className="pf-micro truncate">{user.email}</p> : null}
           </div>
-          <Link
-            href="/profile"
-            role="menuitem"
-            onClick={closeAndNavigate}
-            className="mt-[4px] flex w-full items-center gap-[8px] rounded-[6px] px-[10px] py-[8px] text-[13px] font-medium leading-[18px] text-[#414651] hover:bg-[#f5f8ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#155eef]/30"
-          >
-            <UserRound size={16} />
+          <Link href="/profile" role="menuitem" onClick={closeAndNavigate} className="pf-menu-item mt-[4px]">
+            <UserRound size={15} />
             Profile
           </Link>
           <button
             type="button"
             role="menuitem"
             onClick={() => void handleSignOut()}
-            className="flex w-full items-center gap-[8px] rounded-[6px] px-[10px] py-[8px] text-left text-[13px] font-medium leading-[18px] text-[#b42318] hover:bg-[#fef3f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f04438]/30"
+            className="pf-menu-item pf-menu-item--danger"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
             Sign out
           </button>
         </div>
@@ -281,7 +300,7 @@ function SidebarBody({
   collapsed = false,
   onToggle,
 }: {
-  nav: DashNavItem[]
+  nav: DashNav
   secondaryNav?: DashNavItem[]
   user?: DashboardUser
   brand: DashboardBrand
@@ -305,83 +324,95 @@ function SidebarBody({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  const groups = useMemo(() => toGroups(nav), [nav])
   const q = query.trim().toLowerCase()
-  const filteredPrimary = q ? nav.filter((i) => i.label.toLowerCase().includes(q)) : nav
+
+  const filteredGroups = q
+    ? groups
+        .map((g) => ({ ...g, items: g.items.filter((i) => i.label.toLowerCase().includes(q)) }))
+        .filter((g) => g.items.length > 0)
+    : groups
   const filteredSecondary = q
     ? (secondaryNav ?? []).filter((i) => i.label.toLowerCase().includes(q))
     : secondaryNav ?? []
-  const noMatches = q.length > 0 && filteredPrimary.length === 0 && filteredSecondary.length === 0
+  const noMatches = q.length > 0 && filteredGroups.length === 0 && filteredSecondary.length === 0
 
   return (
     <>
-      <div className={`flex items-center gap-[8px] ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      {/* The collapsed rail deliberately drops the brand (see
+          features/workspace/workspace-sidebar.test.tsx) — at 76px the wordmark
+          does not fit and a lone mark reads as a stray button. */}
+      <div className="pf-side-head">
         {!collapsed && <BrandLink brand={brand} onNavigate={onNavigate} />}
-        <div className="flex items-center gap-[4px]">
-          {notificationTrigger ?? (notifications && <NotificationsBell items={notifications} align="left" />)}
+        <div className="flex items-center gap-[2px]">
+          {!collapsed &&
+            (notificationTrigger ?? (notifications && <NotificationsBell items={notifications} align="left" />))}
           {onToggle && (
             <button
               type="button"
               onClick={onToggle}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#f5f8ff] hover:text-[#155eef]"
+              className="pf-btn pf-btn--ghost pf-btn--icon pf-btn--sm"
             >
-              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+              {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
             </button>
           )}
         </div>
       </div>
 
       {!collapsed && (
-        <div className="relative">
-          <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-[#717680]" />
+        <div className="pf-side-search">
+          <Search size={15} />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search workspace"
+            placeholder="Jump to…"
             aria-label="Filter navigation"
-            className={`w-full rounded-[8px] border border-[#d5d7da] bg-white py-[8px] pl-[36px] pr-[36px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`}
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label="Clear search"
-              className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#717680] hover:text-[#414651]"
+              className="text-[color:var(--ink-faint)] hover:text-[color:var(--ink)]"
             >
               <X size={14} />
             </button>
           ) : (
-            <span className="absolute right-[10px] top-1/2 -translate-y-1/2 rounded-[4px] border border-[#e9eaeb] bg-white px-[6px] py-[2px] text-[12px] leading-[18px] text-[#717680]">
-              ⌘K
-            </span>
+            <span className="pf-kbd">⌘K</span>
           )}
         </div>
       )}
 
-      <nav className="flex flex-col gap-[2px]">
-        {filteredPrimary.map((item) => (
-          <NavLink key={item.label} item={item} onNavigate={onNavigate} collapsed={collapsed} />
+      <div className="pf-side-scroll">
+        {filteredGroups.map((group, index) => (
+          <nav key={group.label ?? `group-${index}`} className="pf-nav-group">
+            {group.label && <span className="pf-nav-label">{group.label}</span>}
+            {group.items.map((item) => (
+              <NavLink key={item.label} item={item} onNavigate={onNavigate} collapsed={collapsed} />
+            ))}
+          </nav>
         ))}
-      </nav>
 
-      {noMatches && (
-        <p className="px-[12px] text-[13px] leading-[18px] text-[#717680]">No matching pages.</p>
-      )}
+        {noMatches && <p className="pf-small px-[10px]">No matching pages.</p>}
 
-      <div className="flex-1" />
+        <div className="flex-1" />
 
-      {filteredSecondary.length > 0 && (
-        <nav className="flex flex-col gap-[2px]">
-          {filteredSecondary.map((item) => (
-            <NavLink key={item.label} item={item} onNavigate={onNavigate} collapsed={collapsed} />
-          ))}
-        </nav>
-      )}
+        {filteredSecondary.length > 0 && (
+          <nav className="pf-nav-group border-t border-[color:var(--line-soft)] pt-[12px]">
+            {filteredSecondary.map((item) => (
+              <NavLink key={item.label} item={item} onNavigate={onNavigate} collapsed={collapsed} />
+            ))}
+          </nav>
+        )}
+      </div>
 
-      <WorkspaceAccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} />
+      <div className="border-t border-[color:var(--line-soft)] pt-[10px]">
+        <WorkspaceAccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} />
+      </div>
     </>
   )
 }
@@ -397,7 +428,7 @@ export function DashboardSidebar({
   collapsed = false,
   onToggle,
 }: {
-  nav: DashNavItem[]
+  nav: DashNav
   secondaryNav?: DashNavItem[]
   user?: DashboardUser
   brand?: DashboardBrand
@@ -407,10 +438,64 @@ export function DashboardSidebar({
   onToggle?: () => void
 }) {
   return (
-    <aside className={`sticky top-0 hidden h-screen shrink-0 flex-col gap-[24px] overflow-hidden border-r border-[#e9eaeb] bg-white px-[16px] py-[24px] transition-[width] duration-200 lg:flex ${collapsed ? 'w-[80px]' : 'w-[296px]'}`}>
-      <SidebarBody nav={nav} secondaryNav={secondaryNav} user={user} brand={brand} notifications={notifications} notificationTrigger={notificationTrigger} collapsed={collapsed} onToggle={onToggle} />
+    <aside className="pf-side" data-collapsed={collapsed ? 'true' : 'false'}>
+      <SidebarBody
+        nav={nav}
+        secondaryNav={secondaryNav}
+        user={user}
+        brand={brand}
+        notifications={notifications}
+        notificationTrigger={notificationTrigger}
+        collapsed={collapsed}
+        onToggle={onToggle}
+      />
     </aside>
   )
+}
+
+const SIDEBAR_PREF_KEY = 'proploy:portal:sidebar-collapsed'
+
+/**
+ * The rail's collapsed state lives in a tiny external store rather than an
+ * effect, so it can be restored from localStorage without a setState cascade.
+ * `getServerSnapshot` returns false, and useSyncExternalStore re-renders after
+ * hydration if the stored preference disagrees — no markup mismatch.
+ */
+let sidebarCollapsedState: boolean | null = null
+const sidebarListeners = new Set<() => void>()
+
+function readSidebarPref(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_PREF_KEY) === '1'
+  } catch {
+    return false // storage unavailable (private mode) — default to expanded
+  }
+}
+
+function subscribeSidebar(listener: () => void): () => void {
+  sidebarListeners.add(listener)
+  return () => {
+    sidebarListeners.delete(listener)
+  }
+}
+
+function getSidebarSnapshot(): boolean {
+  if (sidebarCollapsedState === null) sidebarCollapsedState = readSidebarPref()
+  return sidebarCollapsedState
+}
+
+function getSidebarServerSnapshot(): boolean {
+  return false
+}
+
+function setSidebarCollapsed(next: boolean): void {
+  sidebarCollapsedState = next
+  try {
+    window.localStorage.setItem(SIDEBAR_PREF_KEY, next ? '1' : '0')
+  } catch {
+    /* ignore — the preference simply won't persist */
+  }
+  sidebarListeners.forEach((listener) => listener())
 }
 
 /** Full chrome: desktop sidebar + mobile top bar/drawer + content frame. */
@@ -423,7 +508,7 @@ export function DashboardChrome({
   notificationTrigger,
   children,
 }: {
-  nav: DashNavItem[]
+  nav: DashNav
   secondaryNav?: DashNavItem[]
   user?: DashboardUser
   brand?: DashboardBrand
@@ -432,7 +517,15 @@ export function DashboardChrome({
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // Remembered across navigations and sessions — re-collapsing the rail on
+  // every page load was a standing annoyance of the old chrome.
+  const sidebarCollapsed = useSyncExternalStore(
+    subscribeSidebar,
+    getSidebarSnapshot,
+    getSidebarServerSnapshot,
+  )
+
+  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
 
   // Lock body scroll while the drawer is open.
   useEffect(() => {
@@ -444,9 +537,19 @@ export function DashboardChrome({
     }
   }, [open])
 
+  // Escape closes the mobile drawer.
+  useEffect(() => {
+    if (!open) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [open])
+
   return (
-    <div className="min-h-screen bg-white font-[family-name:var(--font-dm-sans)] text-[#181d27]">
-      <div className="flex">
+    <div className="pf-scope font-[family-name:var(--font-dm-sans)]">
+      <div className="pf-shell">
         <DashboardSidebar
           nav={nav}
           secondaryNav={secondaryNav}
@@ -455,12 +558,12 @@ export function DashboardChrome({
           notifications={notifications}
           notificationTrigger={notificationTrigger}
           collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed((current) => !current)}
+          onToggle={toggleSidebar}
         />
 
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {/* Mobile top bar */}
-          <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] bg-white px-[16px] py-[12px]">
+          <div className="pf-topbar">
             <BrandLink brand={brand} compact />
             <div className="flex items-center gap-[4px]">
               {notificationTrigger ?? (notifications && <NotificationsBell items={notifications} align="right" />)}
@@ -468,9 +571,9 @@ export function DashboardChrome({
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Open navigation"
-                className={`inline-flex size-[40px] items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white text-[#414651] ${BUTTON_SKEUO}`}
+                className="pf-btn pf-btn--secondary pf-btn--icon"
               >
-                <Menu size={20} />
+                <Menu size={18} />
               </button>
             </div>
           </div>
@@ -481,20 +584,16 @@ export function DashboardChrome({
 
       {/* Mobile drawer */}
       {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-[#0a0d12]/40 backdrop-blur-[2px]"
-            onClick={() => setOpen(false)}
-            aria-hidden
-          />
-          <aside className="relative flex h-full w-[296px] max-w-[85vw] flex-col gap-[24px] overflow-y-auto bg-white px-[16px] py-[24px] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)]">
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="pf-scrim" onClick={() => setOpen(false)} aria-hidden />
+          <aside className="pf-drawer">
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close navigation"
-              className="absolute right-[12px] top-[20px] inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#fafafa]"
+              className="pf-btn pf-btn--ghost pf-btn--icon pf-btn--sm absolute right-[10px] top-[16px]"
             >
-              <X size={18} />
+              <X size={17} />
             </button>
             <SidebarBody
               nav={nav}
@@ -524,18 +623,13 @@ export function DashboardEmptyState({
   actionLabel?: string
 }) {
   return (
-    <main className="flex min-h-[60vh] flex-1 items-center justify-center px-[24px] py-[48px]">
-      <div className="max-w-[440px] rounded-[16px] border border-[#e9eaeb] bg-white p-[32px] text-center">
-        <div className="mx-auto mb-[16px] flex size-[56px] items-center justify-center rounded-full bg-[#f5f5f5] text-[#717680]">
-          {icon}
-        </div>
-        <h1 className="font-semibold text-[24px] leading-[32px] text-[#181d27]">{title}</h1>
-        <p className="mt-[8px] text-[15px] leading-[22px] text-[#535862]">{body}</p>
+    <main className="flex min-h-[70vh] flex-1 items-center justify-center px-[24px] py-[48px]">
+      <div className="pf-card pf-empty max-w-[440px]">
+        <span className="pf-empty-ico">{icon}</span>
+        <h3>{title}</h3>
+        <p>{body}</p>
         {actionHref && actionLabel && (
-          <Link
-            href={actionHref}
-            className={`mt-[24px] inline-flex rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
-          >
+          <Link href={actionHref} className="pf-btn pf-btn--primary mt-[4px]">
             {actionLabel}
           </Link>
         )}

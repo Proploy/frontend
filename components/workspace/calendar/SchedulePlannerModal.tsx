@@ -210,29 +210,29 @@ export function SchedulePlannerModal({
   const stepDay = (delta: number) =>
     setDay((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta))
 
-  const fieldClass = `rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[9px] text-[14px] leading-[20px] text-[#181d27] placeholder:text-[#717680] focus:outline-none focus:ring-2 focus:ring-[#155eef]/30 ${BUTTON_SKEUO}`
-  const labelClass = 'text-[13px] font-medium leading-[20px] text-[#414651]'
+  const fieldClass = `rounded-[8px] border border-line bg-white px-[12px] py-[9px] text-[14px] leading-[20px] text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-cobalt/30 ${BUTTON_SKEUO}`
+  const labelClass = 'text-[13px] font-medium leading-[20px] text-ink-soft'
   const hours = Array.from({ length: (DAY_END_MIN - DAY_START_MIN) / 60 + 1 }, (_, i) => DAY_START_MIN / 60 + i)
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-[16px]">
-      <div className="absolute inset-0 bg-[#0a0d12]/40 backdrop-blur-[2px]" onClick={submitting ? undefined : onClose} aria-hidden />
+      <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={submitting ? undefined : onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="schedule-planner-title"
-        className="relative flex max-h-[calc(100vh-32px)] w-full max-w-[760px] flex-col overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)]"
+        className="relative flex max-h-[calc(100vh-32px)] w-full max-w-[760px] flex-col overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)]"
       >
         {/* Header */}
-        <div className="flex items-start gap-[12px] border-b border-[#e9eaeb] px-[24px] py-[18px]">
-          <div className="flex size-[40px] shrink-0 items-center justify-center rounded-[8px] bg-[#eff4ff] text-[#155eef]">
+        <div className="flex items-start gap-[12px] border-b border-line px-[24px] py-[18px]">
+          <div className="flex size-[40px] shrink-0 items-center justify-center rounded-[8px] bg-cobalt-soft text-cobalt">
             <CalendarClock size={20} />
           </div>
           <div className="flex-1">
-            <h2 id="schedule-planner-title" className="font-semibold text-[18px] leading-[26px] text-[#181d27]">
+            <h2 id="schedule-planner-title" className="font-semibold text-[18px] leading-[26px] text-ink">
               Schedule a call
             </h2>
-            <p className="mt-[2px] text-[13px] leading-[18px] text-[#717680]">
+            <p className="mt-[2px] text-[13px] leading-[18px] text-ink-muted">
               Drag the block to a time that works for both calendars, then resize to set the length.
             </p>
           </div>
@@ -241,7 +241,7 @@ export function SchedulePlannerModal({
             onClick={onClose}
             disabled={submitting}
             aria-label="Close"
-            className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#fafafa] disabled:opacity-50"
+            className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-ink-muted hover:bg-surface-hover disabled:opacity-50"
           >
             <X size={18} />
           </button>
@@ -286,28 +286,28 @@ export function SchedulePlannerModal({
                 type="button"
                 onClick={() => stepDay(-1)}
                 aria-label="Previous day"
-                className={`inline-flex size-[32px] items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
+                className={`inline-flex size-[32px] items-center justify-center rounded-[8px] border border-line bg-white text-ink-soft hover:bg-surface-hover ${BUTTON_SKEUO}`}
               >
                 <ChevronLeft size={16} />
               </button>
-              <p className="min-w-[190px] text-center text-[15px] font-semibold leading-[22px] text-[#181d27]">
+              <p className="min-w-[190px] text-center text-[15px] font-semibold leading-[22px] text-ink">
                 {day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
               <button
                 type="button"
                 onClick={() => stepDay(1)}
                 aria-label="Next day"
-                className={`inline-flex size-[32px] items-center justify-center rounded-[8px] border border-[#d5d7da] bg-white text-[#414651] hover:bg-[#fafafa] ${BUTTON_SKEUO}`}
+                className={`inline-flex size-[32px] items-center justify-center rounded-[8px] border border-line bg-white text-ink-soft hover:bg-surface-hover ${BUTTON_SKEUO}`}
               >
                 <ChevronRight size={16} />
               </button>
             </div>
-            <div className="flex items-center gap-[14px] text-[12px] leading-[18px] text-[#717680]">
+            <div className="flex items-center gap-[14px] text-[12px] leading-[18px] text-ink-muted">
               <span className="inline-flex items-center gap-[5px]">
-                <span className="size-[10px] rounded-[3px] bg-[#e9eaeb]" /> Busy
+                <span className="size-[10px] rounded-[3px] bg-line" /> Busy
               </span>
               <span className="inline-flex items-center gap-[5px]">
-                <span className={`size-[10px] rounded-[3px] ${hasConflict ? 'bg-[#f04438]' : 'bg-[#155eef]'}`} /> Your call
+                <span className={`size-[10px] rounded-[3px] ${hasConflict ? 'bg-danger' : 'bg-cobalt'}`} /> Your call
               </span>
             </div>
           </div>
@@ -316,22 +316,22 @@ export function SchedulePlannerModal({
           <div className="flex px-[24px] pt-[12px]">
             <div className="w-[56px] shrink-0" />
             <div className="grid flex-1 grid-cols-2 gap-[6px]">
-              <div className="rounded-t-[8px] bg-[#f5f8ff] px-[10px] py-[6px] text-[12px] font-semibold text-[#155eef]">You</div>
-              <div className="truncate rounded-t-[8px] bg-[#fafafa] px-[10px] py-[6px] text-[12px] font-semibold text-[#414651]">
+              <div className="rounded-t-[8px] bg-cobalt-soft px-[10px] py-[6px] text-[12px] font-semibold text-cobalt">You</div>
+              <div className="truncate rounded-t-[8px] bg-surface-sunken px-[10px] py-[6px] text-[12px] font-semibold text-ink-soft">
                 {partyName || 'Other party'}
               </div>
             </div>
           </div>
 
           {/* Timeline */}
-          <div ref={scrollRef} className="mx-[24px] mb-[8px] max-h-[340px] overflow-y-auto rounded-b-[8px] border border-[#e9eaeb]">
+          <div ref={scrollRef} className="mx-[24px] mb-[8px] max-h-[340px] overflow-y-auto rounded-b-[8px] border border-line">
             <div className="flex" style={{ height: TOTAL_PX }}>
               {/* Hour gutter */}
-              <div className="relative w-[56px] shrink-0 border-r border-[#e9eaeb] bg-[#fcfcfd]">
+              <div className="relative w-[56px] shrink-0 border-r border-line bg-surface-sunken">
                 {hours.map((h) => (
                   <div
                     key={h}
-                    className="absolute right-[8px] -translate-y-1/2 text-[11px] leading-[14px] text-[#717680]"
+                    className="absolute right-[8px] -translate-y-1/2 text-[11px] leading-[14px] text-ink-muted"
                     style={{ top: minToPx(h * 60) }}
                   >
                     {hourLabel(h)}
@@ -347,10 +347,10 @@ export function SchedulePlannerModal({
               >
                 {/* Hour grid lines + midpoints */}
                 {hours.map((h) => (
-                  <div key={h} className="absolute left-0 right-0 border-t border-[#f0f1f3]" style={{ top: minToPx(h * 60) }} />
+                  <div key={h} className="absolute left-0 right-0 border-t border-line-soft" style={{ top: minToPx(h * 60) }} />
                 ))}
                 {/* Center divider between the two people */}
-                <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-[#f0f1f3]" />
+                <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-line-soft" />
 
                 {/* Busy blocks (visual only) */}
                 <div className="pointer-events-none absolute inset-0">
@@ -370,8 +370,8 @@ export function SchedulePlannerModal({
                   className={[
                     'absolute left-[6px] right-[6px] flex cursor-grab flex-col justify-center overflow-hidden rounded-[8px] border-2 px-[10px] shadow-sm active:cursor-grabbing',
                     hasConflict
-                      ? 'border-[#f04438] bg-[#fef3f2] text-[#b42318]'
-                      : 'border-[#155eef] bg-[#eff4ff] text-[#004eeb]',
+                      ? 'border-danger bg-danger-soft text-danger'
+                      : 'border-cobalt bg-cobalt-soft text-cobalt-deep',
                   ].join(' ')}
                   style={{ top: minToPx(startMin), height: Math.max(durationMin * PX_PER_MIN, 22) }}
                 >
@@ -401,7 +401,7 @@ export function SchedulePlannerModal({
             <div
               className={[
                 'flex items-center gap-[8px] rounded-[8px] border px-[12px] py-[9px] text-[13px] leading-[18px]',
-                hasConflict ? 'border-[#fecdca] bg-[#fef3f2] text-[#b42318]' : 'border-[#abefc6] bg-[#ecfdf3] text-[#067647]',
+                hasConflict ? 'border-danger-line bg-danger-soft text-danger' : 'border-ok-line bg-ok-soft text-ok',
               ].join(' ')}
             >
               {hasConflict ? <AlertTriangle size={16} className="shrink-0" /> : <Check size={16} className="shrink-0" />}
@@ -424,16 +424,16 @@ export function SchedulePlannerModal({
               />
             </label>
 
-            <div className="flex items-center gap-[8px] rounded-[8px] border border-[#e9eaeb] bg-[#fafafa] px-[12px] py-[9px]">
-              <Video size={16} className="shrink-0 text-[#155eef]" />
-              <p className="text-[12px] leading-[18px] text-[#535862]">
-                Scheduled through <span className="font-medium text-[#414651]">{providerName}</span>. A video link is
+            <div className="flex items-center gap-[8px] rounded-[8px] border border-line bg-surface-sunken px-[12px] py-[9px]">
+              <Video size={16} className="shrink-0 text-cobalt" />
+              <p className="text-[12px] leading-[18px] text-ink-soft">
+                Scheduled through <span className="font-medium text-ink-soft">{providerName}</span>. A video link is
                 generated automatically once booked.
               </p>
             </div>
 
             {error && (
-              <p className="text-[13px] leading-[18px] text-[#d92d20]" role="alert">
+              <p className="text-[13px] leading-[18px] text-danger" role="alert">
                 {error}
               </p>
             )}
@@ -441,8 +441,8 @@ export function SchedulePlannerModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-[10px] border-t border-[#e9eaeb] px-[24px] py-[14px]">
-          <p className="text-[13px] leading-[18px] text-[#717680]">
+        <div className="flex items-center justify-between gap-[10px] border-t border-line px-[24px] py-[14px]">
+          <p className="text-[13px] leading-[18px] text-ink-muted">
             {minLabel(startMin)} – {minLabel(endMin)} · {durationMin} min
           </p>
           <div className="flex gap-[10px]">
@@ -450,7 +450,7 @@ export function SchedulePlannerModal({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className={`rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] disabled:opacity-50 ${BUTTON_SKEUO}`}
+              className={`rounded-[8px] border border-line bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-ink-soft disabled:opacity-50 ${BUTTON_SKEUO}`}
             >
               Cancel
             </button>
@@ -458,7 +458,7 @@ export function SchedulePlannerModal({
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className={`inline-flex items-center gap-[6px] rounded-[8px] border-2 border-white/[0.12] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_SKEUO}`}
+              className={`inline-flex items-center gap-[6px] rounded-[8px] border-2 border-white/[0.12] bg-cobalt px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_SKEUO}`}
             >
               {submitting && <Loader2 size={16} className="animate-spin" />}
               {submitting ? 'Scheduling…' : 'Schedule call'}
@@ -475,7 +475,7 @@ function BusyBlockView({ block, side }: { block: BusyBlock; side: 'left' | 'righ
   const height = Math.max((block.endMin - block.startMin) * PX_PER_MIN, 16)
   return (
     <div
-      className="absolute overflow-hidden rounded-[6px] border border-[#e9eaeb] bg-[repeating-linear-gradient(45deg,#f2f4f7_0px,#f2f4f7_6px,#eaecf0_6px,#eaecf0_12px)] px-[8px] py-[3px]"
+      className="absolute overflow-hidden rounded-[6px] border border-line bg-[repeating-linear-gradient(45deg,var(--line-soft)_0px,var(--line-soft)_6px,var(--line)_6px,var(--line)_12px)] px-[8px] py-[3px]"
       style={{
         top,
         height,
@@ -483,8 +483,8 @@ function BusyBlockView({ block, side }: { block: BusyBlock; side: 'left' | 'righ
         width: 'calc(50% - 10px)',
       }}
     >
-      <p className="truncate text-[11px] font-medium leading-[15px] text-[#535862]">{block.label}</p>
-      {height > 30 && <p className="truncate text-[10px] leading-[14px] text-[#717680]">{minLabel(block.startMin)}</p>}
+      <p className="truncate text-[11px] font-medium leading-[15px] text-ink-soft">{block.label}</p>
+      {height > 30 && <p className="truncate text-[10px] leading-[14px] text-ink-muted">{minLabel(block.startMin)}</p>}
     </div>
   )
 }

@@ -33,13 +33,13 @@ export function MonthGrid({
   onSelectEvent: (event: CalendarEvent) => void
 }) {
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[#e9eaeb] bg-white">
+    <div className="overflow-hidden rounded-[12px] border border-line bg-white">
       {/* Weekday header */}
-      <div className="grid grid-cols-7 border-b border-[#e9eaeb]">
+      <div className="grid grid-cols-7 border-b border-line">
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="px-[12px] py-[10px] text-center text-[12px] font-medium leading-[18px] text-[#717680]"
+            className="px-[12px] py-[10px] text-center text-[12px] font-medium leading-[18px] text-ink-muted"
           >
             {label}
           </div>
@@ -65,24 +65,24 @@ export function MonthGrid({
               aria-label={`Schedule a call on ${day.toDateString()}`}
               className={[
                 'group flex min-h-[128px] flex-col gap-[4px] p-[8px] text-left align-top transition-colors',
-                'border-[#e9eaeb]',
+                'border-line',
                 isLastCol ? '' : 'border-r',
                 isLastRow ? '' : 'border-b',
-                inMonth ? 'bg-white hover:bg-[#fafafa]' : 'bg-[#fcfcfd] hover:bg-[#fafafa]',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#155eef]/40',
+                inMonth ? 'bg-white hover:bg-surface-hover' : 'bg-surface-sunken hover:bg-surface-hover',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cobalt/40',
               ].join(' ')}
             >
               {/* Date number */}
               <div className="flex items-center px-[2px]">
                 {isToday ? (
-                  <span className="flex size-[24px] items-center justify-center rounded-full bg-[#155eef] text-[12px] font-semibold leading-[18px] text-white">
+                  <span className="flex size-[24px] items-center justify-center rounded-full bg-cobalt text-[12px] font-semibold leading-[18px] text-white">
                     {day.getDate()}
                   </span>
                 ) : (
                   <span
                     className={[
                       'flex h-[24px] items-center text-[12px] font-semibold leading-[18px]',
-                      inMonth ? 'text-[#414651]' : 'text-[#a4a7ae]',
+                      inMonth ? 'text-ink-soft' : 'text-ink-faint',
                     ].join(' ')}
                   >
                     {day.getDate()}
@@ -96,7 +96,7 @@ export function MonthGrid({
                   <EventChip key={event.id} event={event} onSelect={onSelectEvent} />
                 ))}
                 {overflow > 0 && (
-                  <span className="mt-[1px] px-[4px] text-[12px] font-medium leading-[18px] text-[#717680] group-hover:text-[#414651]">
+                  <span className="mt-[1px] px-[4px] text-[12px] font-medium leading-[18px] text-ink-muted group-hover:text-ink-soft">
                     {overflow} more…
                   </span>
                 )}

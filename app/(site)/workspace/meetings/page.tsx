@@ -12,8 +12,7 @@ import {
 } from 'lucide-react'
 import { ActionToast } from '@/components/ui/action-toast'
 import {
-  BUTTON_SKEUO,
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -38,11 +37,11 @@ const FILTERS: { id: MeetingFilter; label: string }[] = [
 ]
 
 const STATUS_CLASS: Record<string, string> = {
-  scheduled: 'bg-[#eff4ff] text-[#155eef]',
-  completed: 'bg-[#ecfdf3] text-[#067647]',
-  cancelled: 'bg-[#fef3f2] text-[#b42318]',
-  no_show: 'bg-[#fffaeb] text-[#b54708]',
-  rescheduled: 'bg-[#fafafa] text-[#535862]',
+  scheduled: 'bg-cobalt-soft text-cobalt',
+  completed: 'bg-ok-soft text-ok',
+  cancelled: 'bg-danger-soft text-danger',
+  no_show: 'bg-warn-soft text-warn',
+  rescheduled: 'bg-surface-sunken text-ink-soft',
 }
 
 export default function WorkspaceMeetingsPage() {
@@ -227,32 +226,35 @@ function WorkspaceMeetingsContent() {
   return (
     <WorkspaceShell role={state.role}>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#e9eaeb] bg-white px-[24px] py-[20px]">
+        <header className="pf-pagebar">
           <div className="flex flex-col gap-[6px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <Calendar size={22} className="text-[#155eef]" />
-              Meetings
-            </h1>
+            <div className="flex min-w-0 items-center gap-[14px]">
+              <span className="pf-ico pf-ico--lg pf-ico--soft"><Calendar size={20} /></span>
+              <div className="pf-pagebar-text">
+                <span className="pf-eyebrow">Workspace</span>
+                <h1 className="pf-title truncate">Meetings</h1>
+              </div>
+            </div>
             <div ref={dropdownRef} className="relative">
               <button
                 type="button"
                 onClick={() => setEngagementDropdownOpen((current) => !current)}
                 disabled={scheduleableEngagements.length === 0}
-                className="inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[7px] text-[13px] font-semibold text-[#181d27] hover:border-[#155eef] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-[8px] rounded-[8px] border border-line bg-white px-[12px] py-[7px] text-[13px] font-semibold text-ink hover:border-cobalt disabled:cursor-not-allowed disabled:opacity-60"
                 aria-haspopup="listbox"
                 aria-expanded={engagementDropdownOpen}
               >
-                <span className="text-[#717680]">{dropdownPrefix}:</span>
+                <span className="text-ink-muted">{dropdownPrefix}:</span>
                 <span className="truncate">{selectedEngagement ? counterpartyLabel : dropdownPlaceholder}</span>
                 <ChevronDown
                   size={14}
-                  className={engagementDropdownOpen ? 'rotate-180 transition-transform text-[#155eef]' : 'text-[#717680]'}
+                  className={engagementDropdownOpen ? 'rotate-180 transition-transform text-cobalt' : 'text-ink-muted'}
                 />
               </button>
               {engagementDropdownOpen && (
                 <div
                   role="listbox"
-                  className="absolute left-0 top-[calc(100%+6px)] z-30 flex max-h-[280px] min-w-[280px] flex-col overflow-y-auto rounded-[10px] border border-[#e9eaeb] bg-white shadow-lg"
+                  className="absolute left-0 top-[calc(100%+6px)] z-30 flex max-h-[280px] min-w-[280px] flex-col overflow-y-auto rounded-[10px] border border-line bg-white shadow-lg"
                 >
                   {scheduleableEngagements.map((engagement) => {
                     const label = engagementTitle(engagement, state.role)
@@ -265,11 +267,11 @@ function WorkspaceMeetingsContent() {
                         aria-selected={active}
                         onClick={() => selectEngagement(engagement.id)}
                         className={`flex flex-col items-start gap-[2px] px-[12px] py-[10px] text-left transition-colors ${
-                          active ? 'bg-[#eff4ff]' : 'hover:bg-[#fafafa]'
+                          active ? 'bg-cobalt-soft' : 'hover:bg-surface-hover'
                         }`}
                       >
-                        <span className="text-[13px] font-semibold text-[#181d27]">{label}</span>
-                        <span className="text-[11px] uppercase tracking-[0.04em] text-[#717680]">
+                        <span className="text-[13px] font-semibold text-ink">{label}</span>
+                        <span className="text-[11px] uppercase tracking-[0.04em] text-ink-muted">
                           {statusLabel(engagement.status)}
                         </span>
                       </button>
@@ -279,17 +281,17 @@ function WorkspaceMeetingsContent() {
               )}
             </div>
           </div>
-          {loading && <RefreshCw size={18} className="animate-spin text-[#155eef]" />}
+          {loading && <RefreshCw size={18} className="animate-spin text-cobalt" />}
         </header>
 
         {error && (
-          <div className="border-b border-[#fedf89] bg-[#fffaeb] px-[24px] py-[10px] text-[13px] leading-[18px] text-[#b54708]">
+          <div className="border-b border-warn-line bg-warn-soft px-[24px] py-[10px] text-[13px] leading-[18px] text-warn">
             {error.error.message ||
               'Unable to load meetings. Native booking controls remain available below.'}
           </div>
         )}
 
-        <div className="flex flex-col gap-[12px] border-b border-[#e9eaeb] bg-white p-[16px] md:p-[20px]">
+        <div className="flex flex-col gap-[12px] border-b border-line bg-white p-[16px] md:p-[20px]">
           <NativeMeetingEntryCard
             role={state.role}
             engagement={selectedEngagement}
@@ -313,7 +315,7 @@ function WorkspaceMeetingsContent() {
           )}
         </div>
 
-        <div ref={bookingRequestsAnchorRef} className="flex flex-col gap-[12px] border-b border-[#e9eaeb] bg-white p-[16px] md:p-[20px]">
+        <div ref={bookingRequestsAnchorRef} className="flex flex-col gap-[12px] border-b border-line bg-white p-[16px] md:p-[20px]">
           <NativeBookingRequestsPanel
             role={state.role}
             selectedEngagementId={resolvedEngagementId}
@@ -323,8 +325,8 @@ function WorkspaceMeetingsContent() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex flex-col border-b border-[#e9eaeb] bg-white xl:w-[380px] xl:shrink-0 xl:border-b-0 xl:border-r">
-            <div className="border-b border-[#e9eaeb] p-[16px]">
+          <section className="flex flex-col border-b border-line bg-white xl:w-[380px] xl:shrink-0 xl:border-b-0 xl:border-r">
+            <div className="border-b border-line p-[16px]">
               <div className="flex gap-[4px] overflow-x-auto">
                 {FILTERS.map((item) => (
                   <button
@@ -332,7 +334,7 @@ function WorkspaceMeetingsContent() {
                     type="button"
                     onClick={() => setFilter(item.id)}
                     className={`whitespace-nowrap rounded-[6px] px-[10px] py-[6px] text-[13px] font-semibold leading-[18px] transition-colors ${
-                      filter === item.id ? 'bg-[#eff4ff] text-[#155eef]' : 'text-[#535862] hover:bg-[#fafafa]'
+                      filter === item.id ? 'bg-cobalt-soft text-cobalt' : 'text-ink-soft hover:bg-surface-hover'
                     }`}
                   >
                     {item.label}
@@ -342,7 +344,7 @@ function WorkspaceMeetingsContent() {
             </div>
             <div className="flex flex-1 flex-col gap-[4px] overflow-y-auto p-[8px]">
               {visible.length === 0 && (
-                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-[#717680]">
+                <p className="px-[12px] py-[24px] text-center text-[14px] leading-[20px] text-ink-muted">
                   No meetings in this view.
                 </p>
               )}
@@ -364,21 +366,21 @@ function WorkspaceMeetingsContent() {
                       }
                     }}
                     className={`rounded-[10px] border p-[12px] text-left transition-colors ${
-                      active ? 'border-[#155eef] bg-[#f5f8ff]' : 'border-transparent hover:bg-[#fafafa]'
+                      active ? 'border-cobalt bg-cobalt-soft' : 'border-transparent hover:bg-surface-hover'
                     }`}
                   >
-                    <span className="block truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                    <span className="block truncate text-[14px] font-semibold leading-[20px] text-ink">
                       {meeting.title}
                     </span>
-                    <span className="mt-[2px] block truncate text-[13px] leading-[18px] text-[#535862]">
+                    <span className="mt-[2px] block truncate text-[13px] leading-[18px] text-ink-soft">
                       {subtitle}
                     </span>
-                    <span className="mt-[2px] block text-[13px] leading-[18px] text-[#535862]">
+                    <span className="mt-[2px] block text-[13px] leading-[18px] text-ink-soft">
                       {timeDate(meeting.startsAt)}
                     </span>
                     <div className="mt-[10px] flex items-center justify-between gap-[8px]">
                       <MeetingStatusBadge status={meeting.status} />
-                      <span className="text-[12px] leading-[18px] text-[#717680]">{meeting.timezone}</span>
+                      <span className="text-[12px] leading-[18px] text-ink-muted">{meeting.timezone}</span>
                     </div>
                   </button>
                 )
@@ -389,14 +391,14 @@ function WorkspaceMeetingsContent() {
           <section className="min-w-0 flex-1 overflow-y-auto bg-white p-[24px]">
             {selected ? (
               <div className="mx-auto flex max-w-[760px] flex-col gap-[16px]">
-                <article className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-                  <div className="flex flex-wrap items-start justify-between gap-[16px] border-b border-[#e9eaeb] px-[32px] py-[28px]">
+                <article className="pf-card">
+                  <div className="pf-pagebar !static">
                     <div>
                       <MeetingStatusBadge status={selected.status} />
-                      <h2 className="mt-[12px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
+                      <h2 className="pf-title mt-[12px]">
                         {selected.title}
                       </h2>
-                      <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                      <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                         {timeDate(selected.startsAt)} to {timeDate(selected.endsAt)}
                       </p>
                     </div>
@@ -405,7 +407,7 @@ function WorkspaceMeetingsContent() {
                         href={selected.locationUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--primary"
                       >
                         <ExternalLink size={16} />
                         Join Google Meet
@@ -413,7 +415,7 @@ function WorkspaceMeetingsContent() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 gap-px border-b border-[#e9eaeb] bg-[#e9eaeb] sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-px border-b border-line bg-line sm:grid-cols-3">
                     <Fact
                       label="Engagement"
                       value={
@@ -427,25 +429,25 @@ function WorkspaceMeetingsContent() {
                   </div>
 
                   <div className="px-[32px] py-[24px]">
-                    <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
-                      <MapPin size={16} className="text-[#717680]" />
+                    <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+                      <MapPin size={16} className="text-ink-muted" />
                       Location
                     </p>
-                    <p className="mt-[10px] break-words text-[15px] leading-[24px] text-[#252b37]">
+                    <p className="mt-[10px] break-words text-[15px] leading-[24px] text-ink">
                       {selected.locationUrl ?? selected.locationType ?? 'Not set'}
                     </p>
                     {selected.actualStartsAt ? (
-                      <p className="mt-[16px] text-[13px] leading-[20px] text-[#535862]">
+                      <p className="mt-[16px] text-[13px] leading-[20px] text-ink-soft">
                         Actual time: {timeDate(selected.actualStartsAt)}
                         {selected.actualEndsAt ? ` to ${timeDate(selected.actualEndsAt)}` : ''}
                       </p>
                     ) : null}
                     {selected.notes && (
                       <>
-                        <p className="mt-[20px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+                        <p className="mt-[20px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
                           Notes
                         </p>
-                        <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-[#252b37]">
+                        <p className="mt-[10px] whitespace-pre-wrap text-[15px] leading-[24px] text-ink">
                           {selected.notes}
                         </p>
                       </>
@@ -477,15 +479,15 @@ function WorkspaceMeetingsContent() {
                   />
                 ) : (
                   selected.status === 'scheduled' && (
-                    <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-[#e9eaeb] bg-white p-[16px]">
-                      <span className="text-[13px] leading-[18px] text-[#535862]">
+                    <div className="flex flex-wrap items-center justify-between gap-[12px] rounded-[12px] border border-line bg-white p-[16px]">
+                      <span className="text-[13px] leading-[18px] text-ink-soft">
                         Cancel this scheduled meeting. Any Google Calendar event will be removed if linked.
                       </span>
                       <button
                         type="button"
                         onClick={() => void cancelMeeting(selected.id)}
                         disabled={busyId === selected.id}
-                        className={`inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-[#414651] transition-colors hover:bg-[#fef3f2] hover:text-[#d92d20] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_SKEUO}`}
+                        className="pf-btn pf-btn--danger"
                       >
                         <XCircle size={18} />
                         Cancel meeting
@@ -497,9 +499,9 @@ function WorkspaceMeetingsContent() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-[360px] text-center">
-                  <Calendar size={32} className="mx-auto text-[#d5d7da]" />
-                  <h2 className="mt-[12px] text-[18px] font-semibold text-[#181d27]">No meeting selected</h2>
-                  <p className="mt-[4px] text-[14px] leading-[20px] text-[#535862]">
+                  <Calendar size={32} className="mx-auto text-line" />
+                  <h2 className="pf-h2 mt-[12px]">No meeting selected</h2>
+                  <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">
                     Scheduled engagement meetings appear here.
                   </p>
                 </div>
@@ -536,7 +538,7 @@ function MeetingStatusBadge({ status }: { status: WorkspaceMeeting['status'] }) 
   return (
     <span
       className={`inline-flex items-center gap-[6px] rounded-full px-[8px] py-[2px] text-[12px] font-medium leading-[18px] ${
-        STATUS_CLASS[status] ?? 'bg-[#fafafa] text-[#535862]'
+        STATUS_CLASS[status] ?? 'bg-surface-sunken text-ink-soft'
       }`}
     >
       <span className="size-[6px] rounded-full bg-current" />
@@ -548,8 +550,8 @@ function MeetingStatusBadge({ status }: { status: WorkspaceMeeting['status'] }) 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 bg-white px-[24px] py-[18px]">
-      <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">{label}</p>
-      <p className="mt-[6px] truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">{value}</p>
+      <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">{label}</p>
+      <p className="mt-[6px] truncate text-[14px] font-semibold leading-[20px] text-ink">{value}</p>
     </div>
   )
 }

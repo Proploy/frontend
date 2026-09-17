@@ -20,7 +20,7 @@ import {
 import { ActionToast } from '@/components/ui/action-toast'
 import { Skeleton } from '@/components/ui/Skeleton'
 import {
-  CARD_SHADOW,
+
   WorkspaceLoading,
   WorkspaceShell,
   WorkspaceSignInState,
@@ -166,35 +166,38 @@ function WorkspaceSettingsContent() {
 
   return (
     <WorkspaceShell role={state.role}>
-      <main className="min-w-0 flex-1 bg-white px-[24px] py-[24px] md:px-[32px] md:py-[32px]">
+      <main className="pf-main min-w-0 flex-1">
         <div className="mx-auto flex max-w-[1040px] flex-col gap-[24px]">
           <header className="flex flex-col gap-[4px]">
-            <h1 className="flex items-center gap-[10px] text-[24px] font-semibold leading-[32px] text-[#181d27]">
-              <Settings size={22} className="text-[#155eef]" />
-              Settings
-            </h1>
+            <div className="flex min-w-0 items-center gap-[14px]">
+              <span className="pf-ico pf-ico--lg pf-ico--soft"><Settings size={20} /></span>
+              <div className="pf-pagebar-text">
+                <span className="pf-eyebrow">Workspace</span>
+                <h1 className="pf-title truncate">Settings</h1>
+              </div>
+            </div>
           </header>
 
-          <section className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}>
-            <div className="flex flex-wrap items-start justify-between gap-[16px] border-b border-[#e9eaeb] px-[24px] py-[20px]">
+          <section className="pf-card">
+            <div className="flex flex-wrap items-start justify-between gap-[16px] border-b border-line px-[24px] py-[20px]">
               <div className="flex items-start gap-[12px]">
-                <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#fde68a] to-[#c084fc] text-[14px] font-semibold text-white">
+                <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-warn-line to-violet-line text-[14px] font-semibold text-white">
                   {(state.user.name ?? state.user.email ?? 'U').charAt(0).toUpperCase()}
                 </span>
                 <div>
-                  <h2 className="text-[18px] font-semibold leading-[28px] text-[#181d27]">
+                  <h2 className="pf-h2">
                     {state.user.name ?? 'Workspace user'}
                   </h2>
-                  <p className="text-[14px] leading-[20px] text-[#535862]">{state.user.email}</p>
+                  <p className="text-[14px] leading-[20px] text-ink-soft">{state.user.email}</p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-[6px] rounded-full bg-[#ecfdf3] px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-[#067647]">
+              <span className="inline-flex items-center gap-[6px] rounded-full bg-ok-soft px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-ok">
                 <CheckCircle2 size={14} />
                 {statusLabel(state.role ?? 'user')}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-px bg-[#e9eaeb] md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-px bg-line md:grid-cols-3">
               <SettingFact icon={<UserRound size={18} />} label="Active engagements" value={String(counts.engagements)} />
               <SettingFact icon={<Calendar size={18} />} label="Upcoming meetings" value={String(counts.meetings)} />
               <SettingFact icon={<Settings size={18} />} label="Pending requests" value={String(counts.requests)} />
@@ -204,7 +207,7 @@ function WorkspaceSettingsContent() {
           <nav
             role="tablist"
             aria-label="Settings sections"
-            className={`flex flex-wrap gap-[4px] rounded-[12px] border border-[#e9eaeb] bg-white p-[4px] ${CARD_SHADOW}`}
+            className="pf-card flex flex-wrap gap-[4px] p-[4px]"
           >
             {TAB_DEFINITIONS.map((tab) => {
               const selected = tab.id === activeTab
@@ -219,8 +222,8 @@ function WorkspaceSettingsContent() {
                   onClick={() => setActiveTab(tab.id)}
                   className={
                     selected
-                      ? 'inline-flex flex-1 items-center justify-center gap-[8px] rounded-[8px] bg-[#155eef] px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition'
-                      : 'inline-flex flex-1 items-center justify-center gap-[8px] rounded-[8px] px-[14px] py-[10px] text-[14px] font-medium leading-[20px] text-[#535862] transition hover:bg-[#f5f7fa] hover:text-[#181d27]'
+                      ? 'inline-flex flex-1 items-center justify-center gap-[8px] rounded-[8px] bg-cobalt px-[14px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition'
+                      : 'inline-flex flex-1 items-center justify-center gap-[8px] rounded-[8px] px-[14px] py-[10px] text-[14px] font-medium leading-[20px] text-ink-soft transition hover:bg-surface-hover hover:text-ink'
                   }
                 >
                   {tab.icon}
@@ -234,7 +237,7 @@ function WorkspaceSettingsContent() {
             role="tabpanel"
             id={`tab-panel-${activeTab}`}
             aria-labelledby={`tab-${activeTab}`}
-            className={`rounded-[16px] border border-[#e9eaeb] bg-white ${CARD_SHADOW}`}
+            className="pf-card"
           >
             {activeTab === 'profile' && (
               <ProfileTab
@@ -259,7 +262,7 @@ function WorkspaceSettingsContent() {
             )}
           </div>
 
-          <p className="text-center text-[12px] leading-[18px] text-[#717680]">
+          <p className="text-center text-[12px] leading-[18px] text-ink-muted">
             Changes to notifications and profile are stored locally for now. Backend persistence will follow the W10 sign-off.
           </p>
         </div>
@@ -281,11 +284,11 @@ function isOpenRequest(request: { status: string }): boolean {
 function SettingFact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="bg-white px-[24px] py-[20px]">
-      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
-        <span className="text-[#717680]">{icon}</span>
+      <p className="flex items-center gap-[6px] text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
+        <span className="text-ink-muted">{icon}</span>
         {label}
       </p>
-      <p className="mt-[6px] text-[20px] font-semibold leading-[30px] text-[#181d27]">{value}</p>
+      <p className="mt-[6px] text-[20px] font-semibold leading-[30px] text-ink">{value}</p>
     </div>
   )
 }
@@ -346,11 +349,11 @@ function ProfileTab({
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       <header className="flex items-center gap-[12px]">
-        <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
+        <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-cobalt-soft text-cobalt">
           <UserRound size={20} />
         </span>
         <div>
-          <h2 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">Profile</h2>
+          <h2 className="pf-h2">Profile</h2>
         </div>
       </header>
 
@@ -369,16 +372,16 @@ function ProfileTab({
             aria-describedby="profile-displayName-help"
             className={
               isDisplayNameInvalid
-                ? 'w-full rounded-[10px] border border-[#fda29b] bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-[#181d27] outline-none focus:border-[#b42318] focus:ring-[2px] focus:ring-[#fef3f2]'
-                : 'w-full rounded-[10px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-[#181d27] outline-none focus:border-[#155eef] focus:ring-[2px] focus:ring-[#eff4ff]'
+                ? 'w-full rounded-[10px] border border-danger-line bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-ink outline-none focus:border-danger focus:ring-[2px] focus:ring-danger-soft'
+                : 'w-full rounded-[10px] border border-line bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-ink outline-none focus:border-cobalt focus:ring-[2px] focus:ring-cobalt-soft'
             }
           />
           <p
             id="profile-displayName-help"
             className={
               isDisplayNameInvalid
-                ? 'mt-[6px] text-[12px] leading-[18px] text-[#b42318]'
-                : 'mt-[6px] text-[12px] leading-[18px] text-[#717680]'
+                ? 'mt-[6px] text-[12px] leading-[18px] text-danger'
+                : 'mt-[6px] text-[12px] leading-[18px] text-ink-muted'
             }
           >
             {trimmed.length}/{DISPLAY_NAME_MAX} characters · required
@@ -386,17 +389,17 @@ function ProfileTab({
         </div>
 
         <FieldLabel htmlFor="profile-email">Email</FieldLabel>
-        <div className="flex items-center gap-[10px] rounded-[10px] border border-[#e9eaeb] bg-white px-[14px] py-[10px]">
-          <Mail size={16} className="text-[#717680]" />
-          <span className="text-[14px] leading-[20px] text-[#181d27]">{profile.email || '—'}</span>
-          <span className="ml-auto text-[11px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+        <div className="flex items-center gap-[10px] rounded-[10px] border border-line bg-white px-[14px] py-[10px]">
+          <Mail size={16} className="text-ink-muted" />
+          <span className="text-[14px] leading-[20px] text-ink">{profile.email || '—'}</span>
+          <span className="ml-auto text-[11px] font-medium uppercase tracking-[0.04em] text-ink-muted">
             read-only
           </span>
         </div>
 
         <FieldLabel htmlFor="profile-role">Role</FieldLabel>
         <div>
-          <span className="inline-flex items-center gap-[6px] rounded-full bg-[#ecfdf3] px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-[#067647]">
+          <span className="inline-flex items-center gap-[6px] rounded-full bg-ok-soft px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-ok">
             <CheckCircle2 size={14} />
             {statusLabel(role ?? profile.role ?? 'user')}
           </span>
@@ -409,7 +412,7 @@ function ProfileTab({
             aria-label="Timezone"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-            className="w-full rounded-[10px] border border-[#d5d7da] bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-[#181d27] outline-none focus:border-[#155eef] focus:ring-[2px] focus:ring-[#eff4ff]"
+            className="w-full rounded-[10px] border border-line bg-white px-[14px] py-[10px] text-[14px] leading-[20px] text-ink outline-none focus:border-cobalt focus:ring-[2px] focus:ring-cobalt-soft"
           >
             {TIMEZONE_OPTIONS.map((tz) => (
               <option key={tz} value={tz}>
@@ -417,13 +420,13 @@ function ProfileTab({
               </option>
             ))}
           </select>
-          <p className="mt-[6px] text-[12px] leading-[18px] text-[#717680]">
+          <p className="mt-[6px] text-[12px] leading-[18px] text-ink-muted">
             Used for meeting confirmations and scheduled notifications.
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-[12px] border-t border-[#e9eaeb] pt-[16px]">
+      <div className="flex items-center justify-end gap-[12px] border-t border-line pt-[16px]">
         <button
           type="button"
           onClick={() => {
@@ -431,7 +434,7 @@ function ProfileTab({
             setTimezone(profile.timezone)
           }}
           disabled={!dirty || saving}
-          className="rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[8px] text-[13px] font-semibold leading-[20px] text-[#181d27] disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-[8px] border border-line bg-white px-[14px] py-[8px] text-[13px] font-semibold leading-[20px] text-ink disabled:cursor-not-allowed disabled:opacity-60"
         >
           Discard
         </button>
@@ -439,7 +442,7 @@ function ProfileTab({
           type="submit"
           onClick={() => void handleSave()}
           disabled={!dirty || saving || isDisplayNameInvalid}
-          className="inline-flex items-center gap-[8px] rounded-[8px] bg-[#155eef] px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition hover:bg-[#0e4dc7] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-[8px] rounded-[8px] bg-cobalt px-[16px] py-[10px] text-[14px] font-semibold leading-[20px] text-white transition hover:bg-cobalt-deep disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save profile
@@ -489,11 +492,11 @@ function NotificationsTab({
     <div className="flex flex-col gap-[16px] px-[24px] py-[24px]">
       <header className="flex items-start justify-between gap-[12px]">
         <div className="flex items-center gap-[12px]">
-          <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#eff4ff] text-[#155eef]">
+          <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-cobalt-soft text-cobalt">
             <Bell size={20} />
           </span>
           <div>
-            <h2 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">Notifications</h2>
+            <h2 className="pf-h2">Notifications</h2>
           </div>
         </div>
         <div className="flex shrink-0 gap-[8px]">
@@ -501,7 +504,7 @@ function NotificationsTab({
             type="button"
             onClick={() => void onToggleAll(true)}
             disabled={settings.notificationSaveState === 'saving'}
-            className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[6px] text-[12px] font-semibold leading-[18px] text-[#181d27] hover:bg-[#f5f7fa] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-[8px] border border-line bg-white px-[12px] py-[6px] text-[12px] font-semibold leading-[18px] text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             Enable all
           </button>
@@ -509,14 +512,14 @@ function NotificationsTab({
             type="button"
             onClick={() => void onToggleAll(false)}
             disabled={settings.notificationSaveState === 'saving'}
-            className="rounded-[8px] border border-[#d5d7da] bg-white px-[12px] py-[6px] text-[12px] font-semibold leading-[18px] text-[#181d27] hover:bg-[#f5f7fa] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-[8px] border border-line bg-white px-[12px] py-[6px] text-[12px] font-semibold leading-[18px] text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             Pause all
           </button>
         </div>
       </header>
 
-      <div className="rounded-[10px] border border-[#e9eaeb]">
+      <div className="rounded-[10px] border border-line">
         {NOTIFICATION_TEMPLATES.map((template, index) => {
           const enabled = settings.notificationPreferences[template]
           const pending = pendingTemplate === template
@@ -527,14 +530,14 @@ function NotificationsTab({
               className={
                 isLast
                   ? 'flex items-center justify-between gap-[12px] px-[16px] py-[14px]'
-                  : 'flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] px-[16px] py-[14px]'
+                  : 'flex items-center justify-between gap-[12px] border-b border-line px-[16px] py-[14px]'
               }
             >
               <div className="min-w-0">
-                <p className="truncate text-[14px] font-semibold leading-[20px] text-[#181d27]">
+                <p className="truncate text-[14px] font-semibold leading-[20px] text-ink">
                   {NOTIFICATION_TEMPLATE_LABELS[template]}
                 </p>
-                <p className="text-[12px] leading-[18px] text-[#717680]">{template}</p>
+                <p className="text-[12px] leading-[18px] text-ink-muted">{template}</p>
               </div>
               <button
                 type="button"
@@ -545,8 +548,8 @@ function NotificationsTab({
                 disabled={pending}
                 className={
                   enabled
-                    ? 'inline-flex items-center gap-[6px] rounded-full bg-[#ecfdf3] px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-[#067647] disabled:cursor-not-allowed disabled:opacity-70'
-                    : 'inline-flex items-center gap-[6px] rounded-full bg-[#f5f7fa] px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-[#535862] disabled:cursor-not-allowed disabled:opacity-70'
+                    ? 'inline-flex items-center gap-[6px] rounded-full bg-ok-soft px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-ok disabled:cursor-not-allowed disabled:opacity-70'
+                    : 'inline-flex items-center gap-[6px] rounded-full bg-surface-sunken px-[10px] py-[4px] text-[12px] font-semibold leading-[18px] text-ink-soft disabled:cursor-not-allowed disabled:opacity-70'
                 }
               >
                 {pending ? (
@@ -563,7 +566,7 @@ function NotificationsTab({
         })}
       </div>
 
-      <p className="text-[12px] leading-[18px] text-[#717680]">
+      <p className="text-[12px] leading-[18px] text-ink-muted">
         Preferences persist locally; per-user persistence arrives once service-apis exposes the endpoint.
         {allEnabled
           ? ' All templates are on.'
@@ -604,17 +607,17 @@ function SchedulingTab({
       ) : profile ? (
         <div className="flex flex-col gap-[16px]">
           <header className="flex items-center gap-[12px]">
-            <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#ecfdf3] text-[#067647]">
+            <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-ok-soft text-ok">
               <CalendarClock size={20} />
             </span>
             <div>
-              <h2 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">External scheduling</h2>
-              <p className="mt-[2px] text-[13px] leading-[18px] text-[#535862]">
+              <h2 className="pf-h2">External scheduling</h2>
+              <p className="mt-[2px] text-[13px] leading-[18px] text-ink-soft">
                 Your existing Calendly or Cal link remains available for legacy flows.
               </p>
             </div>
           </header>
-          <dl className="grid grid-cols-1 gap-[12px] rounded-[10px] border border-[#e9eaeb] p-[16px] md:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-[12px] rounded-[10px] border border-line p-[16px] md:grid-cols-2">
             <DetailRow label="Display label" value={profile.displayLabel} />
             <DetailRow label="Provider" value={profile.provider} />
             <DetailRow label="Connection mode" value={profile.connectionMode} />
@@ -626,7 +629,7 @@ function SchedulingTab({
           </dl>
         </div>
       ) : (
-        <div className="rounded-[12px] border border-[#fedf89] bg-[#fffaeb] px-[14px] py-[12px] text-[13px] leading-[20px] text-[#b54708]">
+        <div className="rounded-[12px] border border-warn-line bg-warn-soft px-[14px] py-[12px] text-[13px] leading-[20px] text-warn">
           No external scheduling profile is configured. You can use Proploy&rsquo;s native Google Calendar flow below.
         </div>
       )}
@@ -652,14 +655,14 @@ function DetailRow({
 }) {
   return (
     <div className="flex flex-col gap-[2px]">
-      <dt className="text-[12px] font-medium uppercase tracking-[0.04em] text-[#717680]">
+      <dt className="text-[12px] font-medium uppercase tracking-[0.04em] text-ink-muted">
         {label}
       </dt>
       <dd
         className={
           tone === 'error'
-            ? 'text-[14px] leading-[20px] text-[#b42318]'
-            : 'text-[14px] leading-[20px] text-[#181d27]'
+            ? 'text-[14px] leading-[20px] text-danger'
+            : 'text-[14px] leading-[20px] text-ink'
         }
       >
         {isLink && value && value !== '—' ? (
@@ -667,7 +670,7 @@ function DetailRow({
             href={value}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-[6px] text-[#004eeb] hover:underline"
+            className="inline-flex items-center gap-[6px] text-cobalt-deep hover:underline"
           >
             {value}
             <ExternalLink size={12} />
@@ -684,7 +687,7 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: ReactNo
   return (
     <label
       htmlFor={htmlFor}
-      className="pt-[10px] text-[13px] font-medium leading-[18px] text-[#535862]"
+      className="pt-[10px] text-[13px] font-medium leading-[18px] text-ink-soft"
     >
       {children}
     </label>
@@ -704,18 +707,18 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-start gap-[12px] px-[24px] py-[28px]">
-      <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-[#fef3f2] text-[#b42318]">
+      <span className="flex size-[40px] items-center justify-center rounded-[10px] bg-danger-soft text-danger">
         {icon}
       </span>
       <div>
-        <h2 className="text-[16px] font-semibold leading-[24px] text-[#181d27]">{title}</h2>
-        <p className="mt-[2px] text-[13px] leading-[20px] text-[#535862]">{body}</p>
+        <h2 className="pf-h2">{title}</h2>
+        <p className="mt-[2px] text-[13px] leading-[20px] text-ink-soft">{body}</p>
       </div>
       {action ? (
         <button
           type="button"
           onClick={action.onClick}
-          className="inline-flex items-center gap-[8px] rounded-[8px] border border-[#d5d7da] bg-white px-[14px] py-[8px] text-[13px] font-semibold leading-[20px] text-[#181d27] hover:bg-[#f5f7fa]"
+          className="inline-flex items-center gap-[8px] rounded-[8px] border border-line bg-white px-[14px] py-[8px] text-[13px] font-semibold leading-[20px] text-ink hover:bg-surface-hover"
         >
           {action.label}
         </button>
@@ -759,7 +762,7 @@ function NotificationsSkeleton() {
       {[0, 1, 2, 3].map((row) => (
         <div
           key={row}
-          className="flex items-center justify-between gap-[12px] rounded-[10px] border border-[#e9eaeb] px-[16px] py-[14px]"
+          className="flex items-center justify-between gap-[12px] rounded-[10px] border border-line px-[16px] py-[14px]"
         >
           <div className="flex flex-col gap-[6px]">
             <Skeleton className="h-[12px] w-[180px] rounded-[6px]" />
@@ -782,7 +785,7 @@ function SchedulingSkeleton() {
           <Skeleton className="h-[12px] w-[200px] rounded-[6px]" />
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-[12px] rounded-[10px] border border-[#e9eaeb] p-[16px] md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-[12px] rounded-[10px] border border-line p-[16px] md:grid-cols-2">
         {[0, 1, 2, 3, 4].map((row) => (
           <div key={row} className="flex flex-col gap-[6px]">
             <Skeleton className="h-[12px] w-[80px] rounded-[6px]" />

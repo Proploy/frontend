@@ -220,11 +220,11 @@ export function WorkspaceNotificationTrigger() {
       type="button"
       onClick={openNotifications}
       aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-      className="relative inline-flex size-[36px] items-center justify-center rounded-[8px] text-[#414651] transition-colors hover:bg-[#fafafa]"
+      className="relative inline-flex size-[36px] items-center justify-center rounded-[8px] text-ink-soft transition-colors hover:bg-surface-hover"
     >
       <Bell size={19} />
       {unreadCount > 0 && (
-        <span className="absolute right-[4px] top-[3px] flex min-w-[16px] items-center justify-center rounded-full bg-[#d92d20] px-[4px] text-[10px] font-semibold leading-[16px] text-white">
+        <span className="absolute right-[4px] top-[3px] flex min-w-[16px] items-center justify-center rounded-full bg-danger px-[4px] text-[10px] font-semibold leading-[16px] text-white">
           {unreadCount}
         </span>
       )}
@@ -269,56 +269,56 @@ function WorkspaceNotificationModal({
         type="button"
         aria-label="Close notifications"
         onClick={onClose}
-        className="absolute inset-0 size-full bg-[#0a0d12]/25 backdrop-blur-[1px]"
+        className="absolute inset-0 size-full bg-ink/25 backdrop-blur-[1px]"
       />
-      <section className="absolute right-[16px] top-[16px] z-[1] flex max-h-[min(640px,calc(100vh-32px))] w-[420px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] border border-[#e9eaeb] bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.28)]">
-        <header className="flex items-center justify-between gap-[12px] border-b border-[#e9eaeb] px-[18px] py-[14px]">
+      <section className="absolute right-[16px] top-[16px] z-[1] flex max-h-[min(640px,calc(100vh-32px))] w-[420px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] border border-line bg-white shadow-[0_24px_48px_-12px_rgba(10,13,18,0.28)]">
+        <header className="flex items-center justify-between gap-[12px] border-b border-line px-[18px] py-[14px]">
           <div>
-            <h2 className="text-[16px] font-semibold text-[#181d27]">Notifications</h2>
-            <p className="text-[12px] text-[#717680]">{unread} unread</p>
+            <h2 className="text-[16px] font-semibold text-ink">Notifications</h2>
+            <p className="text-[12px] text-ink-muted">{unread} unread</p>
           </div>
           <div className="flex items-center gap-[6px]">
             {unread > 0 && (
-              <button type="button" onClick={onReadAll} className="inline-flex items-center gap-[4px] text-[12px] font-semibold text-[#155eef]">
+              <button type="button" onClick={onReadAll} className="inline-flex items-center gap-[4px] text-[12px] font-semibold text-cobalt">
                 <Check size={14} />
                 Mark all read
               </button>
             )}
-            <button type="button" onClick={onClose} aria-label="Close" className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-[#717680] hover:bg-[#f5f5f5]">
+            <button type="button" onClick={onClose} aria-label="Close" className="inline-flex size-[32px] items-center justify-center rounded-[8px] text-ink-muted hover:bg-surface-hover">
               <X size={17} />
             </button>
           </div>
         </header>
         <div className="overflow-y-auto">
           {loading && notifications.length === 0 ? (
-            <div className="flex items-center justify-center gap-[8px] px-[20px] py-[40px] text-[13px] text-[#717680]">
+            <div className="flex items-center justify-center gap-[8px] px-[20px] py-[40px] text-[13px] text-ink-muted">
               <Loader2 size={16} className="animate-spin" />
               Loading notifications
             </div>
           ) : error && notifications.length === 0 ? (
             <div className="px-[20px] py-[32px] text-center">
-              <p className="text-[13px] text-[#b42318]">{error}</p>
-              <button type="button" onClick={onRetry} className="mt-[10px] text-[13px] font-semibold text-[#155eef]">Retry</button>
+              <p className="text-[13px] text-danger">{error}</p>
+              <button type="button" onClick={onRetry} className="mt-[10px] text-[13px] font-semibold text-cobalt">Retry</button>
             </div>
           ) : notifications.length === 0 ? (
-            <p className="px-[20px] py-[40px] text-center text-[13px] text-[#717680]">No notifications yet.</p>
+            <p className="px-[20px] py-[40px] text-center text-[13px] text-ink-muted">No notifications yet.</p>
           ) : (
-            <ul className="divide-y divide-[#f0f0f1]">
+            <ul className="divide-y divide-line-soft">
               {notifications.map((notification) => {
                 const content = (
                   <div className="flex gap-[10px] px-[18px] py-[14px]">
-                    <span className={`mt-[6px] size-[8px] shrink-0 rounded-full ${notification.readAt == null ? 'bg-[#155eef]' : 'bg-transparent'}`} />
+                    <span className={`mt-[6px] size-[8px] shrink-0 rounded-full ${notification.readAt == null ? 'bg-cobalt' : 'bg-transparent'}`} />
                     <span className="min-w-0">
-                      <span className="block text-[14px] font-semibold text-[#181d27]">{notification.title}</span>
-                      <span className="mt-[2px] block text-[13px] text-[#717680]">{notification.body}</span>
-                      <span className="mt-[4px] block text-[11px] text-[#a4a7ae]">
+                      <span className="block text-[14px] font-semibold text-ink">{notification.title}</span>
+                      <span className="mt-[2px] block text-[13px] text-ink-muted">{notification.body}</span>
+                      <span className="mt-[4px] block text-[11px] text-ink-faint">
                         {notificationToItem(notification).when}
                       </span>
                     </span>
                   </div>
                 )
                 return (
-                  <li key={notification.id} className="hover:bg-[#fafafa]">
+                  <li key={notification.id} className="hover:bg-surface-hover">
                     {notification.href ? (
                       <Link
                         href={notification.href}
@@ -326,7 +326,7 @@ function WorkspaceNotificationModal({
                           onRead(notification.id)
                           onClose()
                         }}
-                        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#155eef]"
+                        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cobalt"
                       >
                         {content}
                       </Link>
