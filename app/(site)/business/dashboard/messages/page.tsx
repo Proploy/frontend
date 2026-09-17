@@ -1,32 +1,39 @@
 'use client'
 
-import { useState } from 'react'
-import { Send } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Archive, Paperclip, Phone, Search } from 'lucide-react'
 import { BusinessPage, BusinessPageHeader } from '@/components/business/dashboard/BusinessDashboardFrame'
-import { SectionCard } from '@/components/business/dashboard/ui'
+import { ChatAvatar } from '@/components/messaging/chat-avatar'
 import {
-  ConversationHeader,
-  MessageBubble,
-  MessageComposer,
-} from '@/components/messaging'
-import { Avatar } from '@/components/ui/Avatar'
+  ChatBubble,
+  ConversationRow,
+  DayDivider,
+  type ChatMessage,
+  type ChatThread,
+} from '@/components/messaging/chat'
 import { MOCK_BUSINESS_DASHBOARD } from '@/lib/service-apis/business-dashboard-mock'
 import { useDemo, addMessage, notify, DEMO_EXPERT } from '@/lib/demo/demo-store'
 
-type Bubble = { id: string; from: 'them' | 'me'; text: string; when: string }
+/**
+ * The business inbox. Shares the expert inbox's chat primitives
+ * (`components/messaging/chat`) rather than reimplementing a thinner version of
+ * them — the two were drifting apart, with this side missing read receipts,
+ * per-message avatars, day dividers and presence.
+ */
 
-const THREADS: Record<string, Bubble[]> = {
+const SEED: Record<string, ChatMessage[]> = {
   m1: [
-    { id: 'm1-1', from: 'them', text: 'UAT environment is ready for your team to test.', when: '18m' },
-    { id: 'm1-2', from: 'me', text: 'Great — I’ll get Priya’s team to run through the test scripts today.', when: '12m' },
-    { id: 'm1-3', from: 'them', text: 'Perfect. I’ll be on standby for any blockers.', when: '9m' },
+    { id: 'm1-1', from: 'them', kind: 'text', day: 'today', time: '18m', text: 'UAT environment is ready for your team to test.' },
+    { id: 'm1-2', from: 'you', kind: 'text', day: 'today', time: '12m', read: true, text: 'Great — I’ll get Priya’s team to run through the test scripts today.' },
+    { id: 'm1-3', from: 'them', kind: 'text', day: 'today', time: '9m', text: 'Perfect. I’ll be on standby for any blockers.' },
   ],
   m2: [
-    { id: 'm2-1', from: 'them', text: 'Need a call to unblock the data mapping decisions.', when: '2h' },
-    { id: 'm2-2', from: 'me', text: 'Can do 3pm AEST — sending an invite now.', when: '1h' },
+    { id: 'm2-1', from: 'them', kind: 'text', day: 'today', time: '2h', text: 'Need a call to unblock the data mapping decisions.' },
+    { id: 'm2-2', from: 'you', kind: 'text', day: 'today', time: '1h', read: true, text: 'Can do 3pm AEST — sending an invite now.' },
   ],
   m3: [
-    { id: 'm3-1', from: 'them', text: 'Dashboards shipped — sharing the walkthrough recording.', when: 'Yesterday' },
+    { id: 'm3-1', from: 'them', kind: 'text', day: 'before', time: 'Yesterday', text: 'Dashboards shipped — sharing the walkthrough recording.' },
+    { id: 'm3-2', from: 'them', kind: 'file', day: 'before', time: 'Yesterday', file: { name: 'analytics-walkthrough.pdf', size: '4.2 MB' } },
   ],
 }
 
@@ -35,12 +42,39 @@ export default function BusinessMessagesPage() {
   const { messages: storeMsgs } = useDemo()
   const [activeId, setActiveId] = useState(d.messages[0].id)
   const [draft, setDraft] = useState('')
+
   const active = d.messages.find((m) => m.id === activeId) ?? d.messages[0]
   const synced = active.from === DEMO_EXPERT
-  const thread: Bubble[] = [
-    ...(THREADS[activeId] ?? []),
+
+  const threads: ChatThread[] = useMemo(
+    () =>
+      d.messages.map((m) => ({
+        id: m.id,
+        name: m.from,
+        handle: m.project,
+        time: m.when,
+        preview: m.preview,
+        unread: m.unread,
+        online: m.from === DEMO_EXPERT,
+      })),
+    [d.messages],
+  )
+  const activeThread = threads.find((t) => t.id === activeId) ?? threads[0]
+
+  const messages: ChatMessage[] = [
+    ...(SEED[activeId] ?? []),
     ...(synced
-      ? storeMsgs.map((m) => ({ from: m.from === 'business' ? 'me' : 'them', text: m.text, when: 'now' }) as Bubble)
+      ? storeMsgs.map(
+          (m, i): ChatMessage => ({
+            id: `live-${i}`,
+            from: m.from === 'business' ? 'you' : 'them',
+            kind: 'text',
+            day: 'today',
+            time: 'now',
+            read: false,
+            text: m.text,
+          }),
+        )
       : []),
   ]
 
@@ -51,7 +85,7 @@ export default function BusinessMessagesPage() {
     notify({
       role: 'expert',
       kind: 'message',
-      title: `New message from ${active.from === DEMO_EXPERT ? 'Northwind Capital' : active.from}`,
+      title: `New message from Northwind Capital`,
       body: text.length > 60 ? `${text.slice(0, 60)}…` : text,
       href: '/experts/chat',
     })
@@ -62,65 +96,110 @@ export default function BusinessMessagesPage() {
     <BusinessPage>
       <BusinessPageHeader title="Messages" subtitle="Talk to every expert on your engagements in one inbox." />
 
-      <div className="mt-[24px]">
-        <SectionCard className="overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr]">
-            {/* Conversation list */}
-            <ul className="divide-y divide-line-soft border-b border-line-soft md:border-b-0 md:border-r">
-              {d.messages.map((m) => {
-                const isActive = m.id === activeId
-                return (
-                  <li key={m.id}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveId(m.id)}
-                      className={`flex w-full items-start gap-[12px] px-[16px] py-[14px] text-left transition-colors ${
-                        isActive ? 'bg-cobalt-soft' : 'hover:bg-surface-hover'
-                      }`}
-                    >
-                      <Avatar name={m.from} size="md" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-[8px]">
-                          <p className="pf-row-title truncate">{m.from}</p>
-                          <span className="pf-row-meta shrink-0">{m.when}</span>
-                        </div>
-                        <p className="pf-micro truncate">{m.project}</p>
-                        <p className="pf-row-sub truncate">{m.preview}</p>
-                      </div>
-                      {m.unread && <span className="mt-[6px] size-[8px] shrink-0 rounded-full bg-cobalt" />}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-
-            {/* Active thread — same primitives the expert workspace uses */}
-            <div className="flex min-h-[460px] flex-col bg-paper">
-              <ConversationHeader title={active.from} engagementLabel={active.project} />
-
-              <div className="flex flex-1 flex-col gap-[12px] overflow-y-auto p-[20px]">
-                {thread.map((b) => (
-                  <MessageBubble
-                    key={b.id}
-                    own={b.from === 'me'}
-                    message={{ content: b.text }}
-                    atLabel={b.when}
-                  />
-                ))}
-              </div>
-
-              <MessageComposer
-                draft={draft}
-                sending={false}
-                onDraftChange={setDraft}
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  send()
-                }}
+      <div className="pf-card mt-[24px] flex min-h-[600px] overflow-hidden">
+        {/* Thread rail */}
+        <div className="flex w-[320px] shrink-0 flex-col border-r border-line">
+          <div className="shrink-0 px-[16px] py-[16px]">
+            <div className="relative">
+              <Search size={16} className="absolute left-[12px] top-1/2 -translate-y-1/2 text-ink-muted" />
+              <input
+                type="text"
+                placeholder="Search"
+                aria-label="Search conversations"
+                className="pf-input h-[34px] pl-[34px] text-[13px]"
               />
             </div>
           </div>
-        </SectionCard>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {threads.map((t) => (
+              <ConversationRow
+                key={t.id}
+                conversation={t}
+                active={t.id === activeId}
+                onSelect={() => setActiveId(t.id)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Conversation */}
+        <section className="flex min-w-0 flex-1 flex-col">
+          <header className="flex h-[81px] shrink-0 items-center justify-between gap-[16px] border-b border-line px-[24px]">
+            <div className="flex min-w-0 items-center gap-[12px]">
+              <ChatAvatar name={activeThread.name} size="md" online={activeThread.online} />
+              <div className="min-w-0">
+                <div className="flex items-center gap-[8px]">
+                  <span className="pf-h2 truncate">{activeThread.name}</span>
+                  {activeThread.online && (
+                    <span className="pf-pill pf-pill--ok pf-pill--dot">Online</span>
+                  )}
+                </div>
+                <p className="pf-row-sub truncate">{activeThread.handle}</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-[8px]">
+              <button type="button" className="pf-btn pf-btn--secondary pf-btn--sm">
+                <Phone size={15} />
+                Call
+              </button>
+              <button type="button" className="pf-btn pf-btn--secondary pf-btn--sm">
+                <Archive size={15} />
+                Archive
+              </button>
+            </div>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-[24px] py-[24px]">
+            <div className="mx-auto flex max-w-[856px] flex-col gap-[16px]">
+              {messages.map((m, i) => {
+                const prev = messages[i - 1]
+                const showDivider = !prev || (prev.day !== m.day && m.day === 'today')
+                return (
+                  <div key={m.id} className="flex flex-col gap-[16px]">
+                    {showDivider && m.day === 'today' && <DayDivider label="Today" />}
+                    <ChatBubble message={m} sender={activeThread} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="shrink-0 px-[24px] py-[20px]">
+            <div className="mx-auto max-w-[856px] rounded-[10px] border border-line bg-white px-[14px] py-[12px] shadow-[var(--shadow-xs)] focus-within:border-cobalt">
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    send()
+                  }
+                }}
+                rows={2}
+                aria-label="Message"
+                placeholder={synced ? `Message ${activeThread.name} (live)` : `Message ${activeThread.name}`}
+                className="min-h-[48px] w-full resize-none bg-transparent text-[15px] leading-[23px] text-ink placeholder:text-ink-muted focus:outline-none"
+              />
+              <div className="flex items-center justify-between pt-[8px]">
+                <button
+                  type="button"
+                  aria-label="Attach file"
+                  className="flex size-[28px] items-center justify-center rounded-[6px] text-ink-faint transition-colors hover:bg-surface-hover hover:text-ink-soft"
+                >
+                  <Paperclip size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={send}
+                  disabled={!draft.trim() || !synced}
+                  className="text-[14px] font-semibold leading-[20px] text-cobalt-deep hover:underline disabled:cursor-not-allowed disabled:text-ink-faint disabled:no-underline"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </BusinessPage>
   )
