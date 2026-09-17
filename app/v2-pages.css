@@ -607,9 +607,10 @@
 
 .mc-hero{position:relative;z-index:20;padding-block:var(--sp-32) var(--sp-24)}
 .mc-hero-mesh{position:absolute;right:-96px;top:-96px;width:900px;max-width:none;opacity:.45;mix-blend-mode:multiply;pointer-events:none;-webkit-mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);mask-image:radial-gradient(60% 60% at 50% 45%,#000 45%,transparent 88%);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-.mc-hero-grid{display:grid;align-items:center;gap:var(--sp-12);grid-template-columns:minmax(0,1fr) minmax(0,.92fr)}
+.mc-hero-grid{display:grid;gap:var(--sp-10);grid-template-columns:minmax(0,1fr)}
 .mc-hero-copy{min-width:0}
-.mc-hero-card{min-width:0;padding-left:var(--sp-4)}
+.mc-hero-word{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.14em}
+.mc-hero-card{min-width:0}
 .mc-eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);padding:6px 12px;border-radius:var(--r-full);border:var(--bw) solid var(--line);background:color-mix(in oklab,white 70%,transparent)}
 .mc-proof{display:flex;align-items:center;gap:var(--sp-3)}
 .mc-proof-dots{display:flex;flex-shrink:0}
