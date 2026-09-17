@@ -10,6 +10,19 @@ import { ProductSearch } from "@/components/search/ProductSearch";
 import { MATCH_CONSOLE_HASH } from "./match-console-hash";
 
 /**
+ * Typed into the placeholder while the field is idle, so the bar shows what a
+ * real query looks like instead of asking an open question. Kept module-level:
+ * a new array each render would restart the reel on every keystroke.
+ */
+const PLACEHOLDER_PHRASES = [
+  "best CRM for construction",
+  "HRIS that integrates with NetSuite",
+  "field service platform with offline mode",
+  "procurement suite for a 400-person manufacturer",
+  "revenue ops stack for a Series B SaaS",
+] as const;
+
+/**
  * A bare printable keystroke typed while the console is hovered should land in
  * the search field, so "hover, then type" works without the card grabbing focus
  * off the page (which would hijack space/arrow scrolling).
@@ -91,6 +104,7 @@ export function MatchConsole() {
         mode={mode}
         variant="embedded"
         listClassName="mc-results"
+        placeholderPhrases={PLACEHOLDER_PHRASES}
       />
 
       {/* Sam is the guided route: for buyers who don't yet know what to search

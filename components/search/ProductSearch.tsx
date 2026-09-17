@@ -9,6 +9,9 @@ import {
   useNaturalSearch,
 } from "@/features/catalog";
 import type { SearchMode } from "@/features/catalog";
+import { useTypedPlaceholder } from "./use-typed-placeholder";
+
+const EMPTY_PHRASES: readonly string[] = [];
 
 /**
  * The real catalog search: keyword typeahead (spell correction + ghost
@@ -27,6 +30,7 @@ export function ProductSearch({
   variant = "popover",
   className = "",
   listClassName = "",
+  placeholderPhrases,
 }: {
   query: string
   onQueryChange: (query: string) => void
@@ -35,10 +39,13 @@ export function ProductSearch({
   variant?: "popover" | "embedded"
   className?: string
   listClassName?: string
+  /** Example queries to type into the placeholder while the field is idle. */
+  placeholderPhrases?: readonly string[]
 }) {
   const router = useRouter();
   const [resultsOpen, setResultsOpen] = React.useState(false);
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
+  const [focused, setFocused] = React.useState(false);
   const searchRef = React.useRef<HTMLDivElement>(null);
 
   const {
@@ -68,6 +75,11 @@ export function ProductSearch({
   const displayedError = isNatural ? naturalError : error;
 
   const embedded = variant === "embedded";
+  /** Idle means: nothing typed and the caret is elsewhere. */
+  const typedPlaceholder = useTypedPlaceholder(
+    placeholderPhrases ?? EMPTY_PHRASES,
+    query.length === 0 && !focused,
+  );
   const hasQuery = query.trim().length > 1;
   /** The dropdown is gated on focus in popover mode; embedded always shows. */
   const showResults = embedded ? hasQuery : resultsOpen && hasQuery;
@@ -185,9 +197,11 @@ export function ProductSearch({
             }}
             onKeyDown={handleKeyDown}
             onFocus={() => {
+              setFocused(true);
               if (query.trim().length > 1) setResultsOpen(true);
             }}
-            placeholder="What are you trying to solve?"
+            onBlur={() => setFocused(false)}
+            placeholder={typedPlaceholder ?? "What are you trying to solve?"}
             className="relative z-10 w-full min-w-0 bg-transparent px-3.5 py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-soft/70"
           />
         </div>

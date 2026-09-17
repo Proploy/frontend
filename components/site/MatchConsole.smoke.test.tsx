@@ -21,9 +21,14 @@ describe('MatchConsole render smoke', () => {
 
     // The search bar is always mounted.
     expect(container.querySelector('input')).not.toBeNull()
-    expect(container.querySelector('input')!.placeholder).toBe(
-      'What are you trying to solve?',
-    )
+    // The placeholder is a typewriter reel of example queries, so it is not a
+    // stable string. The accessible name comes from the sr-only label, which is
+    // exactly why the label must stay put while the placeholder churns.
+    const input = container.querySelector('input')!
+    expect(input.getAttribute('placeholder')).not.toBeNull()
+    const label = container.querySelector(`label[for="${input.id}"]`)
+    expect(label).not.toBeNull()
+    expect(label!.textContent).toBe('What are you trying to solve?')
     // A submit button sits at the right of the bar, so the bar does not rely
     // on the visitor guessing that Enter is the only way to run a search.
     const submit = container.querySelector('button[type="submit"]')
