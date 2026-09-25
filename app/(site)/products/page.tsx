@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { serverCatalogApi } from '@/features/catalog/shared/server-api'
 import ProductsPageClient from './ProductsPageClient'
@@ -11,6 +12,15 @@ import {
   parseProductFilterParams,
   searchParamsFromRecord,
 } from '@/features/catalog/products/filter-params'
+
+// The canonical drops the query string: every filter and search combination
+// renders a variant of this one page, and they must not compete with it.
+export const metadata: Metadata = {
+  title: 'Software catalog — Proploy',
+  description:
+    'Browse business software by category, compliance, integrations and pricing, and find vetted experts who implement it.',
+  alternates: { canonical: '/products' },
+}
 
 const PRODUCT_PAGE_SIZE = 15
 
