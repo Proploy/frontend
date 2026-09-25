@@ -10,6 +10,7 @@ import { CompareSelectionProvider } from '@/features/compare/selection-store'
 import { InterestCaptureProvider } from '@/features/interests/InterestCaptureProvider'
 import { FavoritesProvider } from '@/features/users'
 import CompareTray from '@/components/compare/CompareTray'
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo'
 
 import '../globals.css'
 
@@ -34,9 +35,23 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: 'swap',
 })
 
+// Pages write their own full title ("Blog — Proploy"), so there is no title
+// template here: one would brand every existing title twice. These values are
+// the fallback for routes that set nothing, and `metadataBase` is what turns
+// relative canonical and OG URLs into absolute ones on the canonical host.
 export const metadata: Metadata = {
-  title: 'Proploy - Procurement Solutions',
-  description: 'Smart procurement platform for your business needs',
+  metadataBase: new URL(SITE_URL),
+  title: 'Proploy — Software marketplace with implementation experts',
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 }
 
 export const dynamic = 'force-dynamic';
