@@ -9,11 +9,12 @@ import { Industries } from '@/components/site/Industries'
 import { HowItWorks } from '@/components/site/HowItWorks'
 import { Integrations } from '@/components/site/Integrations'
 import { ClosingCTA } from '@/components/site/ClosingCTA'
+import { SITE_DESCRIPTION } from '@/lib/seo'
 
 export const metadata: Metadata = {
-  title: 'Proploy — AI software marketplace with vetted implementation experts',
-  description:
-    'Proploy matches your business with the right software and the vetted experts who deploy it. Pre-negotiated pricing, full spend visibility, guaranteed execution.',
+  title: 'Proploy — Software marketplace with implementation experts',
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: '/' },
 }
 
 // The homepage ships the v2 Nav + Footer (design-system chrome). The global

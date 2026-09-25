@@ -1,33 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options'
+import { isProtectedRoute } from '@/lib/auth/protected-routes'
 import crypto from 'node:crypto'
 
 const publicRoutes = ['/', '/sign-in', '/sign-up', '/auth/callback', '/become-expert']
-
-// Public expert-directory category pages (footer links) — static marketing
-// routes that live alongside the auth-gated /experts/[id] profiles.
-const PUBLIC_EXPERT_CATEGORY_ROUTES = [
-  '/experts/top',
-  '/experts/engineering',
-  '/experts/data-ai',
-  '/experts/product',
-  '/experts/marketing',
-  '/experts/finance-ops',
-  '/experts/consulting',
-]
-
-function isProtectedExpertRoute(pathname: string) {
-  if (pathname.startsWith('/experts/dashboard') || pathname.startsWith('/experts/account') || pathname.startsWith('/experts/chat')) {
-    return true
-  }
-
-  if (PUBLIC_EXPERT_CATEGORY_ROUTES.includes(pathname)) {
-    return false
-  }
-
-  return pathname.startsWith('/experts/')
-}
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -102,19 +79,9 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isProtectedRoute = pathname.startsWith('/become-expert') ||
-                          pathname.startsWith('/expert-dashboard') ||
-                          isProtectedExpertRoute(pathname) ||
-                          pathname.startsWith('/dashboard') ||
-                          pathname.startsWith('/workspace') ||
-                          pathname.startsWith('/onboarding') ||
-                          pathname.startsWith('/favorites') ||
-                          pathname.startsWith('/profile') ||
-                          pathname.startsWith('/AI_workspace')
-  
   const isAuthRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
 
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute(pathname) && !user) {
     const loginUrl = new URL('/sign-in', request.url)
     loginUrl.searchParams.set('redirectTo', `${pathname}${request.nextUrl.search}`)
     return NextResponse.redirect(loginUrl)

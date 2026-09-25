@@ -67,7 +67,7 @@ const NAV_LINK_IDLE =
 const NAV_LINK_ACTIVE = "text-cobalt font-medium after:origin-left after:scale-x-100";
 
 export function Nav() {
-  const { user, signOut } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
   const avatarUrl = useUserProfilePicture();
   const application = useExpertApplicationStage();
   const [scrolled, setScrolled] = useState(false);
@@ -169,7 +169,11 @@ export function Nav() {
           </ul>
 
           <div className="ml-auto flex items-center gap-3">
-            {user ? (
+            {/* Held while the session resolves, so a signed-in visitor never
+                sees "Log in" flash before their avatar. */}
+            {isLoading ? (
+              <span aria-hidden="true" className="hidden h-8 w-8 animate-pulse rounded-full bg-gray-200/80 sm:block" />
+            ) : user ? (
               <div ref={profileRef} className="relative hidden sm:block">
                 <button
                   type="button"

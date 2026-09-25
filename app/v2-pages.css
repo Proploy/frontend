@@ -154,6 +154,18 @@
 .pp-btn.pp-btn--soft[aria-pressed="true"],.pp-btn.pp-btn--soft[aria-pressed="true"]:hover{color:#fff}
 .pp-btn--cobalt *,.pp-btn--primary *,.pp-btn--soft[aria-pressed="true"] *{color:inherit}
 .pp-btn--cobalt svg,.pp-btn--primary svg{stroke:currentColor}
+/* Floating feedback launcher (features/feedback/FeedbackWidget.tsx): position
+   and sizing only — fill and text colour come from .pp-btn--cobalt above.
+   Bottom-right; icon-only on phones; lifts clear of the compare tray, which is
+   bottom-centred and reaches this corner on narrower screens. */
+.pp-btn.pp-feedback-pill{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;height:44px;padding-inline:16px;gap:8px;font-size:14px;box-shadow:var(--shadow-lift);transition:bottom var(--d-base) var(--ease),transform var(--d-base) var(--ease),background-color var(--d-base) ease}
+.pp-btn.pp-feedback-pill[data-above-tray]{bottom:calc(112px + env(safe-area-inset-bottom))}
+@media (max-width:640px){
+  .pp-btn.pp-feedback-pill{right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:48px;height:48px;padding:0}
+  .pp-btn.pp-feedback-pill[data-above-tray]{bottom:calc(172px + env(safe-area-inset-bottom))}
+  .pp-feedback-pill__label{display:none}
+}
+@media (prefers-reduced-motion:reduce){.pp-btn.pp-feedback-pill{transition:none}}
 .pp-link-arrow{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:var(--weight-semibold);color:var(--cobalt);cursor:pointer;background:none;border:0;padding:0}
 .pp-link-arrow svg{transition:transform var(--d-base) var(--ease)}
 .pp-link-arrow:hover{color:var(--cobalt-deep);text-decoration:none}

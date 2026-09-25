@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Footer } from '@/components/site/Footer'
@@ -28,12 +29,50 @@ function CenteredState({ children }: { children: React.ReactNode }) {
   )
 }
 
+const DESCRIPTION_LIMIT = 155
+
+function detailPath(id: string) {
+  return `/api/v1/catalog/products/${encodeURIComponent(id)}/ui`
+}
+
+function clip(text: string) {
+  const clean = text.replace(/\s+/g, ' ').trim()
+  if (clean.length <= DESCRIPTION_LIMIT) return clean
+  return `${clean.slice(0, DESCRIPTION_LIMIT - 1).replace(/\s+\S*$/, '')}…`
+}
+
+// Same URL and options as the page's own fetch, so Next serves both from one
+// request. `/product/[id]` and `/products/[id]` render this same module, and
+// the canonical names `/products/...` because that is the one the site links.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const canonical = `/products/${encodeURIComponent(id)}`
+
+  const response = await serviceApisFetch(detailPath(id), { next: { revalidate: 3600 } })
+  if (!response.ok) {
+    return { title: 'Product — Proploy', robots: { index: false } }
+  }
+
+  const detail: ProductDetail = await response.json()
+  const title = `${detail.product_name} — Proploy`
+  const summary = detail.short_description || detail.best_for || detail.what_is
+  const description = summary
+    ? clip(summary)
+    : `Compare ${detail.product_name} on Proploy, and find vetted experts who implement it.`
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+  }
+}
+
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   // Use serviceApisFetch directly to hit the backend from the server component
   const [detailRes, mediaRes] = await Promise.all([
-    serviceApisFetch(`/api/v1/catalog/products/${encodeURIComponent(id)}/ui`, { next: { revalidate: 3600 } }),
+    serviceApisFetch(detailPath(id), { next: { revalidate: 3600 } }),
     serviceApisFetch(`/api/v1/catalog/products/${encodeURIComponent(id)}/media`, { next: { revalidate: 3600 } }),
   ])
 

@@ -241,10 +241,14 @@ export default function WorkspaceEngagementsPage() {
                     <StatusBadge status={selected.status} />
                   </div>
 
-                  <div className="grid grid-cols-1 gap-px bg-line md:grid-cols-3">
+                  <div
+                    className={`grid grid-cols-1 gap-px bg-line ${isExpertWorkspace ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}
+                  >
                     <Fact label="Expert" value={selected.expertDisplayName ?? 'Not available'} />
                     <Fact label="Buyer" value={selected.buyerDisplayName ?? 'Not available'} />
-                    <Fact label="Request" value={selected.meetingIntentId ?? 'Not linked'} />
+                    {isExpertWorkspace ? null : (
+                      <Fact label="Request" value={selected.meetingIntentId ?? 'Not linked'} />
+                    )}
                   </div>
                 </article>
 
