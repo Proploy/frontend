@@ -42,6 +42,9 @@ async function handleProxy(request: NextRequest, context: { params: Promise<unkn
     '/api/v1/documents/',
     '/api/v1/auth/sync',
     '/api/v1/catalog/compare',
+    // POST is public; the token, when a session exists, only attributes the
+    // submission. Reads are admin-only.
+    '/api/v1/feedback',
   ]
   const requireAuth = AUTH_REQUIRED_PREFIXES.some(prefix => path.startsWith(prefix))
 

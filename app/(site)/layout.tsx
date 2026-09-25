@@ -10,6 +10,7 @@ import { CompareSelectionProvider } from '@/features/compare/selection-store'
 import { InterestCaptureProvider } from '@/features/interests/InterestCaptureProvider'
 import { FavoritesProvider } from '@/features/users'
 import CompareTray from '@/components/compare/CompareTray'
+import { FeedbackWidget } from '@/features/feedback/FeedbackWidget'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo'
 
 import '../globals.css'
@@ -82,6 +83,7 @@ export default function RootLayout({
                       <main className="flex-1 w-full">{children}</main>
                       <SiteFooter />
                       <CompareTray />
+                      <FeedbackWidget />
                     </InterestCaptureProvider>
                 </CompareSelectionProvider>
               </FavoritesProvider>

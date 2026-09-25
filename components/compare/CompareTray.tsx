@@ -10,12 +10,17 @@ import { CatalogImage } from '@/components/catalog/CatalogImage'
 import { buildCompareUrl } from '@/features/compare/compare-url'
 import { useCompareSelection, MAX_COMPARE } from '@/features/compare/selection-store'
 
+/** Whether the tray is on screen; other bottom-anchored UI moves clear of it. */
+export function compareTrayShows(count: number, pathname: string | null): boolean {
+  return count > 0 && !pathname?.startsWith('/compare')
+}
+
 export default function CompareTray() {
   const router = useRouter()
   const pathname = usePathname()
   const { items, count, remove, clear } = useCompareSelection()
 
-  if (count === 0 || pathname?.startsWith('/compare')) return null
+  if (!compareTrayShows(count, pathname)) return null
 
   const canCompare = count >= 2
   const goCompare = () => {
