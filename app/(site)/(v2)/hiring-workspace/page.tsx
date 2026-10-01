@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { WorkspaceTabs } from './WorkspaceTabs'
 
-export const metadata: Metadata = {
-  title: 'Hiring workspace — Proploy',
-  description:
-    'Shortlists, conversations and decision records in one place — so your hiring decision survives handoffs, holidays and audits.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Hiring Workspace",
+  description: "Collaborative hiring hub for business teams. Review proposals, manage shortlist candidates, and coordinate interviews in one place.",
+  path: "/hiring-workspace",
+  keywords: ["hiring workspace","team hiring tool","candidate management","brief management"],
+})
 
 const PILLARS = [
   {

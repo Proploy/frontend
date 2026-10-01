@@ -26,6 +26,9 @@ import { Nav } from '@/components/site/Nav'
 import { Avatar } from '@/components/ui/Avatar'
 import { InlineVideo } from '@/components/media/InlineVideo'
 import { useExpertProfile } from '@/features/experts/use-expert-profile'
+import { IntegrationLogo } from '@/components/integrations/IntegrationLogo'
+import { getProductLogoUrl } from '@/features/catalog/products/logo-url'
+import { CatalogImage } from '@/components/catalog/CatalogImage'
 import type {
   ExpertLinkResponse,
   ExpertProductExpertiseResponse,
@@ -308,8 +311,8 @@ export default function ExpertProfilePage() {
           <StatCard label="Portfolio projects" value={profile.projects.length} />
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-[32px]">
-          <div className="flex flex-col gap-[32px]">
+        <section className="grid min-w-0 grid-cols-1 gap-[32px] lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="flex min-w-0 flex-col gap-[32px]">
             {introVideoUrl ? (
               <ProfileSection title="Intro Video">
                 <div className="aspect-video overflow-hidden rounded-[12px] bg-ink">
@@ -327,7 +330,7 @@ export default function ExpertProfilePage() {
 
             <ProfileSection title="Products & certifications">
               {profile.productExpertise && profile.productExpertise.length > 0 ? (
-                <div className="grid grid-cols-1 gap-[14px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
                   {profile.productExpertise.map((product) => (
                     <ProductExpertiseCard key={product.id ?? product.productName} product={product} />
                   ))}
@@ -400,10 +403,10 @@ export default function ExpertProfilePage() {
             ) : null}
           </div>
 
-          <aside className="flex flex-col gap-[24px]">
+          <aside className="flex min-w-0 flex-col gap-[24px]">
             <ProfileSection title="Projects">
               {profile.projects.length > 0 ? (
-                <div className="grid grid-cols-1 gap-[14px]">
+                <div className="grid min-w-0 grid-cols-1 gap-[14px]">
                   {profile.projects.map((project) => (
                     <ProjectCard key={project.id} expertId={profile.id} project={project} />
                   ))}
@@ -588,6 +591,35 @@ function ProfileSection({ title, children }: { title: string; children: React.Re
   )
 }
 
+function AboutCard({ label, value }: { label: string; value?: string | null }) {
+  const [expanded, setExpanded] = useState(false)
+  const LIMIT = 130
+  const isExpandable = typeof value === 'string' && value.length > LIMIT
+
+  return (
+    <button
+      type="button"
+      onClick={() => isExpandable && setExpanded((current) => !current)}
+      aria-expanded={isExpandable ? expanded : undefined}
+      className={`flex min-h-[116px] w-full min-w-0 flex-col rounded-[12px] border border-line bg-white p-[14px] text-left transition-colors ${isExpandable ? 'cursor-pointer hover:border-cobalt-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt/30' : ''}`}
+    >
+      <p className="text-[12px] leading-[16px] font-semibold text-ink-muted uppercase tracking-wider">{label}</p>
+      {value ? (
+        <div className="mt-[6px] w-full">
+          <p className={`whitespace-pre-line break-words text-[14px] leading-[20px] text-ink-soft ${isExpandable && !expanded ? 'line-clamp-3' : ''}`}>
+            {value}
+          </p>
+          {isExpandable ? <span className="mt-[6px] inline-block text-[12px] font-semibold text-cobalt-deep">{expanded ? 'Show less' : 'Read more'}</span> : null}
+        </div>
+      ) : (
+        <p className="mt-[6px]">
+          <NotSharedYet />
+        </p>
+      )}
+    </button>
+  )
+}
+
 function AboutGrid({ profile }: { profile: ExpertPublic }) {
   const rows = [
     { label: 'Why Proploy', value: profile.whyPlatform },
@@ -598,105 +630,146 @@ function AboutGrid({ profile }: { profile: ExpertPublic }) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
       {rows.map((row) => (
-        <div key={row.label} className="rounded-[12px] bg-surface-sunken p-[16px]">
-          <p className="text-[13px] leading-[18px] font-medium text-ink-muted">{row.label}</p>
-          {row.value ? (
-            <p className="mt-[6px] whitespace-pre-line text-[15px] leading-[22px] text-ink-soft">{row.value}</p>
-          ) : (
-            <p className="mt-[6px]">
-              <NotSharedYet />
-            </p>
-          )}
-        </div>
+        <AboutCard
+          key={row.label}
+          label={row.label}
+          value={row.value}
+        />
       ))}
     </div>
   )
 }
 
 function ProductExpertiseCard({ product }: { product: ExpertProductExpertiseResponse }) {
-  const stats = [
-    { label: 'Years', value: product.yearsExperience },
-    { label: 'Projects', value: product.projectsCompleted },
-  ]
+  const [certsOpen, setCertsOpen] = useState(false)
+  const hasCerts = product.certifications.length > 0
+
+  // Resolve real catalog logo; fall back to IntegrationLogo SVG sprite
+  const logoUrl = product.productId ? getProductLogoUrl(product.productId, 'catalog') : null
 
   return (
-    <article className="rounded-[12px] border border-line bg-surface-sunken p-[18px]">
-      <div className="flex flex-wrap items-center gap-[8px]">
-        <p className="font-semibold text-[16px] leading-[24px] text-ink">{product.productName}</p>
-        <span
-          className={`inline-flex items-center rounded-full border px-[8px] py-[1px] text-[12px] leading-[18px] font-medium ${
-            product.isPrimary
-              ? 'border-cobalt-soft bg-cobalt-soft text-cobalt-deep'
-              : 'border-line bg-white text-ink-muted'
-          }`}
-        >
-          {product.isPrimary ? 'Primary' : 'Secondary'}
-        </span>
-      </div>
+    <>
+      {/* ── COMPACT CARD ── */}
+      <div
+        className="relative rounded-[12px] border border-line bg-white p-[14px] flex items-center gap-[12px] cursor-pointer transition-shadow duration-200 hover:shadow-sm hover:border-cobalt-soft/60"
+        onClick={() => hasCerts && setCertsOpen(true)}
+        role={hasCerts ? 'button' : undefined}
+        aria-expanded={hasCerts ? certsOpen : undefined}
+      >
+        {/* Logo */}
+        <div className="shrink-0 rounded-[8px] border border-[#e9eaeb] bg-surface-sunken flex items-center justify-center overflow-hidden" style={{ width: 40, height: 40 }}>
+          {logoUrl ? (
+            <CatalogImage
+              src={logoUrl}
+              alt={product.productName}
+              className="w-full h-full object-contain p-[4px]"
+              fallback={<IntegrationLogo name={product.productName} size={32} borderless />}
+            />
+          ) : (
+            <IntegrationLogo name={product.productName} size={32} borderless />
+          )}
+        </div>
 
-      <div className="mt-[12px] flex flex-wrap gap-[24px]">
-        {stats.map((stat) => (
-          <div key={stat.label}>
-            <p className="text-[13px] leading-[18px] font-medium text-ink-muted">{stat.label}</p>
-            {typeof stat.value === 'number' ? (
-              <p className="mt-[2px] text-[15px] leading-[22px] font-semibold text-ink">{stat.value}</p>
-            ) : (
-              <p className="mt-[2px]">
-                <NotSharedYet />
-              </p>
-            )}
+        {/* Name + badge */}
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[14px] leading-[20px] text-ink truncate">{product.productName}</p>
+          <span
+            className={`inline-flex items-center rounded-full border px-[6px] py-[1px] text-[11px] leading-[16px] font-medium ${
+              product.isPrimary
+                ? 'border-cobalt-soft bg-cobalt-soft text-cobalt-deep'
+                : 'border-line bg-surface-sunken text-ink-muted'
+            }`}
+          >
+            {product.isPrimary ? 'Primary' : 'Secondary'}
+          </span>
+        </div>
+
+        {/* Stats */}
+        <div className="shrink-0 flex gap-[16px] text-right">
+          <div>
+            <p className="text-[10px] font-medium text-ink-muted uppercase tracking-wide">Yrs</p>
+            <p className="text-[16px] font-bold text-ink leading-none mt-[2px]">
+              {typeof product.yearsExperience === 'number' ? product.yearsExperience : '—'}
+            </p>
           </div>
-        ))}
+          <div>
+            <p className="text-[10px] font-medium text-ink-muted uppercase tracking-wide">Proj</p>
+            <p className="text-[16px] font-bold text-ink leading-none mt-[2px]">
+              {typeof product.projectsCompleted === 'number' ? product.projectsCompleted : '—'}
+            </p>
+          </div>
+          {hasCerts && (
+            <div className="self-center">
+              <Award size={14} className="text-cobalt-deep" />
+            </div>
+          )}
+        </div>
       </div>
 
-      {product.industryFit && product.industryFit.length > 0 && (
-        <div className="mt-[14px]">
-          <p className="text-[13px] leading-[18px] font-medium text-ink-muted">Industries served</p>
-          <div className="mt-[6px] flex flex-wrap gap-[4px]">
-            {product.industryFit.map((industry) => (
-              <span
-                key={industry}
-                className="inline-flex items-center rounded-md border border-line bg-white px-[8px] py-[2px] text-[12px] leading-[18px] font-medium text-ink-soft"
-              >
-                {industry}
-              </span>
-            ))}
+      {/* ── CERT DRAWER (click-to-open modal overlay) ── */}
+      {certsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-[16px]"
+          style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setCertsOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-[380px] rounded-[16px] bg-white border border-line shadow-xl p-[20px] flex flex-col gap-[12px] max-h-[70vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setCertsOpen(false)}
+              className="absolute top-[14px] right-[14px] rounded-full p-[4px] hover:bg-surface-sunken transition-colors"
+              aria-label="Close"
+            >
+              <X size={16} className="text-ink-muted" />
+            </button>
+
+            <div className="flex items-center gap-[10px]">
+              <div className="shrink-0 rounded-[8px] border border-[#e9eaeb] bg-surface-sunken flex items-center justify-center overflow-hidden" style={{ width: 36, height: 36 }}>
+                {logoUrl ? (
+                  <CatalogImage src={logoUrl} alt={product.productName} className="w-full h-full object-contain p-[4px]" fallback={<IntegrationLogo name={product.productName} size={28} borderless />} />
+                ) : (
+                  <IntegrationLogo name={product.productName} size={28} borderless />
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-[15px] leading-[20px] text-ink">{product.productName}</p>
+                <p className="text-[12px] text-ink-muted">Certifications</p>
+              </div>
+            </div>
+
+            <div className="border-t border-line pt-[12px]">
+              {hasCerts ? (
+                <ul className="flex flex-col gap-[8px]">
+                  {product.certifications.map((cert, i) => (
+                    <li key={`${cert.name}-${i}`} className="rounded-[8px] border border-line bg-surface-sunken px-[12px] py-[10px]">
+                      <p className="font-medium text-[13px] leading-[18px] text-ink">{cert.name}</p>
+                      {(cert.issuer || cert.year) && (
+                        <p className="text-[12px] leading-[16px] text-ink-muted mt-[2px]">
+                          {[cert.issuer, cert.year].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      {cert.credentialUrl && (
+                        <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer"
+                          className="mt-[6px] inline-flex items-center gap-[4px] text-[12px] font-semibold text-cobalt-deep hover:underline"
+                        >
+                          Verify <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-ink-muted">No certifications listed yet.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
-
-      <div className="mt-[14px]">
-        <p className="text-[13px] leading-[18px] font-medium text-ink-muted">Certifications</p>
-        {product.certifications.length > 0 ? (
-          <ul className="mt-[6px] flex flex-col gap-[6px]">
-            {product.certifications.map((certification, index) => (
-              <li key={`${certification.name}-${index}`} className="text-[14px] leading-[20px] text-ink-soft">
-                <span className="font-medium text-ink">{certification.name}</span>
-                {certification.issuer ? <span> · {certification.issuer}</span> : null}
-                {certification.year ? <span> · {certification.year}</span> : null}
-                {certification.credentialUrl ? (
-                  <a
-                    href={certification.credentialUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-[6px] inline-flex items-center gap-[4px] font-semibold text-cobalt-deep hover:underline"
-                  >
-                    Verify
-                    <ExternalLink size={13} />
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-[4px]">
-            <NotSharedYet />
-          </p>
-        )}
-      </div>
-    </article>
+    </>
   )
 }
 
@@ -707,12 +780,10 @@ function AvailabilityGrid({ profile }: { profile: ExpertPublic }) {
       label: 'Regions served',
       value: profile.regionsServed?.length ? profile.regionsServed.join(', ') : null,
     },
-    { label: 'Remote only', value: profile.remoteOnly ? 'Yes' : null },
     {
       label: 'Weekly availability',
       value: profile.availabilityHoursPerWeek ? `${profile.availabilityHoursPerWeek} hours` : null,
     },
-    { label: 'Earliest start', value: profile.earliestStartDate },
   ]
 
   return (
@@ -729,30 +800,58 @@ function AvailabilityGrid({ profile }: { profile: ExpertPublic }) {
 
 function ProjectCard({ expertId, project }: { expertId: string; project: ExpertProjectResponse }) {
   const { getProjectFileDownloadUrl } = useExpertProfile()
+  const [expanded, setExpanded] = useState(false)
+
+  const summary = project.summary ?? ''
+  const outcomes = project.outcomes ?? ''
+  const combined = [summary, outcomes].filter(Boolean).join(' · ')
+  const LIMIT = 120
+  const isTruncatable = combined.length > LIMIT
 
   return (
-    <article className="rounded-[12px] border border-line bg-surface-sunken p-[18px]">
-      <div className="flex items-start justify-between gap-[12px]">
-        <div className="min-w-0">
-          <p className="font-semibold text-[16px] leading-[24px] text-ink">{project.title}</p>
-          <p className="mt-[4px] text-[14px] leading-[20px] text-ink-soft">{project.summary}</p>
-        </div>
-        <Briefcase size={18} className="shrink-0 text-ink-muted" />
+    <article className="min-w-0 rounded-[12px] border border-line bg-white p-[14px]">
+      <div className="flex items-start justify-between gap-[10px]">
+        <p className="min-w-0 break-words font-semibold text-[14px] leading-[20px] text-ink">{project.title}</p>
+        <Briefcase size={15} className="shrink-0 text-ink-muted mt-[2px]" />
       </div>
-      {project.outcomes ? (
-        <p className="mt-[12px] text-[14px] leading-[20px] text-ink-soft">{project.outcomes}</p>
-      ) : null}
-      {resolveExpertPublicResourceUrl(project.link) ? (
-        <a href={resolveExpertPublicResourceUrl(project.link) ?? undefined} target="_blank" rel="noopener noreferrer" className="mt-[12px] inline-flex items-center gap-[6px] text-[14px] leading-[20px] font-semibold text-cobalt-deep hover:underline">
-          Project link
-          <ArrowUpRight size={16} />
-        </a>
-      ) : null}
-      <ProjectDocumentViewer
-        project={project}
-        getDownloadUrl={(projectId) => getProjectFileDownloadUrl(expertId, projectId)}
-        compact
-      />
+
+      {combined && (
+        <div className="mt-[6px]">
+          <p className="text-[13px] leading-[18px] text-ink-soft break-words">
+            {isTruncatable && !expanded ? `${combined.slice(0, LIMIT).trimEnd()}…` : combined}
+          </p>
+          {isTruncatable && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              className="mt-[6px] inline-flex items-center gap-[4px] text-[12px] font-semibold text-cobalt-deep hover:underline"
+            >
+              {expanded ? 'Show less' : 'Read full project'}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="mt-[10px] flex flex-col gap-[6px]">
+        {resolveExpertPublicResourceUrl(project.link) && (
+          <div>
+            <a
+              href={resolveExpertPublicResourceUrl(project.link) ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-[4px] text-[12px] font-semibold text-cobalt-deep hover:underline"
+            >
+              Project link <ArrowUpRight size={13} />
+            </a>
+          </div>
+        )}
+        <ProjectDocumentViewer
+          project={project}
+          getDownloadUrl={(projectId) => getProjectFileDownloadUrl(expertId, projectId)}
+          compact
+        />
+      </div>
     </article>
   )
 }

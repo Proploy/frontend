@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { PricingFaq } from './PricingFaq'
 
-export const metadata: Metadata = {
-  title: 'Transparent pricing — Proploy',
-  description:
-    '0% commission on your rate. A flat, published engagement fee instead of a percentage cut — see exactly what you pay before you accept a brief.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Transparent Pricing & Commission",
+  description: "Clear, predictable pricing with zero hidden fees. See exactly what clients pay and what experts earn on Proploy.",
+  path: "/commission",
+  keywords: ["transparent pricing","commission structure","freelance platform fees","Proploy pricing"],
+})
 
 const FEES = [
   { item: 'Applying & verification', detail: 'Interview, references, badge', cost: 'Free' },

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Proploy Agent — Proploy',
-  description:
-    'Describe what your team needs in plain language. The Proploy Agent shortlists software, attaches vetted implementation experts and books the first call — in one conversation.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Proploy Agent",
+  description: "Autonomous AI matching engine that evaluates technical requirements, scopes implementation workflows, and coordinates verified experts.",
+  path: "/proploy-agent",
+  keywords: ["Proploy agent","AI matching agent","software scoping AI","automated talent matching"],
+})
 
 const CAPABILITIES = [
   {

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Discover experts — Proploy',
-  description:
-    'Browse vetted implementation experts, match on stack and sector, and compare shortlists side by side — before the first call.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Discover Experts",
+  description: "Browse verified software specialists, consultants, and architects matched to your exact platforms and requirements.",
+  path: "/discover-experts",
+  keywords: ["discover experts","find software specialists","hire verified engineers","top SaaS consultants"],
+})
 
 function Check() {
   return (

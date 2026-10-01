@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
 
@@ -10,11 +11,12 @@ import { AboutToggle } from '@/components/site/AboutToggle'
 import { CaseScroller } from './CaseScroller'
 import { QuoteCarousel } from './QuoteCarousel'
 
-export const metadata: Metadata = {
-  title: 'For Businesses — Proploy',
-  description:
-    'Discover best-fit software, get matched with vetted implementation experts, and launch with confidence — one workflow from software decision to successful launch.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "For Businesses",
+  description: "Discover best-fit software, get matched with vetted implementation experts, and launch with confidence — one workflow from software decision to successful launch.",
+  path: "/for-businesses",
+  keywords: ["hire software experts","software implementation for business","vetted SaaS consultants","business software deployment"],
+})
 
 function CheckMark({ style }: { style?: CSSProperties }) {
   return (

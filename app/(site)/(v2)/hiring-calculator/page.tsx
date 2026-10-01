@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { Calculator } from './Calculator'
 
-export const metadata: Metadata = {
-  title: 'Hiring calculator — Proploy',
-  description:
-    'Compare the annual cost of a full-time specialist hire against an on-demand Proploy implementation expert. Pick a role, region and weekly hours to see the math.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Hiring & Implementation ROI Calculator",
+  description: "Estimate software implementation timelines, contractor costs, and ROI compared to traditional agency hires.",
+  path: "/hiring-calculator",
+  keywords: ["hiring calculator","implementation cost calculator","contractor rates calculator","ROI calculator"],
+})
 
 const ASSUMPTIONS = [
   {

@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import { ExpertCategoryPage } from '../category-page'
 
-export const metadata: Metadata = {
-  title: 'Marketing experts — Proploy',
-  description:
-    'Vetted marketing, SEO, growth and content specialists — including HubSpot implementers — who run the ops behind the funnel.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Marketing Ops & MarTech Experts",
+  description: "Certified MarTech, CRM, marketing automation, and attribution tracking implementation consultants.",
+  path: "/experts/marketing",
+  keywords: ["marketing ops experts","MarTech consultants","CRM implementation","marketing automation"],
+})
 
 export default function MarketingExpertsPage() {
   return (

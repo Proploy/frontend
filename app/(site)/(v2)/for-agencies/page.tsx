@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'For Consulting Firms — Proploy',
-  description:
-    'List your whole bench on Proploy — multi-seat consultant profiles, a pipeline of qualified briefs, and white-label delivery through one workspace.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "For Consulting Firms & Agencies",
+  description: "Deploy bench capacity, win pre-qualified enterprise briefs, and streamline billing and contracting through Proploy.",
+  path: "/for-agencies",
+  keywords: ["for consulting firms","agency partner program","staff augmentation","bench monetization"],
+})
 
 const PILLARS = [
   {

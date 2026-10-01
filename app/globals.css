@@ -438,8 +438,17 @@ body {
 }
 
 @utility marquee-track {
-    animation: marquee 38s linear infinite;
+    animation: marquee 80s linear infinite;
     &:hover { animation-play-state: paused; }
+}
+
+/* ── Product expertise card flip ─────────────────────────────────────────── */
+@utility backface-hidden {
+    backface-visibility: hidden;
+}
+
+.group:hover [data-flip="true"] {
+    transform: rotateY(180deg);
 }
 
 @utility spin-slow {

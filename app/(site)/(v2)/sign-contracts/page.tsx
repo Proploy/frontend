@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { ContractFaq } from './ContractFaq'
 
-export const metadata: Metadata = {
-  title: 'Sign contracts — Proploy',
-  description:
-    'Standardised SOWs with scope protection, e-signed in the workspace. From accepted brief to binding contract without a lawyer on retainer.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Sign Contracts & SOWs",
+  description: "Standardized, IP-protected Master Services Agreements and Statements of Work ready for digital signature in seconds.",
+  path: "/sign-contracts",
+  keywords: ["sign contracts","standardized SOW","MSA agreement","digital contracting"],
+})
 
 const PROTECTIONS = [
   {

@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 
 import { LegalPage, type LegalSection } from '../legal-page'
 
-export const metadata: Metadata = {
-  title: 'Cookie Policy — Proploy',
-  description: 'The cookies and similar technologies Proploy uses, and the choices you have about them.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Cookie Policy",
+  description: "Information about how Proploy uses cookies and similar technologies to enhance security and user experience.",
+  path: "/legal/cookies",
+  keywords: ["cookie policy","privacy settings","Proploy cookies"],
+})
 
 const COOKIE_ROWS: { name: string; category: string; purpose: string; duration: string }[] = [
   { name: 'pp_session', category: 'Strictly necessary', purpose: 'Keeps you signed in and secures your session', duration: 'Session' },

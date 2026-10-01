@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { PaymentsFaq } from './PaymentsFaq'
 
-export const metadata: Metadata = {
-  title: 'Global payments & tax — Proploy',
-  description:
-    'Pay vetted experts in 34 countries with tax and compliance handled — local invoicing entities, jurisdiction-correct documentation and one monthly invoice.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Global Payments & Tax Compliance",
+  description: "Automated tax form collection (W-8/W-9), multi-currency payouts, and compliant cross-border contractor invoicing.",
+  path: "/global-payments-tax",
+  keywords: ["global payments","tax compliance","contractor payouts","cross-border payroll"],
+})
 
 // deterministic dot pattern — same on server and client
 const DOT_COUNT = 132

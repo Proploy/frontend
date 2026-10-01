@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Approve invoices — Proploy',
-  description:
-    'Invoice review and approval chains built for finance — every line tied to an approved milestone, every action logged for audit.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Approve Invoices",
+  description: "Review milestone deliverables, inspect work logs and approve invoices in one click. Clean audit trails for finance and compliance.",
+  path: "/approve-invoices",
+  keywords: ["approve invoices","invoice approvals","contractor invoice management","spend management"],
+})
 
 const QUEUE = [
   { id: 'INV-2041', vendor: 'Amara O.', project: 'Meridian HRIS rollout', amount: '$8,400', state: 'Awaiting you', tone: 'warn' },

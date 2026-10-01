@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import { ExpertCategoryPage } from '../category-page'
 
-export const metadata: Metadata = {
-  title: 'Data & AI experts — Proploy',
-  description:
-    'Vetted data, analytics, machine learning and AI automation specialists who turn your pipelines and models into working systems.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Data & AI Implementation Experts",
+  description: "Top data engineers, ML architects, LLM integrators, and analytics specialists for modern data stacks.",
+  path: "/experts/data-ai",
+  keywords: ["Data & AI experts","machine learning engineers","analytics consultants","AI deployment"],
+})
 
 export default function DataAiExpertsPage() {
   return (

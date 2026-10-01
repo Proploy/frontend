@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 
 import { LegalPage, type LegalSection } from '../legal-page'
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy — Proploy',
-  description: 'How Proploy collects, uses, shares and protects personal data across the marketplace.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Privacy Policy",
+  description: "Learn how Proploy collects, uses, and safeguards your personal information and project data.",
+  path: "/legal/privacy",
+  keywords: ["privacy policy","data protection","GDPR compliance","security"],
+})
 
 const SECTIONS: LegalSection[] = [
   {

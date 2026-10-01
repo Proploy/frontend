@@ -94,7 +94,7 @@ export function LogoMarquee() {
       <div className="flex overflow-hidden">
         <ul
           className="marquee-track flex shrink-0 items-center gap-22 pr-22"
-          style={{ animationDuration: '48s' }}
+          style={{ animationDuration: '80s' }}
           aria-busy={loading}
         >
           {track.map((t, i) => (

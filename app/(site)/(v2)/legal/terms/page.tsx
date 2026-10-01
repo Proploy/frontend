@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 
 import { LegalPage, type LegalSection } from '../legal-page'
 
-export const metadata: Metadata = {
-  title: 'Terms of Service — Proploy',
-  description: 'The terms that govern use of the Proploy marketplace and engagement workspace.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Terms of Service",
+  description: "The terms and conditions governing the use of the Proploy marketplace and enterprise platform services.",
+  path: "/legal/terms",
+  keywords: ["terms of service","user agreement","platform terms"],
+})
 
 const SECTIONS: LegalSection[] = [
   {

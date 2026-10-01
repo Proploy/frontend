@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { BriefFaq } from './BriefFaq'
 
-export const metadata: Metadata = {
-  title: 'Post a job — Proploy',
-  description:
-    'Brief once and matched specialists respond with scope, timeline and rate — no job-board spam, no fifty unqualified applications.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Post a Job or Implementation Brief",
+  description: "Describe your software goal or implementation requirement. Get matched with pre-vetted specialists within 48 hours.",
+  path: "/post-a-job",
+  keywords: ["post a job","create brief","hire software consultant","request proposal"],
+})
 
 const FLOW_STEPS = [
   {

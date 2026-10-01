@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Find work — Proploy',
-  description:
-    'Qualified briefs matched to your platforms and industries. Scope and budget defined before you respond — no bidding wars, no race to the bottom.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Find Work",
+  description: "Qualified briefs matched to your platforms and industries. Scope and budget defined before you respond — no bidding wars.",
+  path: "/find-work",
+  keywords: ["find work","freelance projects","consulting gigs","software engineer briefs"],
+})
 
 const MATCH_STEPS = [
   {

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Global payments — Proploy',
-  description:
-    'Local-currency payouts across 34 countries on local rails — FX shown before you accept, tax documentation generated per jurisdiction.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Global Payments",
+  description: "Receive payouts in your local currency across 130+ countries with fast transfers and guaranteed payment protection.",
+  path: "/global-payments",
+  keywords: ["global payouts","international payments","expert earnings","direct deposit"],
+})
 
 // Deterministic world-ish dot map: indexes of lit / hot dots in a 22×9 grid.
 const GRID_COLS = 22

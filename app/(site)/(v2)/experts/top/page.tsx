@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import { ExpertCategoryPage } from '../category-page'
 
-export const metadata: Metadata = {
-  title: 'Top experts — Proploy',
-  description:
-    'The most experienced specialists on Proploy — interviewed, reference-checked and graded against the playbook for the software they implement.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Top Rated Software Experts",
+  description: "The highest-rated, verified software architects and implementation specialists across the Proploy marketplace.",
+  path: "/experts/top",
+  keywords: ["top rated experts","elite software consultants","vetted architects","verified specialists"],
+})
 
 export default function TopExpertsPage() {
   return (
