@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Events — Proploy',
-  description:
-    'Webinars, workshops and community sessions on buying and implementing business software — hosted by Proploy and the expert network.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Events & Webinars",
+  description: "Live architecture breakdowns, product teardowns, and expert panels on modern software selection and deployment.",
+  path: "/events",
+  keywords: ["tech events","software webinars","live demos","developer panels"],
+})
 
 const UPCOMING = [
   {

@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { ContactForm } from './ContactForm'
 
-export const metadata: Metadata = {
-  title: 'Contact — Proploy',
-  description:
-    'Talk to the Proploy team — sales, support, partnerships or press. We reply to every message within one business day.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Contact Us",
+  description: "Get in touch with the Proploy team for enterprise onboarding, expert inquiries, partnerships, or support.",
+  path: "/contact",
+  keywords: ["contact Proploy","customer support","sales contact","enterprise inquiries"],
+})
 
 const CHANNELS = [
   {

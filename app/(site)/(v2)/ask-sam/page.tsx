@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 import { ArrowRight, Check, Minus } from 'lucide-react'
 
@@ -12,15 +13,12 @@ const TITLE = 'Ask Sam — Proploy'
 const DESCRIPTION =
   'Describe what you are trying to fix. Sam asks a few focused questions, shortlists software from the Proploy catalog, and writes a brief your team can act on.'
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  openGraph: {
-    title: TITLE,
-    description: DESCRIPTION,
-    type: 'website',
-  },
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Ask Sam — AI Software Advisor",
+  description: "Ask Sam anything about software selection, stack compatibility, implementation scope and expert matching for your business.",
+  path: "/ask-sam",
+  keywords: ["AI software advisor","Ask Sam","software recommendation","stack matching AI"],
+})
 
 // Copy on this page is derived from the agent's system prompt and tools in
 // agent-harness (prompts/prompt_builder.py, prompts/evaluation.py,

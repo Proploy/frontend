@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import { ExpertCategoryPage } from '../category-page'
 
-export const metadata: Metadata = {
-  title: 'Finance & ops experts — Proploy',
-  description:
-    'Vetted finance, accounting, billing, ERP and operations specialists who keep the back office running and audit-ready.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Finance & Ops Software Experts",
+  description: "Specialists in ERP implementation, accounting systems, billing infrastructure, and revenue operations.",
+  path: "/experts/finance-ops",
+  keywords: ["finance ops experts","ERP implementation","RevOps consultants","billing automation"],
+})
 
 export default function FinanceOpsExpertsPage() {
   return (

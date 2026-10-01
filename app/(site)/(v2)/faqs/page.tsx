@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { FaqAccordion, type FaqItem } from './FaqAccordion'
 
-export const metadata: Metadata = {
-  title: 'FAQs — Proploy',
-  description:
-    'Everything businesses and experts ask about Proploy — matching, vetting, pricing, payments, trust and security.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Frequently Asked Questions",
+  description: "Find answers to common questions about hiring experts, vetting standards, payments, contracts, and platform guarantees.",
+  path: "/faqs",
+  keywords: ["FAQs","frequently asked questions","Proploy help","how Proploy works"],
+})
 
 interface FaqSection {
   id: string

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Manage team projects — Proploy',
-  description:
-    'Run engagements with your whole team — clear roles, approval chains and milestone visibility from kickoff to go-live.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Manage Team Projects",
+  description: "Unified project visibility across all contractor and expert engagements for department leads and project managers.",
+  path: "/manage-team-projects",
+  keywords: ["team project management","contractor tracking","enterprise milestone oversight","department spend"],
+})
 
 function Check() {
   return (

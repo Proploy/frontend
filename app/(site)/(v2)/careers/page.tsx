@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Careers — Proploy',
-  description:
-    'Join the team closing the execution gap in software. Openings across engineering, expert operations and growth at Proploy.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Careers at Proploy",
+  description: "Help build the vetted network where businesses choose, deploy and master modern software. View our open roles.",
+  path: "/careers",
+  keywords: ["careers","jobs at Proploy","tech jobs","hiring"],
+})
 
 const CULTURE = [
   {

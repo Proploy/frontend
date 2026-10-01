@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Nav } from '@/components/site/Nav'
@@ -11,11 +12,12 @@ import { FaqAccordion } from './FaqAccordion'
 import { MemberScroller } from './MemberScroller'
 import { ContactForm } from './ContactForm'
 
-export const metadata: Metadata = {
-  title: 'For experts — Proploy',
-  description:
-    'Get hired for what you’re actually great at. Qualified briefs from businesses that already know what they want to deploy. No bidding wars.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "For Experts",
+  description: "Get hired for what you’re actually great at. Qualified briefs from businesses that already know what they want to deploy. No bidding wars.",
+  path: "/for-experts",
+  keywords: ["for experts","freelance consultants","software engineering jobs","contract work","Proploy experts"],
+})
 
 const STEPS = [
   {

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Mission — Proploy',
-  description:
-    'Proploy exists to close the execution gap in software — pairing every software decision with the vetted expert who makes it work.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Our Mission",
+  description: "Why we built Proploy: to eliminate software shelfware and empower businesses with verified implementation mastery.",
+  path: "/mission",
+  keywords: ["company mission","about Proploy","why Proploy","software adoption vision"],
+})
 
 const PRINCIPLES = [
   {

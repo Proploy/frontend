@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import { ExpertCategoryPage } from '../category-page'
 
-export const metadata: Metadata = {
-  title: 'Business consulting experts — Proploy',
-  description:
-    'Vetted strategy, advisory and transformation consultants who pair the recommendation with the rollout.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Business Consulting Experts",
+  description: "Vetted management, IT strategy, and business consulting experts for digital transformation and enterprise workflows.",
+  path: "/experts/consulting",
+  keywords: ["business consulting experts","IT strategy consultants","digital transformation specialists"],
+})
 
 export default function ConsultingExpertsPage() {
   return (

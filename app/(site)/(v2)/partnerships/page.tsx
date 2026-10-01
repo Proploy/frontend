@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Partnerships — Proploy',
-  description:
-    'List your software, bring your agency, or build an integration. Three ways to partner with the Proploy marketplace.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Partnerships",
+  description: "Partner with Proploy to empower software ecosystems, co-market solutions, and drive successful customer implementations.",
+  path: "/partnerships",
+  keywords: ["strategic partnerships","tech partnerships","co-marketing","ecosystem partners"],
+})
 
 const PARTNER_TYPES = [
   {

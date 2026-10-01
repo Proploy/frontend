@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
 import { QuoteCarousel } from './QuoteCarousel'
 
-export const metadata: Metadata = {
-  title: 'Customer stories — Proploy',
-  description:
-    'How teams use Proploy to find the right software and the vetted experts who deploy it — from first brief to go-live.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Customer Stories",
+  description: "See how high-growth businesses and enterprise teams ship software faster with vetted Proploy experts.",
+  path: "/customers",
+  keywords: ["customer case studies","client stories","software deployment results","Proploy reviews"],
+})
 
 // Fictional, plausible companies only.
 const STORIES = [

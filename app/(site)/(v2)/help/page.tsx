@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Help Center — Proploy',
-  description:
-    'Guides and answers for Proploy — getting started, businesses, experts, billing and payments, and trust & safety.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Help Center",
+  description: "Documentation, platform tutorials, troubleshooting guides, and support resources for clients and experts.",
+  path: "/help",
+  keywords: ["help center","Proploy documentation","support guides","troubleshooting"],
+})
 
 interface HelpTopic {
   title: string

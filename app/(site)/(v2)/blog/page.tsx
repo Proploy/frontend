@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Blog — Proploy',
-  description:
-    'Notes from the Proploy team and expert network on software buying, implementation and the marketplace itself.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Blog & Insights",
+  description: "Perspectives on software selection, deployment architecture, modern stacks, and building high-trust expert networks.",
+  path: "/blog",
+  keywords: ["software blog","SaaS implementation guides","tech architecture insights","Proploy blog"],
+})
 
 const FEATURED = {
   title: 'Why every software deal should ship with an implementer attached',

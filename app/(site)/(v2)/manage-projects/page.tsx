@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Manage projects — Proploy',
-  description:
-    'One workspace per engagement: milestones, deliverables, client comms, files and approvals in a single thread — from kickoff to closeout.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Manage Projects",
+  description: "Track project milestones, log deliverable updates, communicate with clients, and submit work seamlessly.",
+  path: "/manage-projects",
+  keywords: ["manage projects","milestone tracking","freelance project management","deliverable review"],
+})
 
 const MILESTONES = [
   { name: 'Discovery & audit', amount: '$4,800', status: 'Approved', tone: 'success' as const },

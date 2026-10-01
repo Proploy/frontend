@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Send invoices — Proploy',
-  description:
-    'Milestone invoices generated from the workspace, with live status tracking from sent to paid. No spreadsheets, no chasing, no lost PDFs.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Send Invoices",
+  description: "Generate compliant milestone invoices automatically from approved deliverables. Fast processing and direct deposit.",
+  path: "/send-invoices",
+  keywords: ["send invoices","automated invoicing","freelance billing","milestone invoices"],
+})
 
 const INVOICES = [
   { id: 'INV-0231', milestone: 'Discovery & audit', client: 'Northbeam Ltd', amount: '$4,800', status: 'Paid', tone: 'success' as const },

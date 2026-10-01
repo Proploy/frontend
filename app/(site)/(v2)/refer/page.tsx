@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Referrals — Proploy',
-  description:
-    'Know a team that needs software, or an expert who should be on the network? Refer them to Proploy and share in the outcome when the match lands.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Referral Program",
+  description: "Refer high-caliber experts or hiring businesses to Proploy and earn generous recurring bonuses on completed projects.",
+  path: "/refer",
+  keywords: ["referral program","refer a friend","affiliate program","consultant referral bonus"],
+})
 
 const STEPS = [
   {

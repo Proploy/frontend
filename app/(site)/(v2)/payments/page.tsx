@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import { constructMetadata } from '@/lib/seo'
 import Link from 'next/link'
 
 import { Reveal } from '@/components/site/Reveal'
 
-export const metadata: Metadata = {
-  title: 'Payments — Proploy',
-  description:
-    'Funds committed before kickoff, held in escrow-style milestone accounts and released on approval — with payout methods that fit how you bank.',
-}
+export const metadata: Metadata = constructMetadata({
+  title: "Secure Payments & Escrow",
+  description: "Escrow-backed milestone payments protect both businesses and experts. Release funds only when deliverables are verified.",
+  path: "/payments",
+  keywords: ["secure payments","milestone escrow","guaranteed payout","contractor payment protection"],
+})
 
 const ESCROW_STAGES = [
   {

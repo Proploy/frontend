@@ -1,3 +1,5 @@
+import type { Metadata } from 'next'
+
 /**
  * The origin search engines should treat as the site.
  *
@@ -12,3 +14,59 @@ export const SITE_NAME = 'Proploy'
 
 export const SITE_DESCRIPTION =
   'Proploy matches your business with the right software and the vetted experts who deploy it. Pre-negotiated pricing, full spend visibility, guaranteed execution.'
+
+export type PageSeoProps = {
+  title: string
+  description: string
+  path: string
+  keywords?: string[]
+  noIndex?: boolean
+}
+
+export function constructMetadata({
+  title,
+  description,
+  path,
+  keywords,
+  noIndex = false,
+}: PageSeoProps): Metadata {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const formattedTitle = title.includes(SITE_NAME) ? title : `${title} — ${SITE_NAME}`
+
+  return {
+    title: formattedTitle,
+    description,
+    keywords: keywords || [
+      'software marketplace',
+      'software implementation',
+      'vetted SaaS experts',
+      'freelance software consultants',
+      'Proploy',
+    ],
+    alternates: {
+      canonical: cleanPath,
+    },
+    openGraph: {
+      title: formattedTitle,
+      description,
+      url: cleanPath,
+      siteName: SITE_NAME,
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: formattedTitle,
+      description,
+    },
+    robots: noIndex
+      ? {
+          index: false,
+          follow: false,
+        }
+      : {
+          index: true,
+          follow: true,
+        },
+  }
+}
