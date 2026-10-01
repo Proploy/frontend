@@ -119,29 +119,29 @@ export function ProjectDocumentViewer({
 
   return (
     <>
-      <div className={`mt-[14px] rounded-[10px] border border-line bg-white p-[12px] ${compact ? '' : 'w-full'}`}>
-        <div className="flex flex-wrap items-center justify-between gap-[12px]">
-          <div className="flex min-w-0 items-center gap-[10px]">
-            <div className="flex size-[36px] shrink-0 items-center justify-center rounded-[8px] bg-cobalt-soft text-cobalt">
-              <Icon size={16} />
+      <div className={`w-full min-w-0 rounded-[8px] border border-line bg-surface-sunken p-[10px] ${compact ? 'mt-[6px]' : 'mt-[14px] bg-white'}`}>
+        <div className="flex flex-wrap items-center justify-between gap-[8px] min-w-0">
+          <div className="flex min-w-0 items-center gap-[8px] flex-1">
+            <div className="flex size-[30px] shrink-0 items-center justify-center rounded-[6px] bg-cobalt-soft text-cobalt">
+              <Icon size={14} />
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-[14px] font-semibold leading-[20px] text-ink">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-semibold leading-[18px] text-ink">
                 {project.fileName || 'Project document'}
               </p>
-              <p className="truncate text-[12px] leading-[18px] text-ink-muted">{fileMeta}</p>
+              {!compact && <p className="truncate text-[11px] leading-[16px] text-ink-muted">{fileMeta}</p>}
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-[8px]">
+          <div className="flex shrink-0 items-center gap-[6px]">
             {canPreview ? (
               <button
                 type="button"
                 onClick={openPreview}
                 disabled={isLoadingPreview}
-                className="inline-flex items-center gap-[6px] rounded-[8px] border border-line bg-white px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-ink-soft hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-[4px] rounded-[6px] border border-line bg-white px-[8px] py-[4px] text-[12px] font-semibold leading-[16px] text-ink-soft hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isLoadingPreview ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+                {isLoadingPreview ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
                 Preview
               </button>
             ) : null}
@@ -149,16 +149,16 @@ export function ProjectDocumentViewer({
               type="button"
               onClick={openInNewTab}
               disabled={isOpeningFile}
-              className="inline-flex items-center gap-[6px] rounded-[8px] bg-cobalt px-[10px] py-[7px] text-[13px] font-semibold leading-[18px] text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-[4px] rounded-[6px] bg-cobalt px-[8px] py-[4px] text-[12px] font-semibold leading-[16px] text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isOpeningFile ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+              {isOpeningFile ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
               Open
             </button>
           </div>
         </div>
 
         {fileError ? (
-          <p className="mt-[8px] text-[13px] leading-[18px] text-danger">{fileError}</p>
+          <p className="mt-[6px] text-[12px] leading-[16px] text-danger">{fileError}</p>
         ) : null}
       </div>
 
