@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getAuthIntentFromCookie, AUTH_INTENT_COOKIE } from '@/lib/utils/auth-intent'
 import { serviceApisFetch } from '@/lib/service-apis/server'
 import { supabaseAuthCookieOptions } from '@/lib/supabase/cookie-options'
+import { sanitizeRedirectPath } from '@/app/(site)/(auth)/auth-redirect'
 
 import { type EmailOtpType } from '@supabase/supabase-js'
 
@@ -44,9 +45,14 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/sign-in?error=sync_failed`)
     }
 
+    // Both sources are appended to `origin`, so each must be a same-origin
+    // path: `?next=@evil.example` would otherwise land on
+    // `https://proploy.io@evil.example`.
     const cookieHeader = request.headers.get('cookie')
-    const authIntent = getAuthIntentFromCookie(cookieHeader)
-    const finalRedirect = authIntent || redirectParam
+    const finalRedirect =
+      sanitizeRedirectPath(getAuthIntentFromCookie(cookieHeader)) ??
+      sanitizeRedirectPath(redirectParam) ??
+      '/workspace'
     const response = NextResponse.redirect(`${origin}${finalRedirect}`)
     response.cookies.set(AUTH_INTENT_COOKIE, '', {
       ...supabaseAuthCookieOptions,
